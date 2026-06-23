@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Building Intelligent AI Agents &mdash; From Deep Learning to Autonomous Agents</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f6fb;
+      color: #1e1f33;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    a { color: #4f46e5; }
+    header {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+      color: #fff;
+      padding: 22px 20px;
+      text-align: center;
+      border-bottom: 3px solid #06b6d4;
+    }
+    header h1 { margin: 0; font-size: 1.6em; }
+    header .tagline { margin-top: 6px; color: #a5b4fc; font-size: 0.95em; font-weight: 600; }
+    header .prepared { margin-top: 4px; color: #67e8f9; font-size: 0.88em; font-weight: 600; }
+    header .meta { margin-top: 8px; color: #cbd0e8; font-size: 0.9em; }
+    header .meta span { margin: 0 7px; }
+    header .meta .duration { color: #a5b4fc; font-weight: 600; }
+    header .meta .level { color: #67e8f9; font-weight: 600; }
+    header .meta .nocode { background: #06b6d4; color: #062c33; padding: 1px 8px; border-radius: 10px; font-weight: 700; }
+    .container {
+      max-width: 1000px;
+      margin: 15px auto;
+      background: #fff;
+      padding: 15px 25px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    section { margin-bottom: 15px; }
+    section h2 {
+      border-bottom: 2px solid #06b6d4;
+      padding-bottom: 5px;
+      margin: 0 0 10px 0;
+      color: #312e81;
+      font-size: 1.2em;
+    }
+    .lead { margin: 0 0 10px 0; font-size: 0.95em; }
+    .overview-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .overview-box {
+      background: #eef2ff;
+      padding: 10px 12px;
+      border-radius: 4px;
+      border-left: 3px solid #4f46e5;
+    }
+    .overview-box h4 { margin: 0 0 5px 0; font-size: 0.95em; color: #312e81; }
+    .overview-box ul { margin: 0; padding-left: 18px; font-size: 0.88em; }
+    .overview-box li { margin-bottom: 2px; }
+    .day-header {
+      background: linear-gradient(135deg, #312e81 0%, #4f46e5 140%);
+      color: #fff;
+      padding: 8px 12px;
+      margin: 15px 0 10px 0;
+      border-radius: 4px;
+      font-size: 1.02em;
+      font-weight: 600;
+      border-left: 4px solid #06b6d4;
+    }
+    .day-header .goal { display: block; font-weight: 400; font-size: 0.82em; color: #dbe0ff; margin-top: 3px; }
+    .modules-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .module {
+      background: #f5f5ff;
+      padding: 8px 10px;
+      border-left: 3px solid #4f46e5;
+      border-radius: 0 4px 4px 0;
+      font-size: 0.85em;
+    }
+    .module.full { grid-column: 1 / -1; }
+    .module.labs { border-left-color: #f59e0b; background: #fffbeb; }
+    .module h4 {
+      margin: 0 0 5px 0;
+      font-size: 0.95em;
+      color: #312e81;
+    }
+    .module ul { margin: 0; padding-left: 16px; }
+    .module li { margin-bottom: 1px; }
+    .module .lab { color: #4338ca; }
+    .badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-size: 0.7em;
+      margin-left: 5px;
+      vertical-align: middle;
+    }
+    .core-badge { background: #4f46e5; color: #fff; }
+    .key-badge { background: #b45309; color: #fff; }
+    .build-badge { background: #0891b2; color: #fff; }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 15px;
+    }
+    .info-box h3 {
+      margin: 0 0 8px 0;
+      font-size: 1em;
+      color: #312e81;
+      border-bottom: 1px solid #d2d6ee;
+      padding-bottom: 4px;
+    }
+    .info-box ul { margin: 0; padding-left: 18px; font-size: 0.85em; }
+    .info-box li { margin-bottom: 3px; }
+    .two-col-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px 20px;
+    }
+    .two-col-list li { margin-bottom: 2px; }
+    .callout {
+      background: #eef2ff;
+      border: 1px solid #a5b4fc;
+      border-left: 4px solid #4f46e5;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 0.88em;
+      margin: 10px 0;
+    }
+    .callout.descope {
+      background: #fff7ed;
+      border-color: #fdba74;
+      border-left-color: #b45309;
+    }
+    .capstone {
+      background: #fffbeb;
+      border: 1px solid #f59e0b;
+      border-left: 4px solid #f59e0b;
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: 0.9em;
+    }
+    footer {
+      background: #1e1b4b;
+      color: #fff;
+      text-align: center;
+      padding: 14px;
+      font-size: 0.85em;
+    }
+    footer a { color: #a5b4fc; text-decoration: none; }
+
+    @media print {
+      @page { size: A4; margin: 10mm; }
+      body { font-size: 11px; background: #fff; }
+      header { padding: 12px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      header h1 { font-size: 1.4em; }
+      .container { box-shadow: none; padding: 10px 15px; margin: 10px auto; }
+      section { margin-bottom: 10px; }
+      section h2 { font-size: 1.1em; margin-bottom: 8px; }
+      .day-header { padding: 6px 10px; margin: 10px 0 8px 0; font-size: 0.95em; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .module { padding: 6px 8px; font-size: 0.8em; }
+      .module h4 { font-size: 0.9em; }
+      .modules-grid { gap: 6px; }
+      .overview-grid, .info-grid { gap: 10px; }
+      .info-box ul { font-size: 0.8em; }
+      .callout { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      footer { padding: 8px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .page-break { page-break-before: always; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Building Intelligent AI Agents</h1>
+    <div class="tagline">From deep-learning foundations &amp; transformers to autonomous, industry-ready AI agents</div>
+    <div class="prepared">Hands-on with Python, Hugging Face, LangChain &amp; AutoGPT</div>
+    <div class="meta">
+      <span class="duration">5 Days &middot; Hands-on</span> |
+      <span class="level">Beginner &rarr; Practitioner</span> |
+      <span class="nocode">PYTHON &middot; LAB-DRIVEN</span> |
+      <span>Trainer: Rajesh Gheware</span>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Overview -->
+    <section id="overview">
+      <h2>Course Overview</h2>
+      <p class="lead">
+        A practitioner-first program that takes participants from <strong>zero AI background</strong> to <strong>building and
+        deploying intelligent, autonomous AI agents</strong>. The week opens with the foundations &mdash; how modern AI works and
+        how <strong>deep neural networks</strong> learn &mdash; then moves to the <strong>transformer architecture</strong> that
+        powers today's large language models, including using <strong>pre-trained models</strong> and <strong>fine-tuning</strong>
+        them for real tasks. From there the course pivots to the heart of the program: <strong>agentic AI</strong> &mdash;
+        designing autonomous agents with frameworks such as <strong>LangChain</strong> and <strong>AutoGPT</strong>, wiring them to
+        <strong>external tools, APIs and databases</strong>, automating real work, and coordinating <strong>multiple agents</strong>
+        for decision-making. The final day applies everything to <strong>industry-specific agents</strong> for finance, healthcare,
+        customer service and cybersecurity, and closes with <strong>ethics and responsible AI</strong>. Roughly 50% concept, 50%
+        hands-on; every module pairs with a Python lab that participants run themselves. The five days build in a clear arc &mdash;
+        <strong>understand the models &rarr; harness transformers &rarr; build your first agent &rarr; make agents do real work &rarr; ship industry agents responsibly.</strong>
+      </p>
+      <div class="callout">
+        <strong>No AI background needed.</strong> The course assumes <strong>no prior knowledge of AI, deep learning, or machine
+        learning</strong>. Basic Python helps but is not mandatory &mdash; concepts are introduced from first principles, and every
+        lab provides scaffolded, fill-in-the-blank starter code so participants of all levels can keep pace.
+      </div>
+      <div class="callout descope">
+        <strong>Practical, build-first focus.</strong> The emphasis is on <strong>building working agents</strong>, not deriving the
+        math. Heavy theory (backpropagation derivations, attention proofs, distributed-training internals) is summarized at an
+        intuition level so the week stays focused on shipping intelligent agents.
+      </div>
+      <div class="overview-grid">
+        <div class="overview-box">
+          <h4>Day 1 &middot; AI &amp; Deep Learning</h4>
+          <ul>
+            <li>AI and its evolution</li>
+            <li>Neural networks &amp; deep learning</li>
+            <li>Build an MNIST classifier</li>
+            <li>Visualizing model decisions</li>
+          </ul>
+        </div>
+        <div class="overview-box">
+          <h4>Day 2 &middot; Transformer Models</h4>
+          <ul>
+            <li>Why transformers &amp; attention</li>
+            <li>Pre-trained models &amp; fine-tuning</li>
+            <li>GPT API for text generation</li>
+            <li>Fine-tune BERT for sentiment</li>
+          </ul>
+        </div>
+        <div class="overview-box">
+          <h4>Day 3 &middot; Agentic AI Foundations</h4>
+          <ul>
+            <li>What is agentic AI?</li>
+            <li>Agent frameworks (LangChain, AutoGPT)</li>
+            <li>Build your first LangChain agent</li>
+            <li>Connect agents to external APIs</li>
+          </ul>
+        </div>
+        <div class="overview-box">
+          <h4>Day 4 &middot; Real-World Agents</h4>
+          <ul>
+            <li>Task automation with agents</li>
+            <li>Multi-agent collaboration</li>
+            <li>Email-drafting automation agent</li>
+            <li>Customer-service chatbot system</li>
+          </ul>
+        </div>
+        <div class="overview-box">
+          <h4>Day 5 &middot; Advanced &amp; Responsible</h4>
+          <ul>
+            <li>Agents in finance, health, cyber</li>
+            <li>Ethics &amp; responsible AI</li>
+            <li>Financial-report insight agent</li>
+            <li>Debugging &amp; guardrails</li>
+          </ul>
+        </div>
+        <div class="overview-box" style="border-left-color:#f59e0b;background:#fffbeb;">
+          <h4>The Capstone Thread</h4>
+          <ul>
+            <li>Industry-specific intelligent agent</li>
+            <li>Tool, API &amp; database integration</li>
+            <li>Autonomous task &amp; decision flow</li>
+            <li>Responsible &amp; debuggable</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Objective + Audience -->
+    <section id="objective">
+      <h2>Objective &amp; Learning Outcomes</h2>
+      <p class="lead">
+        Equip participants to go from AI fundamentals to building intelligent, autonomous AI agents that automate tasks, make
+        decisions, and integrate with real systems &mdash; ready to apply in their own domain. By the end of the course, participants will be able to:
+      </p>
+      <ul class="two-col-list" style="font-size: 0.9em;">
+        <li>Build AI models using deep learning and transformer-based architectures</li>
+        <li>Implement agentic AI pipelines using frameworks like LangChain and AutoGPT</li>
+        <li>Design AI-driven task automation and decision-making systems</li>
+        <li>Develop industry-specific AI agents for finance, healthcare &amp; customer service</li>
+        <li>Integrate AI agents with external tools, APIs and databases</li>
+        <li>Use and fine-tune pre-trained models (GPT, BERT) for real-world tasks</li>
+        <li>Coordinate multi-agent systems for collaborative decision-making</li>
+        <li>Apply responsible-AI practices and debug agent failures</li>
+      </ul>
+    </section>
+
+    <section id="audience">
+      <h2>Target Audience &amp; Prerequisites</h2>
+      <div class="overview-grid" style="grid-template-columns: 1fr 1fr;">
+        <div class="overview-box">
+          <h4>Who should attend</h4>
+          <ul>
+            <li>Developers &amp; engineers moving into AI / agentic systems</li>
+            <li>Data, analytics &amp; automation professionals</li>
+            <li>Technical leads, architects &amp; product owners exploring AI agents</li>
+            <li>Anyone who wants to build practical AI agents from the ground up</li>
+          </ul>
+        </div>
+        <div class="overview-box">
+          <h4>Prerequisites</h4>
+          <ul>
+            <li><strong>No prior knowledge of AI, deep learning or ML required</strong></li>
+            <li>Basic programming knowledge (Python recommended, not mandatory)</li>
+            <li>Comfort running commands &amp; notebooks in a browser</li>
+            <li>A modern browser &amp; stable internet</li>
+            <li>Curiosity and willingness to experiment</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout">
+        <strong>Scaffolded for mixed levels.</strong> Concepts start from first principles and every lab ships with guided,
+        fill-in-the-blank starter notebooks &mdash; so both newcomers and experienced developers stay engaged and finish each build.
+      </div>
+    </section>
+
+    <!-- DAY 1 -->
+    <div class="day-header">
+      Day 1 &mdash; Foundations of AI and Deep Learning
+      <span class="goal">Goal: understand what AI is and how it evolved, grasp how deep neural networks learn, and build &amp; visualize a working image classifier by end of day.</span>
+    </div>
+    <div class="modules-grid">
+      <div class="module">
+        <h4>Module 1: Understanding AI and its Evolution <span class="badge core-badge">Core</span> <a class="badge build-badge" style="text-decoration:none" href="presentation/day1-module1-understanding-ai-and-its-evolution.html">&#9654; Slides</a> <a class="badge core-badge" style="text-decoration:none" href="hands-on/module-1/index.html">&#9654; 12 Labs</a></h4>
+        <ul>
+          <li>What AI is: from rule-based systems to machine learning</li>
+          <li>The evolution &mdash; ML, deep learning &amp; the rise of agents</li>
+          <li>Where AI delivers value: tasks, decisions, automation</li>
+          <li>Key terms &amp; the modern AI landscape, demystified</li>
+        </ul>
+      </div>
+      <div class="module">
+        <h4>Module 2: Introduction to Deep Learning <span class="badge core-badge">Core</span></h4>
+        <ul>
+          <li>Neurons, layers &amp; how a network learns (intuition-first)</li>
+          <li>Training basics: data, loss, gradient descent, epochs</li>
+          <li>Activation, overfitting &amp; how to read a training curve</li>
+          <li>The deep-learning toolkit: Python, NumPy, PyTorch/Keras</li>
+        </ul>
+      </div>
+      <div class="module full labs">
+        <h4>Day 1 Labs <a class="badge core-badge" style="text-decoration:none;font-weight:600" href="hands-on/module-1/index.html">&#9654; Module 1 &middot; 12 hands-on labs</a></h4>
+        <ul class="two-col-list">
+          <li class="lab"><strong>Module 1</strong> (Understanding AI): 12 experiential labs &mdash; 6 beginner, 3 intermediate, 3 advanced (~5h)</li>
+          <li class="lab"><strong>1.1&ndash;1.6</strong> Rules vs. learning &middot; AI family tree &middot; AI timeline &middot; narrow/general/super &middot; how machines learn &middot; learning from data</li>
+          <li class="lab"><strong>1.7&ndash;1.9</strong> First ML pipeline &middot; overfitting (train/test trap) &middot; supervised vs unsupervised (clustering)</li>
+          <li class="lab"><strong>1.10&ndash;1.11</strong> Neural network from scratch &middot; <strong>recognise handwritten digits &amp; visualise how AI decides</strong></li>
+          <li class="lab"><strong>1.12</strong> Capstone: build a mini AI agent (LLM + tools + goal + loop)</li>
+          <li class="lab"><strong>Module 2</strong> labs (deep-learning &amp; the MNIST classifier) are authored with Module 2</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- DAY 2 -->
+    <div class="day-header page-break">
+      Day 2 &mdash; Understanding Transformer Models: The Backbone of Agentic AI
+      <span class="goal">Goal: understand why transformers changed everything, and learn to use and fine-tune pre-trained language models (GPT, BERT) for real-world text tasks.</span>
+    </div>
+    <div class="modules-grid">
+      <div class="module">
+        <h4>Module 3: Why Transformers? <span class="badge core-badge">Core</span></h4>
+        <ul>
+          <li>The limits of earlier models &amp; what attention solves</li>
+          <li>Self-attention &amp; the transformer block (intuition-first)</li>
+          <li>How transformers power today's large language models</li>
+          <li>Tokens, embeddings &amp; context windows in practice</li>
+        </ul>
+      </div>
+      <div class="module">
+        <h4>Module 4: Pre-trained Models and Fine-tuning <span class="badge key-badge">Key</span></h4>
+        <ul>
+          <li>Pre-training vs. fine-tuning &mdash; standing on giants</li>
+          <li>The Hugging Face ecosystem &amp; model hub</li>
+          <li>When to prompt, when to fine-tune, when to ground</li>
+          <li>Preparing real-world datasets for fine-tuning</li>
+        </ul>
+      </div>
+      <div class="module full labs">
+        <h4>Day 2 Labs</h4>
+        <ul class="two-col-list">
+          <li class="lab"><strong>2.1</strong> Use OpenAI's GPT API for text generation</li>
+          <li class="lab"><strong>2.2</strong> Fine-tune a BERT model for sentiment analysis on a real-world dataset</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- DAY 3 -->
+    <div class="day-header page-break">
+      Day 3 &mdash; Introduction to Agentic AI and Autonomous AI Agents
+      <span class="goal">Goal: understand what makes AI &ldquo;agentic,&rdquo; meet the leading agent frameworks, and build your first working LangChain agent that reaches out to external tools.</span>
+    </div>
+    <div class="modules-grid">
+      <div class="module">
+        <h4>Module 5: What is Agentic AI? <span class="badge core-badge">Core</span></h4>
+        <ul>
+          <li>From a model that answers to an agent that acts</li>
+          <li>The agent loop: reason, plan, use tools, observe, act</li>
+          <li>Memory, tools &amp; goals &mdash; the anatomy of an agent</li>
+          <li>Where autonomous agents help &mdash; and where they don't</li>
+        </ul>
+      </div>
+      <div class="module">
+        <h4>Module 6: Frameworks for Building AI Agents <span class="badge build-badge">Build</span></h4>
+        <ul>
+          <li>LangChain: chains, tools, agents &amp; the building blocks</li>
+          <li>AutoGPT &amp; the autonomous-agent pattern</li>
+          <li>Connecting agents to APIs, search &amp; knowledge sources</li>
+          <li>Choosing a framework for the job at hand</li>
+        </ul>
+      </div>
+      <div class="module full labs">
+        <h4>Day 3 Labs</h4>
+        <ul class="two-col-list">
+          <li class="lab"><strong>3.1</strong> Build a simple AI agent using LangChain</li>
+          <li class="lab"><strong>3.2</strong> Connect AI agents to external APIs (Google Search, Wolfram Alpha)</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- DAY 4 -->
+    <div class="day-header page-break">
+      Day 4 &mdash; Building Intelligent AI Agents for Real-World Applications
+      <span class="goal">Goal: put agents to work &mdash; automate real tasks end to end, and coordinate multiple agents that collaborate and make decisions together.</span>
+    </div>
+    <div class="modules-grid">
+      <div class="module">
+        <h4>Module 7: Task Automation with AI Agents <span class="badge key-badge">Key</span></h4>
+        <ul>
+          <li>Turning a business task into an agent workflow</li>
+          <li>Tools, APIs &amp; databases as the agent's hands</li>
+          <li>Reliability: prompts, retries, validation &amp; human-in-the-loop</li>
+          <li>Patterns for drafting, extraction &amp; routing</li>
+        </ul>
+      </div>
+      <div class="module">
+        <h4>Module 8: Multi-Agent Collaboration &amp; Decision Making <span class="badge key-badge">Key</span></h4>
+        <ul>
+          <li>Why one agent isn't always enough &mdash; specialist roles</li>
+          <li>Supervisor / worker patterns &amp; message passing</li>
+          <li>Reaching a decision: voting, critique &amp; synthesis</li>
+          <li>Designing a multi-agent system end to end</li>
+        </ul>
+      </div>
+      <div class="module full labs">
+        <h4>Day 4 Labs</h4>
+        <ul class="two-col-list">
+          <li class="lab"><strong>4.1</strong> Create an AI agent that automates email drafting based on client queries</li>
+          <li class="lab"><strong>4.2</strong> Design a multi-agent system for customer-service chatbots</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- DAY 5 -->
+    <div class="day-header page-break">
+      Day 5 &mdash; Advanced AI Agents and Future Trends
+      <span class="goal">Goal: build industry-specific agents (finance, healthcare, cybersecurity), learn to apply responsible-AI practices, debug agent errors, and present a capstone.</span>
+    </div>
+    <div class="modules-grid">
+      <div class="module">
+        <h4>Module 9: AI Agents in Finance, Healthcare &amp; Cybersecurity <span class="badge build-badge">Build</span></h4>
+        <ul>
+          <li>Industry-specific agents: what each domain demands</li>
+          <li>Finance: extracting insights from reports &amp; filings</li>
+          <li>Healthcare &amp; cybersecurity: high-stakes, guarded use</li>
+          <li>Integrating tools, APIs &amp; databases per domain</li>
+        </ul>
+      </div>
+      <div class="module">
+        <h4>Module 10: Ethics &amp; Responsible AI in Agentic Systems <span class="badge key-badge">Compliance</span></h4>
+        <ul>
+          <li>Bias, hallucination, privacy &amp; accountability</li>
+          <li>Responsible-AI frameworks &amp; guardrails for agents</li>
+          <li>Debugging agent errors: tracing, logging &amp; evaluation</li>
+          <li>Future trends &amp; your next steps with agentic AI</li>
+        </ul>
+      </div>
+      <div class="module full labs">
+        <h4>Day 5 Labs</h4>
+        <ul class="two-col-list">
+          <li class="lab"><strong>5.1</strong> Deploy an AI agent that extracts insights from financial reports</li>
+          <li class="lab"><strong>5.2</strong> Explore responsible-AI frameworks &amp; debug AI agent errors</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Capstone -->
+    <section id="capstone" style="margin-top: 15px;">
+      <h2>Capstone &mdash; Your Own Industry-Specific Intelligent Agent</h2>
+      <div class="capstone">
+        By the end of the week, each participant (or small team) builds and demos an <strong>intelligent, autonomous AI agent</strong>
+        for a domain they care about &mdash; finance, healthcare, customer service or beyond. The agent is built on the frameworks
+        covered in the course (<strong>LangChain / AutoGPT</strong>), <strong>automates a real task and makes decisions</strong>,
+        <strong>integrates external tools, APIs and databases</strong>, and where useful coordinates <strong>multiple specialist
+        agents</strong>. It is wrapped in <strong>responsible-AI guardrails</strong> &mdash; handling for bias, privacy and
+        hallucination &mdash; and is <strong>debuggable</strong>, with tracing and basic evaluation in place. Each participant presents
+        what their agent does, how it integrates with real systems, what it deliberately won't do, and how they'll extend it next.
+      </div>
+    </section>
+
+    <!-- Info -->
+    <section id="info" style="margin-top: 15px;">
+      <div class="info-grid">
+        <div class="info-box">
+          <h3>Tools &amp; Technologies</h3>
+          <ul>
+            <li><strong>Python</strong> &mdash; the language for every lab</li>
+            <li><strong>PyTorch / Keras</strong> &mdash; build &amp; train neural networks</li>
+            <li><strong>Hugging Face Transformers</strong> &mdash; pre-trained models &amp; fine-tuning (BERT)</li>
+            <li><strong>OpenAI GPT API</strong> &mdash; text generation &amp; reasoning</li>
+            <li><strong>LangChain &amp; AutoGPT</strong> &mdash; build agentic pipelines</li>
+            <li>External APIs &mdash; Google Search, Wolfram Alpha &amp; more</li>
+            <li>Databases &amp; tool integrations for agent actions</li>
+            <li>Jupyter notebooks for hands-on, scaffolded labs</li>
+          </ul>
+        </div>
+        <div class="info-box">
+          <h3>Lab Environment</h3>
+          <ul>
+            <li>Personal browser-based Jupyter sandbox &mdash; nothing to install</li>
+            <li>Python, PyTorch &amp; Hugging Face pre-installed and ready</li>
+            <li>LangChain &amp; AutoGPT pre-wired with example agents</li>
+            <li>Scaffolded, fill-in-the-blank notebooks for every lab</li>
+            <li>Sample datasets (MNIST, sentiment, financial reports) pre-loaded</li>
+            <li>API keys &amp; connectors provisioned for the labs</li>
+            <li>Isolated &amp; persistent across all 5 days; access from Day 1</li>
+            <li>Any modern browser (Chrome, Firefox, Edge)</li>
+          </ul>
+        </div>
+        <div class="info-box">
+          <h3>Participants Receive</h3>
+          <ul>
+            <li>Certificate of Completion</li>
+            <li>Their own capstone agent project to keep &amp; extend</li>
+            <li>All lab notebooks &amp; reusable agent templates</li>
+            <li>A responsible-AI &amp; debugging checklist for agents</li>
+            <li>Slide decks &amp; reference notes</li>
+            <li>A &ldquo;what to build next&rdquo; roadmap</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <footer>
+    &copy; 2026 Gheware DevOps &amp; Agentic AI |
+    <a href="https://devops.gheware.com">devops.gheware.com</a> |
+    Trainer: Rajesh Gheware |
+    Building Intelligent AI Agents v1.0
+  </footer>
+</body>
+</html>
