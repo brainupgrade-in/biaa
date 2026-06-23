@@ -16,37 +16,45 @@ autonomous, industry-ready AI agents.*
   Python recommended but not mandatory.
 - **Audience:** developers, data/automation professionals, technical leads/architects moving
   into agentic AI.
-- **Stage:** early build. Deliverables so far:
+- **Stage:** early build &mdash; **Day 1 complete** (Modules 1 &amp; 2). Deliverables so far:
   `course-outline-building-intelligent-ai-agents.html` (landing/outline);
-  `presentation/day1-module1-understanding-ai-and-its-evolution.html` (Day 1 Module 1 deck,
-  22 slides); and `hands-on/module-1/` (Day 1 Module 1 labs &mdash; 12 notebooks + `index.html`
-  landing page + `solutions/` answer keys). Remaining Modules 2&ndash;10 decks and their labs
-  are not built yet.
+  `presentation/day1-module1-understanding-ai-and-its-evolution.html` (22 slides) and
+  `presentation/day1-module2-introduction-to-deep-learning.html` (20 slides); and
+  `hands-on/module-1/` + `hands-on/module-2/` (12 labs each + `index.html` + `solutions/`).
+  Remaining Modules 3&ndash;10 decks and their labs are not built yet.
 
 ## Hands-on labs (the convention that's now established)
 
-- **Course prefix:** `biaa`. Each lab writes to its own `/tmp/biaa-lab-01-NN/` working dir
-  (module 01, lab NN).
+- **Course prefix:** `biaa`. Each lab writes to its own `/tmp/biaa-lab-MM-NN/` working dir
+  (module MM, lab NN) &mdash; e.g. `/tmp/biaa-lab-01-07/`, `/tmp/biaa-lab-02-11/`.
 - **Module 1 has 12 labs** (`hands-on/module-1/lab-01..12-*.ipynb`): 6 Beginner, 3 Intermediate,
   3 Advanced &mdash; an experiential progression (rules &rarr; data &rarr; ML pipeline &rarr; overfitting
   &rarr; clustering &rarr; perceptron-from-scratch &rarr; digit NN &rarr; mini-agent capstone). ~320 min total.
+- **Module 2 has 12 labs** (`hands-on/module-2/lab-01..12-*.ipynb`, prefix `/tmp/biaa-lab-02-NN/`):
+  6 Beginner, 3 Intermediate, 3 Advanced &mdash; the artificial neuron, activations, MSE loss,
+  gradient descent, training a neuron, reading training curves (Beginner, NumPy/matplotlib);
+  2-layer net from scratch, overfitting/early-stopping, hyperparameters (Intermediate, sklearn);
+  **Keras on real MNIST** &mdash; first Keras net, the MNIST classifier with training curves, and
+  visualising decisions/confusion matrix (Advanced). ~375 min total. **Labs 10&ndash;12 use
+  `tensorflow-cpu` + `keras.datasets.mnist`**; the shared `load_image_data()` helper falls back to
+  offline `load_digits` (8x8) if MNIST can't download, so they run with or without network
+  (verified on Python 3.13 with tensorflow-cpu 2.21 / keras 3.14).
 - **Every notebook follows:** Concept &rarr; Demo (runnable) &rarr; Your Turn (`___` blanks) &rarr;
   auto-grader cell printing `[PASS]`/`[FAIL]`/`[TODO]` + `Score: n/total`. Grader helpers are
   `expect(label, got, want)` and `expect_true(label, fn)`; blanks/exceptions register as `[TODO]`.
-- **Student vs solution:** student notebooks have `___`; full answer keys live in
-  `hands-on/module-1/solutions/` (same filenames, with a SOLUTION banner cell).
-- **Generators (re-run to regenerate, do NOT hand-edit the .ipynb):** live in
-  `hands-on/module-1/_generators/` &mdash; `gen_labs.py` (notebooks + solutions), `gen_index.py`
-  (landing page), `regenerate.sh` (runs both, no args needed), `README.md`. Blanks use the
-  `{"s":..,"a":..}` student/answer convention; `_meta.json` is written beside the generators
-  (not in the labs dir). Verified: `regenerate.sh` reproduces the committed files byte-identically.
-  Edit the generators, never the JSON.
-- **Dependencies (offline-friendly):** numpy + scikit-learn + matplotlib only. Labs 1&ndash;6, 10, 12
-  need just Python/NumPy; 7&ndash;9, 11 use sklearn (11 also matplotlib). Lab 12 has an *optional*
-  Ollama/LangChain step (`langchain-community`, `llama3.2:1b`) that degrades gracefully.
-- **Verification done:** all 12 solution notebooks were executed with `nbconvert` and reach a
-  full `Score`; all 12 student notebooks run top-to-bottom without uncaught errors (blanks land
-  as `[TODO]`). Re-verify the same way after any edit.
+- **Student vs solution:** student notebooks have `___`; full answer keys live in each module's
+  `solutions/` dir (same filenames, with a SOLUTION banner cell).
+- **Generators (re-run to regenerate, do NOT hand-edit the .ipynb):** each module has its own
+  `_generators/` (`hands-on/module-1/_generators/`, `hands-on/module-2/_generators/`) with
+  `gen_labs.py` (notebooks + solutions), `gen_index.py` (landing page), `regenerate.sh` (runs both,
+  no args), `README.md`. Blanks use the `{"s":..,"a":..}` student/answer convention; `_meta.json`
+  is written beside the generators (not in the labs dir, and gitignored). Verified: `regenerate.sh`
+  reproduces the committed files byte-identically. Edit the generators, never the JSON.
+- **Verification done (both modules):** all 24 solution notebooks were executed with `nbconvert`
+  and reach a full `Score`; all 24 student notebooks run top-to-bottom without uncaught errors
+  (blanks land as `[TODO]`). Module 2's Keras labs were verified against real MNIST. Re-verify the
+  same way after any edit (Module 2 advanced labs need `tensorflow-cpu` and train real nets, so
+  execution is slower).
 - **Deck framework:** single self-contained HTML, custom slide engine (NOT Reveal.js) ported
   from the Sharewealth Module-1 deck &mdash; keyboard/swipe nav, slide counter, progress bar,
   `O`/Esc overview grid, `N` presenter notes (`data-note` per `<section.slide>`), `F`
