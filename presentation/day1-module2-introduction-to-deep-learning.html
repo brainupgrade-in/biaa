@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 1 · Module 2 — Introduction to Deep Learning</title>
+<style>
+  :root{
+    --ink-900:#1e1b4b; --ink-800:#312e81; --ind-600:#4f46e5;
+    --ind-300:#a5b4fc; --ind-50:#eef2ff;
+    --cyan:#06b6d4; --cyan-l:#67e8f9; --amber:#f59e0b; --amber-d:#b45309; --blue:#0891b2;
+    --ok:#059669; --bg:#f5f6fb; --ink:#1e1f33; --muted:#5b5f7a; --line:#d8dcf0;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+    background:var(--ink-900); color:var(--ink);
+    overflow:hidden;
+  }
+  a{color:var(--ind-600);}
+
+  /* ---------- Deck / slide framework ---------- */
+  .deck{position:fixed;inset:0;}
+  .slide{
+    position:absolute;inset:0;
+    display:none;
+    flex-direction:column;
+    background:var(--bg);
+    padding:clamp(20px,3.2vh,40px) clamp(28px,5vw,80px) 64px;
+    overflow:auto;
+  }
+  .slide.active{display:flex;animation:fade .35s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+  .kicker{
+    display:flex;align-items:center;gap:10px;
+    font-size:clamp(.7rem,1.1vw,.85rem);font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--ind-600);margin-bottom:6px;
+  }
+  .kicker .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);}
+  .kicker .sub{color:var(--muted);font-weight:600;}
+  h2.title{
+    margin:0 0 14px;color:var(--ink-800);
+    font-size:clamp(1.5rem,3.4vw,2.5rem);line-height:1.1;
+    border-bottom:3px solid var(--cyan);padding-bottom:10px;
+  }
+  .body{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;}
+  .center{justify-content:center;}
+  p.lead{font-size:clamp(1rem,1.7vw,1.3rem);line-height:1.5;max-width:62ch;color:#26273f;}
+  .small{font-size:clamp(.8rem,1.2vw,.95rem);color:var(--muted);}
+
+  /* ---------- Generic helpers ---------- */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:clamp(14px,2vw,26px);}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(12px,1.6vw,20px);}
+  .grid4{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(12px,1.6vw,18px);}
+  .card{
+    background:#fff;border:1px solid var(--line);border-left:4px solid var(--ind-600);
+    border-radius:6px;padding:clamp(12px,1.6vw,18px);box-shadow:0 1px 4px rgba(30,27,75,.06);
+  }
+  .card.gold{border-left-color:var(--amber);background:#fffbeb;}
+  .card.amber{border-left-color:var(--amber-d);}
+  .card.blue{border-left-color:var(--blue);}
+  .card.cyan{border-left-color:var(--cyan);}
+  .card h3{margin:0 0 8px;color:var(--ink-800);font-size:clamp(1rem,1.5vw,1.2rem);
+    display:flex;align-items:center;gap:8px;}
+  .card p,.card li{font-size:clamp(.82rem,1.2vw,1rem);line-height:1.45;}
+  .card ul{margin:6px 0 0;padding-left:20px;}
+  .card ul li{margin-bottom:4px;}
+
+  ul.bullets{font-size:clamp(.95rem,1.6vw,1.25rem);line-height:1.7;padding-left:26px;max-width:64ch;}
+  ul.bullets li{margin-bottom:10px;}
+  ul.bullets li b{color:var(--ink-800);}
+
+  table{border-collapse:collapse;width:100%;font-size:clamp(.8rem,1.2vw,1.02rem);background:#fff;
+    box-shadow:0 1px 4px rgba(30,27,75,.07);border-radius:6px;overflow:hidden;}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top;}
+  thead th{background:var(--ink-800);color:#fff;font-weight:600;}
+  tbody tr:nth-child(even){background:var(--ind-50);}
+  td .yes{color:var(--ok);font-weight:700;}
+  td .no{color:#b91c1c;font-weight:700;}
+  caption{caption-side:bottom;font-size:.8rem;color:var(--muted);padding-top:8px;text-align:left;}
+
+  .pill{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.72em;font-weight:700;
+    vertical-align:middle;letter-spacing:.02em;}
+  .pill.green{background:var(--ind-600);color:#fff;}
+  .pill.gold{background:var(--amber);color:var(--ink-900);}
+  .pill.amber{background:var(--amber-d);color:#fff;}
+  .pill.blue{background:var(--blue);color:#fff;}
+  .pill.cyan{background:var(--cyan);color:var(--ink-900);}
+  .pill.ghost{background:#fff;border:1px solid var(--line);color:var(--muted);}
+
+  .callout{background:var(--ind-50);border:1px solid var(--ind-300);border-radius:8px;
+    padding:14px 18px;font-size:clamp(.9rem,1.4vw,1.1rem);color:#262248;}
+  .callout.warn{background:#fffbeb;border-color:var(--amber);}
+  .callout b{color:var(--ink-800);}
+
+  figure{margin:0;text-align:center;}
+  figure svg{width:100%;height:auto;max-height:60vh;}
+  figcaption{font-size:clamp(.78rem,1.1vw,.92rem);color:var(--muted);margin-top:8px;}
+
+  .mono{font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;}
+  .terminal{background:#14143a;color:#e0e3f5;border-radius:8px;padding:16px 18px;
+    font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:clamp(.72rem,1.1vw,.95rem);
+    line-height:1.6;box-shadow:0 4px 16px rgba(0,0,0,.3);overflow:auto;}
+  .terminal .com{color:#7f86b8;}
+  .terminal .kw{color:var(--cyan-l);}
+  .terminal .str{color:#fcd34d;}
+  .terminal .fn{color:#a5b4fc;}
+  .terminal .out{color:#6ee7b7;}
+  .terminal .you{color:#fff;}
+
+  /* ---------- reference list ---------- */
+  ul.refs{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;
+    gap:10px 26px;font-size:clamp(.82rem,1.2vw,1rem);}
+  ul.refs li{padding:8px 12px;background:#fff;border:1px solid var(--line);
+    border-left:3px solid var(--cyan);border-radius:6px;line-height:1.4;}
+  ul.refs li a{font-weight:600;text-decoration:none;}
+  ul.refs li a:hover{text-decoration:underline;}
+  ul.refs li .d{display:block;color:var(--muted);font-size:.82em;margin-top:2px;}
+  @media(max-width:760px){ul.refs{grid-template-columns:1fr;} .grid2,.grid3,.grid4{grid-template-columns:1fr;}}
+
+  /* ---------- Title slide ---------- */
+  .title-slide{background:linear-gradient(135deg,#312e81 0%,#1e1b4b 100%);color:#fff;
+    border-bottom:none;align-items:flex-start;justify-content:center;}
+  .title-slide .kicker{color:var(--cyan-l);}
+  .title-slide h1{font-size:clamp(2rem,5.2vw,3.6rem);margin:0 0 6px;line-height:1.08;}
+  .title-slide .accent{color:var(--cyan-l);}
+  .title-slide .subtitle{font-size:clamp(1rem,2vw,1.5rem);color:#c7cbf0;margin:4px 0 0;font-weight:500;}
+  .title-slide .rule{width:120px;height:4px;background:var(--cyan);margin:22px 0;border-radius:2px;}
+  .title-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;}
+  .title-meta .pill{font-size:.85rem;padding:5px 14px;}
+  .title-slide .trainer{margin-top:26px;font-size:clamp(.85rem,1.4vw,1.05rem);color:#a9adda;}
+  .title-slide .trainer b{color:#fff;}
+  .title-slide a{color:var(--cyan-l);}
+  .homelink{position:fixed;top:10px;right:16px;z-index:46;font-size:.74rem;text-decoration:none;
+    background:rgba(255,255,255,.9);border:1px solid var(--line);color:var(--ink-800);
+    padding:5px 12px;border-radius:14px;font-weight:600;}
+  .homelink:hover{background:#fff;}
+
+  /* ---------- dark slides ---------- */
+  .dark{background:linear-gradient(135deg,#312e81 0%,#1e1b4b 100%);color:#fff;border-bottom:none;}
+  .dark h2.title{color:#fff;border-bottom-color:var(--cyan);}
+  .dark .kicker{color:var(--cyan-l);}
+  .dark p.lead,.dark li{color:#e7e9fb;}
+  .dark .card{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.15);color:#eef0ff;}
+  .dark .card h3{color:var(--cyan-l);}
+
+  /* ---------- Chrome ---------- */
+  #progress{position:fixed;top:0;left:0;height:4px;background:var(--cyan);width:0;z-index:50;
+    transition:width .3s ease;}
+  .footer{position:fixed;bottom:0;left:0;right:0;height:34px;display:flex;align-items:center;
+    justify-content:space-between;padding:0 16px;font-size:.72rem;color:var(--muted);
+    background:rgba(255,255,255,.85);backdrop-filter:blur(4px);border-top:1px solid var(--line);z-index:40;}
+  .footer .brand{font-weight:600;color:var(--ink-800);}
+  .footer a{text-decoration:none;}
+  .nav{position:fixed;bottom:44px;right:18px;display:flex;gap:8px;z-index:45;}
+  .nav button{border:none;cursor:pointer;width:42px;height:42px;border-radius:50%;
+    background:var(--ink-800);color:#fff;font-size:1.1rem;box-shadow:0 2px 8px rgba(0,0,0,.25);
+    display:flex;align-items:center;justify-content:center;transition:background .2s,transform .1s;}
+  .nav button:hover{background:var(--ind-600);}
+  .nav button:active{transform:scale(.92);}
+  .nav button:disabled{opacity:.35;cursor:default;}
+  #counter{position:fixed;bottom:46px;left:18px;z-index:45;background:var(--ink-800);color:#fff;
+    font-size:.8rem;font-weight:600;padding:6px 12px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.25);}
+  .hint{position:fixed;bottom:46px;left:50%;transform:translateX(-50%);z-index:45;
+    font-size:.72rem;color:var(--muted);background:rgba(255,255,255,.8);
+    padding:5px 12px;border-radius:12px;border:1px solid var(--line);}
+  @media(max-width:700px){.hint{display:none;}}
+
+  /* ---------- Presenter notes ---------- */
+  #notes{position:fixed;left:0;right:0;bottom:34px;z-index:48;display:none;
+    background:#14143a;color:#e4e6fb;padding:14px 20px 16px;border-top:3px solid var(--cyan);
+    font-size:.92rem;line-height:1.5;max-height:38vh;overflow:auto;}
+  body.show-notes #notes{display:block;}
+  #notes b{color:var(--cyan-l);}
+  #notes .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ind-300);
+    display:block;margin-bottom:4px;}
+
+  /* ---------- Overview ---------- */
+  #overview{position:fixed;inset:0;z-index:60;background:rgba(30,27,75,.97);color:#fff;
+    display:none;flex-direction:column;padding:32px clamp(20px,5vw,80px);overflow:auto;}
+  body.show-overview #overview{display:flex;}
+  #overview h3{color:var(--cyan-l);margin:0 0 4px;font-size:1.4rem;}
+  #overview .ovsub{color:#a9adda;margin:0 0 20px;font-size:.9rem;}
+  .ovgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+  .ovcard{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:8px;
+    padding:12px 14px;cursor:pointer;transition:background .15s,border-color .15s;}
+  .ovcard:hover{background:rgba(6,182,212,.18);border-color:var(--cyan);}
+  .ovcard .num{font-size:.72rem;color:var(--cyan-l);font-weight:700;}
+  .ovcard .ttl{font-size:.95rem;margin-top:3px;color:#fff;}
+
+  svg text{font-family:'Segoe UI',sans-serif;}
+
+  @media print{
+    body{overflow:visible;background:#fff;}
+    .slide{display:flex!important;position:relative;inset:auto;min-height:96vh;page-break-after:always;
+      border:1px solid #ccc;}
+    #progress,.footer,.nav,#counter,.hint,#notes,#overview,.homelink{display:none!important;}
+  }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<a class="homelink" href="../course-outline-building-intelligent-ai-agents.html" title="Back to course outline">&#8962; Course outline</a>
+
+<div class="deck" id="deck">
+
+  <!-- ============ SLIDE 1 — TITLE ============ -->
+  <section class="slide title-slide" data-title="Title"
+    data-note="Welcome back. Module 1 gave us the map: AI, ML, deep learning, generative AI, agents. Module 2 zooms into the engine that powers all of modern AI -- the neural network. Set expectations: intuition-first, not a maths lecture. By the end you'll understand exactly what's happening inside the labs you've already touched (1.10 perceptron, 1.11 digits). The whole rest of the week -- transformers, LLMs, agents -- is built on what we cover now.">
+    <div class="body center">
+      <div class="kicker"><span class="dot"></span> 5-Day Course &nbsp;&middot;&nbsp; <span class="sub">Day 1 &middot; Module 2 of 10</span></div>
+      <h1>Introduction to <span class="accent">Deep Learning</span></h1>
+      <p class="subtitle">Neurons, layers, loss &amp; gradient descent &mdash; how a network actually learns, intuition-first.</p>
+      <div class="rule"></div>
+      <div class="title-meta">
+        <span class="pill gold">Beginner &rarr; Practitioner</span>
+        <span class="pill green">Foundations &middot; concept-first</span>
+        <span class="pill ghost" style="color:#c7cbf0;border-color:rgba(255,255,255,.3)">~75 min &middot; pairs with Labs 1.10&ndash;1.11</span>
+      </div>
+      <p class="trainer">Trainer: <b>Rajesh Gheware</b> &middot; 25+ yrs (JPMorgan Chase · Deutsche Bank · Morgan Stanley) &middot; 5,000+ trained &middot; 4.91/5</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 2 — AGENDA ============ -->
+  <section class="slide" data-title="What we'll cover"
+    data-note="Lay out the journey. We build a single neuron, stack neurons into layers, then answer the big question: what does it mean for a network to 'learn'? That's loss + gradient descent + the training loop + backprop. Then the practitioner's reality: overfitting and how to read a training curve. We finish with the toolkit (NumPy, PyTorch, Keras) and real code. Tell them: every box here maps to a few lines of code they'll run.">
+    <div class="kicker"><span class="dot"></span> Day 1 &middot; Module 2 <span class="sub">— Introduction to Deep Learning</span></div>
+    <h2 class="title">What we&rsquo;ll cover</h2>
+    <div class="body">
+      <div class="grid3">
+        <div class="card"><h3>&#9312; The neuron</h3><p>The tiny unit at the heart of it all: a <b>weighted sum + activation</b>.</p></div>
+        <div class="card"><h3>&#9313; Layers &amp; the network</h3><p>Stack neurons into layers; a <b>forward pass</b>; why &ldquo;deep&rdquo; means many layers.</p></div>
+        <div class="card cyan"><h3>&#9314; How it <i>learns</i></h3><p><b>Loss</b> (how wrong), <b>gradient descent</b> (walk downhill), epochs &amp; backprop.</p></div>
+        <div class="card"><h3>&#9315; Activations</h3><p>Why <b>ReLU</b> &amp; <b>sigmoid</b> &mdash; the spark that lets networks model anything.</p></div>
+        <div class="card gold"><h3>&#9316; Overfitting</h3><p>Reading a <b>train vs validation</b> curve &mdash; and how to fight memorisation.</p></div>
+        <div class="card gold"><h3>&#9317; The toolkit</h3><p>NumPy, <b>PyTorch</b> &amp; <b>Keras</b> &mdash; with real, runnable code.</p></div>
+      </div>
+      <p class="callout" style="margin-top:18px">&#129504; <b>The throughline:</b> a neural network is just <b>numbers being nudged to make fewer mistakes.</b> Everything else &mdash; transformers, LLMs, agents &mdash; is this idea, scaled.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 3 — RECAP BRIDGE ============ -->
+  <section class="slide" data-title="Where deep learning sits"
+    data-note="A 30-second bridge from Module 1. Remind them of the nested rings -- deep learning is the inner ring of machine learning that uses neural networks, and it's what powers generative AI and the agents we build all week. We're now opening that 'Deep Learning' box and looking inside. Keep it quick; it's orientation, not new content.">
+    <div class="kicker"><span class="dot"></span> Bridge from Module 1</div>
+    <h2 class="title">Reminder: where deep learning sits</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 320" role="img" aria-label="Nested rings highlighting Deep Learning inside Machine Learning inside AI">
+          <rect x="60" y="30" width="700" height="270" rx="18" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="90" y="62" font-size="18" font-weight="700" fill="#312e81">Artificial Intelligence</text>
+          <rect x="110" y="84" width="600" height="196" rx="16" fill="#e0e7ff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="140" y="114" font-size="16" font-weight="700" fill="#312e81">Machine Learning &mdash; learns from data</text>
+          <rect x="160" y="132" width="500" height="130" rx="14" fill="#312e81" stroke="#06b6d4" stroke-width="3"/>
+          <text x="410" y="170" text-anchor="middle" font-size="20" font-weight="700" fill="#67e8f9">Deep Learning</text>
+          <text x="410" y="198" text-anchor="middle" font-size="13.5" fill="#c7cbf0">multi-layer neural networks</text>
+          <text x="410" y="220" text-anchor="middle" font-size="13.5" fill="#c7cbf0">we open this box today</text>
+          <text x="410" y="246" text-anchor="middle" font-size="12.5" fill="#a5b4fc">&rarr; powers transformers, LLMs &amp; the agents (Days 2&ndash;5)</text>
+          <rect x="790" y="120" width="170" height="90" rx="14" fill="#fffbeb" stroke="#f59e0b" stroke-width="2.5"/>
+          <text x="875" y="152" text-anchor="middle" font-size="14" font-weight="700" fill="#92400e">You are here</text>
+          <text x="875" y="176" text-anchor="middle" font-size="12" fill="#5b5f7a">opening the</text>
+          <text x="875" y="193" text-anchor="middle" font-size="12" fill="#5b5f7a">neural-net box</text>
+          <path d="M788 165 L662 175" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="6 5" marker-end="url(#a3)"/>
+          <defs><marker id="a3" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#94a3b8"/></marker></defs>
+        </svg>
+        <figcaption>Deep learning is the engine inside machine learning. Today we look inside it &mdash; and it&rsquo;s simpler than it looks.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 4 — THE NEURON ============ -->
+  <section class="slide" data-title="The artificial neuron"
+    data-note="The atom of deep learning. Walk left to right: inputs (numbers) each get multiplied by a WEIGHT (how much that input matters), all summed, a BIAS is added (a tunable offset), and the result is passed through an ACTIVATION to produce the output. The weights and bias are the 'knobs' -- the only things that change during learning. Tie back to Lab 1.10 where they coded exactly this: weighted sum + sigmoid.">
+    <div class="kicker"><span class="dot"></span> The neuron &middot; the atom of deep learning</div>
+    <h2 class="title">One artificial neuron</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 320" role="img" aria-label="An artificial neuron: inputs times weights, summed with bias, through an activation">
+          <defs><marker id="n4" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker></defs>
+          <!-- inputs -->
+          <g font-size="14" text-anchor="middle">
+            <circle cx="90" cy="80" r="22" fill="#a5b4fc"/><text x="90" y="85" fill="#1e1b4b" font-weight="700">x&#8321;</text>
+            <circle cx="90" cy="160" r="22" fill="#a5b4fc"/><text x="90" y="165" fill="#1e1b4b" font-weight="700">x&#8322;</text>
+            <circle cx="90" cy="240" r="22" fill="#a5b4fc"/><text x="90" y="245" fill="#1e1b4b" font-weight="700">x&#8323;</text>
+          </g>
+          <!-- weight labels on edges -->
+          <g font-size="12.5" fill="#b45309" font-weight="700">
+            <text x="250" y="104">w&#8321;</text><text x="250" y="158">w&#8322;</text><text x="250" y="214">w&#8323;</text>
+          </g>
+          <line x1="112" y1="80" x2="430" y2="150" stroke="#4f46e5" stroke-width="2"/>
+          <line x1="112" y1="160" x2="430" y2="160" stroke="#4f46e5" stroke-width="2"/>
+          <line x1="112" y1="240" x2="430" y2="170" stroke="#4f46e5" stroke-width="2"/>
+          <!-- sum node -->
+          <circle cx="470" cy="160" r="42" fill="#eef2ff" stroke="#4f46e5" stroke-width="2.5"/>
+          <text x="470" y="158" text-anchor="middle" font-size="22" font-weight="700" fill="#312e81">&#931;</text>
+          <text x="470" y="180" text-anchor="middle" font-size="11" fill="#5b5f7a">+ bias b</text>
+          <!-- activation -->
+          <path d="M512 160 L590 160" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#n4)"/>
+          <rect x="595" y="120" width="150" height="80" rx="12" fill="#312e81" stroke="#06b6d4" stroke-width="2.5"/>
+          <text x="670" y="150" text-anchor="middle" font-size="14" font-weight="700" fill="#67e8f9">activation</text>
+          <text x="670" y="172" text-anchor="middle" font-size="12" fill="#c7cbf0">f( &middot; )</text>
+          <text x="670" y="189" text-anchor="middle" font-size="10.5" fill="#a5b4fc">adds the &ldquo;spark&rdquo;</text>
+          <!-- output -->
+          <path d="M745 160 L820 160" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#n4)"/>
+          <circle cx="870" cy="160" r="30" fill="#fffbeb" stroke="#f59e0b" stroke-width="2.5"/>
+          <text x="870" y="165" text-anchor="middle" font-size="15" font-weight="700" fill="#92400e">output</text>
+          <!-- formula -->
+          <text x="470" y="265" text-anchor="middle" font-size="15" fill="#1e1f33" font-weight="600">output = f( w&#8321;x&#8321; + w&#8322;x&#8322; + w&#8323;x&#8323; + b )</text>
+          <text x="470" y="290" text-anchor="middle" font-size="12.5" fill="#5b5f7a">the weights w and bias b are the only knobs that learning changes</text>
+        </svg>
+        <figcaption>You built exactly this in <b>Lab 1.10</b>: a weighted sum, a bias, and a sigmoid. A neural network is just <b>many</b> of these wired together.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 5 — ACTIVATIONS ============ -->
+  <section class="slide" data-title="Activation functions"
+    data-note="Why activations matter: without them, stacking layers collapses into a single straight-line model -- it could never learn a curve. The activation bends the line, giving the network the power to model anything. Walk the three: sigmoid (squashes to 0..1, good for probabilities/output), tanh (-1..1, centred), ReLU (the workhorse of hidden layers -- zero for negatives, linear for positives, fast and avoids some training problems). Tell them: ReLU is the default you'll see everywhere.">
+    <div class="kicker"><span class="dot"></span> The spark &middot; activation functions</div>
+    <h2 class="title">Activations &mdash; the non-linearity that gives power</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 300" role="img" aria-label="Three activation functions: sigmoid, tanh and ReLU">
+          <!-- Sigmoid -->
+          <line x1="40" y1="230" x2="300" y2="230" stroke="#cbd0e8" stroke-width="1.5"/>
+          <line x1="170" y1="60" x2="170" y2="245" stroke="#cbd0e8" stroke-width="1.5"/>
+          <path d="M50 220 C140 220 150 90 300 80" fill="none" stroke="#4f46e5" stroke-width="3"/>
+          <text x="170" y="285" text-anchor="middle" font-size="15" font-weight="700" fill="#312e81">Sigmoid</text>
+          <text x="170" y="50" text-anchor="middle" font-size="11.5" fill="#5b5f7a">squashes to 0&hellip;1</text>
+          <!-- tanh -->
+          <line x1="360" y1="150" x2="640" y2="150" stroke="#cbd0e8" stroke-width="1.5"/>
+          <line x1="500" y1="60" x2="500" y2="245" stroke="#cbd0e8" stroke-width="1.5"/>
+          <path d="M370 225 C470 225 470 75 630 75" fill="none" stroke="#06b6d4" stroke-width="3"/>
+          <text x="500" y="285" text-anchor="middle" font-size="15" font-weight="700" fill="#312e81">tanh</text>
+          <text x="500" y="50" text-anchor="middle" font-size="11.5" fill="#5b5f7a">centred, &minus;1&hellip;1</text>
+          <!-- ReLU -->
+          <line x1="700" y1="230" x2="960" y2="230" stroke="#cbd0e8" stroke-width="1.5"/>
+          <line x1="820" y1="60" x2="820" y2="245" stroke="#cbd0e8" stroke-width="1.5"/>
+          <path d="M710 230 L820 230 L940 80" fill="none" stroke="#f59e0b" stroke-width="3"/>
+          <text x="820" y="285" text-anchor="middle" font-size="15" font-weight="700" fill="#312e81">ReLU</text>
+          <text x="820" y="50" text-anchor="middle" font-size="11.5" fill="#5b5f7a">0 if negative, else linear</text>
+        </svg>
+        <figcaption>Without a non-linear activation, stacking layers collapses to one straight line. <b>ReLU</b> is the default in hidden layers; <b>sigmoid/softmax</b> sit at the output for probabilities.</figcaption>
+      </figure>
+      <p class="callout" style="margin-top:8px">&#128161; The activation is what lets a network bend, curve and ultimately model <b>any</b> pattern &mdash; the &ldquo;universal approximator&rdquo; idea.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 6 — LAYERS & FORWARD PASS ============ -->
+  <section class="slide" data-title="Layers &amp; the forward pass"
+    data-note="Now stack them. Inputs feed a hidden layer, whose outputs feed the next hidden layer, ending at the output layer. Data flowing left-to-right is the FORWARD PASS -- it's how the network makes a prediction. 'Deep' literally just means more than one hidden layer. Each layer is a fully-connected set of the neurons from the last slide. Point out: every line is a weight; a real network has thousands to billions of them.">
+    <div class="kicker"><span class="dot"></span> Stacking neurons &middot; the forward pass</div>
+    <h2 class="title">From one neuron to a network</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 330" role="img" aria-label="A deep neural network with input layer, two hidden layers and an output layer">
+          <g stroke="#c7d2fe" stroke-width="1">
+            <line x1="130" y1="80" x2="360" y2="60"/><line x1="130" y1="80" x2="360" y2="140"/><line x1="130" y1="80" x2="360" y2="220"/>
+            <line x1="130" y1="165" x2="360" y2="60"/><line x1="130" y1="165" x2="360" y2="140"/><line x1="130" y1="165" x2="360" y2="220"/>
+            <line x1="130" y1="250" x2="360" y2="60"/><line x1="130" y1="250" x2="360" y2="140"/><line x1="130" y1="250" x2="360" y2="220"/>
+            <line x1="360" y1="60" x2="600" y2="60"/><line x1="360" y1="60" x2="600" y2="140"/><line x1="360" y1="60" x2="600" y2="220"/>
+            <line x1="360" y1="140" x2="600" y2="60"/><line x1="360" y1="140" x2="600" y2="140"/><line x1="360" y1="140" x2="600" y2="220"/>
+            <line x1="360" y1="220" x2="600" y2="60"/><line x1="360" y1="220" x2="600" y2="140"/><line x1="360" y1="220" x2="600" y2="220"/>
+            <line x1="600" y1="60" x2="840" y2="115"/><line x1="600" y1="60" x2="840" y2="195"/>
+            <line x1="600" y1="140" x2="840" y2="115"/><line x1="600" y1="140" x2="840" y2="195"/>
+            <line x1="600" y1="220" x2="840" y2="115"/><line x1="600" y1="220" x2="840" y2="195"/>
+          </g>
+          <g>
+            <circle cx="130" cy="80" r="17" fill="#a5b4fc"/><circle cx="130" cy="165" r="17" fill="#a5b4fc"/><circle cx="130" cy="250" r="17" fill="#a5b4fc"/>
+            <circle cx="360" cy="60" r="17" fill="#4f46e5"/><circle cx="360" cy="140" r="17" fill="#4f46e5"/><circle cx="360" cy="220" r="17" fill="#4f46e5"/>
+            <circle cx="600" cy="60" r="17" fill="#4f46e5"/><circle cx="600" cy="140" r="17" fill="#4f46e5"/><circle cx="600" cy="220" r="17" fill="#4f46e5"/>
+            <circle cx="840" cy="115" r="17" fill="#06b6d4"/><circle cx="840" cy="195" r="17" fill="#06b6d4"/>
+          </g>
+          <g font-size="13" text-anchor="middle" fill="#312e81" font-weight="700">
+            <text x="130" y="300">Input</text><text x="360" y="300">Hidden 1</text><text x="600" y="300">Hidden 2</text><text x="840" y="300">Output</text>
+          </g>
+          <path d="M120 25 L860 25" stroke="#f59e0b" stroke-width="2" marker-end="url(#fwd6)"/>
+          <text x="490" y="18" text-anchor="middle" font-size="12.5" font-weight="700" fill="#92400e">forward pass &mdash; data flows left to right to make a prediction</text>
+          <defs><marker id="fwd6" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#f59e0b"/></marker></defs>
+        </svg>
+        <figcaption>Every line is a <b>weight</b>. &ldquo;<b>Deep</b>&rdquo; just means more than one hidden layer. A real model has thousands to <i>billions</i> of these weights.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 7 — REPRESENTATIONS ============ -->
+  <section class="slide" data-title="How representations build up"
+    data-note="The most beautiful idea in deep learning: the network learns its OWN features, and they get more abstract layer by layer. For images: early layers detect edges, middle layers assemble edges into shapes/parts, late layers recognise whole objects (a digit, a face). Nobody programmed 'an 8 has two loops' -- the network discovered it. This is why deep learning beat hand-engineered features (the Module 1 'three paradigms' point).">
+    <div class="kicker"><span class="dot"></span> Why depth matters</div>
+    <h2 class="title">Each layer learns a richer idea</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 270" role="img" aria-label="Representations becoming more abstract: edges to shapes to digit">
+          <defs><marker id="r7" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker></defs>
+          <rect x="40" y="60" width="200" height="140" rx="12" fill="#fff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="140" y="48" text-anchor="middle" font-size="13.5" font-weight="700" fill="#312e81">Early layers</text>
+          <g stroke="#4f46e5" stroke-width="3"><line x1="80" y1="100" x2="120" y2="100"/><line x1="150" y1="90" x2="150" y2="160"/><line x1="180" y1="160" x2="215" y2="120"/></g>
+          <text x="140" y="225" text-anchor="middle" font-size="12" fill="#5b5f7a">edges &amp; strokes</text>
+
+          <path d="M250 130 L300 130" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#r7)"/>
+
+          <rect x="310" y="60" width="200" height="140" rx="12" fill="#fff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="410" y="48" text-anchor="middle" font-size="13.5" font-weight="700" fill="#312e81">Middle layers</text>
+          <circle cx="380" cy="110" r="26" fill="none" stroke="#06b6d4" stroke-width="3"/>
+          <path d="M430 90 q40 40 0 80" fill="none" stroke="#06b6d4" stroke-width="3"/>
+          <text x="410" y="225" text-anchor="middle" font-size="12" fill="#5b5f7a">loops &amp; corners (parts)</text>
+
+          <path d="M520 130 L570 130" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#r7)"/>
+
+          <rect x="580" y="60" width="200" height="140" rx="12" fill="#312e81" stroke="#06b6d4" stroke-width="2.5"/>
+          <text x="680" y="48" text-anchor="middle" font-size="13.5" font-weight="700" fill="#312e81">Late layers</text>
+          <text x="680" y="150" text-anchor="middle" font-size="74" font-weight="700" fill="#67e8f9">8</text>
+          <text x="680" y="225" text-anchor="middle" font-size="12" fill="#5b5f7a">whole objects (a digit)</text>
+
+          <path d="M790 130 L840 130" stroke="#f59e0b" stroke-width="2.5" marker-end="url(#r7)"/>
+          <rect x="850" y="95" width="120" height="70" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="2.5"/>
+          <text x="910" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#92400e">&ldquo;it&rsquo;s an 8&rdquo;</text>
+          <text x="910" y="148" text-anchor="middle" font-size="11" fill="#5b5f7a">prediction</text>
+        </svg>
+        <figcaption>The network <b>discovers</b> these features itself &mdash; nobody coded &ldquo;an 8 has two loops.&rdquo; That is the superpower depth buys you.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 8 — WHAT IS LEARNING / LOSS ============ -->
+  <section class="slide" data-title="What 'learning' means: loss"
+    data-note="Now the heart of the module. 'Learning' = adjusting the weights so predictions get closer to the right answers. To do that we need a single number that says HOW WRONG the network currently is -- that's the LOSS (a.k.a. cost/error). Big loss = very wrong, zero loss = perfect. The entire goal of training is to make this one number as small as possible. Examples: mean-squared-error for numbers, cross-entropy for classification. Don't dwell on formulae.">
+    <div class="kicker"><span class="dot"></span> How a network learns &middot; 1 of 4</div>
+    <h2 class="title">&ldquo;Learning&rdquo; = making the <i>loss</i> small</h2>
+    <div class="body">
+      <p class="lead">The network makes a prediction; we compare it to the right answer; the gap is the <b>loss</b> &mdash; one number for &ldquo;how wrong.&rdquo; Training is the search for weights that make that number small.</p>
+      <figure style="margin-top:6px">
+        <svg viewBox="0 0 1000 180" role="img" aria-label="Prediction vs target, the gap is the loss">
+          <rect x="60" y="55" width="230" height="70" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="175" y="85" text-anchor="middle" font-size="14" font-weight="700" fill="#312e81">prediction</text>
+          <text x="175" y="108" text-anchor="middle" font-size="13" fill="#5b5f7a">network says: &ldquo;7&rdquo; (61%)</text>
+          <rect x="710" y="55" width="230" height="70" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="2"/>
+          <text x="825" y="85" text-anchor="middle" font-size="14" font-weight="700" fill="#92400e">true answer</text>
+          <text x="825" y="108" text-anchor="middle" font-size="13" fill="#5b5f7a">label: &ldquo;9&rdquo;</text>
+          <line x1="300" y1="90" x2="700" y2="90" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="7 5"/>
+          <text x="500" y="78" text-anchor="middle" font-size="15" font-weight="700" fill="#b91c1c">loss = how wrong</text>
+          <text x="500" y="112" text-anchor="middle" font-size="12" fill="#5b5f7a">one number we want to drive toward zero</text>
+        </svg>
+      </figure>
+      <p class="callout warn" style="margin-top:6px">&#128200; Common losses: <b>cross-entropy</b> for classification (&ldquo;which class?&rdquo;), <b>mean-squared-error</b> for numbers (&ldquo;how much?&rdquo;). You pick one; the framework computes it for you.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 9 — GRADIENT DESCENT ============ -->
+  <section class="slide" data-title="Gradient descent"
+    data-note="The killer metaphor: you're standing on a foggy hill (the loss surface) and want the lowest valley. You can't see the whole map, but you can feel which way is downhill under your feet -- that's the GRADIENT. Take a step downhill, feel again, step again. Repeat until you're at the bottom (low loss). That's gradient descent. The 'gradient' is just the slope; calculus gives it to us automatically. This is THE optimisation algorithm behind essentially all deep learning.">
+    <div class="kicker"><span class="dot"></span> How a network learns &middot; 2 of 4</div>
+    <h2 class="title">Gradient descent &mdash; walk downhill on the loss</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 320" role="img" aria-label="A loss curve shaped like a valley with steps rolling down to the minimum">
+          <defs><marker id="g9" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker></defs>
+          <line x1="60" y1="280" x2="960" y2="280" stroke="#cbd0e8" stroke-width="1.5"/>
+          <line x1="60" y1="40" x2="60" y2="280" stroke="#cbd0e8" stroke-width="1.5"/>
+          <text x="40" y="60" font-size="12" fill="#5b5f7a" transform="rotate(-90 40 160)" text-anchor="middle">loss (how wrong)</text>
+          <text x="510" y="305" text-anchor="middle" font-size="12" fill="#5b5f7a">a weight&rsquo;s value &rarr;</text>
+          <!-- valley curve -->
+          <path d="M120 70 Q510 380 900 70" fill="none" stroke="#312e81" stroke-width="3"/>
+          <!-- descending balls -->
+          <circle cx="160" cy="95" r="11" fill="#f59e0b"/>
+          <circle cx="250" cy="150" r="11" fill="#f59e0b" opacity=".8"/>
+          <circle cx="350" cy="200" r="11" fill="#f59e0b" opacity=".7"/>
+          <circle cx="450" cy="228" r="11" fill="#f59e0b" opacity=".6"/>
+          <circle cx="510" cy="234" r="13" fill="#06b6d4"/>
+          <path d="M168 102 L242 145" stroke="#4f46e5" stroke-width="2" marker-end="url(#g9)"/>
+          <path d="M258 158 L342 195" stroke="#4f46e5" stroke-width="2" marker-end="url(#g9)"/>
+          <path d="M358 207 L442 224" stroke="#4f46e5" stroke-width="2" marker-end="url(#g9)"/>
+          <text x="170" y="80" font-size="12" fill="#b45309" font-weight="700">start: high loss</text>
+          <text x="560" y="240" font-size="12.5" fill="#0e7490" font-weight="700">minimum: low loss</text>
+          <text x="300" y="270" font-size="12" fill="#4f46e5" font-weight="700">each step follows the slope (the gradient) downhill</text>
+        </svg>
+        <figcaption>Feel which way is downhill (the <b>gradient</b>), take a step, repeat. The framework computes the slope for every weight automatically.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 10 — LEARNING RATE ============ -->
+  <section class="slide" data-title="The learning rate"
+    data-note="The one knob beginners most need to understand: the learning rate is the SIZE of each downhill step. Too small -> training crawls, takes forever. Too big -> you leap over the valley and bounce around or even diverge (loss explodes). Just right -> smooth, efficient descent. It's the first thing to tune when training misbehaves. Typical values are small: 0.1, 0.01, 0.001. Connect to Lab 1.10 where lr=0.5 was set.">
+    <div class="kicker"><span class="dot"></span> How a network learns &middot; 3 of 4</div>
+    <h2 class="title">The learning rate &mdash; how big a step?</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 290" role="img" aria-label="Three learning rates: too small, just right, too big">
+          <!-- too small -->
+          <path d="M60 70 Q170 250 280 70" fill="none" stroke="#312e81" stroke-width="2.5"/>
+          <g fill="#b45309"><circle cx="80" cy="95" r="7"/><circle cx="98" cy="120" r="7"/><circle cx="116" cy="142" r="7"/><circle cx="134" cy="160" r="7"/></g>
+          <text x="170" y="265" text-anchor="middle" font-size="14" font-weight="700" fill="#b45309">Too small</text>
+          <text x="170" y="285" text-anchor="middle" font-size="11" fill="#5b5f7a">crawls &mdash; very slow</text>
+
+          <!-- just right -->
+          <path d="M380 70 Q490 250 600 70" fill="none" stroke="#312e81" stroke-width="2.5"/>
+          <g fill="#059669"><circle cx="400" cy="92" r="7"/><circle cx="435" cy="160" r="7"/><circle cx="470" cy="205" r="7"/><circle cx="490" cy="214" r="8"/></g>
+          <path d="M408 99 L428 152" stroke="#059669" stroke-width="2"/><path d="M442 167 L463 198" stroke="#059669" stroke-width="2"/>
+          <text x="490" y="265" text-anchor="middle" font-size="14" font-weight="700" fill="#0e7490">Just right</text>
+          <text x="490" y="285" text-anchor="middle" font-size="11" fill="#5b5f7a">smooth, efficient</text>
+
+          <!-- too big -->
+          <path d="M700 70 Q810 250 920 70" fill="none" stroke="#312e81" stroke-width="2.5"/>
+          <g fill="#dc2626"><circle cx="730" cy="120" r="7"/><circle cx="880" cy="150" r="7"/><circle cx="745" cy="95" r="7"/><circle cx="900" cy="100" r="7"/></g>
+          <path d="M738 126 L872 146" stroke="#dc2626" stroke-width="2"/><path d="M874 144 L752 102" stroke="#dc2626" stroke-width="2"/><path d="M754 100 L892 102" stroke="#dc2626" stroke-width="2"/>
+          <text x="810" y="265" text-anchor="middle" font-size="14" font-weight="700" fill="#b91c1c">Too big</text>
+          <text x="810" y="285" text-anchor="middle" font-size="11" fill="#5b5f7a">overshoots, bounces</text>
+        </svg>
+        <figcaption>The learning rate is the first dial to turn when training misbehaves. Typical values are small &mdash; <span class="mono">0.1</span>, <span class="mono">0.01</span>, <span class="mono">0.001</span>.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 11 — TRAINING LOOP ============ -->
+  <section class="slide" data-title="The training loop"
+    data-note="Put the pieces in motion. The loop: (1) forward pass -> prediction, (2) compute loss, (3) backward pass -> gradients, (4) update weights a small step downhill. Repeat for the next BATCH of data. One full pass over all the training data = one EPOCH; we run several epochs. Define the vocabulary clearly: batch = a handful of examples processed at once; iteration = one batch; epoch = one sweep through the whole dataset. This loop is literally the PyTorch code on the next slides.">
+    <div class="kicker"><span class="dot"></span> How a network learns &middot; 4 of 4</div>
+    <h2 class="title">The training loop &mdash; repeat until good</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 300" role="img" aria-label="The training loop: forward, loss, backward, update, repeat">
+          <defs><marker id="t11" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker>
+          <marker id="t11c" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#06b6d4"/></marker></defs>
+          <g text-anchor="middle">
+            <rect x="40" y="110" width="160" height="80" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+            <text x="120" y="142" font-size="14" font-weight="700" fill="#312e81">1 &middot; Forward</text>
+            <text x="120" y="164" font-size="11.5" fill="#5b5f7a">predict on a batch</text>
+            <rect x="270" y="110" width="160" height="80" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+            <text x="350" y="142" font-size="14" font-weight="700" fill="#312e81">2 &middot; Loss</text>
+            <text x="350" y="164" font-size="11.5" fill="#5b5f7a">how wrong?</text>
+            <rect x="500" y="110" width="160" height="80" rx="12" fill="#312e81" stroke="#06b6d4" stroke-width="2.5"/>
+            <text x="580" y="142" font-size="14" font-weight="700" fill="#67e8f9">3 &middot; Backward</text>
+            <text x="580" y="164" font-size="11.5" fill="#c7cbf0">gradients (backprop)</text>
+            <rect x="730" y="110" width="170" height="80" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="2.5"/>
+            <text x="815" y="142" font-size="14" font-weight="700" fill="#92400e">4 &middot; Update</text>
+            <text x="815" y="164" font-size="11.5" fill="#5b5f7a">step weights downhill</text>
+          </g>
+          <path d="M200 150 L268 150" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#t11)"/>
+          <path d="M430 150 L498 150" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#t11)"/>
+          <path d="M660 150 L728 150" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#t11)"/>
+          <path d="M815 110 C815 50 120 50 120 108" fill="none" stroke="#06b6d4" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#t11c)"/>
+          <text x="470" y="42" text-anchor="middle" font-size="13" font-weight="700" fill="#0e7490">next batch &rarr; repeat</text>
+          <text x="500" y="240" text-anchor="middle" font-size="13.5" fill="#1e1f33"><tspan font-weight="700">batch</tspan> = a handful of examples &nbsp;&middot;&nbsp; <tspan font-weight="700">epoch</tspan> = one full pass over all the data &nbsp;&middot;&nbsp; run several epochs</text>
+        </svg>
+        <figcaption>This four-step loop <i>is</i> training. On the next slide you&rsquo;ll see it as four lines of PyTorch.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 12 — BACKPROP INTUITION ============ -->
+  <section class="slide" data-title="Backpropagation, intuitively"
+    data-note="Demystify the scary word. Backpropagation is just 'assigning blame'. After the forward pass produces a wrong answer, backprop works BACKWARD through the layers, using calculus' chain rule, to figure out how much each weight contributed to the error -- so each can be nudged in the right direction. You will essentially never implement it by hand; PyTorch/TensorFlow do it automatically (autograd) when you call loss.backward(). The takeaway: backprop = efficient blame assignment, done for you.">
+    <div class="kicker"><span class="dot"></span> The one scary word, demystified</div>
+    <h2 class="title">Backpropagation = assigning blame, backwards</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 250" role="img" aria-label="Error flowing backward through layers to assign blame to each weight">
+          <defs><marker id="b12" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#dc2626"/></marker></defs>
+          <g>
+            <circle cx="130" cy="125" r="20" fill="#a5b4fc"/>
+            <circle cx="380" cy="80" r="20" fill="#4f46e5"/><circle cx="380" cy="170" r="20" fill="#4f46e5"/>
+            <circle cx="630" cy="80" r="20" fill="#4f46e5"/><circle cx="630" cy="170" r="20" fill="#4f46e5"/>
+            <circle cx="860" cy="125" r="22" fill="#f59e0b"/>
+          </g>
+          <g stroke="#e2e5f3" stroke-width="1.5">
+            <line x1="150" y1="125" x2="360" y2="80"/><line x1="150" y1="125" x2="360" y2="170"/>
+            <line x1="400" y1="80" x2="610" y2="80"/><line x1="400" y1="80" x2="610" y2="170"/>
+            <line x1="400" y1="170" x2="610" y2="80"/><line x1="400" y1="170" x2="610" y2="170"/>
+            <line x1="650" y1="80" x2="838" y2="125"/><line x1="650" y1="170" x2="838" y2="125"/>
+          </g>
+          <!-- error flowing back -->
+          <path d="M835 110 C700 60 560 60 405 72" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#b12)"/>
+          <path d="M835 140 C700 200 560 200 405 178" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#b12)"/>
+          <text x="500" y="38" text-anchor="middle" font-size="14" font-weight="700" fill="#b91c1c">error flows backward &mdash; &ldquo;how much did each weight cause this mistake?&rdquo;</text>
+          <text x="130" y="170" text-anchor="middle" font-size="12" fill="#5b5f7a">input</text>
+          <text x="860" y="170" text-anchor="middle" font-size="12" fill="#5b5f7a">output / error</text>
+          <text x="500" y="230" text-anchor="middle" font-size="12.5" fill="#1e1f33">each weight gets a <tspan font-weight="700">gradient</tspan>; the optimiser nudges it &mdash; all automatic via <tspan font-weight="700">autograd</tspan></text>
+        </svg>
+        <figcaption>You almost never code this. <span class="mono">loss.backward()</span> in PyTorch (or Keras&rsquo; <span class="mono">fit</span>) computes every gradient for you.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 13 — OVERFITTING CURVE ============ -->
+  <section class="slide" data-title="Overfitting &amp; the training curve"
+    data-note="The single most important practical skill: reading a training curve. Plot loss/error over epochs for BOTH the training set and a held-out validation set. Early on, both drop -- the model is genuinely learning. At some point the validation curve turns UP while training keeps dropping: the model has started MEMORISING the training data (noise included) instead of learning general patterns. That gap is overfitting. The sweet spot is the bottom of the validation curve -- that's where you stop. This is the visual version of Lab 1.8.">
+    <div class="kicker"><span class="dot"></span> The practitioner&rsquo;s skill &middot; reading the curve</div>
+    <h2 class="title">Overfitting &mdash; when the model memorises</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 320" role="img" aria-label="Training loss keeps falling while validation loss falls then rises">
+          <line x1="80" y1="40" x2="80" y2="270" stroke="#cbd0e8" stroke-width="1.5"/>
+          <line x1="80" y1="270" x2="950" y2="270" stroke="#cbd0e8" stroke-width="1.5"/>
+          <text x="50" y="155" font-size="12" fill="#5b5f7a" transform="rotate(-90 50 155)" text-anchor="middle">error / loss</text>
+          <text x="515" y="298" text-anchor="middle" font-size="12" fill="#5b5f7a">epochs (training time) &rarr;</text>
+          <!-- training loss: keeps dropping -->
+          <path d="M90 70 C250 150 450 220 940 250" fill="none" stroke="#4f46e5" stroke-width="3"/>
+          <text x="870" y="240" font-size="12.5" font-weight="700" fill="#4f46e5">training</text>
+          <!-- validation loss: drops then rises -->
+          <path d="M90 80 C260 165 380 205 520 205 C700 205 820 170 940 110" fill="none" stroke="#f59e0b" stroke-width="3"/>
+          <text x="860" y="100" font-size="12.5" font-weight="700" fill="#b45309">validation</text>
+          <!-- sweet spot -->
+          <line x1="520" y1="60" x2="520" y2="270" stroke="#059669" stroke-width="2" stroke-dasharray="5 5"/>
+          <circle cx="520" cy="205" r="8" fill="#059669"/>
+          <text x="520" y="50" text-anchor="middle" font-size="12.5" font-weight="700" fill="#0e7490">stop here (best validation)</text>
+          <!-- overfitting zone -->
+          <rect x="520" y="60" width="420" height="210" fill="#dc2626" opacity="0.05"/>
+          <text x="730" y="150" text-anchor="middle" font-size="13" font-weight="700" fill="#b91c1c">overfitting zone</text>
+          <text x="730" y="170" text-anchor="middle" font-size="11.5" fill="#b91c1c">memorising, not generalising</text>
+        </svg>
+        <figcaption>Training loss always falls. Watch the <b>validation</b> curve: when it turns up, the model is memorising. The best model is at the green line &mdash; this is Lab 1.8, drawn out.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 14 — FIGHTING OVERFITTING ============ -->
+  <section class="slide" data-title="Fighting overfitting"
+    data-note="Give them the toolbox. More data is the best cure (harder to memorise). Early stopping: just stop at the bottom of the validation curve. Dropout: randomly switch off neurons during training so the net can't rely on any one path -- a kind of forced robustness. Regularisation (weight decay): penalise overly large weights. Simpler model: fewer layers/neurons. Tell them these are knobs they'll meet again on Day 2 when fine-tuning. Frame positively: overfitting is normal and manageable.">
+    <div class="kicker"><span class="dot"></span> The practitioner&rsquo;s toolbox</div>
+    <h2 class="title">How to fight overfitting</h2>
+    <div class="body">
+      <div class="grid3">
+        <div class="card cyan"><h3>&#128202; More data</h3><p>The best cure &mdash; harder to memorise a bigger, more varied dataset. Augmentation helps too.</p></div>
+        <div class="card cyan"><h3>&#9209; Early stopping</h3><p>Stop training at the bottom of the validation curve, before it turns up.</p></div>
+        <div class="card cyan"><h3>&#127922; Dropout</h3><p>Randomly switch off neurons each step so the net can&rsquo;t lean on any single path.</p></div>
+        <div class="card"><h3>&#9878;&#65039; Regularisation</h3><p>Penalise large weights (&ldquo;weight decay&rdquo;) to keep the model smooth &amp; general.</p></div>
+        <div class="card"><h3>&#9986;&#65039; Simpler model</h3><p>Fewer layers/neurons &mdash; less capacity to memorise noise.</p></div>
+        <div class="card gold"><h3>&#128270; Always validate</h3><p>Judge on held-out data, never the training set. The validation curve is your dashboard.</p></div>
+      </div>
+      <p class="callout" style="margin-top:16px">&#128161; You&rsquo;ll reach for these again on <b>Day 2</b> when fine-tuning transformers &mdash; same problem, same toolbox.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 15 — THE TOOLKIT ============ -->
+  <section class="slide" data-title="The deep-learning toolkit"
+    data-note="Orient them in the tooling so the labs aren't a mystery. Python is the lingua franca. NumPy is raw arrays/maths -- great for understanding (Lab 1.10 used pure NumPy), but you'd never build a big model by hand with it. PyTorch and TensorFlow/Keras are the real frameworks: they give you layers, autograd (automatic backprop), optimisers and GPU support. Keras is the friendly high-level API; PyTorch is more explicit and dominant in research. For this course we lean on the high-level APIs and scikit-learn for the early labs.">
+    <div class="kicker"><span class="dot"></span> What you build with</div>
+    <h2 class="title">The deep-learning toolkit</h2>
+    <div class="body">
+      <table>
+        <thead><tr><th style="width:18%">Tool</th><th>What it is</th><th style="width:34%">When you use it</th></tr></thead>
+        <tbody>
+          <tr><td><b>Python</b></td><td>The language of AI &mdash; readable, batteries-included</td><td>Everything</td></tr>
+          <tr><td><b>NumPy</b></td><td>Fast arrays &amp; maths; no autograd, no layers</td><td>Understanding the basics by hand (Lab 1.10)</td></tr>
+          <tr><td><b>scikit-learn</b></td><td>Classic ML + a simple neural net (<span class="mono">MLPClassifier</span>)</td><td>Quick models &amp; the early labs (1.7&ndash;1.9, 1.11)</td></tr>
+          <tr><td><b>PyTorch</b></td><td>Full DL framework &mdash; explicit, autograd, GPU</td><td>Research &amp; custom models; dominant today</td></tr>
+          <tr><td><b>TensorFlow / Keras</b></td><td>Full DL framework &mdash; Keras is the friendly high-level API</td><td>Fast, readable model building &amp; production</td></tr>
+        </tbody>
+        <caption>Frameworks give you <b>layers + automatic backprop + optimisers + GPU</b> &mdash; so you describe the model, not the calculus.</caption>
+      </table>
+      <p class="callout" style="margin-top:14px">&#129504; You already used <b>pure NumPy</b> (Lab 1.10) and <b>scikit-learn&rsquo;s</b> neural net (Lab 1.11). Next, see the same idea in <b>Keras</b> and <b>PyTorch</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 16 — CODE SLIDE ============ -->
+  <section class="slide" data-title="The same model, two frameworks"
+    data-note="The payoff slide: everything we discussed, in a few lines. Read the Keras side: define a stack of layers (Dense = fully-connected), ReLU in the hidden layer, dropout for regularisation, softmax output for 10 classes; compile with an optimiser (adam = a smarter gradient descent) and a loss; fit for a few epochs with a validation split. Then the PyTorch side: the SAME network, but you can SEE the training loop -- forward, loss, backward (backprop!), step (gradient descent!). Point at each line and name the concept. This is the whole module made concrete.">
+    <div class="kicker"><span class="dot"></span> It all fits in a few lines</div>
+    <h2 class="title">The same tiny network &mdash; Keras &amp; PyTorch</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="terminal">
+<span class="com"># Keras &mdash; describe the model, .fit does the rest</span>
+<span class="kw">from</span> tensorflow.keras <span class="kw">import</span> layers, models
+
+model = models.<span class="fn">Sequential</span>([
+  layers.<span class="fn">Dense</span>(<span class="str">128</span>, activation=<span class="str">"relu"</span>),  <span class="com"># hidden</span>
+  layers.<span class="fn">Dropout</span>(<span class="str">0.2</span>),                  <span class="com"># anti-overfit</span>
+  layers.<span class="fn">Dense</span>(<span class="str">10</span>, activation=<span class="str">"softmax"</span>), <span class="com"># output</span>
+])
+model.<span class="fn">compile</span>(optimizer=<span class="str">"adam"</span>,
+  loss=<span class="str">"sparse_categorical_crossentropy"</span>,
+  metrics=[<span class="str">"accuracy"</span>])
+model.<span class="fn">fit</span>(x_train, y_train, epochs=<span class="str">5</span>,
+  batch_size=<span class="str">32</span>, validation_split=<span class="str">0.1</span>)
+<span class="out"># Epoch 5/5  loss: 0.07  accuracy: 0.98</span>
+        </div>
+        <div class="terminal">
+<span class="com"># PyTorch &mdash; you can see the training loop</span>
+<span class="kw">import</span> torch, torch.nn <span class="kw">as</span> nn
+
+model = nn.<span class="fn">Sequential</span>(
+  nn.<span class="fn">Linear</span>(<span class="str">784</span>, <span class="str">128</span>), nn.<span class="fn">ReLU</span>(),
+  nn.<span class="fn">Dropout</span>(<span class="str">0.2</span>),
+  nn.<span class="fn">Linear</span>(<span class="str">128</span>, <span class="str">10</span>),
+)
+loss_fn = nn.<span class="fn">CrossEntropyLoss</span>()
+opt = torch.optim.<span class="fn">Adam</span>(model.<span class="fn">parameters</span>(), lr=<span class="str">1e-3</span>)
+
+<span class="kw">for</span> epoch <span class="kw">in</span> <span class="fn">range</span>(<span class="str">5</span>):        <span class="com"># the training loop</span>
+    opt.<span class="fn">zero_grad</span>()
+    loss = loss_fn(model(xb), yb)  <span class="com"># forward + loss</span>
+    loss.<span class="fn">backward</span>()             <span class="com"># backprop</span>
+    opt.<span class="fn">step</span>()                 <span class="com"># gradient descent</span>
+        </div>
+      </div>
+      <p class="callout" style="margin-top:14px">&#128073; Every word here is a concept from this module: <b>Dense/Linear</b> layers, <b>ReLU</b>, <b>Dropout</b>, a <b>loss</b>, an optimiser (<b>Adam</b> = smarter gradient descent), <b>epochs</b>, <b>backward()</b> = backprop.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 17 — CONNECT TO LABS ============ -->
+  <section class="slide" data-title="This connects to your labs"
+    data-note="Make the theory land in their hands. Point them back to the Module 1 labs they've already met: Lab 1.10 was this entire module in miniature -- they coded a neuron, a sigmoid, a forward pass and a gradient-descent update by hand. Lab 1.11 trained a real multi-layer network on digits and visualised its decisions. Encourage them: re-open those labs now and you'll understand every line. Module 2's deeper labs (the MNIST classifier in Keras) come next in the course build-out.">
+    <div class="kicker"><span class="dot"></span> From slides to keyboards</div>
+    <h2 class="title">This is exactly what your labs do</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card"><h3>Lab 1.10 &mdash; Perceptron from scratch</h3>
+          <p>You implemented a <b>neuron</b>: a weighted sum, a <b>sigmoid</b>, a <b>forward pass</b>, and a <b>gradient-descent update</b> &mdash; in pure NumPy. That is this whole module in miniature.</p>
+        </div>
+        <div class="card"><h3>Lab 1.11 &mdash; Digits &amp; decisions</h3>
+          <p>You trained a real <b>multi-layer network</b> on handwritten digits, hit 90%+ accuracy, and <b>visualised</b> how it decides &mdash; including a mistake.</p>
+        </div>
+      </div>
+      <p class="callout warn" style="margin-top:16px">&#128218; Re-open them with new eyes: <a href="../hands-on/module-1/index.html"><b>Module 1 hands-on labs</b></a>. Every line should now make sense. Module 2&rsquo;s own deep-learning labs (an MNIST classifier in Keras) build on this next.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 18 — KEY TAKEAWAYS ============ -->
+  <section class="slide dark" data-title="Key takeaways"
+    data-note="Recap crisply, then questions. Five points. If time allows, ask: 'in one sentence, what does training a network actually do?' -- you're looking for 'nudges weights to make the loss smaller'. That one line is the whole module. Then move to the lab or the break.">
+    <div class="kicker"><span class="dot"></span> Recap</div>
+    <h2 class="title">Five things to carry forward</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card"><h3>1 &middot; A neuron is tiny</h3><p>Weighted sum + bias + activation. A network is just <b>many</b> of them in layers.</p></div>
+        <div class="card"><h3>2 &middot; Activations give power</h3><p>Non-linearity (ReLU, sigmoid) lets a network model <b>any</b> pattern.</p></div>
+        <div class="card cyan"><h3>3 &middot; Learning = shrinking loss</h3><p><b>Gradient descent</b> walks the weights downhill on the loss; the <b>learning rate</b> is the step size.</p></div>
+        <div class="card"><h3>4 &middot; Backprop is automatic</h3><p>It assigns blame backwards; the framework computes it &mdash; you call <span class="mono">.backward()</span>.</p></div>
+        <div class="card gold" style="grid-column:1/-1"><h3>5 &middot; Watch the validation curve</h3><p>Training loss always falls; when <b>validation</b> turns up, you&rsquo;re overfitting. Stop, regularise, or get more data.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 19 — REFERENCES ============ -->
+  <section class="slide" data-title="References &amp; further study"
+    data-note="Point to the best free resources. Two standouts: 3Blue1Brown's neural-network series for visual intuition on gradient descent and backprop -- perfect after today; and Karpathy's 'Neural Networks: Zero to Hero' / micrograd if anyone wants to build backprop from scratch and truly get it. The Keras and PyTorch quickstarts are the doorways to the code. All links are live in the HTML.">
+    <div class="kicker"><span class="dot"></span> Go deeper &middot; curated, mostly free</div>
+    <h2 class="title">References &amp; further study</h2>
+    <div class="body">
+      <ul class="refs">
+        <li><a href="https://www.youtube.com/playlist?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi" target="_blank" rel="noopener">3Blue1Brown &mdash; Neural Networks (video)</a><span class="d">The clearest visual intuition for neurons, gradient descent &amp; backprop.</span></li>
+        <li><a href="https://www.youtube.com/playlist?list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ" target="_blank" rel="noopener">Karpathy &mdash; Neural Networks: Zero to Hero</a><span class="d">Build backprop &amp; a tiny autograd engine (micrograd) from scratch.</span></li>
+        <li><a href="https://developers.google.com/machine-learning/crash-course" target="_blank" rel="noopener">Google ML Crash Course</a><span class="d">Loss, gradient descent &amp; generalisation with interactive exercises.</span></li>
+        <li><a href="https://playground.tensorflow.org/" target="_blank" rel="noopener">TensorFlow Playground</a><span class="d">Train a neural net in your browser &mdash; watch layers &amp; learning rate live.</span></li>
+        <li><a href="https://keras.io/getting_started/intro_to_keras_for_engineers/" target="_blank" rel="noopener">Keras &mdash; quickstart</a><span class="d">The friendly high-level API used in the code slide.</span></li>
+        <li><a href="https://pytorch.org/tutorials/beginner/basics/intro.html" target="_blank" rel="noopener">PyTorch &mdash; Learn the Basics</a><span class="d">Tensors, autograd &amp; the training loop, step by step.</span></li>
+        <li><a href="https://www.deeplearning.ai/" target="_blank" rel="noopener">DeepLearning.AI (Andrew Ng)</a><span class="d">Gold-standard deep-learning specialisations to continue with.</span></li>
+        <li><a href="https://cs231n.github.io/" target="_blank" rel="noopener">Stanford CS231n notes</a><span class="d">Rigorous, readable notes on neural nets &amp; training.</span></li>
+      </ul>
+      <p class="small" style="margin-top:12px">All links open in a new tab. The curious should spend 20 minutes in the <b>TensorFlow Playground</b> before Day 2.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 20 — CLOSING ============ -->
+  <section class="slide title-slide" data-title="What's next"
+    data-note="Close warm and bridge to Day 2. We now understand the engine -- neurons, layers, loss, gradient descent. Tomorrow we meet the architecture that took these ideas and conquered language: the transformer, the 'T' in GPT. It's the backbone of every LLM and every agent we build the rest of the week. End on: you now understand what's inside the box -- next we scale it up to language. Then questions, then break/lab.">
+    <div class="body center">
+      <div class="kicker"><span class="dot"></span> End of Module 2</div>
+      <h1>You understand the <span class="accent">engine</span>.</h1>
+      <p class="subtitle">Neurons, layers, loss, gradient descent &mdash; the machinery under all of modern AI. Next we scale it up to <b>language</b>.</p>
+      <div class="rule"></div>
+      <div class="title-meta">
+        <span class="pill gold">Next: Day 2 &mdash; Transformer Models (the backbone of LLMs)</span>
+        <span class="pill green">Revisit: <a href="../hands-on/module-1/index.html" style="color:#fff;text-decoration:underline">Labs 1.10&ndash;1.11</a></span>
+      </div>
+      <p class="trainer" style="margin-top:22px"><b>Rajesh Gheware</b> &middot;
+        <a href="day1-module1-understanding-ai-and-its-evolution.html">&#8592; Module 1 deck</a> &middot;
+        <a href="../course-outline-building-intelligent-ai-agents.html">Course outline</a> &middot;
+        <a href="https://devops.gheware.com" target="_blank" rel="noopener">devops.gheware.com</a>
+      </p>
+    </div>
+  </section>
+
+</div><!-- /deck -->
+
+<!-- ===== Overview (O / ESC) ===== -->
+<div id="overview">
+  <h3>Module 2 &mdash; jump to a slide</h3>
+  <p class="ovsub">Press O or ESC again to close &middot; click any slide</p>
+  <div class="ovgrid" id="ovgrid"></div>
+</div>
+
+<!-- ===== Presenter notes (N) ===== -->
+<div id="notes"><span class="tag">Presenter note &middot; press N to hide</span><span id="noteText"></span></div>
+
+<!-- ===== Chrome ===== -->
+<div id="counter">1 / 20</div>
+<div class="hint">&larr; &rarr; / Space to navigate &middot; <b>N</b> notes &middot; <b>O</b>/Esc overview &middot; <b>F</b> fullscreen</div>
+<div class="nav">
+  <button id="prev" title="Previous (←)" aria-label="Previous slide">&#8249;</button>
+  <button id="next" title="Next (→)" aria-label="Next slide">&#8250;</button>
+</div>
+<div class="footer">
+  <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
+  <span>Day 1 · Module 2 — Introduction to Deep Learning</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.0</span>
+</div>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var total = slides.length;
+  var i = 0;
+  var counter = document.getElementById('counter');
+  var noteText = document.getElementById('noteText');
+  var progress = document.getElementById('progress');
+  var prevBtn = document.getElementById('prev');
+  var nextBtn = document.getElementById('next');
+
+  function render(){
+    slides.forEach(function(s,idx){ s.classList.toggle('active', idx===i); });
+    counter.textContent = (i+1)+' / '+total;
+    progress.style.width = ((i)/(total-1)*100)+'%';
+    noteText.textContent = ' ' + (slides[i].getAttribute('data-note')||'—');
+    prevBtn.disabled = (i===0);
+    nextBtn.disabled = (i===total-1);
+    if (location.hash !== '#'+(i+1)) history.replaceState(null,'','#'+(i+1));
+    slides[i].scrollTop = 0;
+  }
+  function go(n){ i = Math.max(0, Math.min(total-1, n)); render(); }
+  function next(){ go(i+1); }
+  function prev(){ go(i-1); }
+
+  nextBtn.addEventListener('click', next);
+  prevBtn.addEventListener('click', prev);
+
+  document.addEventListener('keydown', function(e){
+    if (e.key==='ArrowRight' || e.key==='PageDown' || e.key===' '){ e.preventDefault(); next(); }
+    else if (e.key==='ArrowLeft' || e.key==='PageUp'){ e.preventDefault(); prev(); }
+    else if (e.key==='Home'){ e.preventDefault(); go(0); }
+    else if (e.key==='End'){ e.preventDefault(); go(total-1); }
+    else if (e.key==='n' || e.key==='N'){ document.body.classList.toggle('show-notes'); }
+    else if (e.key==='o' || e.key==='O'){ document.body.classList.toggle('show-overview'); }
+    else if (e.key==='Escape'){ document.body.classList.toggle('show-overview'); }
+    else if (e.key==='f' || e.key==='F'){
+      if (!document.fullscreenElement){ document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); }
+      else { document.exitFullscreen && document.exitFullscreen(); }
+    }
+  });
+
+  // build overview
+  var ov = document.getElementById('ovgrid');
+  slides.forEach(function(s,idx){
+    var c = document.createElement('div');
+    c.className='ovcard';
+    c.innerHTML = '<div class="num">'+(idx+1).toString().padStart(2,'0')+'</div><div class="ttl">'+(s.getAttribute('data-title')||('Slide '+(idx+1)))+'</div>';
+    c.addEventListener('click', function(){ go(idx); document.body.classList.remove('show-overview'); });
+    ov.appendChild(c);
+  });
+
+  // swipe (touch)
+  var x0=null;
+  document.addEventListener('touchstart',function(e){ x0=e.touches[0].clientX; },{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(x0===null) return; var dx=e.changedTouches[0].clientX-x0;
+    if(Math.abs(dx)>50){ dx<0?next():prev(); } x0=null;
+  });
+
+  // deep link
+  var start = parseInt((location.hash||'').replace('#',''),10);
+  if(start>=1 && start<=total) i=start-1;
+  render();
+})();
+</script>
+</body>
+</html>
