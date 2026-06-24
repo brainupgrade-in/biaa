@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 2 · Module 3 — Why Transformers?</title>
+<style>
+  :root{
+    --ink-900:#1e1b4b; --ink-800:#312e81; --ind-600:#4f46e5;
+    --ind-300:#a5b4fc; --ind-50:#eef2ff;
+    --cyan:#06b6d4; --cyan-l:#67e8f9; --amber:#f59e0b; --amber-d:#b45309; --blue:#0891b2;
+    --ok:#059669; --bg:#f5f6fb; --ink:#1e1f33; --muted:#5b5f7a; --line:#d8dcf0;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+    background:var(--ink-900); color:var(--ink);
+    overflow:hidden;
+  }
+  a{color:var(--ind-600);}
+
+  /* ---------- Deck / slide framework ---------- */
+  .deck{position:fixed;inset:0;}
+  .slide{
+    position:absolute;inset:0;
+    display:none;
+    flex-direction:column;
+    background:var(--bg);
+    padding:clamp(20px,3.2vh,40px) clamp(28px,5vw,80px) 64px;
+    overflow:auto;
+  }
+  .slide.active{display:flex;animation:fade .35s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+  .kicker{
+    display:flex;align-items:center;gap:10px;
+    font-size:clamp(.7rem,1.1vw,.85rem);font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--ind-600);margin-bottom:6px;
+  }
+  .kicker .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);}
+  .kicker .sub{color:var(--muted);font-weight:600;}
+  h2.title{
+    margin:0 0 14px;color:var(--ink-800);
+    font-size:clamp(1.5rem,3.4vw,2.5rem);line-height:1.1;
+    border-bottom:3px solid var(--cyan);padding-bottom:10px;
+  }
+  .body{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;}
+  .center{justify-content:center;}
+  p.lead{font-size:clamp(1rem,1.7vw,1.3rem);line-height:1.5;max-width:62ch;color:#26273f;}
+  .small{font-size:clamp(.8rem,1.2vw,.95rem);color:var(--muted);}
+
+  /* ---------- Generic helpers ---------- */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:clamp(14px,2vw,26px);}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(12px,1.6vw,20px);}
+  .grid4{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(12px,1.6vw,18px);}
+  .card{
+    background:#fff;border:1px solid var(--line);border-left:4px solid var(--ind-600);
+    border-radius:6px;padding:clamp(12px,1.6vw,18px);box-shadow:0 1px 4px rgba(30,27,75,.06);
+  }
+  .card.gold{border-left-color:var(--amber);background:#fffbeb;}
+  .card.amber{border-left-color:var(--amber-d);}
+  .card.blue{border-left-color:var(--blue);}
+  .card.cyan{border-left-color:var(--cyan);}
+  .card h3{margin:0 0 8px;color:var(--ink-800);font-size:clamp(1rem,1.5vw,1.2rem);
+    display:flex;align-items:center;gap:8px;}
+  .card p,.card li{font-size:clamp(.82rem,1.2vw,1rem);line-height:1.45;}
+  .card ul{margin:6px 0 0;padding-left:20px;}
+  .card ul li{margin-bottom:4px;}
+
+  ul.bullets{font-size:clamp(.95rem,1.6vw,1.25rem);line-height:1.7;padding-left:26px;max-width:64ch;}
+  ul.bullets li{margin-bottom:10px;}
+  ul.bullets li b{color:var(--ink-800);}
+
+  table{border-collapse:collapse;width:100%;font-size:clamp(.8rem,1.2vw,1.02rem);background:#fff;
+    box-shadow:0 1px 4px rgba(30,27,75,.07);border-radius:6px;overflow:hidden;}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top;}
+  thead th{background:var(--ink-800);color:#fff;font-weight:600;}
+  tbody tr:nth-child(even){background:var(--ind-50);}
+  td .yes{color:var(--ok);font-weight:700;}
+  td .no{color:#b91c1c;font-weight:700;}
+  caption{caption-side:bottom;font-size:.8rem;color:var(--muted);padding-top:8px;text-align:left;}
+
+  .pill{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.72em;font-weight:700;
+    vertical-align:middle;letter-spacing:.02em;}
+  .pill.green{background:var(--ind-600);color:#fff;}
+  .pill.gold{background:var(--amber);color:var(--ink-900);}
+  .pill.amber{background:var(--amber-d);color:#fff;}
+  .pill.blue{background:var(--blue);color:#fff;}
+  .pill.cyan{background:var(--cyan);color:var(--ink-900);}
+  .pill.ghost{background:#fff;border:1px solid var(--line);color:var(--muted);}
+
+  .callout{background:var(--ind-50);border:1px solid var(--ind-300);border-radius:8px;
+    padding:14px 18px;font-size:clamp(.9rem,1.4vw,1.1rem);color:#262248;}
+  .callout.warn{background:#fffbeb;border-color:var(--amber);}
+  .callout b{color:var(--ink-800);}
+
+  figure{margin:0;text-align:center;}
+  figure svg{width:100%;height:auto;max-height:60vh;}
+  figcaption{font-size:clamp(.78rem,1.1vw,.92rem);color:var(--muted);margin-top:8px;}
+
+  .mono{font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;}
+  .terminal{background:#14143a;color:#e0e3f5;border-radius:8px;padding:16px 18px;
+    font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:clamp(.72rem,1.1vw,.95rem);
+    line-height:1.6;box-shadow:0 4px 16px rgba(0,0,0,.3);overflow:auto;}
+  .terminal .com{color:#7f86b8;}
+  .terminal .kw{color:var(--cyan-l);}
+  .terminal .str{color:#fcd34d;}
+  .terminal .fn{color:#a5b4fc;}
+  .terminal .out{color:#6ee7b7;}
+  .terminal .you{color:#fff;}
+
+  /* ---------- reference list ---------- */
+  ul.refs{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;
+    gap:10px 26px;font-size:clamp(.82rem,1.2vw,1rem);}
+  ul.refs li{padding:8px 12px;background:#fff;border:1px solid var(--line);
+    border-left:3px solid var(--cyan);border-radius:6px;line-height:1.4;}
+  ul.refs li a{font-weight:600;text-decoration:none;}
+  ul.refs li a:hover{text-decoration:underline;}
+  ul.refs li .d{display:block;color:var(--muted);font-size:.82em;margin-top:2px;}
+  @media(max-width:760px){ul.refs{grid-template-columns:1fr;} .grid2,.grid3,.grid4{grid-template-columns:1fr;}}
+
+  /* ---------- Title slide ---------- */
+  .title-slide{background:linear-gradient(135deg,#312e81 0%,#1e1b4b 100%);color:#fff;
+    border-bottom:none;align-items:flex-start;justify-content:center;}
+  .title-slide .kicker{color:var(--cyan-l);}
+  .title-slide h1{font-size:clamp(2rem,5.2vw,3.6rem);margin:0 0 6px;line-height:1.08;}
+  .title-slide .accent{color:var(--cyan-l);}
+  .title-slide .subtitle{font-size:clamp(1rem,2vw,1.5rem);color:#c7cbf0;margin:4px 0 0;font-weight:500;}
+  .title-slide .rule{width:120px;height:4px;background:var(--cyan);margin:22px 0;border-radius:2px;}
+  .title-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;}
+  .title-meta .pill{font-size:.85rem;padding:5px 14px;}
+  .title-slide .trainer{margin-top:26px;font-size:clamp(.85rem,1.4vw,1.05rem);color:#a9adda;}
+  .title-slide .trainer b{color:#fff;}
+  .title-slide a{color:var(--cyan-l);}
+  .homelink{position:fixed;top:10px;right:16px;z-index:46;font-size:.74rem;text-decoration:none;
+    background:rgba(255,255,255,.9);border:1px solid var(--line);color:var(--ink-800);
+    padding:5px 12px;border-radius:14px;font-weight:600;}
+  .homelink:hover{background:#fff;}
+
+  /* ---------- dark slides ---------- */
+  .dark{background:linear-gradient(135deg,#312e81 0%,#1e1b4b 100%);color:#fff;border-bottom:none;}
+  .dark h2.title{color:#fff;border-bottom-color:var(--cyan);}
+  .dark .kicker{color:var(--cyan-l);}
+  .dark p.lead,.dark li{color:#e7e9fb;}
+  .dark .card{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.15);color:#eef0ff;}
+  .dark .card h3{color:var(--cyan-l);}
+
+  /* ---------- Chrome ---------- */
+  #progress{position:fixed;top:0;left:0;height:4px;background:var(--cyan);width:0;z-index:50;
+    transition:width .3s ease;}
+  .footer{position:fixed;bottom:0;left:0;right:0;height:34px;display:flex;align-items:center;
+    justify-content:space-between;padding:0 16px;font-size:.72rem;color:var(--muted);
+    background:rgba(255,255,255,.85);backdrop-filter:blur(4px);border-top:1px solid var(--line);z-index:40;}
+  .footer .brand{font-weight:600;color:var(--ink-800);}
+  .footer a{text-decoration:none;}
+  .nav{position:fixed;bottom:44px;right:18px;display:flex;gap:8px;z-index:45;}
+  .nav button{border:none;cursor:pointer;width:42px;height:42px;border-radius:50%;
+    background:var(--ink-800);color:#fff;font-size:1.1rem;box-shadow:0 2px 8px rgba(0,0,0,.25);
+    display:flex;align-items:center;justify-content:center;transition:background .2s,transform .1s;}
+  .nav button:hover{background:var(--ind-600);}
+  .nav button:active{transform:scale(.92);}
+  .nav button:disabled{opacity:.35;cursor:default;}
+  #counter{position:fixed;bottom:46px;left:18px;z-index:45;background:var(--ink-800);color:#fff;
+    font-size:.8rem;font-weight:600;padding:6px 12px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.25);}
+  .hint{position:fixed;bottom:46px;left:50%;transform:translateX(-50%);z-index:45;
+    font-size:.72rem;color:var(--muted);background:rgba(255,255,255,.8);
+    padding:5px 12px;border-radius:12px;border:1px solid var(--line);}
+  @media(max-width:700px){.hint{display:none;}}
+
+  /* ---------- Presenter notes ---------- */
+  #notes{position:fixed;left:0;right:0;bottom:34px;z-index:48;display:none;
+    background:#14143a;color:#e4e6fb;padding:14px 20px 16px;border-top:3px solid var(--cyan);
+    font-size:.92rem;line-height:1.5;max-height:38vh;overflow:auto;}
+  body.show-notes #notes{display:block;}
+  #notes b{color:var(--cyan-l);}
+  #notes .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ind-300);
+    display:block;margin-bottom:4px;}
+
+  /* ---------- Overview ---------- */
+  #overview{position:fixed;inset:0;z-index:60;background:rgba(30,27,75,.97);color:#fff;
+    display:none;flex-direction:column;padding:32px clamp(20px,5vw,80px);overflow:auto;}
+  body.show-overview #overview{display:flex;}
+  #overview h3{color:var(--cyan-l);margin:0 0 4px;font-size:1.4rem;}
+  #overview .ovsub{color:#a9adda;margin:0 0 20px;font-size:.9rem;}
+  .ovgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+  .ovcard{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:8px;
+    padding:12px 14px;cursor:pointer;transition:background .15s,border-color .15s;}
+  .ovcard:hover{background:rgba(6,182,212,.18);border-color:var(--cyan);}
+  .ovcard .num{font-size:.72rem;color:var(--cyan-l);font-weight:700;}
+  .ovcard .ttl{font-size:.95rem;margin-top:3px;color:#fff;}
+
+  svg text{font-family:'Segoe UI',sans-serif;}
+
+  @media print{
+    body{overflow:visible;background:#fff;}
+    .slide{display:flex!important;position:relative;inset:auto;min-height:96vh;page-break-after:always;
+      border:1px solid #ccc;}
+    #progress,.footer,.nav,#counter,.hint,#notes,#overview,.homelink{display:none!important;}
+  }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<a class="homelink" href="../course-outline-building-intelligent-ai-agents.html" title="Back to course outline">&#8962; Course outline</a>
+
+<div class="deck" id="deck">
+
+  <!-- ============ SLIDE 1 — TITLE ============ -->
+  <section class="slide title-slide" data-title="Title"
+    data-note="Welcome to Day 2. Yesterday we built the engine -- neural networks: neurons, layers, loss, gradient descent. Today we meet the specific ARCHITECTURE that took those ideas and conquered language: the transformer -- the 'T' in GPT and BERT. It is the backbone of every LLM and every agent we build the rest of the week. Module 3 answers 'why transformers?' -- what problem they solve and the one idea (attention) that makes them work. Module 4 this afternoon: using and fine-tuning pretrained ones.">
+    <div class="body center">
+      <div class="kicker"><span class="dot"></span> 5-Day Course &nbsp;&middot;&nbsp; <span class="sub">Day 2 &middot; Module 3 of 10</span></div>
+      <h1>Why <span class="accent">Transformers?</span></h1>
+      <p class="subtitle">From word-by-word to all-at-once &mdash; attention, self-attention &amp; the architecture behind every LLM.</p>
+      <div class="rule"></div>
+      <div class="title-meta">
+        <span class="pill gold">Beginner &rarr; Practitioner</span>
+        <span class="pill green">The backbone of agentic AI</span>
+        <span class="pill ghost" style="color:#c7cbf0;border-color:rgba(255,255,255,.3)">~75 min &middot; pairs with Module 3 labs</span>
+      </div>
+      <p class="trainer">Trainer: <b>Rajesh Gheware</b> &middot; 25+ yrs (JPMorgan Chase · Deutsche Bank · Morgan Stanley) &middot; 5,000+ trained &middot; 4.91/5</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 2 — AGENDA ============ -->
+  <section class="slide" data-title="What we'll cover"
+    data-note="Map the hour. We start with the problem: language is a sequence, and order/context matter. We look at the old approach (RNNs/LSTMs) and exactly where it broke. Then the breakthrough -- attention, and its self-attention form (query/key/value). We assemble the transformer block, explain tokens/embeddings/positional encoding, and the encoder-vs-decoder split (BERT vs GPT). Tell them: by the end, 'GPT' and 'BERT' stop being magic and become an architecture they understand.">
+    <div class="kicker"><span class="dot"></span> Day 2 &middot; Module 3 <span class="sub">— Why Transformers?</span></div>
+    <h2 class="title">What we&rsquo;ll cover</h2>
+    <div class="body">
+      <div class="grid3">
+        <div class="card"><h3>&#9312; The problem</h3><p>Language is a <b>sequence</b> where order &amp; far-apart context matter. Why that&rsquo;s hard.</p></div>
+        <div class="card"><h3>&#9313; The old way</h3><p><b>RNNs / LSTMs</b> read word-by-word &mdash; and exactly where they break down.</p></div>
+        <div class="card cyan"><h3>&#9314; Attention</h3><p>The breakthrough: look at <b>all</b> words at once and weigh what&rsquo;s relevant.</p></div>
+        <div class="card cyan"><h3>&#9315; Self-attention</h3><p><b>Query / Key / Value</b> &mdash; who attends to whom, intuition-first.</p></div>
+        <div class="card gold"><h3>&#9316; The transformer block</h3><p>Tokens, <b>embeddings</b>, <b>positional encoding</b>, and how it all stacks.</p></div>
+        <div class="card gold"><h3>&#9317; Encoder vs decoder</h3><p>The <b>BERT</b>-style vs <b>GPT</b>-style split &mdash; and why it matters for your labs.</p></div>
+      </div>
+      <p class="callout" style="margin-top:18px">&#129504; <b>The throughline:</b> one idea &mdash; <b>attention</b> &mdash; replaced word-by-word reading with all-at-once context, unlocked massive parallel training, and made today&rsquo;s LLMs possible.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 3 — BRIDGE ============ -->
+  <section class="slide" data-title="From pixels to language"
+    data-note="Bridge from Day 1. Yesterday's networks were great at fixed-size inputs like an image (784 pixels in, one digit out). But language isn't fixed-size or independent -- a sentence is a sequence of words whose meaning depends on each other and on order. 'Dog bites man' vs 'man bites dog': same words, opposite meaning. We need an architecture built for sequences and context. That's what today is about.">
+    <div class="kicker"><span class="dot"></span> Bridge from Day 1</div>
+    <h2 class="title">Images were easy &mdash; language is a sequence</h2>
+    <div class="body">
+      <p class="lead">Day 1&rsquo;s networks took a <b>fixed-size</b> input (784 pixels) and produced one answer. Language is different: a <b>variable-length sequence</b> where meaning depends on <b>order</b> and on <b>far-apart context</b>.</p>
+      <div class="grid2" style="margin-top:6px">
+        <div class="card"><h3>&#127912; An image</h3>
+          <ul>
+            <li>Fixed size, all pixels available at once</li>
+            <li>A plain neural net handles it well (Day 1)</li>
+            <li>No notion of &ldquo;order&rdquo; to preserve</li>
+          </ul>
+        </div>
+        <div class="card cyan"><h3>&#128172; A sentence</h3>
+          <ul>
+            <li>Variable length, arrives as a sequence</li>
+            <li><b>Order flips meaning:</b> &ldquo;dog bites man&rdquo; &ne; &ldquo;man bites dog&rdquo;</li>
+            <li>Context can be <b>far away:</b> a pronoun and its noun</li>
+          </ul>
+        </div>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#128161; We need a model built for <b>sequence + context</b>. The story of getting there runs: RNNs &rarr; LSTMs &rarr; <b>the transformer</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 4 — RNN: THE OLD WAY ============ -->
+  <section class="slide" data-title="The old way: RNNs"
+    data-note="The pre-transformer approach. A Recurrent Neural Network reads one word at a time, keeping a 'hidden state' -- a running memory -- that it updates at each step and passes forward. LSTMs/GRUs are fancier RNNs with gates to remember longer. This genuinely worked and powered translation and speech for years. Set it up fairly before we show the cracks: the sequential hidden-state passing is the key picture.">
+    <div class="kicker"><span class="dot"></span> Before transformers &middot; 1 of 2</div>
+    <h2 class="title">The old way: recurrent networks (RNN / LSTM)</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 280" role="img" aria-label="An RNN reading a sentence word by word, passing a hidden state forward">
+          <defs><marker id="r4" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker></defs>
+          <g text-anchor="middle">
+            <!-- four time steps -->
+            <g>
+              <rect x="60" y="100" width="120" height="70" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+              <text x="120" y="130" font-size="13" font-weight="700" fill="#312e81">cell</text>
+              <text x="120" y="150" font-size="11" fill="#5b5f7a">step 1</text>
+              <text x="120" y="210" font-size="14" fill="#1e1f33" font-weight="700">The</text>
+            </g>
+            <g>
+              <rect x="290" y="100" width="120" height="70" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+              <text x="350" y="130" font-size="13" font-weight="700" fill="#312e81">cell</text>
+              <text x="350" y="150" font-size="11" fill="#5b5f7a">step 2</text>
+              <text x="350" y="210" font-size="14" fill="#1e1f33" font-weight="700">cat</text>
+            </g>
+            <g>
+              <rect x="520" y="100" width="120" height="70" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+              <text x="580" y="130" font-size="13" font-weight="700" fill="#312e81">cell</text>
+              <text x="580" y="150" font-size="11" fill="#5b5f7a">step 3</text>
+              <text x="580" y="210" font-size="14" fill="#1e1f33" font-weight="700">sat</text>
+            </g>
+            <g>
+              <rect x="750" y="100" width="120" height="70" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+              <text x="810" y="130" font-size="13" font-weight="700" fill="#312e81">cell</text>
+              <text x="810" y="150" font-size="11" fill="#5b5f7a">step 4</text>
+              <text x="810" y="210" font-size="14" fill="#1e1f33" font-weight="700">down</text>
+            </g>
+          </g>
+          <!-- hidden state arrows -->
+          <path d="M180 135 L288 135" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#r4)"/>
+          <path d="M410 135 L518 135" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#r4)"/>
+          <path d="M640 135 L748 135" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#r4)"/>
+          <text x="234" y="125" text-anchor="middle" font-size="11" fill="#b45309" font-weight="700">hidden state</text>
+          <!-- inputs up -->
+          <path d="M120 195 L120 172" stroke="#94a3b8" stroke-width="2" marker-end="url(#r4)"/>
+          <path d="M350 195 L350 172" stroke="#94a3b8" stroke-width="2" marker-end="url(#r4)"/>
+          <path d="M580 195 L580 172" stroke="#94a3b8" stroke-width="2" marker-end="url(#r4)"/>
+          <path d="M810 195 L810 172" stroke="#94a3b8" stroke-width="2" marker-end="url(#r4)"/>
+          <text x="500" y="55" text-anchor="middle" font-size="14" font-weight="700" fill="#312e81">reads one word at a time, carrying a running &ldquo;memory&rdquo; forward</text>
+        </svg>
+        <figcaption>An <b>RNN/LSTM</b> processes a sentence <b>step by step</b>, updating a hidden state. This powered translation &amp; speech for years &mdash; but it has two deep problems.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 5 — WHERE RNNs BREAK ============ -->
+  <section class="slide" data-title="Where RNNs break"
+    data-note="The two cracks that motivated the transformer. (1) Long-range memory loss: information from early words fades by the time you reach the end of a long sentence -- the pronoun at the end can't 'reach back' to the noun far away. LSTMs helped but didn't solve it. (2) No parallelism: because step N needs step N-1's hidden state, you must process words strictly in order -- you can't use a modern GPU's thousands of cores to do it all at once, so training is painfully slow and hard to scale. The transformer fixes BOTH at once. That's the whole motivation.">
+    <div class="kicker"><span class="dot"></span> Before transformers &middot; 2 of 2</div>
+    <h2 class="title">Two problems that held RNNs back</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card amber"><h3>&#129516; 1 &middot; Long-range memory fades</h3>
+          <p>By the end of a long sentence, early words are nearly forgotten. The model struggles to link a pronoun to a noun far away.</p>
+          <figure style="margin-top:8px">
+            <svg viewBox="0 0 460 90" role="img" aria-label="Memory of early words fading along a sentence">
+              <g font-size="13" font-weight="700">
+                <text x="20" y="40" fill="#1e1f33" opacity="0.25">The</text>
+                <text x="70" y="40" fill="#1e1f33" opacity="0.4">animal</text>
+                <text x="150" y="40" fill="#1e1f33" opacity="0.6">...</text>
+                <text x="200" y="40" fill="#1e1f33" opacity="0.8">it</text>
+                <text x="250" y="40" fill="#1e1f33">was tired</text>
+              </g>
+              <path d="M30 55 C150 80 280 80 235 50" fill="none" stroke="#dc2626" stroke-width="2" stroke-dasharray="5 4"/>
+              <text x="150" y="80" font-size="10.5" fill="#b91c1c">&ldquo;it&rdquo; &rarr; ? hard to reach back</text>
+            </svg>
+          </figure>
+        </div>
+        <div class="card amber"><h3>&#128034; 2 &middot; No parallelism</h3>
+          <p>Step N needs step N&minus;1&rsquo;s memory, so words must be processed <b>strictly in order</b> &mdash; you can&rsquo;t use a GPU&rsquo;s thousands of cores at once. Training is slow and hard to scale.</p>
+          <figure style="margin-top:8px">
+            <svg viewBox="0 0 460 90" role="img" aria-label="Sequential processing one step after another">
+              <g font-size="11" text-anchor="middle" fill="#92400e" font-weight="700">
+                <rect x="20" y="35" width="70" height="30" rx="7" fill="#fff" stroke="#b45309"/><text x="55" y="55">w1</text>
+                <rect x="120" y="35" width="70" height="30" rx="7" fill="#fff" stroke="#b45309"/><text x="155" y="55">w2</text>
+                <rect x="220" y="35" width="70" height="30" rx="7" fill="#fff" stroke="#b45309"/><text x="255" y="55">w3</text>
+                <rect x="320" y="35" width="70" height="30" rx="7" fill="#fff" stroke="#b45309"/><text x="355" y="55">w4</text>
+              </g>
+              <text x="230" y="22" text-anchor="middle" font-size="10.5" fill="#b91c1c">must wait for the previous &mdash; one at a time</text>
+            </svg>
+          </figure>
+        </div>
+      </div>
+      <p class="callout" style="margin-top:14px">&#9889; The transformer (2017) fixes <b>both at once</b>: it sees every word simultaneously (parallel) and lets any word look directly at any other (no fading). The mechanism that does this is <b>attention</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 6 — ATTENTION: THE BIG IDEA ============ -->
+  <section class="slide" data-title="The big idea: attention"
+    data-note="The single most important concept of the day. Attention lets the model, when processing one word, look at ALL other words at once and decide how much each one matters for understanding this word -- assigning a weight to each. High weight = 'pay attention to this word'. No more single bottleneck memory; every word has direct access to every other word. The famous 2017 paper that introduced this was literally titled 'Attention Is All You Need'. Land that title.">
+    <div class="kicker"><span class="dot"></span> The breakthrough</div>
+    <h2 class="title">Attention &mdash; look at everything, weigh what matters</h2>
+    <div class="body">
+      <p class="lead">Instead of a single running memory, <b>attention</b> lets each word look <b>directly at every other word</b> at the same time, and decide <b>how much each one matters</b> right now &mdash; a weight per word.</p>
+      <div class="grid3" style="margin-top:6px">
+        <div class="card"><h3>&#128064; Look at all</h3><p>Every word can see every other word in the sentence &mdash; <b>at once</b>, no fading.</p></div>
+        <div class="card"><h3>&#9878;&#65039; Weigh relevance</h3><p>Assign each a <b>weight</b>: how relevant is that word to understanding this one?</p></div>
+        <div class="card cyan"><h3>&#10133; Blend</h3><p>Mix the others&rsquo; meaning by those weights to enrich this word&rsquo;s representation.</p></div>
+      </div>
+      <p class="callout warn" style="margin-top:16px">&#128196; The 2017 paper that introduced this was titled <b>&ldquo;Attention Is All You Need&rdquo;</b> &mdash; it removed recurrence entirely and kept only attention. That architecture is the <b>transformer</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 7 — SELF-ATTENTION Q/K/V ============ -->
+  <section class="slide" data-title="Self-attention: Q, K, V"
+    data-note="How attention is actually computed, by analogy -- no heavy maths. Every word produces three vectors: a Query (what am I looking for?), a Key (what do I offer?), and a Value (what do I contribute?). To process a word, compare its Query against every word's Key (a dot product) -> similarity scores -> softmax to turn them into weights that sum to 1 -> take a weighted sum of all the Values. Use the library analogy: your Query is your search; each book's Key is its title/spine; the Value is its contents; you read mostly from the best-matching books. 'Self' = the words attend to each other within the same sentence.">
+    <div class="kicker"><span class="dot"></span> Inside attention &middot; the Q/K/V recipe</div>
+    <h2 class="title">Self-attention: Query, Key, Value</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 300" role="img" aria-label="Query compared to Keys gives weights used to blend Values">
+          <defs><marker id="s7" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker></defs>
+          <!-- Query -->
+          <rect x="40" y="120" width="150" height="64" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="2.5"/>
+          <text x="115" y="148" text-anchor="middle" font-size="14" font-weight="700" fill="#92400e">Query (Q)</text>
+          <text x="115" y="168" text-anchor="middle" font-size="11" fill="#5b5f7a">&ldquo;what am I after?&rdquo;</text>
+          <!-- Keys -->
+          <g text-anchor="middle">
+            <rect x="300" y="40" width="150" height="50" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/><text x="375" y="70" font-size="13" font-weight="700" fill="#312e81">Key&#8321; &middot; Value&#8321;</text>
+            <rect x="300" y="128" width="150" height="50" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/><text x="375" y="158" font-size="13" font-weight="700" fill="#312e81">Key&#8322; &middot; Value&#8322;</text>
+            <rect x="300" y="216" width="150" height="50" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/><text x="375" y="246" font-size="13" font-weight="700" fill="#312e81">Key&#8323; &middot; Value&#8323;</text>
+          </g>
+          <!-- compare arrows with scores -->
+          <path d="M190 150 L298 66" stroke="#4f46e5" stroke-width="2" marker-end="url(#s7)"/>
+          <path d="M190 152 L298 152" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#s7)"/>
+          <path d="M190 156 L298 238" stroke="#4f46e5" stroke-width="2" marker-end="url(#s7)"/>
+          <text x="540" y="70" font-size="12.5" fill="#5b5f7a">score 0.1</text>
+          <text x="540" y="158" font-size="13.5" fill="#0e7490" font-weight="700">score 0.7</text>
+          <text x="540" y="246" font-size="12.5" fill="#5b5f7a">score 0.2</text>
+          <text x="375" y="108" text-anchor="middle" font-size="11" fill="#b45309">compare Q&middot;K &rarr; softmax &rarr; weights (sum to 1)</text>
+          <!-- blend -->
+          <path d="M620 152 L700 152" stroke="#f59e0b" stroke-width="2.5" marker-end="url(#s7)"/>
+          <rect x="705" y="116" width="250" height="72" rx="12" fill="#312e81" stroke="#06b6d4" stroke-width="2.5"/>
+          <text x="830" y="146" text-anchor="middle" font-size="14" font-weight="700" fill="#67e8f9">weighted sum of Values</text>
+          <text x="830" y="168" text-anchor="middle" font-size="11.5" fill="#c7cbf0">this word, now context-aware</text>
+        </svg>
+        <figcaption>Like a library search: your <b>Query</b> matches each book&rsquo;s <b>Key</b>; you read most from the best matches&rsquo; <b>Values</b>. &ldquo;Self&rdquo;-attention = words attend to each other in the same sentence.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 8 — ATTENTION EXAMPLE ============ -->
+  <section class="slide" data-title="Attention in action"
+    data-note="Make it concrete with the canonical example. Sentence: 'The animal didn't cross the street because it was tired.' What does 'it' refer to? A human knows 'animal'. Self-attention, when processing 'it', puts a high weight on 'animal' (and low on 'street') -- it resolves the reference by attending to the right word, regardless of distance. Show the heavier line from 'it' to 'animal'. This is the long-range problem from the RNN slide, SOLVED. Note models learn these patterns from data, and we can visualise them (a Module 3 lab does exactly this).">
+    <div class="kicker"><span class="dot"></span> Self-attention &middot; a concrete example</div>
+    <h2 class="title">&ldquo;it&rdquo; learns to look at &ldquo;animal&rdquo;</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 250" role="img" aria-label="The word it attends most strongly to the word animal across the sentence">
+          <g font-size="16" text-anchor="middle" fill="#1e1f33" font-weight="600">
+            <text x="70" y="150">The</text>
+            <text x="170" y="150" font-weight="800" fill="#312e81">animal</text>
+            <text x="290" y="150">didn&rsquo;t</text>
+            <text x="380" y="150">cross</text>
+            <text x="450" y="150">the</text>
+            <text x="530" y="150">street</text>
+            <text x="640" y="150">because</text>
+            <text x="740" y="150" font-weight="800" fill="#b45309">it</text>
+            <text x="800" y="150">was</text>
+            <text x="880" y="150">tired</text>
+          </g>
+          <!-- attention arcs from "it" -->
+          <path d="M735 138 C600 60 300 60 175 136" fill="none" stroke="#06b6d4" stroke-width="5" opacity="0.85"/>
+          <path d="M740 138 C690 90 590 90 535 138" fill="none" stroke="#94a3b8" stroke-width="1.5" opacity="0.6" stroke-dasharray="4 4"/>
+          <text x="430" y="55" text-anchor="middle" font-size="13.5" font-weight="700" fill="#0e7490">strong attention: &ldquo;it&rdquo; &rarr; &ldquo;animal&rdquo;</text>
+          <text x="600" y="120" text-anchor="middle" font-size="11.5" fill="#5b5f7a">weak: &ldquo;it&rdquo; &rarr; &ldquo;street&rdquo;</text>
+          <text x="500" y="210" text-anchor="middle" font-size="13" fill="#1e1f33">distance doesn&rsquo;t matter &mdash; attention links the pronoun to its noun <b>directly</b></text>
+        </svg>
+        <figcaption>The exact long-range problem that defeated RNNs &mdash; <b>solved</b>. Models learn these links from data, and you can <b>visualise</b> them (you&rsquo;ll do this in a Module 3 lab).</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 9 — TOKENS & EMBEDDINGS ============ -->
+  <section class="slide" data-title="Tokens &amp; embeddings"
+    data-note="Step back to inputs: how does text become numbers a network can process? Two steps. (1) Tokenization: split text into tokens -- often sub-word pieces, not whole words ('tokenization' -> 'token' + 'ization'). Each token maps to an integer id. (2) Embedding: each id becomes a vector of numbers (e.g. 768 dims) that captures meaning -- similar words get similar vectors, so 'king' and 'queen' land near each other. These embeddings are learned. This is the bridge from language to the maths of Day 1. Labs: they'll tokenize with a real tokenizer and measure embedding similarity.">
+    <div class="kicker"><span class="dot"></span> From text to numbers &middot; 1 of 2</div>
+    <h2 class="title">Tokens &amp; embeddings &mdash; turning words into vectors</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 270" role="img" aria-label="Text split into tokens, mapped to ids, then to embedding vectors">
+          <defs><marker id="e9" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker></defs>
+          <!-- text -->
+          <rect x="40" y="40" width="200" height="46" rx="10" fill="#fff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="140" y="69" text-anchor="middle" font-size="14" fill="#1e1f33" font-weight="700">&ldquo;Transformers rock&rdquo;</text>
+          <path d="M140 86 L140 116" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#e9)"/>
+          <!-- tokens -->
+          <g text-anchor="middle" font-size="12.5" font-weight="700">
+            <rect x="30" y="120" width="90" height="40" rx="8" fill="#eef2ff" stroke="#4f46e5"/><text x="75" y="145" fill="#312e81">Transform</text>
+            <rect x="125" y="120" width="55" height="40" rx="8" fill="#eef2ff" stroke="#4f46e5"/><text x="152" y="145" fill="#312e81">ers</text>
+            <rect x="185" y="120" width="70" height="40" rx="8" fill="#eef2ff" stroke="#4f46e5"/><text x="220" y="145" fill="#312e81">rock</text>
+          </g>
+          <text x="140" y="182" text-anchor="middle" font-size="11" fill="#5b5f7a">tokens (sub-word pieces)</text>
+          <path d="M270 140 L360 140" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#e9)"/>
+          <!-- ids -->
+          <g text-anchor="middle" font-size="13" font-weight="700">
+            <rect x="375" y="120" width="70" height="40" rx="8" fill="#fffbeb" stroke="#f59e0b"/><text x="410" y="145" fill="#92400e">19134</text>
+            <rect x="450" y="120" width="55" height="40" rx="8" fill="#fffbeb" stroke="#f59e0b"/><text x="477" y="145" fill="#92400e">409</text>
+            <rect x="510" y="120" width="60" height="40" rx="8" fill="#fffbeb" stroke="#f59e0b"/><text x="540" y="145" fill="#92400e">3138</text>
+          </g>
+          <text x="470" y="182" text-anchor="middle" font-size="11" fill="#5b5f7a">integer ids (a lookup)</text>
+          <path d="M585 140 L675 140" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#e9)"/>
+          <!-- embeddings -->
+          <rect x="690" y="95" width="280" height="92" rx="12" fill="#312e81" stroke="#06b6d4" stroke-width="2.5"/>
+          <text x="830" y="124" text-anchor="middle" font-size="14" font-weight="700" fill="#67e8f9">embedding vectors</text>
+          <text x="830" y="148" text-anchor="middle" font-size="12" fill="#c7cbf0" class="mono">[0.21, -0.08, 0.74, ... ]</text>
+          <text x="830" y="170" text-anchor="middle" font-size="11" fill="#a5b4fc">meaning as numbers &mdash; similar words, similar vectors</text>
+          <text x="500" y="232" text-anchor="middle" font-size="13" fill="#1e1f33">&ldquo;king&rdquo; and &ldquo;queen&rdquo; land near each other; &ldquo;king&rdquo;&minus;&ldquo;man&rdquo;+&ldquo;woman&rdquo; &asymp; &ldquo;queen&rdquo; &mdash; geometry of meaning</text>
+        </svg>
+        <figcaption>Text &rarr; <b>tokens</b> &rarr; <b>ids</b> &rarr; <b>embeddings</b> (learned vectors). This is the bridge from language to the numeric world of Day 1 &mdash; and what your labs start with.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 10 — POSITIONAL ENCODING ============ -->
+  <section class="slide" data-title="Positional encoding"
+    data-note="A subtle but crucial point. Because attention looks at all words at once (a SET), it has no built-in sense of order -- 'dog bites man' and 'man bites dog' would look identical to raw attention. So transformers ADD a 'positional encoding' to each token's embedding -- a signal that encodes 'I am word #1, #2, #3...'. Now order is baked into the numbers. Keep it light: the point is just 'attention is order-blind, so we inject position'. Modern variants use rotary/relative positions but the idea is the same.">
+    <div class="kicker"><span class="dot"></span> From text to numbers &middot; 2 of 2</div>
+    <h2 class="title">Positional encoding &mdash; putting order back in</h2>
+    <div class="body">
+      <p class="lead">Attention sees the words as a <b>set</b>, with no inherent order. So we <b>add a position signal</b> to each token&rsquo;s embedding &mdash; now the model knows word 1 from word 5, and &ldquo;dog bites man&rdquo; differs from &ldquo;man bites dog.&rdquo;</p>
+      <figure style="margin-top:6px">
+        <svg viewBox="0 0 1000 170" role="img" aria-label="Token embedding plus positional encoding equals position-aware input">
+          <defs><marker id="p10" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker></defs>
+          <rect x="40" y="55" width="220" height="60" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="150" y="82" text-anchor="middle" font-size="13.5" font-weight="700" fill="#312e81">token embedding</text>
+          <text x="150" y="102" text-anchor="middle" font-size="11" fill="#5b5f7a">what the word means</text>
+          <text x="290" y="92" text-anchor="middle" font-size="26" font-weight="700" fill="#92400e">+</text>
+          <rect x="320" y="55" width="220" height="60" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="2"/>
+          <text x="430" y="82" text-anchor="middle" font-size="13.5" font-weight="700" fill="#92400e">positional encoding</text>
+          <text x="430" y="102" text-anchor="middle" font-size="11" fill="#5b5f7a">where it sits in the sequence</text>
+          <path d="M548 85 L612 85" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#p10)"/>
+          <rect x="620" y="50" width="340" height="70" rx="12" fill="#312e81" stroke="#06b6d4" stroke-width="2.5"/>
+          <text x="790" y="80" text-anchor="middle" font-size="14" font-weight="700" fill="#67e8f9">position-aware input</text>
+          <text x="790" y="102" text-anchor="middle" font-size="11.5" fill="#c7cbf0">meaning + order, ready for attention</text>
+        </svg>
+      </figure>
+      <p class="callout warn" style="margin-top:8px">&#128161; Without this, a transformer couldn&rsquo;t tell word order at all. Adding position is what lets a parallel, order-blind mechanism still understand sequence.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 11 — THE TRANSFORMER BLOCK ============ -->
+  <section class="slide" data-title="The transformer block"
+    data-note="Assemble the architecture. A transformer is a STACK of identical blocks. Each block has two main parts: (1) multi-head self-attention -- 'multi-head' means several attention computations run in parallel, each learning a different kind of relationship (one head tracks grammar, another tracks references, etc.), then they're combined; (2) a small feed-forward network (a Day-1 style MLP) applied to each position. Around each part: residual connections + layer-norm (helpers that make deep stacks trainable). Stack 12, 24, 96 of these and you have BERT/GPT. Don't over-explain the helpers; the headline is attention + feed-forward, repeated.">
+    <div class="kicker"><span class="dot"></span> Assembling the architecture</div>
+    <h2 class="title">The transformer block &mdash; attention + feed-forward, stacked</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 300" role="img" aria-label="A transformer block with multi-head attention and a feed-forward network, stacked N times">
+          <defs><marker id="t11x" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker></defs>
+          <!-- input -->
+          <rect x="60" y="130" width="120" height="50" rx="10" fill="#fff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="120" y="160" text-anchor="middle" font-size="12.5" font-weight="700" fill="#312e81">input tokens</text>
+          <path d="M180 155 L240 155" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#t11x)"/>
+          <!-- the block -->
+          <rect x="245" y="50" width="470" height="210" rx="14" fill="#f5f6fb" stroke="#4f46e5" stroke-width="2" stroke-dasharray="6 4"/>
+          <text x="480" y="74" text-anchor="middle" font-size="13" font-weight="700" fill="#5b5f7a">one transformer block (repeat N&times;)</text>
+          <rect x="280" y="95" width="180" height="120" rx="12" fill="#312e81" stroke="#06b6d4" stroke-width="2.5"/>
+          <text x="370" y="135" text-anchor="middle" font-size="13.5" font-weight="700" fill="#67e8f9">multi-head</text>
+          <text x="370" y="156" text-anchor="middle" font-size="13.5" font-weight="700" fill="#67e8f9">self-attention</text>
+          <text x="370" y="182" text-anchor="middle" font-size="10.5" fill="#a5b4fc">several heads, each</text>
+          <text x="370" y="197" text-anchor="middle" font-size="10.5" fill="#a5b4fc">a different relationship</text>
+          <path d="M460 155 L500 155" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#t11x)"/>
+          <rect x="505" y="95" width="180" height="120" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="2.5"/>
+          <text x="595" y="140" text-anchor="middle" font-size="13.5" font-weight="700" fill="#312e81">feed-forward</text>
+          <text x="595" y="161" text-anchor="middle" font-size="13.5" font-weight="700" fill="#312e81">network</text>
+          <text x="595" y="187" text-anchor="middle" font-size="10.5" fill="#5b5f7a">a small MLP (Day 1)</text>
+          <!-- stack arrow -->
+          <path d="M715 155 L775 155" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#t11x)"/>
+          <g text-anchor="middle">
+            <rect x="780" y="86" width="150" height="40" rx="8" fill="#c7d2fe" stroke="#4338ca"/><text x="855" y="111" font-size="12" font-weight="700" fill="#312e81">block 12</text>
+            <rect x="788" y="120" width="150" height="40" rx="8" fill="#a5b4fc" stroke="#4338ca"/><text x="863" y="145" font-size="12" font-weight="700" fill="#312e81">block ...</text>
+            <rect x="796" y="154" width="150" height="40" rx="8" fill="#818cf8" stroke="#4338ca"/><text x="871" y="179" font-size="12" font-weight="700" fill="#fff">block 1</text>
+          </g>
+          <text x="480" y="245" text-anchor="middle" font-size="11.5" fill="#5b5f7a">+ residual connections &amp; layer-norm around each part (make deep stacks trainable)</text>
+        </svg>
+        <figcaption>Stack <b>12, 24, or 96</b> of these blocks and you have <b>BERT</b> or <b>GPT</b>. The whole architecture is just this block, repeated, with attention doing the heavy lifting.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 12 — WHY IT SCALES ============ -->
+  <section class="slide" data-title="Why transformers scale"
+    data-note="Connect back to the RNN parallelism problem -- this is the commercial reason transformers won. Because attention processes all words simultaneously, you can throw a whole batch at a GPU and compute everything in parallel. That makes training on internet-scale text feasible -- and, crucially, transformers keep getting better as you add data, parameters and compute (the 'scaling laws' from Module 1). RNNs couldn't ride that wave; transformers could. This parallelism + scaling is why GPT-3/4-scale models exist at all.">
+    <div class="kicker"><span class="dot"></span> The reason they won</div>
+    <h2 class="title">Parallel by design &mdash; built to scale</h2>
+    <div class="body">
+      <table>
+        <thead><tr><th style="width:26%"></th><th>RNN / LSTM</th><th>Transformer</th></tr></thead>
+        <tbody>
+          <tr><td><b>Reads the sentence</b></td><td>One word at a time, in order</td><td><span class="yes">All words at once</span></td></tr>
+          <tr><td><b>Long-range links</b></td><td><span class="no">Fade with distance</span></td><td><span class="yes">Direct, any distance</span></td></tr>
+          <tr><td><b>Uses a GPU&rsquo;s cores</b></td><td><span class="no">Hard &mdash; must wait per step</span></td><td><span class="yes">Fully parallel</span></td></tr>
+          <tr><td><b>Trains on huge data</b></td><td>Slow, hard to scale</td><td><span class="yes">Feasible &mdash; rode the scaling wave</span></td></tr>
+          <tr><td><b>Gets better with size</b></td><td>Plateaus</td><td><span class="yes">Keeps improving (scaling laws)</span></td></tr>
+        </tbody>
+        <caption>Parallelism is the quiet superpower: it made training on internet-scale text possible &mdash; the precondition for GPT-3/4-scale models.</caption>
+      </table>
+      <p class="callout" style="margin-top:14px">&#128200; Remember Module 1&rsquo;s <b>scaling laws</b>? Transformers are the architecture that could actually <b>ride</b> them &mdash; more data + compute + parameters &rarr; reliably better.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 13 — ENCODER VS DECODER ============ -->
+  <section class="slide" data-title="Encoder vs decoder"
+    data-note="The practical split they'll meet in the labs and on Day 2's hands-on. The original transformer had an encoder (reads/understands a whole input, sees all words both directions) and a decoder (generates text left-to-right, each word seeing only the words before it). Two families grew from this: ENCODER-only = BERT -> great at UNDERSTANDING tasks (classification, sentiment, search) -- this is the BERT fine-tuning lab. DECODER-only = GPT -> great at GENERATING text -- this is the GPT text-generation lab. One sentence each; tie each to its lab.">
+    <div class="kicker"><span class="dot"></span> The family split &middot; BERT vs GPT</div>
+    <h2 class="title">Encoder vs decoder &mdash; understanding vs generating</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card blue"><h3>&#128218; Encoder &mdash; BERT-style</h3>
+          <p>Reads the <b>whole</b> input at once, each word seeing <b>both directions</b>. Builds deep understanding.</p>
+          <ul>
+            <li>Best at <b>understanding</b>: classification, <b>sentiment</b>, search, NER</li>
+            <li>Family: <b>BERT</b>, DistilBERT, RoBERTa</li>
+            <li>&rarr; Your <b>BERT sentiment fine-tuning</b> lab (Module 4)</li>
+          </ul>
+        </div>
+        <div class="card gold"><h3>&#9999;&#65039; Decoder &mdash; GPT-style</h3>
+          <p>Generates text <b>left to right</b>, each new word seeing only the words <b>before</b> it. Predicts the next token.</p>
+          <ul>
+            <li>Best at <b>generating</b>: writing, chat, code, summarisation</li>
+            <li>Family: <b>GPT</b>, Llama, Mistral, Gemma</li>
+            <li>&rarr; Your <b>GPT text-generation</b> lab (Module 3)</li>
+          </ul>
+        </div>
+      </div>
+      <p class="callout" style="margin-top:14px">&#129504; Same building block, two uses. <b>Encoders understand</b> (is this review positive?); <b>decoders generate</b> (write the reply). LLMs &amp; agents are mostly <b>decoders</b>; many classifiers are <b>encoders</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 14 — THE MODEL LANDSCAPE ============ -->
+  <section class="slide" data-title="The model landscape"
+    data-note="Orient them in the zoo of names they'll see on Hugging Face. Quick tour: BERT family (encoders, understanding); GPT/Llama/Mistral (decoders, generation); T5/BART (encoder-decoder, translation/summarisation). Emphasise: they don't memorise this -- the point is to recognise 'oh, that's an encoder, it's for classification' vs 'that's a decoder, it generates'. And almost all of them are downloadable, often free, from the Hugging Face Hub -- which is exactly what Module 4 is about. This sets up the afternoon.">
+    <div class="kicker"><span class="dot"></span> The zoo, organised</div>
+    <h2 class="title">The transformer landscape</h2>
+    <div class="body">
+      <table>
+        <thead><tr><th style="width:20%">Type</th><th style="width:26%">Examples</th><th>Good at</th></tr></thead>
+        <tbody>
+          <tr><td><b>Encoder-only</b><br><span class="small">(understands)</span></td><td>BERT, DistilBERT, RoBERTa</td><td>Classification, sentiment, search, extracting answers &mdash; <b>understanding</b> a given text</td></tr>
+          <tr><td><b>Decoder-only</b><br><span class="small">(generates)</span></td><td>GPT, Llama, Mistral, Gemma</td><td>Writing, chat, code, summarising &mdash; <b>generating</b> new text. The basis of LLMs &amp; agents</td></tr>
+          <tr><td><b>Encoder-decoder</b><br><span class="small">(transforms)</span></td><td>T5, BART, mT5</td><td>Translation, summarisation &mdash; map one sequence to another</td></tr>
+        </tbody>
+        <caption>You won&rsquo;t memorise these &mdash; just recognise the <b>shape</b>: encoder = understand, decoder = generate.</caption>
+      </table>
+      <p class="callout warn" style="margin-top:14px">&#129303; Nearly all of these are <b>downloadable &mdash; often free &mdash; from the Hugging Face Hub</b>. Standing on these <b>pre-trained</b> giants is exactly what <b>Module 4</b> (this afternoon) is about.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 15 — CODE PEEK ============ -->
+  <section class="slide" data-title="A transformer in a few lines"
+    data-note="The payoff: you don't build a transformer from scratch -- you load one. Show how little code it takes with Hugging Face. Left: a decoder (GPT-style) generating text in 3 lines via a pipeline. Right: an encoder (BERT-style) classifying sentiment in 3 lines. Point out: the pipeline hides tokenization + the model + decoding. This is exactly what the labs do -- on small, free, local models so no API key is needed (the OpenAI GPT API is the same idea, just a paid hosted decoder). Reassure: runnable on a laptop CPU.">
+    <div class="kicker"><span class="dot"></span> You load one &mdash; you don&rsquo;t build it</div>
+    <h2 class="title">A transformer in a few lines (Hugging Face)</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="terminal">
+<span class="com"># DECODER (GPT-style) -- generate text</span>
+<span class="kw">from</span> transformers <span class="kw">import</span> pipeline
+
+gen = <span class="fn">pipeline</span>(<span class="str">"text-generation"</span>,
+              model=<span class="str">"distilgpt2"</span>)
+out = <span class="fn">gen</span>(<span class="str">"Agentic AI is"</span>,
+          max_new_tokens=<span class="str">20</span>)
+<span class="out"># "Agentic AI is a way to let models</span>
+<span class="out">#  take actions toward a goal ..."</span>
+        </div>
+        <div class="terminal">
+<span class="com"># ENCODER (BERT-style) -- understand text</span>
+<span class="kw">from</span> transformers <span class="kw">import</span> pipeline
+
+clf = <span class="fn">pipeline</span>(<span class="str">"sentiment-analysis"</span>)
+clf(<span class="str">"This workshop is fantastic!"</span>)
+<span class="out"># [{'label': 'POSITIVE',</span>
+<span class="out">#   'score': 0.9998}]</span>
+        </div>
+      </div>
+      <p class="callout" style="margin-top:14px">&#128073; A <span class="mono">pipeline</span> hides tokenization + the model + decoding. Your labs run these on <b>small, free, local</b> models &mdash; <b>no API key</b>. The OpenAI GPT API is the same idea, just a paid, hosted decoder.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 16 — CONNECT TO LABS ============ -->
+  <section class="slide" data-title="This connects to your labs"
+    data-note="Hand off to the keyboards. Module 3's 12 labs let them touch every idea from this deck: tokenization with a real tokenizer, word embeddings and cosine similarity, self-attention coded by hand in NumPy (Q.Kt -> softmax -> V), positional encoding, visualising an attention matrix, and finally generating text with a small local transformer. Encourage: the attention-by-hand lab is the 'aha' -- you'll implement the exact recipe from slide 7. Then Module 4 this afternoon goes to pre-trained models and fine-tuning BERT.">
+    <div class="kicker"><span class="dot"></span> From slides to keyboards</div>
+    <h2 class="title">Now build it &mdash; Module 3 labs</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card"><h3>You&rsquo;ll touch every idea here</h3>
+          <ul>
+            <li><b>Tokenization</b> &mdash; whitespace, then a real HF tokenizer</li>
+            <li><b>Embeddings</b> &amp; cosine similarity (geometry of meaning)</li>
+            <li><b>Self-attention by hand</b> &mdash; Q&middot;K&#7488; &rarr; softmax &rarr; V in NumPy</li>
+            <li><b>Positional encoding</b> &amp; visualising an attention matrix</li>
+          </ul>
+        </div>
+        <div class="card cyan"><h3>&hellip;up to generating text</h3>
+          <ul>
+            <li>Run a <b>small local transformer</b> (distilgpt2) to generate text</li>
+            <li>Fill-mask &amp; feature-extraction pipelines</li>
+            <li>Capstone: <b>tokenize &rarr; embed &rarr; attention &rarr; generate</b></li>
+            <li><span class="small">Optional, guarded: bring your own OpenAI/Groq key</span></li>
+          </ul>
+        </div>
+      </div>
+      <p class="callout warn" style="margin-top:16px">&#128218; Open <b><a href="../hands-on/module-3/index.html">Module 3&rsquo;s 12 hands-on labs</a></b> &mdash; 6 beginner, 3 intermediate, 3 advanced. The <b>attention-by-hand</b> lab implements the exact recipe from slide 7.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 17 — KEY TAKEAWAYS ============ -->
+  <section class="slide dark" data-title="Key takeaways"
+    data-note="Recap crisply, then questions. Five points. If time allows, ask: 'in one sentence, what does attention do?' -- you want 'lets every word look at every other word and weigh what's relevant'. That one line is the module. Then move to the lab or Module 4.">
+    <div class="kicker"><span class="dot"></span> Recap</div>
+    <h2 class="title">Five things to carry forward</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card"><h3>1 &middot; Language is a sequence</h3><p>Order &amp; far-apart context matter &mdash; plain nets &amp; RNNs struggled with both.</p></div>
+        <div class="card cyan"><h3>2 &middot; Attention is the idea</h3><p>Every word looks at every other word and <b>weighs</b> what&rsquo;s relevant &mdash; no fading, all at once.</p></div>
+        <div class="card"><h3>3 &middot; Q / K / V</h3><p>Self-attention = match a <b>Query</b> to <b>Keys</b>, blend the <b>Values</b> by the resulting weights.</p></div>
+        <div class="card"><h3>4 &middot; Parallel = scalable</h3><p>Seeing all words at once unlocked GPU-scale training &mdash; the reason LLMs exist.</p></div>
+        <div class="card gold" style="grid-column:1/-1"><h3>5 &middot; Encoder vs decoder</h3><p><b>BERT</b> understands (classify, sentiment); <b>GPT</b> generates (write, chat). Same block, two uses &mdash; both pre-trained &amp; downloadable (Module 4).</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 18 — REFERENCES ============ -->
+  <section class="slide" data-title="References &amp; further study"
+    data-note="Point to the best resources. Two standouts: Jay Alammar's 'Illustrated Transformer' is the single best visual explainer of attention -- send everyone there. And the original 'Attention Is All You Need' paper if anyone wants the source. The 3Blue1Brown attention video is excellent for intuition. The Hugging Face course is the doorway to the labs. All links live in the HTML.">
+    <div class="kicker"><span class="dot"></span> Go deeper &middot; curated, mostly free</div>
+    <h2 class="title">References &amp; further study</h2>
+    <div class="body">
+      <ul class="refs">
+        <li><a href="https://jalammar.github.io/illustrated-transformer/" target="_blank" rel="noopener">The Illustrated Transformer</a><span class="d">Jay Alammar&rsquo;s visual masterclass on attention &mdash; the best place to start.</span></li>
+        <li><a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener">&ldquo;Attention Is All You Need&rdquo; (2017)</a><span class="d">The original paper that introduced the transformer.</span></li>
+        <li><a href="https://www.youtube.com/watch?v=eMlx5fFNoYc" target="_blank" rel="noopener">3Blue1Brown &mdash; Attention in transformers</a><span class="d">Visual intuition for what attention computes, and why.</span></li>
+        <li><a href="https://huggingface.co/learn/nlp-course/chapter1/1" target="_blank" rel="noopener">Hugging Face NLP Course</a><span class="d">Free, hands-on tour of transformers &amp; the Hub &mdash; the doorway to your labs.</span></li>
+        <li><a href="https://nlp.seas.harvard.edu/annotated-transformer/" target="_blank" rel="noopener">The Annotated Transformer (Harvard)</a><span class="d">The paper re-implemented line by line in PyTorch.</span></li>
+        <li><a href="https://jalammar.github.io/illustrated-gpt2/" target="_blank" rel="noopener">The Illustrated GPT-2</a><span class="d">How a decoder-style model generates text, visually.</span></li>
+        <li><a href="https://lilianweng.github.io/posts/2018-06-24-attention/" target="_blank" rel="noopener">Lilian Weng &mdash; Attention? Attention!</a><span class="d">A rigorous but readable deep-dive on attention mechanisms.</span></li>
+        <li><a href="https://bbycroft.net/llm" target="_blank" rel="noopener">LLM Visualization (bbycroft)</a><span class="d">A 3D walkthrough of a GPT computing, token by token.</span></li>
+      </ul>
+      <p class="small" style="margin-top:12px">All links open in a new tab. The curious should read <b>The Illustrated Transformer</b> before the labs.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 19 — CLOSING ============ -->
+  <section class="slide title-slide" data-title="What's next"
+    data-note="Close warm and bridge to Module 4. We now understand the architecture behind every LLM -- attention, self-attention, the transformer block, encoder vs decoder. But we won't train one from scratch (that costs millions). The practitioner's move is to stand on PRE-TRAINED models and adapt them -- which is exactly Module 4 this afternoon: the Hugging Face hub, prompting vs fine-tuning, and fine-tuning BERT for sentiment. End on: you understand the engine of language AI -- next, you put it to work.">
+    <div class="body center">
+      <div class="kicker"><span class="dot"></span> End of Module 3</div>
+      <h1>You understand the <span class="accent">architecture</span>.</h1>
+      <p class="subtitle">Attention, self-attention, the transformer block &mdash; the backbone of every LLM. Next: stand on <b>pre-trained</b> ones and adapt them.</p>
+      <div class="rule"></div>
+      <div class="title-meta">
+        <span class="pill gold">Next: <a href="day2-module4-pretrained-models-and-fine-tuning.html" style="color:#1e1b4b;text-decoration:underline">Module 4 &mdash; Pre-trained Models &amp; Fine-tuning</a></span>
+        <span class="pill green">Now: <a href="../hands-on/module-3/index.html" style="color:#fff;text-decoration:underline">Module 3 labs (12)</a></span>
+      </div>
+      <p class="trainer" style="margin-top:22px"><b>Rajesh Gheware</b> &middot;
+        <a href="day1-module2-introduction-to-deep-learning.html">&#8592; Module 2 deck</a> &middot;
+        <a href="../course-outline-building-intelligent-ai-agents.html">Course outline</a> &middot;
+        <a href="https://devops.gheware.com" target="_blank" rel="noopener">devops.gheware.com</a>
+      </p>
+    </div>
+  </section>
+
+</div><!-- /deck -->
+
+<!-- ===== Overview (O / ESC) ===== -->
+<div id="overview">
+  <h3>Module 3 &mdash; jump to a slide</h3>
+  <p class="ovsub">Press O or ESC again to close &middot; click any slide</p>
+  <div class="ovgrid" id="ovgrid"></div>
+</div>
+
+<!-- ===== Presenter notes (N) ===== -->
+<div id="notes"><span class="tag">Presenter note &middot; press N to hide</span><span id="noteText"></span></div>
+
+<!-- ===== Chrome ===== -->
+<div id="counter">1 / 19</div>
+<div class="hint">&larr; &rarr; / Space to navigate &middot; <b>N</b> notes &middot; <b>O</b>/Esc overview &middot; <b>F</b> fullscreen</div>
+<div class="nav">
+  <button id="prev" title="Previous (←)" aria-label="Previous slide">&#8249;</button>
+  <button id="next" title="Next (→)" aria-label="Next slide">&#8250;</button>
+</div>
+<div class="footer">
+  <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
+  <span>Day 2 · Module 3 — Why Transformers?</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.0</span>
+</div>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var total = slides.length;
+  var i = 0;
+  var counter = document.getElementById('counter');
+  var noteText = document.getElementById('noteText');
+  var progress = document.getElementById('progress');
+  var prevBtn = document.getElementById('prev');
+  var nextBtn = document.getElementById('next');
+
+  function render(){
+    slides.forEach(function(s,idx){ s.classList.toggle('active', idx===i); });
+    counter.textContent = (i+1)+' / '+total;
+    progress.style.width = ((i)/(total-1)*100)+'%';
+    noteText.textContent = ' ' + (slides[i].getAttribute('data-note')||'—');
+    prevBtn.disabled = (i===0);
+    nextBtn.disabled = (i===total-1);
+    if (location.hash !== '#'+(i+1)) history.replaceState(null,'','#'+(i+1));
+    slides[i].scrollTop = 0;
+  }
+  function go(n){ i = Math.max(0, Math.min(total-1, n)); render(); }
+  function next(){ go(i+1); }
+  function prev(){ go(i-1); }
+
+  nextBtn.addEventListener('click', next);
+  prevBtn.addEventListener('click', prev);
+
+  document.addEventListener('keydown', function(e){
+    if (e.key==='ArrowRight' || e.key==='PageDown' || e.key===' '){ e.preventDefault(); next(); }
+    else if (e.key==='ArrowLeft' || e.key==='PageUp'){ e.preventDefault(); prev(); }
+    else if (e.key==='Home'){ e.preventDefault(); go(0); }
+    else if (e.key==='End'){ e.preventDefault(); go(total-1); }
+    else if (e.key==='n' || e.key==='N'){ document.body.classList.toggle('show-notes'); }
+    else if (e.key==='o' || e.key==='O'){ document.body.classList.toggle('show-overview'); }
+    else if (e.key==='Escape'){ document.body.classList.toggle('show-overview'); }
+    else if (e.key==='f' || e.key==='F'){
+      if (!document.fullscreenElement){ document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); }
+      else { document.exitFullscreen && document.exitFullscreen(); }
+    }
+  });
+
+  // build overview
+  var ov = document.getElementById('ovgrid');
+  slides.forEach(function(s,idx){
+    var c = document.createElement('div');
+    c.className='ovcard';
+    c.innerHTML = '<div class="num">'+(idx+1).toString().padStart(2,'0')+'</div><div class="ttl">'+(s.getAttribute('data-title')||('Slide '+(idx+1)))+'</div>';
+    c.addEventListener('click', function(){ go(idx); document.body.classList.remove('show-overview'); });
+    ov.appendChild(c);
+  });
+
+  // swipe (touch)
+  var x0=null;
+  document.addEventListener('touchstart',function(e){ x0=e.touches[0].clientX; },{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(x0===null) return; var dx=e.changedTouches[0].clientX-x0;
+    if(Math.abs(dx)>50){ dx<0?next():prev(); } x0=null;
+  });
+
+  // deep link
+  var start = parseInt((location.hash||'').replace('#',''),10);
+  if(start>=1 && start<=total) i=start-1;
+  render();
+})();
+</script>
+</body>
+</html>
