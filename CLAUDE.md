@@ -16,12 +16,12 @@ autonomous, industry-ready AI agents.*
   Python recommended but not mandatory.
 - **Audience:** developers, data/automation professionals, technical leads/architects moving
   into agentic AI.
-- **Stage:** early build &mdash; **Day 1 complete** (Modules 1 &amp; 2). Deliverables so far:
-  `course-outline-building-intelligent-ai-agents.html` (landing/outline);
-  `presentation/day1-module1-understanding-ai-and-its-evolution.html` (22 slides) and
-  `presentation/day1-module2-introduction-to-deep-learning.html` (20 slides); and
-  `hands-on/module-1/` + `hands-on/module-2/` (12 labs each + `index.html` + `solutions/`).
-  Remaining Modules 3&ndash;10 decks and their labs are not built yet.
+- **Stage:** early build &mdash; **Days 1 &amp; 2 complete** (Modules 1&ndash;4). Decks:
+  `presentation/day1-module1-...` (22 slides), `day1-module2-...` (20), `day2-module3-why-transformers...`
+  (19), `day2-module4-pretrained-models-and-fine-tuning...` (20). Labs: `hands-on/module-1/` &hellip;
+  `module-4/` (12 labs each + `index.html` + `solutions/` + `_generators/`). Outline cross-links all of
+  them (Slides + 12 Labs badges per module; Day-1 &amp; Day-2 labs boxes summarise the sets).
+  Remaining Modules 5&ndash;10 decks and their labs are not built yet.
 
 ## Hands-on labs (the convention that's now established)
 
@@ -48,6 +48,19 @@ autonomous, industry-ready AI agents.*
   no downloads; each Advanced lab adds an **optional, non-graded Hugging Face cell** (`transformers`+`torch`,
   tiny models `bert-tiny`/`tiny-gpt2`) that degrades gracefully if absent. The client's "GPT API text
   generation" is reframed as a runnable local-generation lab + an optional guarded OpenAI/Groq key cell.
+- **Module 4 has 12 labs** (`hands-on/module-4/lab-01..12-*.ipynb`, prefix `/tmp/biaa-lab-04-NN/`):
+  6 Beginner, 3 Intermediate, 3 Advanced &mdash; using a pretrained model, softmax confidence,
+  prompt/fine-tune/RAG, model inputs (ids/mask/padding), dataset prep, train/val split (Beginner);
+  frozen features + trainable head, precision/recall/confusion, data-efficiency curve (Intermediate);
+  **fine-tune a sentiment classifier** (before vs after), tune &amp; evaluate (regularisation +
+  confusion matrix), and a capstone adapting a model to a NEW task (Advanced). ~340 min.
+  **Framework choice:** same as Module 3 &mdash; every GRADED cell is offline (scikit-learn transfer
+  learning: frozen TF-IDF features + a trainable head, the portable form of fine-tuning); each Advanced
+  lab adds an **optional, non-graded Hugging Face cell** that fine-tunes/uses a real `bert-tiny`. The
+  client's "fine-tune BERT for sentiment" is the offline-graded core + the optional real-bert cell.
+  (Real bert-tiny did not load on the bleeding-edge verify venv &mdash; transformers 5.x / torch 2.12
+  tokenizer-backend issue &mdash; so the offline path is what guarantees verification; the optional cell
+  targets the managed sandbox.)
 - **Every notebook follows:** Concept &rarr; Demo (runnable) &rarr; Your Turn (`___` blanks) &rarr;
   auto-grader cell printing `[PASS]`/`[FAIL]`/`[TODO]` + `Score: n/total`. Grader helpers are
   `expect(label, got, want)` and `expect_true(label, fn)`; blanks/exceptions register as `[TODO]`.
@@ -59,9 +72,11 @@ autonomous, industry-ready AI agents.*
   no args), `README.md`. Blanks use the `{"s":..,"a":..}` student/answer convention; `_meta.json`
   is written beside the generators (not in the labs dir, and gitignored). Verified: `regenerate.sh`
   reproduces the committed files byte-identically. Edit the generators, never the JSON.
-- **Verification done (both modules):** all 24 solution notebooks were executed with `nbconvert`
-  and reach a full `Score`; all 24 student notebooks run top-to-bottom without uncaught errors
-  (blanks land as `[TODO]`). Module 2's Keras labs were verified against real MNIST. Re-verify the
+- **Verification done (Modules 1&ndash;4):** all 48 solution notebooks were executed with `nbconvert`
+  and reach a full `Score`; all 48 student notebooks run top-to-bottom without uncaught errors
+  (blanks land as `[TODO]`); each module's `regenerate.sh` reproduces its files byte-identically.
+  Module 2's Keras labs were verified against real MNIST. Modules 3&ndash;4 graded cells are offline
+  (numpy/sklearn) so they verify with just `numpy scikit-learn matplotlib nbconvert`. Re-verify the
   same way after any edit (Module 2 advanced labs need `tensorflow-cpu` and train real nets, so
   execution is slower).
 - **Deck framework:** single self-contained HTML, custom slide engine (NOT Reveal.js) ported
