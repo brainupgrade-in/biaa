@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Day 2 &middot; Module 3 &mdash; Hands-on Labs</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:#f5f6fb; color:#1e1f33; font-size:14px; line-height:1.45; }
+    a { color:#4f46e5; }
+    header { background:linear-gradient(135deg,#1e1b4b 0%,#312e81 100%); color:#fff; padding:24px 20px; text-align:center; border-bottom:3px solid #06b6d4; }
+    header h1 { margin:0; font-size:1.6em; }
+    header .tagline { margin-top:6px; color:#a5b4fc; font-weight:600; }
+    header .meta { margin-top:10px; color:#cbd0e8; font-size:.9em; }
+    header .meta span { margin:0 7px; }
+    header .meta .k { color:#67e8f9; font-weight:600; }
+    .home { position:absolute; top:14px; right:18px; font-size:.78rem; background:rgba(255,255,255,.92); border:1px solid #d8dcf0; color:#312e81; padding:5px 12px; border-radius:14px; text-decoration:none; font-weight:600; }
+    .container { max-width:1080px; margin:16px auto; background:#fff; padding:18px 26px 28px; box-shadow:0 0 10px rgba(0,0,0,.08); }
+    .callout { background:#eef2ff; border:1px solid #a5b4fc; border-left:4px solid #4f46e5; border-radius:6px; padding:12px 16px; font-size:.92em; margin:14px 0; }
+    .callout.warn { background:#fffbeb; border-color:#f59e0b; border-left-color:#f59e0b; }
+    .callout code { background:#e0e7ff; padding:1px 5px; border-radius:4px; font-size:.92em; }
+    h2 { display:flex; align-items:center; gap:10px; font-size:1.2em; color:#312e81; border-bottom:2px solid #06b6d4; padding-bottom:6px; margin:22px 0 14px; }
+    h2 .scount { font-size:.6em; color:#5b5f7a; font-weight:500; margin-left:auto; }
+    .dot { width:12px; height:12px; border-radius:50%; display:inline-block; }
+    .dot.beg { background:#059669; } .dot.int { background:#f59e0b; } .dot.adv { background:#dc2626; }
+    .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+    @media(max-width:860px) { .grid { grid-template-columns:1fr; } }
+    .lab { border:1px solid #e2e5f3; border-top:4px solid #4f46e5; border-radius:8px; padding:12px 14px; display:flex; flex-direction:column; background:#fcfcff; }
+    .lab.beg { border-top-color:#059669; } .lab.int { border-top-color:#f59e0b; } .lab.adv { border-top-color:#dc2626; }
+    .lab-top { display:flex; justify-content:space-between; align-items:center; }
+    .lab .num { font-weight:700; color:#312e81; font-size:.82em; letter-spacing:.02em; }
+    .lab .time { font-size:.74em; color:#5b5f7a; }
+    .lab h4 { margin:6px 0 4px; font-size:1em; color:#1e1b4b; line-height:1.25; }
+    .lab p { margin:0 0 8px; font-size:.86em; color:#3a3c57; flex:1; }
+    .chips { margin-bottom:10px; }
+    .chip { display:inline-block; background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe; border-radius:10px; font-size:.68em; padding:1px 8px; margin:0 4px 4px 0; }
+    .links { display:flex; gap:8px; }
+    .links a { text-decoration:none; font-size:.8em; font-weight:600; padding:5px 10px; border-radius:6px; }
+    .links .open { background:#4f46e5; color:#fff; flex:1; text-align:center; }
+    .links .open:hover { background:#4338ca; }
+    .links .sol { background:#fff; color:#5b5f7a; border:1px solid #d8dcf0; }
+    .links .sol:hover { border-color:#a5b4fc; color:#4f46e5; }
+    footer { background:#1e1b4b; color:#fff; text-align:center; padding:16px; font-size:.85em; margin-top:8px; }
+    footer a { color:#a5b4fc; text-decoration:none; }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="home" href="../../course-outline-building-intelligent-ai-agents.html">&#8962; Course outline</a>
+    <h1>Day 2 &middot; Module 3 &mdash; Hands-on Labs</h1>
+    <div class="tagline">Why Transformers? &mdash; tokenize, embed, attend &amp; generate</div>
+    <div class="meta">
+      <span class="k">12 labs</span> |
+      <span>6 Beginner &middot; 3 Intermediate &middot; 3 Advanced</span> |
+      <span class="k">~6h 15m total</span> |
+      <span>Experiential: concept &rarr; demo &rarr; practice</span>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="callout">
+      <strong>How these labs work.</strong> Each notebook follows the same rhythm &mdash; read the
+      <strong>Concept</strong>, run the <strong>Demo</strong>, then complete <strong>Your Turn</strong> by
+      replacing every <code>___</code> placeholder. Run the <strong>grader</strong> cell at the bottom: it
+      prints <code>[PASS]</code> / <code>[FAIL]</code> / <code>[TODO]</code> and a final <code>Score</code>.
+      Each lab writes to its own <code>/tmp/biaa-lab-03-NN/</code> working dir. Stuck? Every lab has a full
+      answer key under <a href="solutions/"><code>solutions/</code></a> &mdash; try first, then check.
+    </div>
+    <div class="callout warn">
+      <strong>Setup (once).</strong> Python 3.10+ with: <code>pip install numpy scikit-learn matplotlib</code>.
+      Every graded step runs <strong>offline</strong> on NumPy / scikit-learn &mdash; no API keys, no model
+      downloads. Each Advanced lab also ends with an <em>optional</em>, non-graded
+      <strong>Hugging Face</strong> cell (<code>pip install transformers torch</code>) that runs a real tiny
+      transformer (e.g. <code>bert-tiny</code>, <code>tiny-gpt2</code>) so you can see the production tool;
+      it skips cleanly if transformers is not installed. In the managed lab sandbox everything is pre-installed.
+    </div>
+
+    <section>
+      <h2><span class="dot beg"></span>Beginner <span class="scount">6 labs &middot; ~140 min</span></h2>
+      <div class="grid">
+      <div class="lab beg">
+        <div class="lab-top">
+          <span class="num">Lab 3.1</span>
+          <span class="time">&#9201; 20 min</span>
+        </div>
+        <h4>Tokenization: Turning Text into Tokens</h4>
+        <p>Split raw text into tokens, build a vocabulary, and encode tokens to integer IDs -- step one for every transformer.</p>
+        <div class="chips"><span class="chip">Tokenization</span><span class="chip">Vocabulary</span><span class="chip">Encoding to IDs</span></div>
+        <div class="links">
+          <a class="open" href="lab-01-tokenization.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-01-tokenization.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab beg">
+        <div class="lab-top">
+          <span class="num">Lab 3.2</span>
+          <span class="time">&#9201; 20 min</span>
+        </div>
+        <h4>Word Embeddings & Cosine Similarity</h4>
+        <p>Represent words as vectors and measure how similar two words are with cosine similarity.</p>
+        <div class="chips"><span class="chip">Embeddings</span><span class="chip">Cosine similarity</span><span class="chip">Semantic distance</span></div>
+        <div class="links">
+          <a class="open" href="lab-02-embeddings-cosine.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-02-embeddings-cosine.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab beg">
+        <div class="lab-top">
+          <span class="num">Lab 3.3</span>
+          <span class="time">&#9201; 25 min</span>
+        </div>
+        <h4>Self-Attention by Hand</h4>
+        <p>Implement scaled dot-product attention in NumPy -- the single idea at the heart of every transformer.</p>
+        <div class="chips"><span class="chip">Query/Key/Value</span><span class="chip">Softmax</span><span class="chip">Scaled dot-product attention</span></div>
+        <div class="links">
+          <a class="open" href="lab-03-attention-by-hand.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-03-attention-by-hand.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab beg">
+        <div class="lab-top">
+          <span class="num">Lab 3.4</span>
+          <span class="time">&#9201; 25 min</span>
+        </div>
+        <h4>Positional Encoding</h4>
+        <p>Give a transformer a sense of word order with sinusoidal positional encodings.</p>
+        <div class="chips"><span class="chip">Word order</span><span class="chip">Sinusoidal encoding</span><span class="chip">Position vectors</span></div>
+        <div class="links">
+          <a class="open" href="lab-04-positional-encoding.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-04-positional-encoding.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab beg">
+        <div class="lab-top">
+          <span class="num">Lab 3.5</span>
+          <span class="time">&#9201; 25 min</span>
+        </div>
+        <h4>What a Pretrained Model Knows: Fill-in-the-Blank</h4>
+        <p>Predict a masked word from its context with a tiny language model -- the idea BERT is pretrained on.</p>
+        <div class="chips"><span class="chip">Masked language modelling</span><span class="chip">Context prediction</span><span class="chip">Bigram model</span></div>
+        <div class="links">
+          <a class="open" href="lab-05-fill-mask.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-05-fill-mask.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab beg">
+        <div class="lab-top">
+          <span class="num">Lab 3.6</span>
+          <span class="time">&#9201; 25 min</span>
+        </div>
+        <h4>Why Subwords? A Greedy Subword Tokenizer</h4>
+        <p>Build a greedy subword tokenizer and see how it handles words a word-level vocabulary would miss.</p>
+        <div class="chips"><span class="chip">Subword tokenization</span><span class="chip">Out-of-vocabulary</span><span class="chip">Greedy matching</span></div>
+        <div class="links">
+          <a class="open" href="lab-06-subword-tokenizer.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-06-subword-tokenizer.ipynb">Solution</a>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <section>
+      <h2><span class="dot int"></span>Intermediate <span class="scount">3 labs &middot; ~110 min</span></h2>
+      <div class="grid">
+      <div class="lab int">
+        <div class="lab-top">
+          <span class="num">Lab 3.7</span>
+          <span class="time">&#9201; 35 min</span>
+        </div>
+        <h4>Semantic Search with Embeddings</h4>
+        <p>Turn a small corpus into vectors and rank documents by similarity to a query -- the core of search and RAG.</p>
+        <div class="chips"><span class="chip">TF-IDF embeddings</span><span class="chip">Cosine ranking</span><span class="chip">Top-k retrieval</span></div>
+        <div class="links">
+          <a class="open" href="lab-07-semantic-search.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-07-semantic-search.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab int">
+        <div class="lab-top">
+          <span class="num">Lab 3.8</span>
+          <span class="time">&#9201; 40 min</span>
+        </div>
+        <h4>Self-Attention Over a Sequence</h4>
+        <p>Project a sequence into Q/K/V and run self-attention over every position, checking the shapes at each step.</p>
+        <div class="chips"><span class="chip">Q/K/V projections</span><span class="chip">Attention matrix</span><span class="chip">Shape discipline</span></div>
+        <div class="links">
+          <a class="open" href="lab-08-self-attention-sequence.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-08-self-attention-sequence.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab int">
+        <div class="lab-top">
+          <span class="num">Lab 3.9</span>
+          <span class="time">&#9201; 35 min</span>
+        </div>
+        <h4>Visualising an Attention Matrix</h4>
+        <p>Compute and plot the attention weights for a short sentence to see which words attend to which.</p>
+        <div class="chips"><span class="chip">Attention weights</span><span class="chip">Heatmap</span><span class="chip">Interpretability</span></div>
+        <div class="links">
+          <a class="open" href="lab-09-attention-heatmap.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-09-attention-heatmap.ipynb">Solution</a>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <section>
+      <h2><span class="dot adv"></span>Advanced <span class="scount">3 labs &middot; ~125 min</span></h2>
+      <div class="grid">
+      <div class="lab adv">
+        <div class="lab-top">
+          <span class="num">Lab 3.10</span>
+          <span class="time">&#9201; 40 min</span>
+        </div>
+        <h4>Text Generation: Greedy vs Sampling</h4>
+        <p>Generate text by predicting the next token -- with greedy decoding and temperature sampling -- the way GPT works.</p>
+        <div class="chips"><span class="chip">Next-token prediction</span><span class="chip">Greedy decoding</span><span class="chip">Temperature sampling</span></div>
+        <div class="links">
+          <a class="open" href="lab-10-text-generation.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-10-text-generation.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab adv">
+        <div class="lab-top">
+          <span class="num">Lab 3.11</span>
+          <span class="time">&#9201; 40 min</span>
+        </div>
+        <h4>Feature Extraction + a Classifier Head</h4>
+        <p>Use a model as a feature extractor, then train a small classifier head on top -- the essence of transfer learning.</p>
+        <div class="chips"><span class="chip">Feature extraction</span><span class="chip">Classifier head</span><span class="chip">Transfer learning</span></div>
+        <div class="links">
+          <a class="open" href="lab-11-feature-extraction-head.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-11-feature-extraction-head.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab adv">
+        <div class="lab-top">
+          <span class="num">Lab 3.12</span>
+          <span class="time">&#9201; 45 min</span>
+        </div>
+        <h4>Capstone: A Mini Transformer Pipeline</h4>
+        <p>Assemble the whole Module-3 toolkit -- tokenize, embed, add positions, self-attend, pool -- into one pipeline.</p>
+        <div class="chips"><span class="chip">End-to-end pipeline</span><span class="chip">Self-attention</span><span class="chip">Sequence pooling</span></div>
+        <div class="links">
+          <a class="open" href="lab-12-capstone-mini-transformer.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-12-capstone-mini-transformer.ipynb">Solution</a>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <div class="callout" style="margin-top:22px">
+      &#128218; <strong>Reference material:</strong>
+      <a href="../../presentation/day2-module3-why-transformers.html">Module 3 slides &mdash; Why Transformers?</a>
+      &middot; <a href="../../course-outline-building-intelligent-ai-agents.html">Full course outline</a>
+      &middot; <a href="../module-4/index.html">Module 4 labs</a>.
+      The slides&rsquo; final <em>References &amp; further study</em> slide lists curated resources (the Illustrated Transformer, &ldquo;Attention Is All You Need&rdquo;, the Hugging Face course &amp; more).
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2026 Gheware DevOps &amp; Agentic AI |
+    <a href="https://devops.gheware.com">devops.gheware.com</a> |
+    Trainer: Rajesh Gheware |
+    Building Intelligent AI Agents &middot; Day 2 Module 3 Labs v1.0
+  </footer>
+</body>
+</html>

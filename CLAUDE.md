@@ -39,6 +39,15 @@ autonomous, industry-ready AI agents.*
   `tensorflow-cpu` + `keras.datasets.mnist`**; the shared `load_image_data()` helper falls back to
   offline `load_digits` (8x8) if MNIST can't download, so they run with or without network
   (verified on Python 3.13 with tensorflow-cpu 2.21 / keras 3.14).
+- **Module 3 has 12 labs** (`hands-on/module-3/lab-01..12-*.ipynb`, prefix `/tmp/biaa-lab-03-NN/`):
+  6 Beginner, 3 Intermediate, 3 Advanced &mdash; tokenization, embeddings/cosine, attention-by-hand,
+  positional encoding, fill-mask (bigram), subword tokenizer (Beginner); semantic search (TF-IDF),
+  self-attention over a sequence, attention heatmap (Intermediate); text generation (greedy/temperature),
+  feature-extraction + classifier head, and a mini-transformer-pipeline capstone (Advanced). ~375 min.
+  **Framework choice:** every GRADED cell is **offline (NumPy/scikit-learn/matplotlib)** &mdash; no keys,
+  no downloads; each Advanced lab adds an **optional, non-graded Hugging Face cell** (`transformers`+`torch`,
+  tiny models `bert-tiny`/`tiny-gpt2`) that degrades gracefully if absent. The client's "GPT API text
+  generation" is reframed as a runnable local-generation lab + an optional guarded OpenAI/Groq key cell.
 - **Every notebook follows:** Concept &rarr; Demo (runnable) &rarr; Your Turn (`___` blanks) &rarr;
   auto-grader cell printing `[PASS]`/`[FAIL]`/`[TODO]` + `Score: n/total`. Grader helpers are
   `expect(label, got, want)` and `expect_true(label, fn)`; blanks/exceptions register as `[TODO]`.
