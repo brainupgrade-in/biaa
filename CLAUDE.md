@@ -16,12 +16,14 @@ autonomous, industry-ready AI agents.*
   Python recommended but not mandatory.
 - **Audience:** developers, data/automation professionals, technical leads/architects moving
   into agentic AI.
-- **Stage:** early build &mdash; **Days 1 &amp; 2 complete** (Modules 1&ndash;4). Decks:
+- **Stage:** early build &mdash; **Days 1 &amp; 2 complete + Day 3 Module 5 complete** (Modules 1&ndash;5). Decks:
   `presentation/day1-module1-...` (22 slides), `day1-module2-...` (20), `day2-module3-why-transformers...`
-  (19), `day2-module4-pretrained-models-and-fine-tuning...` (20). Labs: `hands-on/module-1/` &hellip;
-  `module-4/` (12 labs each + `index.html` + `solutions/` + `_generators/`). Outline cross-links all of
-  them (Slides + 12 Labs badges per module; Day-1 &amp; Day-2 labs boxes summarise the sets).
-  Remaining Modules 5&ndash;10 decks and their labs are not built yet.
+  (19), `day2-module4-pretrained-models-and-fine-tuning...` (20), `day3-module5-what-is-agentic-ai...`
+  (42 slides, incl. a 10-question quiz: Q slide &rarr; answer slide interleaved, 4 choices each). Labs:
+  `hands-on/module-1/` &hellip; `module-5/` (12 labs each + `index.html` + `solutions/` + `_generators/`).
+  Outline cross-links all of them (Slides + 12 Labs badges per module; Day-1/2/3 labs boxes summarise the
+  sets). Remaining: Day 3 **Module 6** (Agent Frameworks) deck + labs, and Days 4&ndash;5 (Modules 7&ndash;10),
+  not built yet.
 
 ## Hands-on labs (the convention that's now established)
 
@@ -61,6 +63,17 @@ autonomous, industry-ready AI agents.*
   (Real bert-tiny did not load on the bleeding-edge verify venv &mdash; transformers 5.x / torch 2.12
   tokenizer-backend issue &mdash; so the offline path is what guarantees verification; the optional cell
   targets the managed sandbox.)
+- **Module 5 has 12 labs** (`hands-on/module-5/lab-01..12-*.ipynb`, prefix `/tmp/biaa-lab-05-NN/`):
+  6 Beginner, 3 Intermediate, 3 Advanced &mdash; model-vs-agent, build-a-tool, the reason&rarr;act&rarr;observe
+  agent loop, ReAct-step parsing, tool routing, memory/scratchpad (Beginner); a rule-based ReAct agent
+  (two-step task), guardrails (max-steps / allow-list / loop-detection / input validation), tool selection
+  (Intermediate); plan-and-execute, reflection/self-critique, and a **mini-autonomous-agent capstone** over
+  a task suite (Advanced). ~330 min. **Framework choice:** every GRADED cell is **pure Python stdlib** &mdash;
+  students build a ReAct agent from scratch driven by a deterministic rule-based ("mock LLM") policy, with an
+  **AST-based safe calculator** (no bare `eval`); no numpy/sklearn needed. Each Advanced lab adds an
+  **optional, non-graded, guarded real-LLM cell** (`langchain_ollama` `llama3.2:1b`, Groq alt) that degrades
+  gracefully &mdash; the bridge to Module 6 (Agent Frameworks) and the Day-3 LangChain labs. So this module
+  verifies with just the Jupyter exec stack (`nbconvert nbformat ipykernel`).
 - **Every notebook follows:** Concept &rarr; Demo (runnable) &rarr; Your Turn (`___` blanks) &rarr;
   auto-grader cell printing `[PASS]`/`[FAIL]`/`[TODO]` + `Score: n/total`. Grader helpers are
   `expect(label, got, want)` and `expect_true(label, fn)`; blanks/exceptions register as `[TODO]`.
@@ -72,11 +85,12 @@ autonomous, industry-ready AI agents.*
   no args), `README.md`. Blanks use the `{"s":..,"a":..}` student/answer convention; `_meta.json`
   is written beside the generators (not in the labs dir, and gitignored). Verified: `regenerate.sh`
   reproduces the committed files byte-identically. Edit the generators, never the JSON.
-- **Verification done (Modules 1&ndash;4):** all 48 solution notebooks were executed with `nbconvert`
-  and reach a full `Score`; all 48 student notebooks run top-to-bottom without uncaught errors
+- **Verification done (Modules 1&ndash;5):** all 60 solution notebooks were executed with `nbconvert`
+  and reach a full `Score`; all 60 student notebooks run top-to-bottom without uncaught errors
   (blanks land as `[TODO]`); each module's `regenerate.sh` reproduces its files byte-identically.
   Module 2's Keras labs were verified against real MNIST. Modules 3&ndash;4 graded cells are offline
-  (numpy/sklearn) so they verify with just `numpy scikit-learn matplotlib nbconvert`. Re-verify the
+  (numpy/sklearn) so they verify with just `numpy scikit-learn matplotlib nbconvert`; **Module 5 graded
+  cells are stdlib-only, so they verify with just `nbconvert nbformat ipykernel`**. Re-verify the
   same way after any edit (Module 2 advanced labs need `tensorflow-cpu` and train real nets, so
   execution is slower).
 - **Deck framework:** single self-contained HTML, custom slide engine (NOT Reveal.js) ported
