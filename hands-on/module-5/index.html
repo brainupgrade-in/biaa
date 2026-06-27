@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Day 3 &middot; Module 5 &mdash; Hands-on Labs</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:#f5f6fb; color:#1e1f33; font-size:14px; line-height:1.45; }
+    a { color:#4f46e5; }
+    header { background:linear-gradient(135deg,#1e1b4b 0%,#312e81 100%); color:#fff; padding:24px 20px; text-align:center; border-bottom:3px solid #06b6d4; }
+    header h1 { margin:0; font-size:1.6em; }
+    header .tagline { margin-top:6px; color:#a5b4fc; font-weight:600; }
+    header .meta { margin-top:10px; color:#cbd0e8; font-size:.9em; }
+    header .meta span { margin:0 7px; }
+    header .meta .k { color:#67e8f9; font-weight:600; }
+    .home { position:absolute; top:14px; right:18px; font-size:.78rem; background:rgba(255,255,255,.92); border:1px solid #d8dcf0; color:#312e81; padding:5px 12px; border-radius:14px; text-decoration:none; font-weight:600; }
+    .container { max-width:1080px; margin:16px auto; background:#fff; padding:18px 26px 28px; box-shadow:0 0 10px rgba(0,0,0,.08); }
+    .callout { background:#eef2ff; border:1px solid #a5b4fc; border-left:4px solid #4f46e5; border-radius:6px; padding:12px 16px; font-size:.92em; margin:14px 0; }
+    .callout.warn { background:#fffbeb; border-color:#f59e0b; border-left-color:#f59e0b; }
+    .callout code { background:#e0e7ff; padding:1px 5px; border-radius:4px; font-size:.92em; }
+    h2 { display:flex; align-items:center; gap:10px; font-size:1.2em; color:#312e81; border-bottom:2px solid #06b6d4; padding-bottom:6px; margin:22px 0 14px; }
+    h2 .scount { font-size:.6em; color:#5b5f7a; font-weight:500; margin-left:auto; }
+    .dot { width:12px; height:12px; border-radius:50%; display:inline-block; }
+    .dot.beg { background:#059669; } .dot.int { background:#f59e0b; } .dot.adv { background:#dc2626; }
+    .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+    @media(max-width:860px) { .grid { grid-template-columns:1fr; } }
+    .lab { border:1px solid #e2e5f3; border-top:4px solid #4f46e5; border-radius:8px; padding:12px 14px; display:flex; flex-direction:column; background:#fcfcff; }
+    .lab.beg { border-top-color:#059669; } .lab.int { border-top-color:#f59e0b; } .lab.adv { border-top-color:#dc2626; }
+    .lab-top { display:flex; justify-content:space-between; align-items:center; }
+    .lab .num { font-weight:700; color:#312e81; font-size:.82em; letter-spacing:.02em; }
+    .lab .time { font-size:.74em; color:#5b5f7a; }
+    .lab h4 { margin:6px 0 4px; font-size:1em; color:#1e1b4b; line-height:1.25; }
+    .lab p { margin:0 0 8px; font-size:.86em; color:#3a3c57; flex:1; }
+    .chips { margin-bottom:10px; }
+    .chip { display:inline-block; background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe; border-radius:10px; font-size:.68em; padding:1px 8px; margin:0 4px 4px 0; }
+    .links { display:flex; gap:8px; }
+    .links a { text-decoration:none; font-size:.8em; font-weight:600; padding:5px 10px; border-radius:6px; }
+    .links .open { background:#4f46e5; color:#fff; flex:1; text-align:center; }
+    .links .open:hover { background:#4338ca; }
+    .links .sol { background:#fff; color:#5b5f7a; border:1px solid #d8dcf0; }
+    .links .sol:hover { border-color:#a5b4fc; color:#4f46e5; }
+    footer { background:#1e1b4b; color:#fff; text-align:center; padding:16px; font-size:.85em; margin-top:8px; }
+    footer a { color:#a5b4fc; text-decoration:none; }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="home" href="../../course-outline-building-intelligent-ai-agents.html">&#8962; Course outline</a>
+    <h1>Day 3 &middot; Module 5 &mdash; Hands-on Labs</h1>
+    <div class="tagline">What is Agentic AI? &mdash; build a ReAct agent loop from scratch</div>
+    <div class="meta">
+      <span class="k">12 labs</span> |
+      <span>6 Beginner &middot; 3 Intermediate &middot; 3 Advanced</span> |
+      <span class="k">~5h 30m total</span> |
+      <span>Experiential: concept &rarr; demo &rarr; practice</span>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="callout">
+      <strong>How these labs work.</strong> Each notebook follows the same rhythm &mdash; read the
+      <strong>Concept</strong>, run the <strong>Demo</strong>, then complete <strong>Your Turn</strong> by
+      replacing every <code>___</code> placeholder. Run the <strong>grader</strong> cell at the bottom: it
+      prints <code>[PASS]</code> / <code>[FAIL]</code> / <code>[TODO]</code> and a final <code>Score</code>.
+      Each lab writes to its own <code>/tmp/biaa-lab-05-NN/</code> working dir. Stuck? Every lab has a full
+      answer key under <a href="solutions/"><code>solutions/</code></a> &mdash; try first, then check.
+    </div>
+    <div class="callout warn">
+      <strong>Setup (almost none).</strong> Just <strong>Python 3.10+</strong> &mdash; every graded step uses
+      only the <strong>standard library</strong>. You build a working <strong>ReAct-style agent</strong> from
+      scratch (tools, the reason &rarr; act &rarr; observe loop, ReAct parsing, tool routing, memory and
+      guardrails), driven by a deterministic rule-based &ldquo;mock LLM&rdquo; policy &mdash; <strong>no API
+      keys, no model downloads, no network</strong>. The calculator tool uses a small <strong>AST-based safe
+      evaluator</strong> (never bare <code>eval</code>). Each Advanced lab ends with an <em>optional</em>,
+      non-graded cell that swaps the rule-based policy for a <strong>real LLM via LangChain</strong>
+      (<code>pip install langchain-ollama</code> + <code>ollama run llama3.2:1b</code>, or
+      <code>ChatGroq</code> with a <code>GROQ_API_KEY</code>); it skips cleanly if absent.
+    </div>
+
+    <section>
+      <h2><span class="dot beg"></span>Beginner <span class="scount">6 labs &middot; ~120 min</span></h2>
+      <div class="grid">
+      <div class="lab beg">
+        <div class="lab-top">
+          <span class="num">Lab 5.1</span>
+          <span class="time">&#9201; 20 min</span>
+        </div>
+        <h4>A Model that Answers vs an Agent that Acts</h4>
+        <p>Feel the core shift: a stateless model answers once; an agent takes an action toward a goal and can loop.</p>
+        <div class="chips"><span class="chip">Stateless model</span><span class="chip">Goal</span><span class="chip">Action</span></div>
+        <div class="links">
+          <a class="open" href="lab-01-agent-vs-model.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-01-agent-vs-model.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab beg">
+        <div class="lab-top">
+          <span class="num">Lab 5.2</span>
+          <span class="time">&#9201; 20 min</span>
+        </div>
+        <h4>Build a Tool: Give the Agent Hands</h4>
+        <p>Define tools as {name, description, fn}, register them, and wire up a SAFE calculator and a lookup tool.</p>
+        <div class="chips"><span class="chip">Tool schema</span><span class="chip">Registry</span><span class="chip">Safe calculator</span></div>
+        <div class="links">
+          <a class="open" href="lab-02-build-a-tool.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-02-build-a-tool.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab beg">
+        <div class="lab-top">
+          <span class="num">Lab 5.3</span>
+          <span class="time">&#9201; 20 min</span>
+        </div>
+        <h4>The Agent Loop: Reason, Act, Observe</h4>
+        <p>Implement the reason -> act -> observe loop with a stop condition and a max_steps cap.</p>
+        <div class="chips"><span class="chip">Agent loop</span><span class="chip">Stop condition</span><span class="chip">max_steps</span></div>
+        <div class="links">
+          <a class="open" href="lab-03-the-agent-loop.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-03-the-agent-loop.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab beg">
+        <div class="lab-top">
+          <span class="num">Lab 5.4</span>
+          <span class="time">&#9201; 20 min</span>
+        </div>
+        <h4>Parsing a ReAct Step</h4>
+        <p>Parse a ReAct-formatted string into Thought / Action / Action Input / Final Answer.</p>
+        <div class="chips"><span class="chip">ReAct format</span><span class="chip">Parsing</span><span class="chip">Final Answer</span></div>
+        <div class="links">
+          <a class="open" href="lab-04-react-step-parsing.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-04-react-step-parsing.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab beg">
+        <div class="lab-top">
+          <span class="num">Lab 5.5</span>
+          <span class="time">&#9201; 20 min</span>
+        </div>
+        <h4>Tool Routing: Dispatch an Action to a Tool</h4>
+        <p>Route an action name to the right tool, run it, capture the observation, and handle unknown tools safely.</p>
+        <div class="chips"><span class="chip">Routing</span><span class="chip">Observation</span><span class="chip">Error handling</span></div>
+        <div class="links">
+          <a class="open" href="lab-05-tool-routing.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-05-tool-routing.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab beg">
+        <div class="lab-top">
+          <span class="num">Lab 5.6</span>
+          <span class="time">&#9201; 20 min</span>
+        </div>
+        <h4>Memory: the Agent's Scratchpad</h4>
+        <p>Append (thought, action, observation) steps to memory, format a running scratchpad, and detect when to stop.</p>
+        <div class="chips"><span class="chip">Short-term memory</span><span class="chip">Scratchpad</span><span class="chip">Stop detection</span></div>
+        <div class="links">
+          <a class="open" href="lab-06-memory-scratchpad.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-06-memory-scratchpad.ipynb">Solution</a>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <section>
+      <h2><span class="dot int"></span>Intermediate <span class="scount">3 labs &middot; ~90 min</span></h2>
+      <div class="grid">
+      <div class="lab int">
+        <div class="lab-top">
+          <span class="num">Lab 5.7</span>
+          <span class="time">&#9201; 30 min</span>
+        </div>
+        <h4>A Rule-Based ReAct Agent (two-step task)</h4>
+        <p>Combine tools + loop + memory + a policy to solve a two-step task: look up a fact, then compute on it.</p>
+        <div class="chips"><span class="chip">ReAct agent</span><span class="chip">Tool chaining</span><span class="chip">Two-step task</span></div>
+        <div class="links">
+          <a class="open" href="lab-07-rule-based-react-agent.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-07-rule-based-react-agent.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab int">
+        <div class="lab-top">
+          <span class="num">Lab 5.8</span>
+          <span class="time">&#9201; 30 min</span>
+        </div>
+        <h4>Guardrails: Keep the Agent Safe</h4>
+        <p>Add a max_steps cap, a tool allow-list, repeated-action loop detection, and input validation.</p>
+        <div class="chips"><span class="chip">Allow-list</span><span class="chip">Loop detection</span><span class="chip">Input validation</span></div>
+        <div class="links">
+          <a class="open" href="lab-08-guardrails.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-08-guardrails.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab int">
+        <div class="lab-top">
+          <span class="num">Lab 5.9</span>
+          <span class="time">&#9201; 30 min</span>
+        </div>
+        <h4>Tool Selection: Pick the Right Tool</h4>
+        <p>With a larger tool set, select the right tool per sub-goal across several tasks and measure accuracy.</p>
+        <div class="chips"><span class="chip">Tool selection</span><span class="chip">Routing rules</span><span class="chip">Accuracy</span></div>
+        <div class="links">
+          <a class="open" href="lab-09-tool-selection.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-09-tool-selection.ipynb">Solution</a>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <section>
+      <h2><span class="dot adv"></span>Advanced <span class="scount">3 labs &middot; ~120 min</span></h2>
+      <div class="grid">
+      <div class="lab adv">
+        <div class="lab-top">
+          <span class="num">Lab 5.10</span>
+          <span class="time">&#9201; 40 min</span>
+        </div>
+        <h4>Plan-and-Execute (vs ReAct)</h4>
+        <p>Draft a full plan up front, then execute each step's tool -- contrasting with step-by-step ReAct.</p>
+        <div class="chips"><span class="chip">Planning</span><span class="chip">Executor</span><span class="chip">Plan vs ReAct</span></div>
+        <div class="links">
+          <a class="open" href="lab-10-plan-and-execute.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-10-plan-and-execute.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab adv">
+        <div class="lab-top">
+          <span class="num">Lab 5.11</span>
+          <span class="time">&#9201; 35 min</span>
+        </div>
+        <h4>Reflection: Self-Critique and Revise</h4>
+        <p>Produce an answer, critique it against a rule, and revise -- seeded so reflection demonstrably fixes a wrong first try.</p>
+        <div class="chips"><span class="chip">Reflection</span><span class="chip">Critic</span><span class="chip">Self-revision</span></div>
+        <div class="links">
+          <a class="open" href="lab-11-reflection-self-critique.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-11-reflection-self-critique.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab adv">
+        <div class="lab-top">
+          <span class="num">Lab 5.12</span>
+          <span class="time">&#9201; 45 min</span>
+        </div>
+        <h4>Capstone: A Mini Autonomous Agent</h4>
+        <p>Assemble tools + memory + guardrails + a reason/act/observe loop and run it over a small suite of tasks.</p>
+        <div class="chips"><span class="chip">End-to-end agent</span><span class="chip">Task suite</span><span class="chip">Guardrails</span></div>
+        <div class="links">
+          <a class="open" href="lab-12-capstone-mini-agent.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-12-capstone-mini-agent.ipynb">Solution</a>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <div class="callout" style="margin-top:22px">
+      &#128218; <strong>Reference material:</strong>
+      <a href="../../presentation/day3-module5-what-is-agentic-ai.html">Module 5 slides &mdash; What is Agentic AI?</a>
+      &middot; <a href="../../course-outline-building-intelligent-ai-agents.html">Full course outline</a>
+      &middot; <a href="../module-4/index.html">Module 4 labs</a>.
+      These labs build the agent mechanics by hand; <strong>Module 6 (Agent Frameworks)</strong> and the Day-3
+      labs hand the same loop to a real LLM with LangChain &mdash; a simple agent, then connecting agents to
+      external APIs (Google Search / Wolfram Alpha).
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2026 Gheware DevOps &amp; Agentic AI |
+    <a href="https://devops.gheware.com">devops.gheware.com</a> |
+    Trainer: Rajesh Gheware |
+    Building Intelligent AI Agents &middot; Day 3 Module 5 Labs v1.0
+  </footer>
+</body>
+</html>
