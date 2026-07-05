@@ -16,14 +16,16 @@ autonomous, industry-ready AI agents.*
   Python recommended but not mandatory.
 - **Audience:** developers, data/automation professionals, technical leads/architects moving
   into agentic AI.
-- **Stage:** early build &mdash; **Days 1 &amp; 2 complete + Day 3 Module 5 complete** (Modules 1&ndash;5). Decks:
+- **Stage:** early build &mdash; **Days 1 &amp; 2 complete + Day 3 Module 5 complete + Module 6 deck complete**
+  (labs 1&ndash;5, decks 1&ndash;6). Decks:
   `presentation/day1-module1-...` (22 slides), `day1-module2-...` (20), `day2-module3-why-transformers...`
   (19), `day2-module4-pretrained-models-and-fine-tuning...` (20), `day3-module5-what-is-agentic-ai...`
-  (42 slides, incl. a 10-question quiz: Q slide &rarr; answer slide interleaved, 4 choices each). Labs:
+  (42 slides), `day3-module6-frameworks-for-building-ai-agents...` (43 slides) &mdash; the last two each carry
+  a 10-question quiz (Q slide &rarr; answer slide interleaved, 4 choices each). Labs:
   `hands-on/module-1/` &hellip; `module-5/` (12 labs each + `index.html` + `solutions/` + `_generators/`).
-  Outline cross-links all of them (Slides + 12 Labs badges per module; Day-1/2/3 labs boxes summarise the
-  sets). Remaining: Day 3 **Module 6** (Agent Frameworks) deck + labs, and Days 4&ndash;5 (Modules 7&ndash;10),
-  not built yet.
+  Outline cross-links all of them (Slides badge per module 1&ndash;6; 12-Labs badges for modules 1&ndash;5;
+  Day-1/2/3 labs boxes summarise the sets). Remaining: Day 3 **Module 6 labs** (LangChain: simple agent +
+  external APIs), and Days 4&ndash;5 (Modules 7&ndash;10), not built yet.
 
 ## Hands-on labs (the convention that's now established)
 
@@ -99,7 +101,9 @@ autonomous, industry-ready AI agents.*
   fullscreen, `#n` deep-links, `@media print`. Inline SVG diagrams, no external assets except
   reference hyperlinks. Each deck ends with a **References &amp; further study** slide of live
   links and cross-links back to the outline (HOME top-right + footer + arc slide). Match this
-  shape for Modules 2&ndash;10; bump the footer `v` string on edits.
+  shape for Modules 2&ndash;10; bump the footer `v` string on edits. The `.terminal` code/trace
+  block **must** carry `white-space:pre-wrap` &mdash; without it, authored newlines collapse into
+  flowing text (fixed in M5 v1.1 &amp; M6; copy decks from M6, the reference engine).
 - **Not a git repo** (no `.git` here).
 
 ## Important: this is a CODE-BASED course
