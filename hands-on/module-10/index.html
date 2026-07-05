@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Day 5 &middot; Module 10 &mdash; Hands-on Labs</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:#f5f6fb; color:#1e1f33; font-size:14px; line-height:1.45; }
+    a { color:#4f46e5; }
+    header { background:linear-gradient(135deg,#1e1b4b 0%,#312e81 100%); color:#fff; padding:24px 20px; text-align:center; border-bottom:3px solid #06b6d4; }
+    header h1 { margin:0; font-size:1.6em; }
+    header .tagline { margin-top:6px; color:#a5b4fc; font-weight:600; }
+    header .meta { margin-top:10px; color:#cbd0e8; font-size:.9em; }
+    header .meta span { margin:0 7px; }
+    header .meta .k { color:#67e8f9; font-weight:600; }
+    .home { position:absolute; top:14px; right:18px; font-size:.78rem; background:rgba(255,255,255,.92); border:1px solid #d8dcf0; color:#312e81; padding:5px 12px; border-radius:14px; text-decoration:none; font-weight:600; }
+    .container { max-width:1080px; margin:16px auto; background:#fff; padding:18px 26px 28px; box-shadow:0 0 10px rgba(0,0,0,.08); }
+    .callout { background:#eef2ff; border:1px solid #a5b4fc; border-left:4px solid #4f46e5; border-radius:6px; padding:12px 16px; font-size:.92em; margin:14px 0; }
+    .callout.warn { background:#fffbeb; border-color:#f59e0b; border-left-color:#f59e0b; }
+    .callout code { background:#e0e7ff; padding:1px 5px; border-radius:4px; font-size:.92em; }
+    h2 { display:flex; align-items:center; gap:10px; font-size:1.2em; color:#312e81; border-bottom:2px solid #06b6d4; padding-bottom:6px; margin:22px 0 14px; }
+    h2 .scount { font-size:.6em; color:#5b5f7a; font-weight:500; margin-left:auto; }
+    .dot { width:12px; height:12px; border-radius:50%; display:inline-block; }
+    .dot.beg { background:#059669; } .dot.int { background:#f59e0b; } .dot.adv { background:#dc2626; }
+    .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+    @media(max-width:860px) { .grid { grid-template-columns:1fr; } }
+    .lab { border:1px solid #e2e5f3; border-top:4px solid #4f46e5; border-radius:8px; padding:12px 14px; display:flex; flex-direction:column; background:#fcfcff; }
+    .lab.beg { border-top-color:#059669; } .lab.int { border-top-color:#f59e0b; } .lab.adv { border-top-color:#dc2626; }
+    .lab-top { display:flex; justify-content:space-between; align-items:center; }
+    .lab .num { font-weight:700; color:#312e81; font-size:.82em; letter-spacing:.02em; }
+    .lab .time { font-size:.74em; color:#5b5f7a; }
+    .lab h4 { margin:6px 0 4px; font-size:1em; color:#1e1b4b; line-height:1.25; }
+    .lab p { margin:0 0 8px; font-size:.86em; color:#3a3c57; flex:1; }
+    .chips { margin-bottom:10px; }
+    .chip { display:inline-block; background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe; border-radius:10px; font-size:.68em; padding:1px 8px; margin:0 4px 4px 0; }
+    .links { display:flex; gap:8px; }
+    .links a { text-decoration:none; font-size:.8em; font-weight:600; padding:5px 10px; border-radius:6px; }
+    .links .open { background:#4f46e5; color:#fff; flex:1; text-align:center; }
+    .links .open:hover { background:#4338ca; }
+    .links .sol { background:#fff; color:#5b5f7a; border:1px solid #d8dcf0; }
+    .links .sol:hover { border-color:#a5b4fc; color:#4f46e5; }
+    footer { background:#1e1b4b; color:#fff; text-align:center; padding:16px; font-size:.85em; margin-top:8px; }
+    footer a { color:#a5b4fc; text-decoration:none; }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="home" href="../../course-outline-building-intelligent-ai-agents.html">&#8962; Course outline</a>
+    <h1>Day 5 &middot; Module 10 &mdash; Hands-on Labs</h1>
+    <div class="tagline">Ethics &amp; Responsible AI &mdash; responsible-AI frameworks &amp; debugging agents (the finale)</div>
+    <div class="meta">
+      <span class="k">12 labs</span> |
+      <span>6 Beginner &middot; 3 Intermediate &middot; 3 Advanced</span> |
+      <span class="k">~5h 40m total</span> |
+      <span>Experiential: concept &rarr; demo &rarr; practice</span>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="callout">
+      <strong>How these labs work.</strong> Each notebook follows the same rhythm &mdash; read the
+      <strong>Concept</strong>, run the <strong>Demo</strong>, then complete <strong>Your Turn</strong> by
+      replacing every <code>___</code> placeholder. Run the <strong>grader</strong> cell at the bottom: it
+      prints <code>[PASS]</code> / <code>[FAIL]</code> / <code>[TODO]</code> and a final <code>Score</code>.
+      Each lab writes to its own <code>/tmp/biaa-lab-10-NN/</code> working dir. Stuck? Every lab has a full
+      answer key under <a href="solutions/"><code>solutions/</code></a> &mdash; try first, then check.
+    </div>
+    <div class="callout warn">
+      <strong>Setup (almost none).</strong> Just <strong>Python 3.10+</strong> &mdash; every graded step uses
+      only the <strong>standard library</strong>. This is the <strong>course finale</strong> (Lab 5.2): you
+      practice both halves of responsible AI &mdash; <strong>treat input as data</strong> (prompt injection),
+      <strong>least privilege</strong>, fairness across groups, the responsible-agent checklist, and the eval
+      loop as a <strong>guardrail regression suite</strong> &mdash; and <strong>debugging agents</strong>:
+      read the trace, classify the failure mode, detect loops, and run a full <strong>debug-and-fix</strong>
+      loop. The agent-assembly labs reuse the <strong>LangChain-shaped shim</strong> from Modules 6&ndash;9
+      (same names &amp; shapes), driven by a deterministic scripted model &mdash; so there are <strong>no API
+      keys, no model downloads, no network</strong>. Each Advanced lab ends with an <em>optional</em>,
+      non-graded cell that runs the <strong>real LangChain</strong> (<code>pip install langchain
+      langchain-ollama</code> + <code>ollama run llama3.2:1b</code>, or <code>ChatGroq</code> with a
+      <code>GROQ_API_KEY</code>); it skips cleanly if absent.
+    </div>
+
+    <section>
+      <h2><span class="dot beg"></span>Beginner <span class="scount">6 labs &middot; ~125 min</span></h2>
+      <div class="grid">
+      <div class="lab beg">
+        <div class="lab-top">
+          <span class="num">Lab 10.1</span>
+          <span class="time">&#9201; 20 min</span>
+        </div>
+        <h4>Treat Input as Data (Prompt Injection)</h4>
+        <p>Defend against prompt injection: detect instructions hidden in untrusted content and treat it as data, never commands.</p>
+        <div class="chips"><span class="chip">Prompt injection</span><span class="chip">Untrusted input</span><span class="chip">Data not commands</span></div>
+        <div class="links">
+          <a class="open" href="lab-01-input-as-data.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-01-input-as-data.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab beg">
+        <div class="lab-top">
+          <span class="num">Lab 10.2</span>
+          <span class="time">&#9201; 20 min</span>
+        </div>
+        <h4>Least Privilege</h4>
+        <p>Grant an agent only the tools its task needs, and never a dangerous one -- the strongest, simplest guardrail.</p>
+        <div class="chips"><span class="chip">Least privilege</span><span class="chip">Withhold the tool</span><span class="chip">Blast radius</span></div>
+        <div class="links">
+          <a class="open" href="lab-02-least-privilege.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-02-least-privilege.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab beg">
+        <div class="lab-top">
+          <span class="num">Lab 10.3</span>
+          <span class="time">&#9201; 25 min</span>
+        </div>
+        <h4>Read the Trace</h4>
+        <p>Debug an agent by reading its trace: find the wrong-tool step and the ungrounded argument the final answer hides.</p>
+        <div class="chips"><span class="chip">Read the trace</span><span class="chip">Debugging</span><span class="chip">Localise the bug</span></div>
+        <div class="links">
+          <a class="open" href="lab-03-read-the-trace.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-03-read-the-trace.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab beg">
+        <div class="lab-top">
+          <span class="num">Lab 10.4</span>
+          <span class="time">&#9201; 20 min</span>
+        </div>
+        <h4>Classify the Failure Mode</h4>
+        <p>Map a trace symptom to a known failure mode so debugging becomes pattern-matching, not guesswork.</p>
+        <div class="chips"><span class="chip">Failure modes</span><span class="chip">Symptom to fix</span><span class="chip">Field guide</span></div>
+        <div class="links">
+          <a class="open" href="lab-04-classify-failure.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-04-classify-failure.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab beg">
+        <div class="lab-top">
+          <span class="num">Lab 10.5</span>
+          <span class="time">&#9201; 20 min</span>
+        </div>
+        <h4>Detect a Runaway Loop</h4>
+        <p>Catch a repeating handoff/tool loop in a trace, and apply the cap that stops it.</p>
+        <div class="chips"><span class="chip">Loop detection</span><span class="chip">max_iterations</span><span class="chip">Guardrail fix</span></div>
+        <div class="links">
+          <a class="open" href="lab-05-detect-loop.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-05-detect-loop.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab beg">
+        <div class="lab-top">
+          <span class="num">Lab 10.6</span>
+          <span class="time">&#9201; 20 min</span>
+        </div>
+        <h4>Fairness Across Groups</h4>
+        <p>Measure an agent's outcome per group and flag disparate impact -- fairness you can't see if you only average.</p>
+        <div class="chips"><span class="chip">Fairness</span><span class="chip">Per-group metrics</span><span class="chip">Disparate impact</span></div>
+        <div class="links">
+          <a class="open" href="lab-06-fairness-across-groups.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-06-fairness-across-groups.ipynb">Solution</a>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <section>
+      <h2><span class="dot int"></span>Intermediate <span class="scount">3 labs &middot; ~90 min</span></h2>
+      <div class="grid">
+      <div class="lab int">
+        <div class="lab-top">
+          <span class="num">Lab 10.7</span>
+          <span class="time">&#9201; 30 min</span>
+        </div>
+        <h4>Build an Eval Set</h4>
+        <p>Turn 'it worked once' into a measurable pass-rate by running an agent over a set of cases with expected outputs.</p>
+        <div class="chips"><span class="chip">Eval set</span><span class="chip">Pass-rate</span><span class="chip">Measure to improve</span></div>
+        <div class="links">
+          <a class="open" href="lab-07-the-eval-set.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-07-the-eval-set.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab int">
+        <div class="lab-top">
+          <span class="num">Lab 10.8</span>
+          <span class="time">&#9201; 30 min</span>
+        </div>
+        <h4>Guardrail Regression Suite</h4>
+        <p>Make the eval set a safety net: assert the agent never advises, never calls a withheld tool, and treats injection as data.</p>
+        <div class="chips"><span class="chip">Guardrail checks</span><span class="chip">Safety regression</span><span class="chip">Continuous verification</span></div>
+        <div class="links">
+          <a class="open" href="lab-08-guardrail-regression.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-08-guardrail-regression.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab int">
+        <div class="lab-top">
+          <span class="num">Lab 10.9</span>
+          <span class="time">&#9201; 30 min</span>
+        </div>
+        <h4>The Responsible-Agent Checklist</h4>
+        <p>Encode the pre-deployment checklist as automated checks over an agent config -- a deployment gate.</p>
+        <div class="chips"><span class="chip">Checklist</span><span class="chip">Deployment gate</span><span class="chip">Governance</span></div>
+        <div class="links">
+          <a class="open" href="lab-09-responsible-checklist.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-09-responsible-checklist.ipynb">Solution</a>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <section>
+      <h2><span class="dot adv"></span>Advanced <span class="scount">3 labs &middot; ~125 min</span></h2>
+      <div class="grid">
+      <div class="lab adv">
+        <div class="lab-top">
+          <span class="num">Lab 10.10</span>
+          <span class="time">&#9201; 40 min</span>
+        </div>
+        <h4>Debug & Fix the Loop</h4>
+        <p>Run a broken agent, read its trace, diagnose the bug, apply the fix, and verify the output is now grounded and correct.</p>
+        <div class="chips"><span class="chip">Debug loop</span><span class="chip">Diagnose</span><span class="chip">Verify the fix</span></div>
+        <div class="links">
+          <a class="open" href="lab-10-debug-and-fix.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-10-debug-and-fix.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab adv">
+        <div class="lab-top">
+          <span class="num">Lab 10.11</span>
+          <span class="time">&#9201; 40 min</span>
+        </div>
+        <h4>Assemble a Guardrailed Agent</h4>
+        <p>Wire input-as-data, least-privilege tools, output validation and a trace into one responsible agent.</p>
+        <div class="chips"><span class="chip">Guardrailed agent</span><span class="chip">Input as data</span><span class="chip">Output validation</span></div>
+        <div class="links">
+          <a class="open" href="lab-11-assemble-guardrailed-agent.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-11-assemble-guardrailed-agent.ipynb">Solution</a>
+        </div>
+      </div>
+      <div class="lab adv">
+        <div class="lab-top">
+          <span class="num">Lab 10.12</span>
+          <span class="time">&#9201; 45 min</span>
+        </div>
+        <h4>Capstone: A Responsible, Debuggable Agent</h4>
+        <p>The finale: run a responsible agent over an eval suite of normal, injection and advice cases, and score it.</p>
+        <div class="chips"><span class="chip">Course finale</span><span class="chip">Eval suite</span><span class="chip">Responsible & debuggable</span></div>
+        <div class="links">
+          <a class="open" href="lab-12-capstone-responsible-agent.ipynb">&#9654; Open lab</a>
+          <a class="sol" href="solutions/lab-12-capstone-responsible-agent.ipynb">Solution</a>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <div class="callout" style="margin-top:22px">
+      &#127881; <strong>You made it &mdash; the last lab set.</strong>
+      Reference: <a href="../../presentation/day5-module10-ethics-responsible-ai.html">Module 10 slides &mdash; Ethics &amp; Responsible AI</a>
+      &middot; <a href="../../course-outline-building-intelligent-ai-agents.html">Full course outline</a>
+      &middot; <a href="../module-9/index.html">Module 9 labs</a>.
+      These labs build a responsible, debuggable agent offline &amp; deterministically; the <em>optional</em>
+      cells run the genuine library. Next &mdash; your <strong>capstone</strong>: build an industry-specific
+      autonomous agent that&rsquo;s useful, guardrailed, and responsible.
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2026 Gheware DevOps &amp; Agentic AI |
+    <a href="https://devops.gheware.com">devops.gheware.com</a> |
+    Trainer: Rajesh Gheware |
+    Building Intelligent AI Agents &middot; Day 5 Module 10 Labs v1.0
+  </footer>
+</body>
+</html>

@@ -16,8 +16,8 @@ autonomous, industry-ready AI agents.*
   Python recommended but not mandatory.
 - **Audience:** developers, data/automation professionals, technical leads/architects moving
   into agentic AI.
-- **Stage:** build &mdash; **Days 1&ndash;4 complete + Module 9 complete + Module 10 deck complete**
-  (Modules 1&ndash;9: decks + labs; Module 10: deck only). Decks:
+- **Stage:** &#10003; **COMPLETE &mdash; all 5 days, all 10 modules (decks + labs) built &amp; verified.**
+  Decks:
   `presentation/day1-module1-...` (22 slides), `day1-module2-...` (20), `day2-module3-why-transformers...`
   (19), `day2-module4-pretrained-models-and-fine-tuning...` (20), `day3-module5-what-is-agentic-ai...`
   (42 slides), `day3-module6-frameworks-for-building-ai-agents...` (43 slides),
@@ -26,10 +26,10 @@ autonomous, industry-ready AI agents.*
   `day5-module9-agents-in-industry...` (43 slides),
   `day5-module10-ethics-responsible-ai...` (43 slides, the finale) &mdash; the last six each carry a
   10-question quiz (Q slide &rarr; answer slide interleaved, 4 choices each). Labs:
-  `hands-on/module-1/` &hellip; `module-9/` (12 labs each + `index.html` + `solutions/` + `_generators/`).
-  Outline cross-links all of them (Slides badge per module 1&ndash;10; 12-Labs badges for modules 1&ndash;9;
-  Day-1/2/3/4/5 labs boxes summarise the sets). Remaining: **Module 10 labs** (responsible-AI frameworks
-  &amp; debugging agent errors) &mdash; the last build; then all 10 modules are complete.
+  `hands-on/module-1/` &hellip; `module-10/` (12 labs each + `index.html` + `solutions/` + `_generators/`
+  &mdash; **120 labs total**). Outline cross-links everything (Slides badge per module 1&ndash;10; 12-Labs
+  badges for modules 1&ndash;10; Day-1/2/3/4/5 labs boxes summarise the sets). Only the participant
+  **capstone** framing remains as course collateral (already described in the outline); no modules left to build.
 
 ## Hands-on labs (the convention that's now established)
 
@@ -147,6 +147,20 @@ autonomous, industry-ready AI agents.*
   `nbconvert nbformat ipykernel`. Advanced labs (10&ndash;12) add optional guarded real-LangChain cells.
   Like Modules 5&ndash;8, unfilled student blanks land as a mix of `[TODO]`/`[FAIL]`; the invariant is
   student notebooks run clean and solutions score full.
+- **Module 10 has 12 labs** (`hands-on/module-10/lab-01..12-*.ipynb`, prefix `/tmp/biaa-lab-10-NN/`) &mdash;
+  the **course finale** (Lab 5.2): 6 Beginner, 3 Intermediate, 3 Advanced covering BOTH halves of the deck.
+  Responsible-AI practice: treat input as data (prompt injection), least privilege, read the trace, classify
+  the failure mode, detect a runaway loop, fairness across groups (Beginner); build an eval set, the
+  guardrail regression suite, the responsible-agent checklist as a deploy gate (Intermediate). Debugging:
+  a full **debug-and-fix loop** (run a broken shim agent &rarr; diagnose from the trace &rarr; give it a
+  grounding tool &rarr; verify), **assemble a guardrailed agent** (input-as-data + least-privilege +
+  output-validation + trace), and a **capstone** running a responsible agent over an eval suite of
+  normal/injection/advice cases (Advanced). ~340 min. **Framework choice:** every GRADED cell is **offline
+  &amp; deterministic pure stdlib** (injection/least-privilege/trace-reading/fairness/eval are rule-based);
+  labs 10&ndash;12 reuse Modules 6&ndash;9's **LangChain-shaped shim**, so it verifies with just
+  `nbconvert nbformat ipykernel`. Advanced labs (10&ndash;12) add optional guarded real-LangChain cells.
+  Like Modules 5&ndash;9, unfilled student blanks land as a mix of `[TODO]`/`[FAIL]`; the invariant is
+  student notebooks run clean and solutions score full.
 - **Every notebook follows:** Concept &rarr; Demo (runnable) &rarr; Your Turn (`___` blanks) &rarr;
   auto-grader cell printing `[PASS]`/`[FAIL]`/`[TODO]` + `Score: n/total`. Grader helpers are
   `expect(label, got, want)` and `expect_true(label, fn)`; blanks/exceptions register as `[TODO]`.
@@ -158,11 +172,11 @@ autonomous, industry-ready AI agents.*
   no args), `README.md`. Blanks use the `{"s":..,"a":..}` student/answer convention; `_meta.json`
   is written beside the generators (not in the labs dir, and gitignored). Verified: `regenerate.sh`
   reproduces the committed files byte-identically. Edit the generators, never the JSON.
-- **Verification done (Modules 1&ndash;9):** all 108 solution notebooks were executed with `nbconvert`
-  and reach a full `Score`; all 108 student notebooks run top-to-bottom without uncaught errors
+- **Verification done (Modules 1&ndash;10, ALL):** all 120 solution notebooks were executed with `nbconvert`
+  and reach a full `Score`; all 120 student notebooks run top-to-bottom without uncaught errors
   (blanks land as `[TODO]`/`[FAIL]`); each module's `regenerate.sh` reproduces its files byte-identically.
   Module 2's Keras labs were verified against real MNIST. Modules 3&ndash;4 graded cells are offline
-  (numpy/sklearn) so they verify with just `numpy scikit-learn matplotlib nbconvert`; **Modules 5&ndash;9
+  (numpy/sklearn) so they verify with just `numpy scikit-learn matplotlib nbconvert`; **Modules 5&ndash;10
   graded cells are stdlib-only, so they verify with just `nbconvert nbformat ipykernel`**. Re-verify the
   same way after any edit (Module 2 advanced labs need `tensorflow-cpu` and train real nets, so
   execution is slower).
