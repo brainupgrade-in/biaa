@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 4 · Module 7 — Task Automation with AI Agents</title>
+<style>
+  :root{
+    --ink-900:#1e1b4b; --ink-800:#312e81; --ind-600:#4f46e5;
+    --ind-300:#a5b4fc; --ind-50:#eef2ff;
+    --cyan:#06b6d4; --cyan-l:#67e8f9; --amber:#f59e0b; --amber-d:#b45309; --blue:#0891b2;
+    --ok:#059669; --bg:#f5f6fb; --ink:#1e1f33; --muted:#5b5f7a; --line:#d8dcf0;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+    background:var(--ink-900); color:var(--ink);
+    overflow:hidden;
+  }
+  a{color:var(--ind-600);}
+
+  /* ---------- Deck / slide framework ---------- */
+  .deck{position:fixed;inset:0;}
+  .slide{
+    position:absolute;inset:0;
+    display:none;
+    flex-direction:column;
+    background:var(--bg);
+    padding:clamp(20px,3.2vh,40px) clamp(28px,5vw,80px) 64px;
+    overflow:auto;
+  }
+  .slide.active{display:flex;animation:fade .35s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+  .kicker{
+    display:flex;align-items:center;gap:10px;
+    font-size:clamp(.7rem,1.1vw,.85rem);font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--ind-600);margin-bottom:6px;
+  }
+  .kicker .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);}
+  .kicker .sub{color:var(--muted);font-weight:600;}
+  h2.title{
+    margin:0 0 14px;color:var(--ink-800);
+    font-size:clamp(1.5rem,3.4vw,2.5rem);line-height:1.1;
+    border-bottom:3px solid var(--cyan);padding-bottom:10px;
+  }
+  .body{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;}
+  .center{justify-content:center;}
+  p.lead{font-size:clamp(1rem,1.7vw,1.3rem);line-height:1.5;max-width:62ch;color:#26273f;}
+  .small{font-size:clamp(.8rem,1.2vw,.95rem);color:var(--muted);}
+
+  /* ---------- Generic helpers ---------- */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:clamp(14px,2vw,26px);}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(12px,1.6vw,20px);}
+  .grid4{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(12px,1.6vw,18px);}
+  .card{
+    background:#fff;border:1px solid var(--line);border-left:4px solid var(--ind-600);
+    border-radius:6px;padding:clamp(12px,1.6vw,18px);box-shadow:0 1px 4px rgba(30,27,75,.06);
+  }
+  .card.gold{border-left-color:var(--amber);background:#fffbeb;}
+  .card.amber{border-left-color:var(--amber-d);}
+  .card.blue{border-left-color:var(--blue);}
+  .card.cyan{border-left-color:var(--cyan);}
+  .card h3{margin:0 0 8px;color:var(--ink-800);font-size:clamp(1rem,1.5vw,1.2rem);
+    display:flex;align-items:center;gap:8px;}
+  .card p,.card li{font-size:clamp(.82rem,1.2vw,1rem);line-height:1.45;}
+  .card ul{margin:6px 0 0;padding-left:20px;}
+  .card ul li{margin-bottom:4px;}
+
+  ul.bullets{font-size:clamp(.95rem,1.6vw,1.25rem);line-height:1.7;padding-left:26px;max-width:64ch;}
+  ul.bullets li{margin-bottom:10px;}
+  ul.bullets li b{color:var(--ink-800);}
+
+  table{border-collapse:collapse;width:100%;font-size:clamp(.8rem,1.2vw,1.02rem);background:#fff;
+    box-shadow:0 1px 4px rgba(30,27,75,.07);border-radius:6px;overflow:hidden;}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top;}
+  thead th{background:var(--ink-800);color:#fff;font-weight:600;}
+  tbody tr:nth-child(even){background:var(--ind-50);}
+  td .yes{color:var(--ok);font-weight:700;}
+  td .no{color:#b91c1c;font-weight:700;}
+  caption{caption-side:bottom;font-size:.8rem;color:var(--muted);padding-top:8px;text-align:left;}
+
+  .pill{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.72em;font-weight:700;
+    vertical-align:middle;letter-spacing:.02em;}
+  .pill.green{background:var(--ind-600);color:#fff;}
+  .pill.gold{background:var(--amber);color:var(--ink-900);}
+  .pill.amber{background:var(--amber-d);color:#fff;}
+  .pill.blue{background:var(--blue);color:#fff;}
+  .pill.cyan{background:var(--cyan);color:var(--ink-900);}
+  .pill.ghost{background:#fff;border:1px solid var(--line);color:var(--muted);}
+
+  .callout{background:var(--ind-50);border:1px solid var(--ind-300);border-radius:8px;
+    padding:14px 18px;font-size:clamp(.9rem,1.4vw,1.1rem);color:#262248;}
+  .callout.warn{background:#fffbeb;border-color:var(--amber);}
+  .callout b{color:var(--ink-800);}
+
+  figure{margin:0;text-align:center;}
+  figure svg{width:100%;height:auto;max-height:60vh;}
+  figcaption{font-size:clamp(.78rem,1.1vw,.92rem);color:var(--muted);margin-top:8px;}
+
+  .mono{font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;}
+  .terminal{background:#14143a;color:#e0e3f5;border-radius:8px;padding:16px 18px;
+    font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:clamp(.72rem,1.1vw,.95rem);
+    line-height:1.6;box-shadow:0 4px 16px rgba(0,0,0,.3);overflow:auto;white-space:pre-wrap;}
+  .terminal .com{color:#7f86b8;}
+  .terminal .kw{color:var(--cyan-l);}
+  .terminal .str{color:#fcd34d;}
+  .terminal .fn{color:#a5b4fc;}
+  .terminal .out{color:#6ee7b7;}
+  .terminal .you{color:#fff;}
+
+  /* ---------- reference list ---------- */
+  ul.refs{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;
+    gap:10px 26px;font-size:clamp(.82rem,1.2vw,1rem);}
+  ul.refs li{padding:8px 12px;background:#fff;border:1px solid var(--line);
+    border-left:3px solid var(--cyan);border-radius:6px;line-height:1.4;}
+  ul.refs li a{font-weight:600;text-decoration:none;}
+  ul.refs li a:hover{text-decoration:underline;}
+  ul.refs li .d{display:block;color:var(--muted);font-size:.82em;margin-top:2px;}
+  @media(max-width:760px){ul.refs{grid-template-columns:1fr;} .grid2,.grid3,.grid4{grid-template-columns:1fr;}}
+
+  /* ---------- Quiz ---------- */
+  .quiz-q{font-size:clamp(1.1rem,2vw,1.5rem);color:var(--ink-800);font-weight:700;line-height:1.3;margin:0 0 16px;}
+  .quiz-restate{font-size:clamp(.92rem,1.4vw,1.12rem);color:var(--muted);font-weight:600;line-height:1.35;margin:0 0 14px;}
+  .quiz-opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .quiz-opt{display:flex;align-items:flex-start;gap:12px;background:#fff;border:1px solid var(--line);
+    border-left:4px solid var(--ind-300);border-radius:8px;padding:12px 16px;font-size:clamp(.9rem,1.4vw,1.1rem);line-height:1.4;}
+  .quiz-opt .ltr{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--ind-50);color:var(--ind-600);
+    font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .quiz-opt.correct{border-left-color:var(--ok);background:#ecfdf5;}
+  .quiz-opt.correct .ltr{background:var(--ok);color:#fff;}
+  .quiz-opt.dim{opacity:.5;}
+  .quiz-why{margin-top:16px;}
+  .quiz-badge{display:inline-block;background:var(--amber);color:var(--ink-900);font-weight:700;font-size:.72em;padding:2px 10px;border-radius:12px;}
+  @media(max-width:760px){.quiz-opts{grid-template-columns:1fr;}}
+
+  /* ---------- Title slide ---------- */
+  .title-slide{background:linear-gradient(135deg,#312e81 0%,#1e1b4b 100%);color:#fff;
+    border-bottom:none;align-items:flex-start;justify-content:center;}
+  .title-slide .kicker{color:var(--cyan-l);}
+  .title-slide h1{font-size:clamp(2rem,5.2vw,3.6rem);margin:0 0 6px;line-height:1.08;}
+  .title-slide .accent{color:var(--cyan-l);}
+  .title-slide .subtitle{font-size:clamp(1rem,2vw,1.5rem);color:#c7cbf0;margin:4px 0 0;font-weight:500;}
+  .title-slide .rule{width:120px;height:4px;background:var(--cyan);margin:22px 0;border-radius:2px;}
+  .title-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;}
+  .title-meta .pill{font-size:.85rem;padding:5px 14px;}
+  .title-slide .trainer{margin-top:26px;font-size:clamp(.85rem,1.4vw,1.05rem);color:#a9adda;}
+  .title-slide .trainer b{color:#fff;}
+  .title-slide a{color:var(--cyan-l);}
+  .homelink{position:fixed;top:10px;right:16px;z-index:46;font-size:.74rem;text-decoration:none;
+    background:rgba(255,255,255,.9);border:1px solid var(--line);color:var(--ink-800);
+    padding:5px 12px;border-radius:14px;font-weight:600;}
+  .homelink:hover{background:#fff;}
+
+  /* ---------- dark slides ---------- */
+  .dark{background:linear-gradient(135deg,#312e81 0%,#1e1b4b 100%);color:#fff;border-bottom:none;}
+  .dark h2.title{color:#fff;border-bottom-color:var(--cyan);}
+  .dark .kicker{color:var(--cyan-l);}
+  .dark p.lead,.dark li{color:#e7e9fb;}
+  .dark .card{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.15);color:#eef0ff;}
+  .dark .card h3{color:var(--cyan-l);}
+
+  /* ---------- Chrome ---------- */
+  #progress{position:fixed;top:0;left:0;height:4px;background:var(--cyan);width:0;z-index:50;
+    transition:width .3s ease;}
+  .footer{position:fixed;bottom:0;left:0;right:0;height:34px;display:flex;align-items:center;
+    justify-content:space-between;padding:0 16px;font-size:.72rem;color:var(--muted);
+    background:rgba(255,255,255,.85);backdrop-filter:blur(4px);border-top:1px solid var(--line);z-index:40;}
+  .footer .brand{font-weight:600;color:var(--ink-800);}
+  .footer a{text-decoration:none;}
+  .nav{position:fixed;bottom:44px;right:18px;display:flex;gap:8px;z-index:45;}
+  .nav button{border:none;cursor:pointer;width:42px;height:42px;border-radius:50%;
+    background:var(--ink-800);color:#fff;font-size:1.1rem;box-shadow:0 2px 8px rgba(0,0,0,.25);
+    display:flex;align-items:center;justify-content:center;transition:background .2s,transform .1s;}
+  .nav button:hover{background:var(--ind-600);}
+  .nav button:active{transform:scale(.92);}
+  .nav button:disabled{opacity:.35;cursor:default;}
+  #counter{position:fixed;bottom:46px;left:18px;z-index:45;background:var(--ink-800);color:#fff;
+    font-size:.8rem;font-weight:600;padding:6px 12px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.25);}
+  .hint{position:fixed;bottom:46px;left:50%;transform:translateX(-50%);z-index:45;
+    font-size:.72rem;color:var(--muted);background:rgba(255,255,255,.8);
+    padding:5px 12px;border-radius:12px;border:1px solid var(--line);}
+  @media(max-width:700px){.hint{display:none;}}
+
+  /* ---------- Presenter notes ---------- */
+  #notes{position:fixed;left:0;right:0;bottom:34px;z-index:48;display:none;
+    background:#14143a;color:#e4e6fb;padding:14px 20px 16px;border-top:3px solid var(--cyan);
+    font-size:.92rem;line-height:1.5;max-height:38vh;overflow:auto;}
+  body.show-notes #notes{display:block;}
+  #notes b{color:var(--cyan-l);}
+  #notes .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ind-300);
+    display:block;margin-bottom:4px;}
+
+  /* ---------- Overview ---------- */
+  #overview{position:fixed;inset:0;z-index:60;background:rgba(30,27,75,.97);color:#fff;
+    display:none;flex-direction:column;padding:32px clamp(20px,5vw,80px);overflow:auto;}
+  body.show-overview #overview{display:flex;}
+  #overview h3{color:var(--cyan-l);margin:0 0 4px;font-size:1.4rem;}
+  #overview .ovsub{color:#a9adda;margin:0 0 20px;font-size:.9rem;}
+  .ovgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+  .ovcard{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:8px;
+    padding:12px 14px;cursor:pointer;transition:background .15s,border-color .15s;}
+  .ovcard:hover{background:rgba(6,182,212,.18);border-color:var(--cyan);}
+  .ovcard .num{font-size:.72rem;color:var(--cyan-l);font-weight:700;}
+  .ovcard .ttl{font-size:.95rem;margin-top:3px;color:#fff;}
+
+  svg text{font-family:'Segoe UI',sans-serif;}
+
+  @media print{
+    body{overflow:visible;background:#fff;}
+    .slide{display:flex!important;position:relative;inset:auto;min-height:96vh;page-break-after:always;
+      border:1px solid #ccc;}
+    #progress,.footer,.nav,#counter,.hint,#notes,#overview,.homelink{display:none!important;}
+  }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<a class="homelink" href="../course-outline-building-intelligent-ai-agents.html" title="Back to course outline">&#8962; Course outline</a>
+
+<div class="deck" id="deck">
+
+  <!-- ============ SLIDE 1 — TITLE ============ -->
+  <section class="slide title-slide" data-title="Title"
+    data-note="Welcome to Day 4 -- the day agents go to WORK. Days 1-2 built the models; Day 3 turned models into agents and gave you the frameworks. So far the agents ANSWER and demonstrate. Today they DO A JOB: take a real business task, run it end to end, and hand you a result. Module 7 is the discipline of task automation -- turning a fuzzy human task ('reply to this client') into a reliable, guardrailed agent workflow: a trigger, gathering context from tools and data, drafting or extracting or routing, validating the output, and -- crucially -- pausing for a human before anything irreversible. The worked example all module is the EMAIL-DRAFTING AGENT, which is exactly your Lab 4.1. By the end you'll know how to make an agent that doesn't just work in a demo, but works on Monday.">
+    <div class="body center">
+      <div class="kicker"><span class="dot"></span> 5-Day Course &nbsp;&middot;&nbsp; <span class="sub">Day 4 &middot; Module 7 of 10</span></div>
+      <h1>Task Automation with <span class="accent">AI Agents</span></h1>
+      <p class="subtitle">Turn a real business task into a <b>reliable, guardrailed</b> agent workflow &mdash; the <b>email-drafting agent</b>.</p>
+      <div class="rule"></div>
+      <div class="title-meta">
+        <span class="pill gold">Beginner &rarr; Practitioner</span>
+        <span class="pill green">Real-World Agents</span>
+        <span class="pill ghost" style="color:#c7cbf0;border-color:rgba(255,255,255,.3)">~75 min &middot; pairs with Module 7 labs</span>
+      </div>
+      <p class="trainer">Trainer: <b>Rajesh Gheware</b> &middot; 25+ yrs (JPMorgan Chase &middot; Deutsche Bank &middot; Morgan Stanley) &middot; 5,000+ trained &middot; 4.91/5</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 2 — AGENDA ============ -->
+  <section class="slide" data-title="What we'll cover"
+    data-note="Map the hour. Start with the shift from 'an agent that can act' to 'an agent that does a job reliably'. Define agentic task automation and its anatomy -- the pipeline every automation follows: trigger, gather, reason/draft, validate, approve, act. Then the three canonical patterns you'll meet everywhere -- draft, extract, route -- with a deep dive on each. Then the part that separates a demo from production: reliability (validation, retries, idempotency) and human-in-the-loop for irreversible actions. Then the worked example that ties it together -- the email-drafting agent, in a diagram, a trace and a code peek -- which is your Lab 4.1. Finish with when to automate (and what NOT to), observability, and the bridge to your labs. Tell them: this module is about making agents trustworthy enough to leave running.">
+    <div class="kicker"><span class="dot"></span> Day 4 &middot; Module 7 <span class="sub">— Task Automation with AI Agents</span></div>
+    <h2 class="title">What we&rsquo;ll cover</h2>
+    <div class="body">
+      <div class="grid3">
+        <div class="card"><h3>&#9312; From act &rarr; do a job</h3><p>An agent that <b>completes a task end to end</b>, not one that just replies.</p></div>
+        <div class="card"><h3>&#9313; The automation pipeline</h3><p>Trigger &rarr; gather &rarr; draft &rarr; <b>validate</b> &rarr; approve &rarr; act.</p></div>
+        <div class="card cyan"><h3>&#9314; Draft &middot; Extract &middot; Route</h3><p>The three <b>patterns</b> almost every automation is built from.</p></div>
+        <div class="card cyan"><h3>&#9315; Reliability</h3><p>Validation, retries, idempotency &mdash; and <b>human-in-the-loop</b>.</p></div>
+        <div class="card gold"><h3>&#9316; The email agent</h3><p>The worked example end to end &mdash; your <b>Lab 4.1</b>.</p></div>
+        <div class="card gold"><h3>&#9317; When to automate</h3><p>ROI, what <b>not</b> to automate, and observability.</p></div>
+      </div>
+      <p class="callout" style="margin-top:18px">&#129504; <b>The throughline:</b> a demo agent has to work <i>once</i>; an automation agent has to work <b>every time, unattended, safely</b>. Module 7 is the discipline that gets you there.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 3 — FROM ACT TO DO A JOB ============ -->
+  <section class="slide" data-title="From act to a job"
+    data-note="Anchor the Day 3 to Day 4 shift. On Day 3 you built agents that CAN act -- they reason, call a tool, observe, answer. That's capability. Day 4 is about APPLICATION: pointing that capability at a real, recurring business task and making it dependable. The difference is everything a practitioner cares about: a demo agent answers a question you typed; an automation agent is triggered by a real event, pulls the context it needs from your systems, produces a work product (a draft, a structured record, a routing decision), checks its own work, and stops for a human before doing anything it can't undo. Same loop underneath -- but wrapped in the engineering that makes it trustworthy. Emphasise: the model didn't change; the RIGOR around it did.">
+    <div class="kicker"><span class="dot"></span> Day 3 gave capability &mdash; Day 4 applies it</div>
+    <h2 class="title">From &ldquo;an agent that acts&rdquo; to &ldquo;an agent that does a job&rdquo;</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card amber"><h3>&#128172; A demo agent</h3>
+          <ul>
+            <li>You type a question; it reasons and answers</li>
+            <li>Runs when you&rsquo;re watching</li>
+            <li>&ldquo;Works&rdquo; means it worked <b>once</b></li>
+            <li>Great for learning &amp; showing the loop</li>
+          </ul>
+        </div>
+        <div class="card cyan"><h3>&#9881;&#65039; An automation agent</h3>
+          <ul>
+            <li>A real <b>event</b> triggers it &mdash; a client email arrives</li>
+            <li>Pulls context from your <b>tools &amp; data</b>, produces a work product</li>
+            <li>&ldquo;Works&rdquo; means it works <b>every time, unattended</b></li>
+            <li><b>Checks itself</b> &amp; pauses for a human before irreversible acts</li>
+          </ul>
+        </div>
+      </div>
+      <p class="callout" style="margin-top:14px">&#129504; <b>Same loop, more rigour.</b> The model and the ReAct loop are unchanged from Day 3 &mdash; what we add is the engineering that makes an agent dependable enough to <b>leave running</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 4 — WHAT IS AGENTIC TASK AUTOMATION ============ -->
+  <section class="slide" data-title="What is task automation"
+    data-note="Give a crisp definition. Agentic task automation = using an agent to complete a recurring business task end to end, from a trigger to a finished work product, with tools for context and guardrails for safety. Unpack the contrast with two things they know. It's more than a chatbot: a chatbot converses; an automation delivers a result and often takes an action. It's more than a rigid script/RPA: classic automation breaks on anything unstructured or ambiguous; an agent handles the fuzzy middle -- reading a messy email, deciding the right reply, extracting fields from free text -- because its brain is an LLM. The sweet spot: tasks that are repetitive enough to be worth automating but too unstructured for a plain script. That's exactly where agents earn their keep, and it's a huge share of knowledge work.">
+    <div class="kicker"><span class="dot"></span> A working definition</div>
+    <h2 class="title">What is agentic task automation?</h2>
+    <div class="body">
+      <p class="lead">Using an agent to complete a <b>recurring business task end to end</b> &mdash; from a <b>trigger</b> to a finished <b>work product</b> &mdash; using <b>tools</b> for context and <b>guardrails</b> for safety.</p>
+      <div class="grid3" style="margin-top:8px">
+        <div class="card amber"><h3>&#128172; More than a chatbot</h3><p>A chatbot <b>converses</b>; an automation delivers a <b>result</b> and often takes an action.</p></div>
+        <div class="card blue"><h3>&#129520; More than a script</h3><p>Classic RPA breaks on anything <b>unstructured</b>; an agent handles the fuzzy middle.</p></div>
+        <div class="card cyan"><h3>&#127919; The sweet spot</h3><p><b>Repetitive</b> enough to automate, <b>too unstructured</b> for a rigid script.</p></div>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#128161; The agent&rsquo;s LLM brain is what lets it read a <b>messy email</b>, decide the right reply, or pull fields from <b>free text</b> &mdash; the parts a plain script could never handle. That&rsquo;s a huge slice of everyday knowledge work.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 5 — THE AUTOMATION PIPELINE (CENTERPIECE) ============ -->
+  <section class="slide" data-title="The automation pipeline"
+    data-note="The centrepiece -- spend time here. Every task-automation agent, however complex, follows the same pipeline. TRIGGER: something kicks it off (an email arrives, a schedule fires, a form is submitted). GATHER: the agent pulls the context it needs -- the client's history from the CRM, a policy from the knowledge base, a figure from a database -- using tools. REASON / DRAFT: the LLM does the actual cognitive work -- drafts the reply, extracts the fields, decides the route. VALIDATE: check the output against rules -- is the JSON well-formed, is the tone right, are required fields present. APPROVE: for anything irreversible, a human reviews before it goes out. ACT: finally, take the action -- send, file, update. Walk the arrows once, then note: the loop from Day 3 lives inside 'reason/draft', but the OUTER pipeline is what makes it an automation. Every lab and every real system maps onto this.">
+    <div class="kicker"><span class="dot"></span> The centrepiece &middot; the shape of every automation</div>
+    <h2 class="title">The task-automation pipeline</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 250" role="img" aria-label="The pipeline: trigger, gather context, reason and draft, validate, human approval, then act">
+          <defs><marker id="pp5" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker></defs>
+          <!-- row of stages -->
+          <g>
+            <rect x="18" y="70" width="140" height="80" rx="12" fill="#312e81" stroke="#06b6d4" stroke-width="2.5"/>
+            <text x="88" y="104" text-anchor="middle" font-size="14" font-weight="700" fill="#67e8f9">Trigger</text>
+            <text x="88" y="126" text-anchor="middle" font-size="10.5" fill="#c7cbf0">email / schedule</text>
+          </g>
+          <g>
+            <rect x="188" y="70" width="140" height="80" rx="12" fill="#ecfeff" stroke="#06b6d4" stroke-width="2"/>
+            <text x="258" y="104" text-anchor="middle" font-size="14" font-weight="700" fill="#0e7490">Gather</text>
+            <text x="258" y="126" text-anchor="middle" font-size="10.5" fill="#5b5f7a">tools / APIs / DB</text>
+          </g>
+          <g>
+            <rect x="358" y="70" width="150" height="80" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="2.5"/>
+            <text x="433" y="100" text-anchor="middle" font-size="14" font-weight="700" fill="#312e81">Reason / Draft</text>
+            <text x="433" y="122" text-anchor="middle" font-size="10.5" fill="#5b5f7a">the LLM does the work</text>
+            <text x="433" y="138" text-anchor="middle" font-size="9.5" fill="#4f46e5">(the Day-3 loop lives here)</text>
+          </g>
+          <g>
+            <rect x="538" y="70" width="140" height="80" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+            <text x="608" y="104" text-anchor="middle" font-size="14" font-weight="700" fill="#312e81">Validate</text>
+            <text x="608" y="126" text-anchor="middle" font-size="10.5" fill="#5b5f7a">check the output</text>
+          </g>
+          <g>
+            <rect x="708" y="70" width="140" height="80" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="2.5"/>
+            <text x="778" y="98" text-anchor="middle" font-size="13.5" font-weight="700" fill="#92400e">Approve</text>
+            <text x="778" y="120" text-anchor="middle" font-size="10.5" fill="#5b5f7a">human checkpoint</text>
+            <text x="778" y="136" text-anchor="middle" font-size="9.5" fill="#b45309">for irreversible acts</text>
+          </g>
+          <g>
+            <rect x="878" y="70" width="104" height="80" rx="12" fill="#059669" stroke="#047857" stroke-width="2"/>
+            <text x="930" y="104" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Act</text>
+            <text x="930" y="126" text-anchor="middle" font-size="10" fill="#d1fae5">send / file</text>
+          </g>
+          <!-- arrows -->
+          <path d="M158 110 L186 110" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#pp5)"/>
+          <path d="M328 110 L356 110" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#pp5)"/>
+          <path d="M508 110 L536 110" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#pp5)"/>
+          <path d="M678 110 L706 110" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#pp5)"/>
+          <path d="M848 110 L876 110" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#pp5)"/>
+          <!-- validate fail loop -->
+          <path d="M608 150 C608 200 460 200 440 152" fill="none" stroke="#b45309" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#pp5)"/>
+          <text x="520" y="196" text-anchor="middle" font-size="10.5" font-weight="700" fill="#b45309">fails? re-draft &#8635;</text>
+        </svg>
+        <figcaption>Every automation is this pipeline. The <b>Day-3 loop</b> lives inside <i>Reason / Draft</i>; the outer stages &mdash; gather, validate, approve &mdash; are what make it <b>reliable</b> and <b>safe</b>.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 6 — GROUNDING WITH TOOLS/APIS/DB ============ -->
+  <section class="slide" data-title="Grounding the task"
+    data-note="Zoom into the GATHER stage -- grounding. An automation is only as good as the context it works from. A general model doesn't know your client's order history, your refund policy, or today's inventory -- so the agent must fetch them via tools before it drafts anything. Three staple sources. TOOLS/APIS: live systems -- the CRM, a ticketing system, a calendar, a payments API. DATABASES: your records -- orders, customers, transactions. KNOWLEDGE BASE / DOCS: policies, templates, product info -- often via RAG (Day 3's retrieval). The rule: gather FIRST, draft SECOND. An agent that drafts before it gathers hallucinates specifics; an agent that grounds every claim in retrieved context is accurate and auditable. Tie back to Module 6: these are just tools you wrapped and gave the agent -- now you're pointing them at a real job.">
+    <div class="kicker"><span class="dot"></span> Gather before you draft</div>
+    <h2 class="title">Grounding the task in real data</h2>
+    <div class="body">
+      <p class="lead">A general model doesn&rsquo;t know <b>your</b> client&rsquo;s history, <b>your</b> refund policy, or today&rsquo;s numbers. So the agent must <b>gather context first</b> &mdash; then draft. Three staple sources:</p>
+      <div class="grid3" style="margin-top:6px">
+        <div class="card"><h3>&#128295; Tools &amp; APIs</h3><p>Live systems &mdash; the <b>CRM</b>, ticketing, calendar, a payments API.</p></div>
+        <div class="card cyan"><h3>&#128451;&#65039; Databases</h3><p>Your records &mdash; <b>orders, customers, transactions</b>.</p></div>
+        <div class="card blue"><h3>&#128218; Knowledge base</h3><p>Policies, templates, product docs &mdash; often via <b>RAG</b> retrieval.</p></div>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#128161; <b>Gather first, draft second.</b> An agent that drafts before it gathers <b>hallucinates specifics</b>; one that grounds every claim in retrieved context is <b>accurate and auditable</b>. These are just the Module-6 tools, pointed at a real job.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 7 — STRUCTURED OUTPUT ============ -->
+  <section class="slide" data-title="Structured output"
+    data-note="This is the single most important engineering idea in the module -- dwell on it. Free-flowing prose is great for a human reader but terrible for automation: you can't reliably act on it. The fix is STRUCTURED OUTPUT -- ask the model to return a defined shape (JSON matching a schema) instead of a paragraph. Why it changes everything: it's machine-readable (your code can act on each field), it's validatable (you can CHECK required fields, types, allowed values before trusting it), and it's composable (the output of one step feeds cleanly into the next). Example: instead of 'I think you should refund them and it's fairly urgent', the extract step returns {intent: refund, urgency: high, order_id: 4471}. Frameworks make the model return this shape (function-calling / structured output / Pydantic schemas). The mantra: if a machine will act on it, make it structured. Prose for humans, JSON for machines.">
+    <div class="kicker"><span class="dot"></span> The backbone of reliable automation</div>
+    <h2 class="title">Structured output, not prose</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card amber"><h3>&#128172; Prose (for a human)</h3>
+          <p class="mono" style="font-size:.85em">&ldquo;I think we should refund them, and it seems fairly urgent &mdash; something about order 4471.&rdquo;</p>
+          <p style="margin-top:8px">Readable &mdash; but your code <b>can&rsquo;t reliably act</b> on it.</p>
+        </div>
+        <div class="card cyan"><h3>&#128290; Structured (for a machine)</h3>
+          <p class="mono" style="font-size:.85em">{ "intent": "refund",<br>&nbsp;&nbsp;"urgency": "high",<br>&nbsp;&nbsp;"order_id": 4471 }</p>
+          <p style="margin-top:8px">Machine-readable, <b>validatable</b>, composable.</p>
+        </div>
+      </div>
+      <p class="callout" style="margin-top:14px">&#129504; Ask the model for a <b>defined shape</b> (JSON / a schema), not a paragraph &mdash; frameworks do this with <b>function-calling / structured output</b>. The mantra: <b>prose for humans, JSON for machines.</b> If code will act on it, make it structured.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 8 — THE THREE PATTERNS ============ -->
+  <section class="slide" data-title="Draft, Extract, Route"
+    data-note="Give them the mental toolkit: almost every task automation is one of three patterns, or a chain of them. DRAFT (generation): turn context into a work product -- an email reply, a summary, a report, a description. The output is text for a human. EXTRACT (structuring): turn messy unstructured input into structured data -- pull the order id, the intent, the sentiment, the dates out of a free-text message. The output is JSON for a machine. ROUTE / CLASSIFY (decision): decide what happens next -- which team gets this ticket, is this urgent, approve or escalate. The output is a label that drives a branch. Most real workflows CHAIN them: extract the fields from an incoming email, route it to the right handler, draft the reply. The email agent you'll build does exactly that. Tell them: name the pattern first and the design falls out.">
+    <div class="kicker"><span class="dot"></span> Almost every automation is one of three</div>
+    <h2 class="title">Three patterns: Draft &middot; Extract &middot; Route</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 250" role="img" aria-label="Three automation patterns: draft turns context into text, extract turns text into structured data, route turns input into a decision label">
+          <defs><marker id="tp8" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker></defs>
+          <!-- Draft -->
+          <rect x="30" y="40" width="290" height="170" rx="14" fill="#eef2ff" stroke="#4f46e5" stroke-width="2.5"/>
+          <text x="175" y="72" text-anchor="middle" font-size="17" font-weight="700" fill="#312e81">&#9998; Draft</text>
+          <text x="175" y="98" text-anchor="middle" font-size="11.5" fill="#5b5f7a">generation</text>
+          <text x="175" y="132" text-anchor="middle" font-size="12" fill="#312e81" font-weight="600">context &rarr; a work product</text>
+          <text x="175" y="156" text-anchor="middle" font-size="11" fill="#5b5f7a">email reply &middot; summary &middot; report</text>
+          <text x="175" y="184" text-anchor="middle" font-size="11" fill="#4f46e5" font-weight="600">output: text for a human</text>
+          <!-- Extract -->
+          <rect x="355" y="40" width="290" height="170" rx="14" fill="#ecfeff" stroke="#06b6d4" stroke-width="2.5"/>
+          <text x="500" y="72" text-anchor="middle" font-size="17" font-weight="700" fill="#0e7490">&#9707; Extract</text>
+          <text x="500" y="98" text-anchor="middle" font-size="11.5" fill="#5b5f7a">structuring</text>
+          <text x="500" y="132" text-anchor="middle" font-size="12" fill="#0e7490" font-weight="600">messy text &rarr; clean fields</text>
+          <text x="500" y="156" text-anchor="middle" font-size="11" fill="#5b5f7a">order id &middot; intent &middot; dates</text>
+          <text x="500" y="184" text-anchor="middle" font-size="11" fill="#0e7490" font-weight="600">output: JSON for a machine</text>
+          <!-- Route -->
+          <rect x="680" y="40" width="290" height="170" rx="14" fill="#fffbeb" stroke="#f59e0b" stroke-width="2.5"/>
+          <text x="825" y="72" text-anchor="middle" font-size="17" font-weight="700" fill="#92400e">&#8623; Route</text>
+          <text x="825" y="98" text-anchor="middle" font-size="11.5" fill="#5b5f7a">classify / decide</text>
+          <text x="825" y="132" text-anchor="middle" font-size="12" fill="#92400e" font-weight="600">input &rarr; a decision</text>
+          <text x="825" y="156" text-anchor="middle" font-size="11" fill="#5b5f7a">which team &middot; urgent? &middot; escalate</text>
+          <text x="825" y="184" text-anchor="middle" font-size="11" fill="#b45309" font-weight="600">output: a label that branches</text>
+        </svg>
+        <figcaption>Real workflows <b>chain</b> them: <b>extract</b> the fields from an email &rarr; <b>route</b> it to the right handler &rarr; <b>draft</b> the reply. Name the pattern and the design falls out.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 9 — DRAFT ============ -->
+  <section class="slide" data-title="Pattern: Draft"
+    data-note="Deep dive on Draft -- the pattern behind your email lab. Draft = the agent generates a work product from gathered context: a reply, a summary, a proposal, a product description. Three keys to a good draft agent. GROUND IT: feed it the real context (the client's message, their history, the relevant policy) so the draft is specific and correct, not generic. GIVE IT A VOICE: a system prompt with tone, format and constraints -- 'professional, concise, sign off as the support team, never promise a refund without approval'. LEAVE A HUMAN IN THE LOOP: a draft is a suggestion, not a sent message -- the human edits and approves. The failure mode to avoid: a draft that invents facts (a delivery date, a policy) because it wasn't grounded. Draft agents are the highest-value, lowest-risk automation because the human still holds the pen -- which is exactly why the email agent is the canonical first real-world lab.">
+    <div class="kicker"><span class="dot"></span> Pattern 1 of 3 &middot; the email lab</div>
+    <h2 class="title">Draft &mdash; generate a work product</h2>
+    <div class="body">
+      <p class="lead">The agent turns gathered context into a <b>draft</b> a human will review &mdash; a reply, a summary, a proposal. Three keys:</p>
+      <div class="grid3" style="margin-top:6px">
+        <div class="card cyan"><h3>&#128204; Ground it</h3><p>Feed the <b>real context</b> &mdash; the message, the history, the policy &mdash; so it&rsquo;s specific, not generic.</p></div>
+        <div class="card"><h3>&#127908; Give it a voice</h3><p>A system prompt sets <b>tone, format &amp; limits</b> &mdash; &ldquo;concise, never promise a refund.&rdquo;</p></div>
+        <div class="card gold"><h3>&#128100; Keep the human</h3><p>A draft is a <b>suggestion</b>, not a sent message &mdash; the human edits &amp; approves.</p></div>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#9888;&#65039; The failure mode: a draft that <b>invents</b> a delivery date or a policy because it wasn&rsquo;t grounded. Draft agents are high-value and <b>low-risk</b> &mdash; the human still holds the pen. That&rsquo;s why the email agent is the canonical first real-world lab.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 10 — EXTRACT ============ -->
+  <section class="slide" data-title="Pattern: Extract"
+    data-note="Deep dive on Extract -- turning mess into structure. Extract = pull defined fields out of unstructured input. An incoming email says 'Hi, my order from last Tuesday still hasn't arrived, ref 4471, getting frustrated' -- extract returns {order_id: 4471, intent: delivery_issue, sentiment: negative}. This is where structured output (slide 7) pays off: you define the schema, the model fills it, your code validates and acts. Keys: define a TIGHT schema (only the fields you'll use, with types and allowed values -- intent must be one of a fixed list); handle MISSING data gracefully (return null, don't hallucinate an order id); and VALIDATE before trusting (is order_id a real order?). Extract is the workhorse that turns email, chat, documents and forms into rows your systems can process. It's often the FIRST step in a chain -- extract, then route, then draft. Reliable extraction is what lets an agent plug into the systems you already run.">
+    <div class="kicker"><span class="dot"></span> Pattern 2 of 3</div>
+    <h2 class="title">Extract &mdash; mess in, structure out</h2>
+    <div class="body">
+      <p class="lead">Pull defined fields out of unstructured input &mdash; the workhorse that turns email, chat, docs &amp; forms into rows your systems can process.</p>
+      <div class="terminal" style="margin:6px 0">
+<span class="com"># unstructured in</span>
+<span class="you">"Hi, my order from last Tuesday still hasn't arrived, ref 4471, getting frustrated."</span>
+
+<span class="com"># structured out (a tight schema: fixed fields, allowed values)</span>
+{ <span class="kw">"order_id"</span>: <span class="str">4471</span>, <span class="kw">"intent"</span>: <span class="str">"delivery_issue"</span>, <span class="kw">"sentiment"</span>: <span class="str">"negative"</span> }
+      </div>
+      <p class="callout" style="margin-top:8px">&#129504; Keys: a <b>tight schema</b> (only fields you&rsquo;ll use, with allowed values) &middot; handle <b>missing data</b> (return null, don&rsquo;t invent an id) &middot; <b>validate</b> before trusting. Often the <b>first step</b> in a chain &mdash; extract &rarr; route &rarr; draft.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 11 — ROUTE ============ -->
+  <section class="slide" data-title="Pattern: Route"
+    data-note="Deep dive on Route / classify -- the decision pattern. Route = decide what happens next and emit a label that drives a branch. Which team gets this ticket (billing, tech, sales)? Is this urgent or routine? Approve automatically or escalate to a human? The output is a single choice from a FIXED set -- that constraint is the whole trick: give the model a closed list of options and it becomes a reliable classifier, not a free-associator. Keys: a CLOSED label set (route must be one of {billing, tech, sales, other} -- include 'other'/'unsure' as an escape hatch); a CONFIDENCE or fallback path (low confidence -> route to a human, never guess on high-stakes); and the label DRIVES CODE, not just a note (your workflow branches on it). Routing is how one agent becomes the front door to a whole system -- it triages, and everything downstream depends on getting it right. It's also the bridge to Module 8: routing to the right specialist AGENT is multi-agent collaboration.">
+    <div class="kicker"><span class="dot"></span> Pattern 3 of 3</div>
+    <h2 class="title">Route &mdash; decide what happens next</h2>
+    <div class="body">
+      <p class="lead">Emit a <b>label from a fixed set</b> that drives a branch &mdash; which team, how urgent, auto-handle or escalate. The closed list is the trick that makes an LLM a <b>reliable classifier</b>.</p>
+      <div class="grid3" style="margin-top:6px">
+        <div class="card cyan"><h3>&#128203; Closed label set</h3><p>One of <span class="mono">{billing, tech, sales, other}</span> &mdash; include <b>&ldquo;unsure&rdquo;</b> as an escape hatch.</p></div>
+        <div class="card gold"><h3>&#128100; Confidence &amp; fallback</h3><p>Low confidence &rarr; <b>route to a human</b>. Never guess on high stakes.</p></div>
+        <div class="card"><h3>&#9095; The label drives code</h3><p>Your workflow <b>branches</b> on it &mdash; it&rsquo;s a decision, not a note.</p></div>
+      </div>
+      <p class="callout" style="margin-top:14px">&#128073; Routing makes one agent the <b>front door</b> to a whole system. Routing to the right <b>specialist agent</b> is the bridge to <b>Module 8</b> &mdash; multi-agent collaboration.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 12 — RELIABILITY ============ -->
+  <section class="slide" data-title="Reliability"
+    data-note="This slide is what separates a demo from something you'd trust unattended -- hit it hard. Four cheap disciplines. VALIDATE THE OUTPUT: never trust the model blindly -- check the JSON parses, required fields are present, values are in range, the order id actually exists. If it fails validation, don't act. RETRY ON FAILURE: models and tools are flaky -- wrap calls with a retry (and a slightly firmer prompt on the retry). But cap retries so you don't loop forever. IDEMPOTENCY: design so running the same task twice is safe -- key each action so a re-run doesn't double-send an email or double-charge a card. This is the subtlest and most important for anything that touches money or messages. DEGRADE GRACEFULLY: when the agent can't complete confidently, fall back to a human with the context, don't fail silently or guess. The theme: assume every step can fail, and make failure safe and visible. This is ordinary software engineering -- agents don't get a pass on it.">
+    <div class="kicker"><span class="dot"></span> What separates a demo from production</div>
+    <h2 class="title">Reliability: validate, retry, stay idempotent</h2>
+    <div class="body">
+      <div class="grid4">
+        <div class="card"><h3>&#9989; Validate the output</h3><p>Check the JSON parses, required fields exist, values are in range &mdash; <b>don&rsquo;t act</b> if it fails.</p></div>
+        <div class="card cyan"><h3>&#128260; Retry on failure</h3><p>Models &amp; tools are flaky &mdash; retry with a firmer prompt, but <b>cap</b> the attempts.</p></div>
+        <div class="card gold"><h3>&#128273; Idempotency</h3><p>Running twice must be <b>safe</b> &mdash; key each action so you never <b>double-send</b> or double-charge.</p></div>
+        <div class="card blue"><h3>&#129309; Degrade gracefully</h3><p>Can&rsquo;t finish confidently? <b>Fall back to a human</b> with context &mdash; never guess silently.</p></div>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#128161; Assume <b>every step can fail</b>, and make failure <b>safe and visible</b>. This is ordinary software engineering &mdash; agents don&rsquo;t get a pass on it. Idempotency matters most for anything that touches <b>money or messages</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 13 — HUMAN IN THE LOOP ============ -->
+  <section class="slide" data-title="Human-in-the-loop"
+    data-note="The single most important safety pattern for real-world agents -- and the design principle behind the whole email lab. The rule: separate DRAFTING from SENDING. The agent can do all the cognitive work -- gather, reason, draft -- fully autonomously, because none of that is irreversible. But the irreversible action -- sending the email, issuing the refund, deleting the record -- pauses for a human to approve. The diagram shows the gate: draft flows to a human checkpoint; approve -> send; reject/edit -> back to the agent to revise. Why this is the sweet spot: you get ALL the speed of automation on the 90% that's safe (the drafting), and full human control on the 10% that's risky (the sending). It also builds trust and a training signal -- every approval/edit teaches you where the agent is weak. Frame it as a dial: as confidence grows you can auto-approve the easy cases and only escalate the hard ones. But start with a human on every send. Draft is not send.">
+    <div class="kicker"><span class="dot"></span> The rule for real-world agents</div>
+    <h2 class="title">Human-in-the-loop: draft &ne; send</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 240" role="img" aria-label="The agent gathers, reasons and drafts autonomously, then a human approval gate decides send or revise">
+          <defs><marker id="hl13" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker>
+          <marker id="hl13g" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#059669"/></marker>
+          <marker id="hl13a" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#b45309"/></marker></defs>
+          <!-- autonomous zone -->
+          <rect x="24" y="70" width="360" height="110" rx="14" fill="none" stroke="#a5b4fc" stroke-width="2" stroke-dasharray="8 6"/>
+          <text x="204" y="60" text-anchor="middle" font-size="12" font-weight="700" fill="#4f46e5">autonomous &mdash; nothing irreversible</text>
+          <rect x="44" y="92" width="150" height="66" rx="10" fill="#ecfeff" stroke="#06b6d4" stroke-width="2"/>
+          <text x="119" y="120" text-anchor="middle" font-size="12.5" font-weight="700" fill="#0e7490">Gather + reason</text>
+          <text x="119" y="140" text-anchor="middle" font-size="10.5" fill="#5b5f7a">pull context</text>
+          <rect x="214" y="92" width="150" height="66" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="289" y="120" text-anchor="middle" font-size="12.5" font-weight="700" fill="#312e81">Draft</text>
+          <text x="289" y="140" text-anchor="middle" font-size="10.5" fill="#5b5f7a">a suggestion</text>
+          <!-- human gate -->
+          <rect x="430" y="82" width="170" height="86" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="2.5"/>
+          <text x="515" y="116" text-anchor="middle" font-size="14" font-weight="700" fill="#92400e">&#128100; Human approval</text>
+          <text x="515" y="140" text-anchor="middle" font-size="10.5" fill="#5b5f7a">review the draft</text>
+          <!-- send -->
+          <rect x="820" y="46" width="150" height="60" rx="10" fill="#059669" stroke="#047857" stroke-width="2"/>
+          <text x="895" y="72" text-anchor="middle" font-size="13.5" font-weight="700" fill="#fff">Send</text>
+          <text x="895" y="92" text-anchor="middle" font-size="10" fill="#d1fae5">the irreversible act</text>
+          <!-- revise -->
+          <rect x="820" y="146" width="150" height="60" rx="10" fill="#fff7ed" stroke="#b45309" stroke-width="2"/>
+          <text x="895" y="172" text-anchor="middle" font-size="13" font-weight="700" fill="#92400e">Revise</text>
+          <text x="895" y="192" text-anchor="middle" font-size="10" fill="#b45309">back to the agent</text>
+          <!-- arrows -->
+          <path d="M194 125 L212 125" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#hl13)"/>
+          <path d="M364 125 L428 125" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#hl13)"/>
+          <path d="M600 108 C690 92 740 82 818 76" fill="none" stroke="#059669" stroke-width="2.5" marker-end="url(#hl13g)"/>
+          <text x="700" y="86" text-anchor="middle" font-size="11" font-weight="700" fill="#047857">approve &rarr;</text>
+          <path d="M600 142 C690 158 740 168 818 174" fill="none" stroke="#b45309" stroke-width="2.5" stroke-dasharray="6 5" marker-end="url(#hl13a)"/>
+          <text x="700" y="182" text-anchor="middle" font-size="11" font-weight="700" fill="#b45309">reject / edit &#8635;</text>
+        </svg>
+        <figcaption>All the <b>speed</b> of automation on the safe 90% (drafting); full human <b>control</b> on the risky 10% (sending). As trust grows, auto-approve the easy cases &mdash; but start with a human on every send.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 14 — WORKED EXAMPLE: EMAIL AGENT ============ -->
+  <section class="slide" data-title="The email agent"
+    data-note="Now assemble everything into the worked example that IS your Lab 4.1: an email-drafting agent for client queries. Walk the pipeline end to end with this concrete case. TRIGGER: a client email lands -- 'where's my order 4471?'. GATHER: the agent calls tools -- look up order 4471 in the orders DB (status: shipped, ETA Friday), pull the client's record from the CRM, fetch the 'delivery delay' reply template from the knowledge base. EXTRACT + ROUTE (optional first steps): it's a delivery query, routine urgency. DRAFT: using that grounded context and a system prompt for tone, it writes a specific, correct reply -- 'Your order 4471 shipped and is due Friday...'. VALIDATE: JSON/format check, required fields, no invented promises. APPROVE: the draft goes to a human -- the support agent -- who edits if needed and clicks send. This is every concept in the module in one flow, and it's exactly what they'll build. Emphasise: the agent did the tedious 90% (finding the order, grounding the reply); the human kept the send.">
+    <div class="kicker"><span class="dot"></span> The worked example &middot; your Lab 4.1</div>
+    <h2 class="title">The email-drafting agent, end to end</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 250" role="img" aria-label="A client email triggers the agent, which gathers order, CRM and template data, drafts a grounded reply, validates it, and sends it after human approval">
+          <defs><marker id="em14" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker></defs>
+          <rect x="16" y="86" width="150" height="70" rx="11" fill="#312e81" stroke="#06b6d4" stroke-width="2.5"/>
+          <text x="91" y="114" text-anchor="middle" font-size="12.5" font-weight="700" fill="#67e8f9">Client email</text>
+          <text x="91" y="134" text-anchor="middle" font-size="10" fill="#c7cbf0">&ldquo;where&rsquo;s order 4471?&rdquo;</text>
+          <!-- gather trio -->
+          <rect x="200" y="24" width="150" height="52" rx="9" fill="#ecfeff" stroke="#06b6d4" stroke-width="1.8"/>
+          <text x="275" y="46" text-anchor="middle" font-size="11.5" font-weight="700" fill="#0e7490">Orders DB</text>
+          <text x="275" y="64" text-anchor="middle" font-size="9.5" fill="#5b5f7a">shipped &middot; ETA Fri</text>
+          <rect x="200" y="94" width="150" height="52" rx="9" fill="#ecfeff" stroke="#06b6d4" stroke-width="1.8"/>
+          <text x="275" y="116" text-anchor="middle" font-size="11.5" font-weight="700" fill="#0e7490">CRM</text>
+          <text x="275" y="134" text-anchor="middle" font-size="9.5" fill="#5b5f7a">client record</text>
+          <rect x="200" y="164" width="150" height="52" rx="9" fill="#ecfeff" stroke="#06b6d4" stroke-width="1.8"/>
+          <text x="275" y="186" text-anchor="middle" font-size="11.5" font-weight="700" fill="#0e7490">KB template</text>
+          <text x="275" y="204" text-anchor="middle" font-size="9.5" fill="#5b5f7a">delivery reply</text>
+          <!-- draft -->
+          <rect x="392" y="86" width="150" height="70" rx="11" fill="#eef2ff" stroke="#4f46e5" stroke-width="2.5"/>
+          <text x="467" y="114" text-anchor="middle" font-size="13" font-weight="700" fill="#312e81">Draft reply</text>
+          <text x="467" y="134" text-anchor="middle" font-size="9.5" fill="#5b5f7a">grounded &amp; on-tone</text>
+          <!-- validate -->
+          <rect x="576" y="86" width="140" height="70" rx="11" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="646" y="114" text-anchor="middle" font-size="13" font-weight="700" fill="#312e81">Validate</text>
+          <text x="646" y="134" text-anchor="middle" font-size="9.5" fill="#5b5f7a">no invented promises</text>
+          <!-- approve -->
+          <rect x="750" y="86" width="140" height="70" rx="11" fill="#fffbeb" stroke="#f59e0b" stroke-width="2.5"/>
+          <text x="820" y="110" text-anchor="middle" font-size="12.5" font-weight="700" fill="#92400e">&#128100; Approve</text>
+          <text x="820" y="130" text-anchor="middle" font-size="9.5" fill="#5b5f7a">human clicks send</text>
+          <!-- send -->
+          <rect x="900" y="94" width="86" height="54" rx="10" fill="#059669" stroke="#047857" stroke-width="2"/>
+          <text x="943" y="126" text-anchor="middle" font-size="12.5" font-weight="700" fill="#fff">Send</text>
+          <!-- arrows -->
+          <path d="M166 112 C182 90 188 66 198 54" fill="none" stroke="#4f46e5" stroke-width="1.8" marker-end="url(#em14)"/>
+          <path d="M166 120 L198 120" stroke="#4f46e5" stroke-width="1.8" marker-end="url(#em14)"/>
+          <path d="M166 128 C182 150 188 174 198 186" fill="none" stroke="#4f46e5" stroke-width="1.8" marker-end="url(#em14)"/>
+          <path d="M350 120 L390 120" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#em14)"/>
+          <path d="M542 121 L574 121" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#em14)"/>
+          <path d="M716 121 L748 121" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#em14)"/>
+          <path d="M890 121 L898 121" stroke="#059669" stroke-width="2.5" marker-end="url(#em14)"/>
+        </svg>
+        <figcaption>The agent did the tedious <b>90%</b> &mdash; finding the order, grounding the reply in real data; the human kept the <b>send</b>. Every concept in this module, in one flow.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 15 — EMAIL AGENT TRACE ============ -->
+  <section class="slide" data-title="Email agent trace"
+    data-note="Make the flow concrete with a run trace -- the same ReAct trace shape from Module 5/6, now doing a real job. Walk it: the incoming email triggers the run; the agent reasons it needs the order status and calls the lookup_order tool (observation: shipped, ETA Friday); it reasons it needs the reply template and fetches it; then it drafts the reply, grounded in those observations; validation passes; and instead of sending, it STOPS and emits the draft for human approval. Point at the last line: the agent's output is a DRAFT plus a 'needs approval' flag -- it did not send. That's the human-in-the-loop pattern in the trace. This is exactly what scrolls past in the lab when you run the email agent with verbose logging. Tie back: gather (two tool calls), draft (grounded), validate, then hand off -- the pipeline made visible.">
+    <div class="kicker"><span class="dot"></span> The run, made visible</div>
+    <h2 class="title">The email agent&rsquo;s trace</h2>
+    <div class="body">
+      <div class="terminal">
+<span class="you">Trigger:</span> client email &mdash; "Where is my order 4471? It's late."
+
+<span class="kw">Thought:</span> I need the order status first.
+<span class="kw">Action:</span> <span class="fn">lookup_order</span>(<span class="str">"4471"</span>)
+<span class="out">Observation: {status: "shipped", eta: "Friday", carrier: "BlueDart"}</span>
+
+<span class="kw">Thought:</span> I'll ground the reply in our delivery-delay template.
+<span class="kw">Action:</span> <span class="fn">get_template</span>(<span class="str">"delivery_delay"</span>)
+<span class="out">Observation: "Hi {name}, your order {id} is on its way..."</span>
+
+<span class="kw">Thought:</span> I have everything. Draft the reply and validate it.
+<span class="kw">Draft:</span> <span class="you">"Hi Priya, your order 4471 has shipped and is due Friday via BlueDart..."</span>
+<span class="out">Validation: OK -- no invented dates, required fields present.</span>
+
+<span class="kw">Final:</span> <span class="fn">status</span>=<span class="str">"needs_approval"</span>  <span class="com"># drafted, NOT sent -- waiting for a human</span>
+      </div>
+      <p class="callout warn" style="margin-top:12px">&#128073; The agent&rsquo;s output is a <b>draft + a &ldquo;needs approval&rdquo; flag</b> &mdash; it gathered, drafted and validated autonomously, then <b>stopped before sending</b>. That last line is human-in-the-loop, in the trace.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 16 — EMAIL AGENT IN CODE ============ -->
+  <section class="slide" data-title="Email agent in code"
+    data-note="A short, illustrative code peek so the abstractions feel concrete -- not a coding lesson. This is the shape of the email agent they'll build in Lab 4.1, in the LangChain idiom from Module 6. Point out the four things they already know: (1) tools -- lookup_order and get_template, defined with @tool exactly as in Module 6; (2) the agent -- create_react_agent binds the model to those tools; (3) the guardrail -- the draft is returned, and send_email is deliberately NOT given to the agent as a tool, so it CANNOT send on its own; a human calls send after approving; (4) the loop cap -- max_iterations, the guardrail from Module 5. Stress the design choice on line with send_email: withholding the irreversible tool from the agent is the simplest, strongest human-in-the-loop guardrail there is -- the agent literally cannot send. Everything here maps to code they wrote yesterday; today they point it at a real task.">
+    <div class="kicker"><span class="dot"></span> Illustrative &middot; the shape of Lab 4.1</div>
+    <h2 class="title">The email agent, in code</h2>
+    <div class="body">
+      <div class="terminal">
+<span class="com"># Tools give the agent its hands (Module 6). Note what's MISSING: send_email.</span>
+<span class="fn">@tool</span>
+<span class="kw">def</span> <span class="fn">lookup_order</span>(order_id: str) -> dict:
+    <span class="str">"""Look up an order's status, ETA and carrier by id."""</span>
+    <span class="kw">return</span> orders_db.<span class="fn">get</span>(order_id)
+
+tools = [lookup_order, get_template]        <span class="com"># gather-only -- the agent CANNOT send</span>
+agent = <span class="fn">create_react_agent</span>(llm, tools, draft_prompt)
+executor = <span class="fn">AgentExecutor</span>(agent=agent, tools=tools, max_iterations=<span class="str">6</span>)
+
+draft = executor.<span class="fn">invoke</span>({<span class="str">"input"</span>: incoming_email})   <span class="com"># returns a DRAFT, not a sent mail</span>
+<span class="kw">if</span> human_approves(draft):                   <span class="com"># the human-in-the-loop gate</span>
+    <span class="fn">send_email</span>(draft)                       <span class="com"># a human triggers the irreversible act</span>
+      </div>
+      <p class="callout warn" style="margin-top:12px">&#128073; The strongest human-in-the-loop guardrail is the simplest: <b>don&rsquo;t give the agent the <span class="mono">send_email</span> tool</b>. It can gather and draft all day &mdash; it literally <b>cannot send</b>. A human does that after approving.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 17 — WHEN TO AUTOMATE ============ -->
+  <section class="slide" data-title="When to automate"
+    data-note="Give them the judgment to choose the right targets -- as important as the how. A task is a GOOD automation candidate when it's: repetitive and high-volume (worth the build), somewhat rule-governed but with unstructured input (needs the LLM's flexibility), tolerant of a human check (draft-and-approve fits), and clear about success (you can tell right from wrong). It's a BAD candidate when: it's rare or one-off (just do it by hand), high-stakes with no room for oversight (don't automate an irreversible decision you can't check), requires judgment you can't specify, or the cost of a wrong answer is catastrophic. The ROI lens: value = volume x time-saved-per-task x (1 - error-cost). Start where volume is high and errors are cheap and catchable -- like email drafting. Warn against the hype trap: automating something flashy that's actually rare, or removing the human from something that genuinely needs one. The senior move is to automate the boring, frequent, checkable 80% and leave the rest to people.">
+    <div class="kicker"><span class="dot"></span> Choose the right targets</div>
+    <h2 class="title">When to automate &mdash; and when not to</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card cyan"><h3>&#9989; Good candidate</h3>
+          <ul>
+            <li><b>Repetitive &amp; high-volume</b> &mdash; worth the build</li>
+            <li>Rule-ish, but with <b>unstructured</b> input</li>
+            <li>Tolerates a <b>human check</b> (draft-and-approve fits)</li>
+            <li>Clear success &mdash; you can tell right from wrong</li>
+          </ul>
+        </div>
+        <div class="card amber"><h3>&#9940; Poor candidate</h3>
+          <ul>
+            <li><b>Rare or one-off</b> &mdash; just do it by hand</li>
+            <li>High-stakes with <b>no room for oversight</b></li>
+            <li>Needs judgment you <b>can&rsquo;t specify</b></li>
+            <li>A wrong answer is <b>catastrophic</b> &amp; uncatchable</li>
+          </ul>
+        </div>
+      </div>
+      <p class="callout" style="margin-top:14px">&#129504; <b>ROI lens:</b> value &asymp; <i>volume</i> &times; <i>time saved</i> &times; <i>(how cheap &amp; catchable errors are)</i>. Automate the <b>boring, frequent, checkable</b> 80% &mdash; like email drafting &mdash; and leave the rest to people.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 18 — FAILURE MODES & OBSERVABILITY ============ -->
+  <section class="slide" data-title="Failure modes & observability"
+    data-note="Close the engineering arc: name the failure modes and insist on observability. The classic ways an automation goes wrong: HALLUCINATED SPECIFICS (an invented delivery date because it wasn't grounded -- fixed by gather-first + validation); SILENT WRONG OUTPUT (a plausible but incorrect draft that no one checks -- fixed by validation + human approval on high-stakes); TOOL/DATA FAILURE (the CRM is down, a lookup returns stale data -- fixed by retries + graceful degradation); and DRIFT (it worked at launch, but inputs changed and quality slid -- fixed by monitoring). The common defence is OBSERVABILITY: log every run -- the trigger, each tool call and observation, the draft, the validation result, the human decision. That log is how you debug a bad output, audit what happened, and MEASURE quality over time (approval rate, edit rate, error rate). Tie to Karpathy's eval loop and Module 6's tracing (LangSmith/Langfuse): once you can measure the automation, you can improve it systematically. You can't run unattended what you can't see.">
+    <div class="kicker"><span class="dot"></span> Assume it will fail &mdash; make failure visible</div>
+    <h2 class="title">Failure modes &amp; observability</h2>
+    <div class="body">
+      <div class="grid4">
+        <div class="card amber"><h3>&#128169; Hallucinated specifics</h3><p>An invented date or policy &mdash; fixed by <b>gather-first</b> + validation.</p></div>
+        <div class="card amber"><h3>&#129323; Silent wrong output</h3><p>Plausible but incorrect &mdash; fixed by <b>validation</b> + human approval.</p></div>
+        <div class="card blue"><h3>&#128268; Tool / data failure</h3><p>CRM down, stale lookup &mdash; fixed by <b>retries</b> &amp; graceful degradation.</p></div>
+        <div class="card blue"><h3>&#128201; Drift</h3><p>Worked at launch, inputs changed &mdash; caught by <b>monitoring</b>.</p></div>
+      </div>
+      <p class="callout" style="margin-top:14px">&#128202; The common defence is <b>observability</b>: log every run &mdash; trigger, each tool call, the draft, the validation, the human decision. That log lets you <b>debug, audit &amp; measure</b> (approval rate, edit rate). <b>LangSmith / Langfuse</b> do this &mdash; you can&rsquo;t run unattended what you can&rsquo;t see.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 19 — CONNECT TO LABS ============ -->
+  <section class="slide" data-title="This connects to your labs"
+    data-note="Hand off to the keyboards. Module 7's labs build the email-drafting agent for real, piece by piece, exactly as the module described. Lab 4.1 -- the flagship: an agent that reads an incoming client query, gathers the order and template context via tools, drafts a grounded reply with the right tone, validates it, and returns it for human approval -- never sending on its own. Along the way you'll practice the three patterns (extract the query's fields, route by type, draft the reply), structured output, validation and the draft-not-send guardrail. Encourage them: this is the first agent that does a job you'd actually pay for -- and it's the template for automating almost any drafting task. Then tease Module 8: when one agent isn't enough, you coordinate several specialists -- the customer-service chatbot (Lab 4.2) -- which is where routing becomes routing to another agent.">
+    <div class="kicker"><span class="dot"></span> From slides to keyboards</div>
+    <h2 class="title">Now build it &mdash; Module 7 labs</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card"><h3>&#9654; Lab 4.1 &middot; The email-drafting agent</h3>
+          <ul>
+            <li><b>Gather</b> order &amp; template context with tools</li>
+            <li><b>Extract &amp; route</b> the query&rsquo;s intent and type</li>
+            <li><b>Draft</b> a grounded, on-tone reply &amp; <b>validate</b> it</li>
+            <li>Return a draft for <b>human approval</b> &mdash; never auto-send</li>
+          </ul>
+        </div>
+        <div class="card cyan"><h3>&#9654; The patterns you&rsquo;ll practise</h3>
+          <ul>
+            <li>Structured output &amp; a tight schema</li>
+            <li>Validation, retries &amp; graceful fallback</li>
+            <li>The <b>draft-not-send</b> guardrail in code</li>
+            <li>Logging the run for debugging &amp; audit</li>
+          </ul>
+        </div>
+      </div>
+      <p class="callout warn" style="margin-top:16px">&#128218; Open <b><a href="../hands-on/module-7/index.html">Module 7&rsquo;s hands-on labs</a></b> &mdash; your first agent that does a job you&rsquo;d actually pay for, and the template for automating almost any drafting task. Next: <b>Module 8 &mdash; Multi-Agent Collaboration</b> (the customer-service chatbot).</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 20 — KEY TAKEAWAYS ============ -->
+  <section class="slide dark" data-title="Key takeaways"
+    data-note="Recap crisply, then the quiz. Five points: task automation is doing a whole job end to end, not one reply; every automation is the same pipeline -- trigger, gather, draft, validate, approve, act; the three patterns are draft, extract and route, and real workflows chain them; structured output plus validation is what makes it reliable; and the golden rule is human-in-the-loop for anything irreversible -- draft is not send. Then tell them: a quick 10-question check to lock it in before they build the email agent.">
+    <div class="kicker"><span class="dot"></span> Recap</div>
+    <h2 class="title">Five things to carry forward</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card"><h3>1 &middot; A whole job, end to end</h3><p>Automation <b>completes a task</b> &mdash; it doesn&rsquo;t just reply.</p></div>
+        <div class="card cyan"><h3>2 &middot; One pipeline</h3><p>Trigger &rarr; gather &rarr; draft &rarr; <b>validate</b> &rarr; approve &rarr; act.</p></div>
+        <div class="card"><h3>3 &middot; Draft &middot; Extract &middot; Route</h3><p>Three patterns &mdash; and real workflows <b>chain</b> them.</p></div>
+        <div class="card"><h3>4 &middot; Structured + validated</h3><p><b>JSON for machines</b>, checked before you act &mdash; the key to reliability.</p></div>
+        <div class="card gold" style="grid-column:1/-1"><h3>5 &middot; Human-in-the-loop</h3><p>Pause for a person before anything <b>irreversible</b> &mdash; <b>draft is not send</b>. Next: build the email agent (Module 7 labs).</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 21 — QUIZ INTRO ============ -->
+  <section class="slide dark" data-title="Quiz — intro"
+    data-note="Quick formative check -- 10 questions, mixed easy/medium, all on Module 7. Format: each question slide, then its answer slide with the explanation. Run it interactively -- read the question, let them call A/B/C/D, advance to reveal. The goal is to surface and fix misconceptions before they build the email agent. Keep it light and fast.">
+    <div class="body center">
+      <div class="kicker"><span class="dot"></span> Lock it in</div>
+      <h2 class="title" style="border-bottom-color:var(--cyan)">Quick check &mdash; 10 questions</h2>
+      <p class="lead" style="color:#e7e9fb">Each <b>question</b> appears first; the <b>answer</b> &amp; a one-line why are on the next slide. Call out A / B / C / D before you advance.</p>
+      <div class="title-meta" style="margin-top:14px">
+        <span class="pill cyan">10 questions</span>
+        <span class="pill gold">mixed: easy &amp; medium</span>
+        <span class="pill ghost" style="color:#c7cbf0;border-color:rgba(255,255,255,.3)">all on Module 7</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 22 — Q1 ============ -->
+  <section class="slide" data-title="Quiz Q1 — automation vs chatbot"
+    data-note="Answer: B. Task automation completes a whole job end to end from a trigger; a chatbot just converses.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q1 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">What distinguishes agentic task automation from a chatbot?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>It uses a larger language model.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>It completes a recurring task end to end &mdash; from a trigger to a finished work product.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>It never uses any tools.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>It only works if a human types each step.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 23 — A1 ============ -->
+  <section class="slide" data-title="Answer Q1"
+    data-note="A chatbot converses; an automation is triggered by an event, gathers context, produces a work product and often takes an action.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q1 / 10</div>
+    <h2 class="title">Automation vs chatbot</h2>
+    <div class="body center">
+      <p class="quiz-restate">What makes it &ldquo;automation&rdquo;.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>It uses a larger language model.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>It completes a recurring task end to end &mdash; from a trigger to a finished work product. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>It never uses any tools.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>It only works if a human types each step.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;A chatbot <b>converses</b>; an automation is <b>triggered by an event</b>, gathers context, produces a work product and often takes an action &mdash; a whole job, not one reply.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 24 — Q2 ============ -->
+  <section class="slide" data-title="Quiz Q2 — the pipeline"
+    data-note="Answer: B. The pipeline is trigger -> gather -> reason/draft -> validate -> approve -> act.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q2 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">What is the shape of a task-automation pipeline?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Act &rarr; approve &rarr; draft &rarr; trigger.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Trigger &rarr; gather &rarr; reason/draft &rarr; validate &rarr; approve &rarr; act.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Draft &rarr; send &rarr; hope for the best.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Gather &rarr; act &rarr; trigger &rarr; validate.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 25 — A2 ============ -->
+  <section class="slide" data-title="Answer Q2"
+    data-note="Every automation follows this pipeline; the Day-3 loop lives inside 'reason/draft', and the outer stages make it reliable and safe.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q2 / 10</div>
+    <h2 class="title">The automation pipeline</h2>
+    <div class="body center">
+      <p class="quiz-restate">The stages, in order.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Act &rarr; approve &rarr; draft &rarr; trigger.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>Trigger &rarr; gather &rarr; reason/draft &rarr; validate &rarr; approve &rarr; act. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Draft &rarr; send &rarr; hope for the best.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Gather &rarr; act &rarr; trigger &rarr; validate.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;The Day-3 loop lives inside <b>reason/draft</b>; the outer stages &mdash; <b>gather, validate, approve</b> &mdash; are what make an automation reliable and safe.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 26 — Q3 ============ -->
+  <section class="slide" data-title="Quiz Q3 — structured output"
+    data-note="Answer: B. Structured output is machine-readable and validatable, so code can reliably act on it.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q3 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Why prefer structured output (JSON/schema) over prose for automation?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Prose is impossible for a model to produce.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>It's machine-readable &amp; validatable, so code can reliably act on each field.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>JSON always uses fewer tokens.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>It removes the need for a language model.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 27 — A3 ============ -->
+  <section class="slide" data-title="Answer Q3"
+    data-note="Prose is for humans; JSON is for machines. A defined shape can be validated (required fields, allowed values) and fed cleanly into the next step.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q3 / 10</div>
+    <h2 class="title">Why structured output</h2>
+    <div class="body center">
+      <p class="quiz-restate">Prose for humans, JSON for machines.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Prose is impossible for a model to produce.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>It's machine-readable &amp; validatable, so code can reliably act on each field. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>JSON always uses fewer tokens.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>It removes the need for a language model.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;A defined shape can be <b>validated</b> (required fields, allowed values) and fed cleanly into the next step. If code will act on it, <b>make it structured</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 28 — Q4 ============ -->
+  <section class="slide" data-title="Quiz Q4 — the three patterns"
+    data-note="Answer: B. The three canonical automation patterns are draft, extract and route.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q4 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">What are the three canonical task-automation patterns?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Train, deploy, monitor.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Draft, extract, route.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Search, summarise, delete.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Encode, decode, embed.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 29 — A4 ============ -->
+  <section class="slide" data-title="Answer Q4"
+    data-note="Draft generates a work product, extract turns mess into structured data, route emits a decision label. Real workflows chain them.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q4 / 10</div>
+    <h2 class="title">The three patterns</h2>
+    <div class="body center">
+      <p class="quiz-restate">Draft &middot; Extract &middot; Route.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Train, deploy, monitor.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>Draft, extract, route. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Search, summarise, delete.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Encode, decode, embed.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;<b>Draft</b> generates a work product, <b>extract</b> turns mess into structured data, <b>route</b> emits a decision label &mdash; and real workflows <b>chain</b> them.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 30 — Q5 ============ -->
+  <section class="slide" data-title="Quiz Q5 — extract"
+    data-note="Answer: B. The extract pattern pulls defined structured fields out of unstructured input.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q5 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">What does the &ldquo;extract&rdquo; pattern do?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Write a long prose summary for a human.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Pull defined fields out of unstructured input into a clean schema.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Send an email to the customer.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Train the model on new data.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 31 — A5 ============ -->
+  <section class="slide" data-title="Answer Q5"
+    data-note="Extract turns a messy email into {order_id, intent, sentiment}. Keys: a tight schema, handle missing data, validate before acting.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q5 / 10</div>
+    <h2 class="title">The extract pattern</h2>
+    <div class="body center">
+      <p class="quiz-restate">Mess in, structure out.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Write a long prose summary for a human.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>Pull defined fields out of unstructured input into a clean schema. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Send an email to the customer.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Train the model on new data.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Extract turns a messy email into <span class="mono">{order_id, intent, sentiment}</span>. Keys: a <b>tight schema</b>, handle <b>missing data</b>, and <b>validate</b> before acting.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 32 — Q6 ============ -->
+  <section class="slide" data-title="Quiz Q6 — draft not send"
+    data-note="Answer: B. Sending is irreversible, so the agent drafts and a human approves before it goes out.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q6 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Why should an email-drafting agent draft rather than auto-send?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Sending is technically impossible for an agent.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Sending is irreversible &mdash; a human should approve before it goes out (human-in-the-loop).</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Drafts are always cheaper in tokens.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Because agents cannot write email text.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 33 — A6 ============ -->
+  <section class="slide" data-title="Answer Q6"
+    data-note="The simplest strong guardrail is to withhold the send tool: the agent gathers and drafts autonomously but literally cannot send; a human does that after approving.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q6 / 10</div>
+    <h2 class="title">Draft is not send</h2>
+    <div class="body center">
+      <p class="quiz-restate">The golden human-in-the-loop rule.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Sending is technically impossible for an agent.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>Sending is irreversible &mdash; a human should approve before it goes out (human-in-the-loop). &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Drafts are always cheaper in tokens.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Because agents cannot write email text.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;The simplest strong guardrail is to <b>withhold the send tool</b>: the agent gathers &amp; drafts autonomously but <b>cannot send</b>. A human does that after approving.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 34 — Q7 ============ -->
+  <section class="slide" data-title="Quiz Q7 — reliability"
+    data-note="Answer: B. Validate the output and retry on failure -- never act on unchecked model output.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q7 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">A good reliability guardrail for an agent's output is to&hellip;</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Trust the model and act immediately.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Validate the output (parse, required fields, ranges) and retry on failure.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Remove all tools from the agent.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Increase the model temperature.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 35 — A7 ============ -->
+  <section class="slide" data-title="Answer Q7"
+    data-note="Never act on unchecked output. Validate it parses and meets the schema; retry with a firmer prompt on failure (capped); degrade to a human if it still fails.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q7 / 10</div>
+    <h2 class="title">Validate, then act</h2>
+    <div class="body center">
+      <p class="quiz-restate">Don't trust unchecked output.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Trust the model and act immediately.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>Validate the output (parse, required fields, ranges) and retry on failure. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Remove all tools from the agent.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Increase the model temperature.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Validate it parses and meets the schema; <b>retry</b> with a firmer prompt on failure (capped); <b>degrade to a human</b> if it still fails. Never act on unchecked output.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 36 — Q8 ============ -->
+  <section class="slide" data-title="Quiz Q8 — idempotency"
+    data-note="Answer: B. Idempotency means running the same task twice has the same effect -- so a re-run never double-sends or double-charges.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q8 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">What is idempotency, and why does it matter for automation?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Making the model bigger so it makes fewer mistakes.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Running the same task twice has the same effect &mdash; so a re-run never double-sends or double-charges.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Encrypting the agent's memory.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Letting the agent run forever without a cap.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 37 — A8 ============ -->
+  <section class="slide" data-title="Answer Q8"
+    data-note="Key each action so a retry or duplicate trigger can't repeat an irreversible effect. It matters most for anything that touches money or messages.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q8 / 10</div>
+    <h2 class="title">Idempotency</h2>
+    <div class="body center">
+      <p class="quiz-restate">Running twice must be safe.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Making the model bigger so it makes fewer mistakes.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>Running the same task twice has the same effect &mdash; so a re-run never double-sends or double-charges. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Encrypting the agent's memory.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Letting the agent run forever without a cap.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;<b>Key each action</b> so a retry or a duplicate trigger can&rsquo;t repeat an irreversible effect. It matters most for anything that touches <b>money or messages</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 38 — Q9 ============ -->
+  <section class="slide" data-title="Quiz Q9 — when to automate"
+    data-note="Answer: B. Good candidates are repetitive, high-volume, somewhat rule-ish tasks with checkable outputs -- not rare or high-stakes-no-oversight ones.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q9 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Which task is the best candidate for agent automation?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>A rare, one-off decision with no way to check the result.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>A repetitive, high-volume task with unstructured input and a checkable output.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>An irreversible, high-stakes action with no oversight.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>A task whose correct answer no one can ever determine.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 39 — A9 ============ -->
+  <section class="slide" data-title="Answer Q9"
+    data-note="Automate the boring, frequent, checkable work where errors are cheap and catchable -- like email drafting. Leave the rare or high-stakes-no-oversight tasks to people.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q9 / 10</div>
+    <h2 class="title">When to automate</h2>
+    <div class="body center">
+      <p class="quiz-restate">The right target.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>A rare, one-off decision with no way to check the result.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>A repetitive, high-volume task with unstructured input and a checkable output. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>An irreversible, high-stakes action with no oversight.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>A task whose correct answer no one can ever determine.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Automate the <b>boring, frequent, checkable</b> work where errors are cheap and catchable &mdash; like email drafting. Leave the rare or high-stakes-no-oversight tasks to people.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 40 — Q10 ============ -->
+  <section class="slide" data-title="Quiz Q10 — observability"
+    data-note="Answer: B. Log every run so you can debug a bad output, audit what happened, and measure quality over time.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q10 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Why is logging/observability essential in an automation agent?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>It makes the model deterministic.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>To debug bad outputs, audit what happened, and measure quality over time.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>It replaces the need for validation.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>It lets the agent skip human approval.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 41 — A10 ============ -->
+  <section class="slide" data-title="Answer Q10"
+    data-note="Automations run unattended and are non-deterministic, so you can't fix what you can't see. Logging each run's trigger, tools, draft, validation and human decision lets you debug, audit and measure -- what LangSmith/Langfuse do.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q10 / 10</div>
+    <h2 class="title">Why observability</h2>
+    <div class="body center">
+      <p class="quiz-restate">You can't run unattended what you can't see.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>It makes the model deterministic.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>To debug bad outputs, audit what happened, and measure quality over time. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>It replaces the need for validation.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>It lets the agent skip human approval.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Automations run <b>unattended</b> and are non-deterministic. Logging each run&rsquo;s trigger, tools, draft, validation &amp; human decision lets you <b>debug, audit &amp; measure</b> &mdash; what <b>LangSmith / Langfuse</b> do.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 42 — REFERENCES ============ -->
+  <section class="slide" data-title="References &amp; further study"
+    data-note="Point to the best companions. LangChain's extraction and tool-calling how-tos are the direct companions to the email lab's extract and gather steps. LangGraph's human-in-the-loop guide is the framework version of the draft-not-send gate. Anthropic's 'Building effective agents' remains the reality check on when a workflow beats an agent. The structured-output docs anchor slide 7. All links live in the HTML; skim the extraction how-to before the labs.">
+    <div class="kicker"><span class="dot"></span> Go deeper &middot; curated, mostly free</div>
+    <h2 class="title">References &amp; further study</h2>
+    <div class="body">
+      <ul class="refs">
+        <li><a href="https://python.langchain.com/docs/tutorials/extraction/" target="_blank" rel="noopener">LangChain &mdash; Extraction tutorial</a><span class="d">The direct companion to the email lab&rsquo;s extract step &mdash; schema-driven output.</span></li>
+        <li><a href="https://python.langchain.com/docs/concepts/structured_outputs/" target="_blank" rel="noopener">LangChain &mdash; Structured outputs</a><span class="d">Making the model return a defined shape &mdash; slide 7, in code.</span></li>
+        <li><a href="https://python.langchain.com/docs/concepts/tool_calling/" target="_blank" rel="noopener">LangChain &mdash; Tool calling</a><span class="d">The gather step: giving the agent tools for real context.</span></li>
+        <li><a href="https://langchain-ai.github.io/langgraph/concepts/human_in_the_loop/" target="_blank" rel="noopener">LangGraph &mdash; Human-in-the-loop</a><span class="d">The framework version of the draft-then-approve gate.</span></li>
+        <li><a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noopener">Anthropic &mdash; Building effective agents</a><span class="d">When a fixed workflow beats an agent &mdash; the reliability reality check.</span></li>
+        <li><a href="https://www.promptingguide.ai/" target="_blank" rel="noopener">Prompt Engineering Guide</a><span class="d">Constraining the draft: tone, format &amp; limits in the system prompt.</span></li>
+        <li><a href="https://langfuse.com/docs" target="_blank" rel="noopener">Langfuse &mdash; tracing &amp; observability</a><span class="d">Log &amp; measure every automation run &mdash; slide 18.</span></li>
+        <li><a href="../course-outline-building-intelligent-ai-agents.html">Course outline (internal)</a><span class="d">Where this module sits in the 5-day arc &mdash; all decks &amp; labs.</span></li>
+      </ul>
+      <p class="small" style="margin-top:12px">All external links open in a new tab. Skim the <b>Extraction tutorial</b> before the labs.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 43 — CLOSING ============ -->
+  <section class="slide title-slide" data-title="What's next"
+    data-note="Close warm and bridge to Module 8. Today the agents went to work: you learned to turn a real business task into a reliable pipeline -- trigger, gather, draft, validate, approve, act -- built from the draft/extract/route patterns, made dependable with validation and idempotency, and kept safe with human-in-the-loop. The worked example, the email-drafting agent, is your Lab 4.1. Next, Module 8 asks: what happens when one agent isn't enough? You coordinate SEVERAL specialist agents -- a router, a billing expert, a tech expert -- that collaborate to handle a whole customer conversation. That's the multi-agent customer-service chatbot, Lab 4.2. End on: you can now automate a task with one agent; next, you orchestrate a team of them.">
+    <div class="body center">
+      <div class="kicker"><span class="dot"></span> End of Module 7</div>
+      <h1>Agents that <span class="accent">do the job</span>.</h1>
+      <p class="subtitle">One agent, one task, done reliably &mdash; trigger to result, with a human on the send. Next: when one agent isn&rsquo;t enough &mdash; <b>a team of them</b>.</p>
+      <div class="rule"></div>
+      <div class="title-meta">
+        <span class="pill gold">Next: Module 8 &mdash; Multi-Agent Collaboration</span>
+        <span class="pill green">Now: <a href="../hands-on/module-7/index.html" style="color:#fff;text-decoration:underline">Module 7 labs</a></span>
+      </div>
+      <p class="trainer" style="margin-top:22px"><b>Rajesh Gheware</b> &middot;
+        <a href="day3-module6-frameworks-for-building-ai-agents.html">&#8592; Module 6 deck</a> &middot;
+        <a href="day4-module8-multi-agent-collaboration.html">Module 8 deck &#8594;</a> &middot;
+        <a href="../course-outline-building-intelligent-ai-agents.html">Course outline</a> &middot;
+        <a href="https://devops.gheware.com" target="_blank" rel="noopener">devops.gheware.com</a>
+      </p>
+    </div>
+  </section>
+
+</div><!-- /deck -->
+
+<!-- ===== Overview (O / ESC) ===== -->
+<div id="overview">
+  <h3>Module 7 &mdash; jump to a slide</h3>
+  <p class="ovsub">Press O or ESC again to close &middot; click any slide</p>
+  <div class="ovgrid" id="ovgrid"></div>
+</div>
+
+<!-- ===== Presenter notes (N) ===== -->
+<div id="notes"><span class="tag">Presenter note &middot; press N to hide</span><span id="noteText"></span></div>
+
+<!-- ===== Chrome ===== -->
+<div id="counter">1 / 43</div>
+<div class="hint">&larr; &rarr; / Space to navigate &middot; <b>N</b> notes &middot; <b>O</b>/Esc overview &middot; <b>F</b> fullscreen</div>
+<div class="nav">
+  <button id="prev" title="Previous (←)" aria-label="Previous slide">&#8249;</button>
+  <button id="next" title="Next (→)" aria-label="Next slide">&#8250;</button>
+</div>
+<div class="footer">
+  <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
+  <span>Day 4 · Module 7 — Task Automation with AI Agents</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.0</span>
+</div>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var total = slides.length;
+  var i = 0;
+  var counter = document.getElementById('counter');
+  var noteText = document.getElementById('noteText');
+  var progress = document.getElementById('progress');
+  var prevBtn = document.getElementById('prev');
+  var nextBtn = document.getElementById('next');
+
+  function render(){
+    slides.forEach(function(s,idx){ s.classList.toggle('active', idx===i); });
+    counter.textContent = (i+1)+' / '+total;
+    progress.style.width = ((i)/(total-1)*100)+'%';
+    noteText.textContent = ' ' + (slides[i].getAttribute('data-note')||'—');
+    prevBtn.disabled = (i===0);
+    nextBtn.disabled = (i===total-1);
+    if (location.hash !== '#'+(i+1)) history.replaceState(null,'','#'+(i+1));
+    slides[i].scrollTop = 0;
+  }
+  function go(n){ i = Math.max(0, Math.min(total-1, n)); render(); }
+  function next(){ go(i+1); }
+  function prev(){ go(i-1); }
+
+  nextBtn.addEventListener('click', next);
+  prevBtn.addEventListener('click', prev);
+
+  document.addEventListener('keydown', function(e){
+    if (e.key==='ArrowRight' || e.key==='PageDown' || e.key===' '){ e.preventDefault(); next(); }
+    else if (e.key==='ArrowLeft' || e.key==='PageUp'){ e.preventDefault(); prev(); }
+    else if (e.key==='Home'){ e.preventDefault(); go(0); }
+    else if (e.key==='End'){ e.preventDefault(); go(total-1); }
+    else if (e.key==='n' || e.key==='N'){ document.body.classList.toggle('show-notes'); }
+    else if (e.key==='o' || e.key==='O'){ document.body.classList.toggle('show-overview'); }
+    else if (e.key==='Escape'){ document.body.classList.toggle('show-overview'); }
+    else if (e.key==='f' || e.key==='F'){
+      if (!document.fullscreenElement){ document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); }
+      else { document.exitFullscreen && document.exitFullscreen(); }
+    }
+  });
+
+  // build overview
+  var ov = document.getElementById('ovgrid');
+  slides.forEach(function(s,idx){
+    var c = document.createElement('div');
+    c.className='ovcard';
+    c.innerHTML = '<div class="num">'+(idx+1).toString().padStart(2,'0')+'</div><div class="ttl">'+(s.getAttribute('data-title')||('Slide '+(idx+1)))+'</div>';
+    c.addEventListener('click', function(){ go(idx); document.body.classList.remove('show-overview'); });
+    ov.appendChild(c);
+  });
+
+  // swipe (touch)
+  var x0=null;
+  document.addEventListener('touchstart',function(e){ x0=e.touches[0].clientX; },{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(x0===null) return; var dx=e.changedTouches[0].clientX-x0;
+    if(Math.abs(dx)>50){ dx<0?next():prev(); } x0=null;
+  });
+
+  // deep link
+  var start = parseInt((location.hash||'').replace('#',''),10);
+  if(start>=1 && start<=total) i=start-1;
+  render();
+})();
+</script>
+</body>
+</html>
