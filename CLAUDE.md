@@ -16,19 +16,20 @@ autonomous, industry-ready AI agents.*
   Python recommended but not mandatory.
 - **Audience:** developers, data/automation professionals, technical leads/architects moving
   into agentic AI.
-- **Stage:** early build &mdash; **Days 1&ndash;4 complete + Module 9 complete**
-  (Modules 1&ndash;9: decks + labs). Decks:
+- **Stage:** build &mdash; **Days 1&ndash;4 complete + Module 9 complete + Module 10 deck complete**
+  (Modules 1&ndash;9: decks + labs; Module 10: deck only). Decks:
   `presentation/day1-module1-...` (22 slides), `day1-module2-...` (20), `day2-module3-why-transformers...`
   (19), `day2-module4-pretrained-models-and-fine-tuning...` (20), `day3-module5-what-is-agentic-ai...`
   (42 slides), `day3-module6-frameworks-for-building-ai-agents...` (43 slides),
   `day4-module7-task-automation...` (43 slides),
   `day4-module8-multi-agent-collaboration...` (43 slides),
-  `day5-module9-agents-in-industry...` (43 slides) &mdash; the last five each carry a 10-question quiz
-  (Q slide &rarr; answer slide interleaved, 4 choices each). Labs:
+  `day5-module9-agents-in-industry...` (43 slides),
+  `day5-module10-ethics-responsible-ai...` (43 slides, the finale) &mdash; the last six each carry a
+  10-question quiz (Q slide &rarr; answer slide interleaved, 4 choices each). Labs:
   `hands-on/module-1/` &hellip; `module-9/` (12 labs each + `index.html` + `solutions/` + `_generators/`).
-  Outline cross-links all of them (Slides badge per module 1&ndash;9; 12-Labs badges for modules 1&ndash;9;
-  Day-1/2/3/4/5 labs boxes summarise the sets). Remaining: **Module 10** (deck + labs, ethics &amp;
-  responsible AI &mdash; the final module), not built yet.
+  Outline cross-links all of them (Slides badge per module 1&ndash;10; 12-Labs badges for modules 1&ndash;9;
+  Day-1/2/3/4/5 labs boxes summarise the sets). Remaining: **Module 10 labs** (responsible-AI frameworks
+  &amp; debugging agent errors) &mdash; the last build; then all 10 modules are complete.
 
 ## Hands-on labs (the convention that's now established)
 
