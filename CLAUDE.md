@@ -16,15 +16,17 @@ autonomous, industry-ready AI agents.*
   Python recommended but not mandatory.
 - **Audience:** developers, data/automation professionals, technical leads/architects moving
   into agentic AI.
-- **Stage:** early build &mdash; **Days 1 &amp; 2 complete + Day 3 complete** (Modules 1&ndash;6: decks + labs).
-  Decks:
+- **Stage:** early build &mdash; **Days 1 &amp; 2 complete + Day 3 complete + Module 7 deck complete**
+  (Modules 1&ndash;6: decks + labs; Module 7: deck only). Decks:
   `presentation/day1-module1-...` (22 slides), `day1-module2-...` (20), `day2-module3-why-transformers...`
   (19), `day2-module4-pretrained-models-and-fine-tuning...` (20), `day3-module5-what-is-agentic-ai...`
-  (42 slides), `day3-module6-frameworks-for-building-ai-agents...` (43 slides) &mdash; the last two each carry
-  a 10-question quiz (Q slide &rarr; answer slide interleaved, 4 choices each). Labs:
+  (42 slides), `day3-module6-frameworks-for-building-ai-agents...` (43 slides),
+  `day4-module7-task-automation...` (43 slides) &mdash; the last three each carry a 10-question quiz
+  (Q slide &rarr; answer slide interleaved, 4 choices each). Labs:
   `hands-on/module-1/` &hellip; `module-6/` (12 labs each + `index.html` + `solutions/` + `_generators/`).
-  Outline cross-links all of them (Slides + 12-Labs badges per module 1&ndash;6; Day-1/2/3 labs boxes
-  summarise the sets). Remaining: Days 4&ndash;5 (Modules 7&ndash;10), not built yet.
+  Outline cross-links all of them (Slides badge per module 1&ndash;7; 12-Labs badges for modules 1&ndash;6;
+  Day-1/2/3 labs boxes summarise the sets). Remaining: Day 4 **Module 7 labs** (email-drafting agent) +
+  **Module 8** (deck + labs), and Day 5 (Modules 9&ndash;10), not built yet.
 
 ## Hands-on labs (the convention that's now established)
 
