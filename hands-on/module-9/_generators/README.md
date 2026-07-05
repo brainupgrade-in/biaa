@@ -1,0 +1,42 @@
+# Module 9 lab generators
+
+The 12 lab notebooks, their answer keys, and `index.html` are **generated** from these scripts.
+**Do not hand-edit the `.ipynb` files** — edit the generators and re-run.
+
+## Files
+- `gen_labs.py` — emits `../lab-*.ipynb` and `../solutions/lab-*.ipynb`. Each lab is one
+  `@lab(...)`-decorated builder; blanks use the `{"s": <student>, "a": <answer>}` convention.
+  Writes `_meta.json` (here) for the index generator.
+- `gen_index.py` — reads `_meta.json`, writes `../index.html`.
+- `regenerate.sh` — runs both.
+
+## Regenerate
+```bash
+./regenerate.sh            # or: python3 gen_labs.py && python3 gen_index.py
+```
+
+## Conventions
+- Course prefix `biaa`; each lab works in `/tmp/biaa-lab-09-NN/`.
+- Flow: Concept → Demo → Your Turn (`___`) → auto-grader ([PASS]/[FAIL]/[TODO] + Score).
+- **This is the "Agents in Finance, Healthcare & Cybersecurity" module** — the labs build the
+  **financial-report insight agent** (the client's Lab 5.1) piece by piece: ground & cite every
+  figure → compute derived metrics → flag anomalies → the **no-advice guardrail** → **withhold the
+  trade tool** → validate grounding → the audit trail → privacy/redaction → assistive-not-autonomous
+  → the assembled agent.
+- **Responsible-AI framing is the point:** the agent is informational only — it grounds & cites
+  every figure, gives **no investment advice**, and has **no trade tool**; a human analyst decides.
+- Every GRADED step is **offline & deterministic** (pure Python standard library) — no
+  numpy/sklearn/transformers, no network, no keys. The agent-assembly labs (11–12) reuse the
+  compact **LangChain-shaped shim** from Modules 6–8 (`LC_TOOL`, `LC_MODEL`, `LC_PROMPT`, `LC_EXEC`)
+  driven by a deterministic scripted `FakeChatModel`.
+- Financial math uses a small **AST-based safe evaluator** (`SAFE_CALC`) — never bare `eval()`.
+- Advanced labs (10–12) add an **optional, non-graded** cell (`optional_real(...)`) that runs the
+  SAME shapes against the **real LangChain** (Ollama `llama3.2:1b`, Groq `ChatGroq`) — it degrades
+  gracefully if a package/model/key is absent and never affects verification.
+- Keep every `___` blank inside a function body or a `try/except` so student notebooks still run
+  top-to-bottom (blanks land as `[TODO]`/`[FAIL]`), never a bare module-level `___`.
+
+## Verify
+Generation needs only the stdlib. Confirm graders by executing the **solution** notebooks in a
+venv (`nbconvert nbformat ipykernel`) — each should print a full `Score: n/n`. Also run the
+**student** notebooks — they must complete without uncaught errors (blanks → `[TODO]`/`[FAIL]`).
