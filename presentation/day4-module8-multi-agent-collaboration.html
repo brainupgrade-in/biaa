@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 4 · Module 8 — Multi-Agent Collaboration &amp; Decision Making</title>
+<style>
+  :root{
+    --ink-900:#1e1b4b; --ink-800:#312e81; --ind-600:#4f46e5;
+    --ind-300:#a5b4fc; --ind-50:#eef2ff;
+    --cyan:#06b6d4; --cyan-l:#67e8f9; --amber:#f59e0b; --amber-d:#b45309; --blue:#0891b2;
+    --ok:#059669; --bg:#f5f6fb; --ink:#1e1f33; --muted:#5b5f7a; --line:#d8dcf0;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+    background:var(--ink-900); color:var(--ink);
+    overflow:hidden;
+  }
+  a{color:var(--ind-600);}
+
+  /* ---------- Deck / slide framework ---------- */
+  .deck{position:fixed;inset:0;}
+  .slide{
+    position:absolute;inset:0;
+    display:none;
+    flex-direction:column;
+    background:var(--bg);
+    padding:clamp(20px,3.2vh,40px) clamp(28px,5vw,80px) 64px;
+    overflow:auto;
+  }
+  .slide.active{display:flex;animation:fade .35s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+  .kicker{
+    display:flex;align-items:center;gap:10px;
+    font-size:clamp(.7rem,1.1vw,.85rem);font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--ind-600);margin-bottom:6px;
+  }
+  .kicker .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);}
+  .kicker .sub{color:var(--muted);font-weight:600;}
+  h2.title{
+    margin:0 0 14px;color:var(--ink-800);
+    font-size:clamp(1.5rem,3.4vw,2.5rem);line-height:1.1;
+    border-bottom:3px solid var(--cyan);padding-bottom:10px;
+  }
+  .body{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;}
+  .center{justify-content:center;}
+  p.lead{font-size:clamp(1rem,1.7vw,1.3rem);line-height:1.5;max-width:62ch;color:#26273f;}
+  .small{font-size:clamp(.8rem,1.2vw,.95rem);color:var(--muted);}
+
+  /* ---------- Generic helpers ---------- */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:clamp(14px,2vw,26px);}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(12px,1.6vw,20px);}
+  .grid4{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(12px,1.6vw,18px);}
+  .card{
+    background:#fff;border:1px solid var(--line);border-left:4px solid var(--ind-600);
+    border-radius:6px;padding:clamp(12px,1.6vw,18px);box-shadow:0 1px 4px rgba(30,27,75,.06);
+  }
+  .card.gold{border-left-color:var(--amber);background:#fffbeb;}
+  .card.amber{border-left-color:var(--amber-d);}
+  .card.blue{border-left-color:var(--blue);}
+  .card.cyan{border-left-color:var(--cyan);}
+  .card h3{margin:0 0 8px;color:var(--ink-800);font-size:clamp(1rem,1.5vw,1.2rem);
+    display:flex;align-items:center;gap:8px;}
+  .card p,.card li{font-size:clamp(.82rem,1.2vw,1rem);line-height:1.45;}
+  .card ul{margin:6px 0 0;padding-left:20px;}
+  .card ul li{margin-bottom:4px;}
+
+  ul.bullets{font-size:clamp(.95rem,1.6vw,1.25rem);line-height:1.7;padding-left:26px;max-width:64ch;}
+  ul.bullets li{margin-bottom:10px;}
+  ul.bullets li b{color:var(--ink-800);}
+
+  table{border-collapse:collapse;width:100%;font-size:clamp(.8rem,1.2vw,1.02rem);background:#fff;
+    box-shadow:0 1px 4px rgba(30,27,75,.07);border-radius:6px;overflow:hidden;}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top;}
+  thead th{background:var(--ink-800);color:#fff;font-weight:600;}
+  tbody tr:nth-child(even){background:var(--ind-50);}
+  td .yes{color:var(--ok);font-weight:700;}
+  td .no{color:#b91c1c;font-weight:700;}
+  caption{caption-side:bottom;font-size:.8rem;color:var(--muted);padding-top:8px;text-align:left;}
+
+  .pill{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.72em;font-weight:700;
+    vertical-align:middle;letter-spacing:.02em;}
+  .pill.green{background:var(--ind-600);color:#fff;}
+  .pill.gold{background:var(--amber);color:var(--ink-900);}
+  .pill.amber{background:var(--amber-d);color:#fff;}
+  .pill.blue{background:var(--blue);color:#fff;}
+  .pill.cyan{background:var(--cyan);color:var(--ink-900);}
+  .pill.ghost{background:#fff;border:1px solid var(--line);color:var(--muted);}
+
+  .callout{background:var(--ind-50);border:1px solid var(--ind-300);border-radius:8px;
+    padding:14px 18px;font-size:clamp(.9rem,1.4vw,1.1rem);color:#262248;}
+  .callout.warn{background:#fffbeb;border-color:var(--amber);}
+  .callout b{color:var(--ink-800);}
+
+  figure{margin:0;text-align:center;}
+  figure svg{width:100%;height:auto;max-height:60vh;}
+  figcaption{font-size:clamp(.78rem,1.1vw,.92rem);color:var(--muted);margin-top:8px;}
+
+  .mono{font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;}
+  .terminal{background:#14143a;color:#e0e3f5;border-radius:8px;padding:16px 18px;
+    font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:clamp(.72rem,1.1vw,.95rem);
+    line-height:1.6;box-shadow:0 4px 16px rgba(0,0,0,.3);overflow:auto;white-space:pre-wrap;}
+  .terminal .com{color:#7f86b8;}
+  .terminal .kw{color:var(--cyan-l);}
+  .terminal .str{color:#fcd34d;}
+  .terminal .fn{color:#a5b4fc;}
+  .terminal .out{color:#6ee7b7;}
+  .terminal .you{color:#fff;}
+
+  /* ---------- reference list ---------- */
+  ul.refs{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;
+    gap:10px 26px;font-size:clamp(.82rem,1.2vw,1rem);}
+  ul.refs li{padding:8px 12px;background:#fff;border:1px solid var(--line);
+    border-left:3px solid var(--cyan);border-radius:6px;line-height:1.4;}
+  ul.refs li a{font-weight:600;text-decoration:none;}
+  ul.refs li a:hover{text-decoration:underline;}
+  ul.refs li .d{display:block;color:var(--muted);font-size:.82em;margin-top:2px;}
+  @media(max-width:760px){ul.refs{grid-template-columns:1fr;} .grid2,.grid3,.grid4{grid-template-columns:1fr;}}
+
+  /* ---------- Quiz ---------- */
+  .quiz-q{font-size:clamp(1.1rem,2vw,1.5rem);color:var(--ink-800);font-weight:700;line-height:1.3;margin:0 0 16px;}
+  .quiz-restate{font-size:clamp(.92rem,1.4vw,1.12rem);color:var(--muted);font-weight:600;line-height:1.35;margin:0 0 14px;}
+  .quiz-opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .quiz-opt{display:flex;align-items:flex-start;gap:12px;background:#fff;border:1px solid var(--line);
+    border-left:4px solid var(--ind-300);border-radius:8px;padding:12px 16px;font-size:clamp(.9rem,1.4vw,1.1rem);line-height:1.4;}
+  .quiz-opt .ltr{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--ind-50);color:var(--ind-600);
+    font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .quiz-opt.correct{border-left-color:var(--ok);background:#ecfdf5;}
+  .quiz-opt.correct .ltr{background:var(--ok);color:#fff;}
+  .quiz-opt.dim{opacity:.5;}
+  .quiz-why{margin-top:16px;}
+  .quiz-badge{display:inline-block;background:var(--amber);color:var(--ink-900);font-weight:700;font-size:.72em;padding:2px 10px;border-radius:12px;}
+  @media(max-width:760px){.quiz-opts{grid-template-columns:1fr;}}
+
+  /* ---------- Title slide ---------- */
+  .title-slide{background:linear-gradient(135deg,#312e81 0%,#1e1b4b 100%);color:#fff;
+    border-bottom:none;align-items:flex-start;justify-content:center;}
+  .title-slide .kicker{color:var(--cyan-l);}
+  .title-slide h1{font-size:clamp(2rem,5.2vw,3.6rem);margin:0 0 6px;line-height:1.08;}
+  .title-slide .accent{color:var(--cyan-l);}
+  .title-slide .subtitle{font-size:clamp(1rem,2vw,1.5rem);color:#c7cbf0;margin:4px 0 0;font-weight:500;}
+  .title-slide .rule{width:120px;height:4px;background:var(--cyan);margin:22px 0;border-radius:2px;}
+  .title-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;}
+  .title-meta .pill{font-size:.85rem;padding:5px 14px;}
+  .title-slide .trainer{margin-top:26px;font-size:clamp(.85rem,1.4vw,1.05rem);color:#a9adda;}
+  .title-slide .trainer b{color:#fff;}
+  .title-slide a{color:var(--cyan-l);}
+  .homelink{position:fixed;top:10px;right:16px;z-index:46;font-size:.74rem;text-decoration:none;
+    background:rgba(255,255,255,.9);border:1px solid var(--line);color:var(--ink-800);
+    padding:5px 12px;border-radius:14px;font-weight:600;}
+  .homelink:hover{background:#fff;}
+
+  /* ---------- dark slides ---------- */
+  .dark{background:linear-gradient(135deg,#312e81 0%,#1e1b4b 100%);color:#fff;border-bottom:none;}
+  .dark h2.title{color:#fff;border-bottom-color:var(--cyan);}
+  .dark .kicker{color:var(--cyan-l);}
+  .dark p.lead,.dark li{color:#e7e9fb;}
+  .dark .card{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.15);color:#eef0ff;}
+  .dark .card h3{color:var(--cyan-l);}
+
+  /* ---------- Chrome ---------- */
+  #progress{position:fixed;top:0;left:0;height:4px;background:var(--cyan);width:0;z-index:50;
+    transition:width .3s ease;}
+  .footer{position:fixed;bottom:0;left:0;right:0;height:34px;display:flex;align-items:center;
+    justify-content:space-between;padding:0 16px;font-size:.72rem;color:var(--muted);
+    background:rgba(255,255,255,.85);backdrop-filter:blur(4px);border-top:1px solid var(--line);z-index:40;}
+  .footer .brand{font-weight:600;color:var(--ink-800);}
+  .footer a{text-decoration:none;}
+  .nav{position:fixed;bottom:44px;right:18px;display:flex;gap:8px;z-index:45;}
+  .nav button{border:none;cursor:pointer;width:42px;height:42px;border-radius:50%;
+    background:var(--ink-800);color:#fff;font-size:1.1rem;box-shadow:0 2px 8px rgba(0,0,0,.25);
+    display:flex;align-items:center;justify-content:center;transition:background .2s,transform .1s;}
+  .nav button:hover{background:var(--ind-600);}
+  .nav button:active{transform:scale(.92);}
+  .nav button:disabled{opacity:.35;cursor:default;}
+  #counter{position:fixed;bottom:46px;left:18px;z-index:45;background:var(--ink-800);color:#fff;
+    font-size:.8rem;font-weight:600;padding:6px 12px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.25);}
+  .hint{position:fixed;bottom:46px;left:50%;transform:translateX(-50%);z-index:45;
+    font-size:.72rem;color:var(--muted);background:rgba(255,255,255,.8);
+    padding:5px 12px;border-radius:12px;border:1px solid var(--line);}
+  @media(max-width:700px){.hint{display:none;}}
+
+  /* ---------- Presenter notes ---------- */
+  #notes{position:fixed;left:0;right:0;bottom:34px;z-index:48;display:none;
+    background:#14143a;color:#e4e6fb;padding:14px 20px 16px;border-top:3px solid var(--cyan);
+    font-size:.92rem;line-height:1.5;max-height:38vh;overflow:auto;}
+  body.show-notes #notes{display:block;}
+  #notes b{color:var(--cyan-l);}
+  #notes .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ind-300);
+    display:block;margin-bottom:4px;}
+
+  /* ---------- Overview ---------- */
+  #overview{position:fixed;inset:0;z-index:60;background:rgba(30,27,75,.97);color:#fff;
+    display:none;flex-direction:column;padding:32px clamp(20px,5vw,80px);overflow:auto;}
+  body.show-overview #overview{display:flex;}
+  #overview h3{color:var(--cyan-l);margin:0 0 4px;font-size:1.4rem;}
+  #overview .ovsub{color:#a9adda;margin:0 0 20px;font-size:.9rem;}
+  .ovgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+  .ovcard{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:8px;
+    padding:12px 14px;cursor:pointer;transition:background .15s,border-color .15s;}
+  .ovcard:hover{background:rgba(6,182,212,.18);border-color:var(--cyan);}
+  .ovcard .num{font-size:.72rem;color:var(--cyan-l);font-weight:700;}
+  .ovcard .ttl{font-size:.95rem;margin-top:3px;color:#fff;}
+
+  svg text{font-family:'Segoe UI',sans-serif;}
+
+  @media print{
+    body{overflow:visible;background:#fff;}
+    .slide{display:flex!important;position:relative;inset:auto;min-height:96vh;page-break-after:always;
+      border:1px solid #ccc;}
+    #progress,.footer,.nav,#counter,.hint,#notes,#overview,.homelink{display:none!important;}
+  }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<a class="homelink" href="../course-outline-building-intelligent-ai-agents.html" title="Back to course outline">&#8962; Course outline</a>
+
+<div class="deck" id="deck">
+  <!-- ============ SLIDE 1 — TITLE ============ -->
+  <section class="slide title-slide" data-title="Title"
+    data-note="Welcome back to Day 4. In Module 7 you built ONE agent that does a job -- the email-drafting agent -- reliably and safely. But some jobs are too big, too varied, or too specialised for a single agent: one prompt overloaded with every instruction and every tool starts to degrade. Module 8 is the answer: when one agent isn't enough, you build a TEAM of them. Specialist agents, each an expert with its own focused prompt and tools, coordinated by a supervisor, passing messages and reaching a decision together. The worked example all module is the MULTI-AGENT CUSTOMER-SERVICE CHATBOT -- your Lab 4.2: a router agent triages an incoming message and hands it to the right specialist (billing, tech, general), whose answers are synthesised into one reply, with a human on anything risky. By the end you'll know the collaboration patterns -- supervisor, pipeline, parallel -- and the decision patterns -- voting, critique, synthesis -- and, crucially, WHEN a team beats a soloist and when it doesn't.">
+    <div class="body center">
+      <div class="kicker"><span class="dot"></span> 5-Day Course &nbsp;&middot;&nbsp; <span class="sub">Day 4 &middot; Module 8 of 10</span></div>
+      <h1>Multi-Agent Collaboration <span class="accent">&amp; Decision Making</span></h1>
+      <p class="subtitle">When one agent isn&rsquo;t enough &mdash; a <b>team of specialists</b> that coordinate, and the <b>customer-service chatbot</b>.</p>
+      <div class="rule"></div>
+      <div class="title-meta">
+        <span class="pill gold">Beginner &rarr; Practitioner</span>
+        <span class="pill green">Real-World Agents</span>
+        <span class="pill ghost" style="color:#c7cbf0;border-color:rgba(255,255,255,.3)">~75 min &middot; pairs with Module 8 labs</span>
+      </div>
+      <p class="trainer">Trainer: <b>Rajesh Gheware</b> &middot; 25+ yrs (JPMorgan Chase &middot; Deutsche Bank &middot; Morgan Stanley) &middot; 5,000+ trained &middot; 4.91/5</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 2 — AGENDA ============ -->
+  <section class="slide" data-title="What we'll cover"
+    data-note="Map the hour. Start with the limit that forces the move: why a single agent, loaded with too many tools and instructions, stops being reliable -- and what a multi-agent system is. Then the building block: specialist roles, separation of concerns. Then how agents are wired together -- the supervisor/router pattern, message passing over shared state, and the four orchestration shapes (supervisor, sequential, parallel, hierarchical). Then the second half of the module's title -- decision making: when several agents produce outputs, how do they converge? Voting, critique/debate, and synthesis. Then the worked example that ties it all together -- the multi-agent customer-service chatbot, in a diagram, a trace and a code peek -- which is your Lab 4.2. Finish with the senior judgement: when to build a team and when a soloist (or a plain workflow) is the right call, plus the observability a multi-agent system demands. Throughline: coordination is power, but it is also cost -- earn it.">
+    <div class="kicker"><span class="dot"></span> Day 4 &middot; Module 8 <span class="sub">— Multi-Agent Collaboration &amp; Decision Making</span></div>
+    <h2 class="title">What we&rsquo;ll cover</h2>
+    <div class="body">
+      <div class="grid3">
+        <div class="card"><h3>&#9312; One agent &rarr; a team</h3><p>Why a single overloaded agent <b>degrades</b> &mdash; and what a multi-agent system is.</p></div>
+        <div class="card"><h3>&#9313; Specialist roles</h3><p><b>Separation of concerns</b> &mdash; each agent a focused expert.</p></div>
+        <div class="card cyan"><h3>&#9314; Coordination</h3><p><b>Supervisor</b>, message passing &amp; the four orchestration shapes.</p></div>
+        <div class="card cyan"><h3>&#9315; Decision making</h3><p>Converge many outputs: <b>voting</b>, critique &amp; synthesis.</p></div>
+        <div class="card gold"><h3>&#9316; The chatbot</h3><p>The multi-agent customer-service bot &mdash; your <b>Lab 4.2</b>.</p></div>
+        <div class="card gold"><h3>&#9317; When (not) to</h3><p>Team vs soloist, cost &amp; latency, and <b>observability</b>.</p></div>
+      </div>
+      <p class="callout" style="margin-top:18px">&#129504; <b>The throughline:</b> coordination is power &mdash; but it is also <b>cost, latency and new failure modes</b>. A team of agents must <b>earn</b> its complexity over a single, well-built one.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 3 — WHY ONE AGENT ISN'T ENOUGH ============ -->
+  <section class="slide" data-title="Why one agent isn't enough"
+    data-note="Anchor the motivation honestly -- start from the single agent's ceiling, not from hype. A single ReAct agent is wonderful until you overload it. Cram every instruction into one system prompt -- be a billing expert AND a technical expert AND a salesperson AND follow twelve policies -- and it starts to blur roles, forget instructions, and pick the wrong tool. Give it thirty tools and its selection accuracy drops; the description of tool #17 competes with tool #4. There's no separation of concerns: a change to the refund policy risks breaking the tech-support behaviour because it's all one tangled prompt. And it can't do things in parallel or bring genuinely different expertise to bear. The insight: these are the SAME problems we solve in software with modules and single-responsibility. The fix is the same -- decompose. Split the one overloaded agent into several focused specialists, each with a small prompt and a handful of tools, and coordinate them. Caveat to plant now (we'll return to it): decomposition has a cost, so you only reach for it when the single agent is genuinely straining.">
+    <div class="kicker"><span class="dot"></span> The ceiling of a soloist</div>
+    <h2 class="title">Why one agent isn&rsquo;t always enough</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card amber"><h3>&#128533; The overloaded agent</h3>
+          <ul>
+            <li>One prompt doing <b>everything</b> &mdash; roles blur, instructions get forgotten</li>
+            <li><b>Too many tools</b> &mdash; selection accuracy drops as the catalog grows</li>
+            <li>No <b>separation of concerns</b> &mdash; a policy tweak breaks unrelated behaviour</li>
+            <li>Can&rsquo;t work in <b>parallel</b> or bring distinct expertise to bear</li>
+          </ul>
+        </div>
+        <div class="card cyan"><h3>&#129513; The same fix as software</h3>
+          <ul>
+            <li>These are the problems <b>modules</b> &amp; <b>single-responsibility</b> solve</li>
+            <li><b>Decompose:</b> several focused specialists, small prompts, few tools each</li>
+            <li>Each is easier to <b>prompt, test &amp; debug</b> in isolation</li>
+            <li>A coordinator wires them together</li>
+          </ul>
+        </div>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#128161; A multi-agent system is <b>decomposition applied to agents</b>. But decomposition has a price &mdash; reach for it when a single agent is genuinely straining, not by default. We&rsquo;ll return to that judgement at the end.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 4 — WHAT IS A MULTI-AGENT SYSTEM ============ -->
+  <section class="slide" data-title="What is a multi-agent system"
+    data-note="Give the crisp definition. A multi-agent system is several agents, each with a focused role, that COLLABORATE to complete a task none would handle as well alone. Three defining properties. SPECIALISATION: each agent has its own system prompt, its own small tool set, its own expertise -- a billing agent, a tech agent, a research agent. COORDINATION: they're wired together by a pattern -- a supervisor that routes, a pipeline that chains, a fan-out that runs them in parallel -- so the right agent works at the right time. COMMUNICATION: they share context by passing messages or reading and writing a shared state, so one agent's output becomes another's input. Contrast with what it is NOT: it's not just one agent calling tools (that's Module 6-7); the difference is that the 'tools' here are themselves reasoning agents with their own judgement. Frame LangGraph as the natural home for this -- the state graph from Module 6 scales up to model a whole team, with nodes as agents and edges as handoffs.">
+    <div class="kicker"><span class="dot"></span> A working definition</div>
+    <h2 class="title">What is a multi-agent system?</h2>
+    <div class="body">
+      <p class="lead">Several agents, each with a <b>focused role</b>, that <b>collaborate</b> to complete a task none would handle as well alone. Three defining properties:</p>
+      <div class="grid3" style="margin-top:8px">
+        <div class="card"><h3>&#127919; Specialisation</h3><p>Each agent has its <b>own</b> prompt, tools &amp; expertise &mdash; billing, tech, research.</p></div>
+        <div class="card cyan"><h3>&#128260; Coordination</h3><p>A <b>pattern</b> wires them &mdash; a supervisor routes, a pipeline chains, a fan-out parallelises.</p></div>
+        <div class="card blue"><h3>&#128172; Communication</h3><p>They pass <b>messages</b> / share <b>state</b> &mdash; one agent&rsquo;s output is another&rsquo;s input.</p></div>
+      </div>
+      <p class="callout" style="margin-top:14px">&#129504; Not just one agent calling tools &mdash; here the &ldquo;tools&rdquo; are themselves <b>reasoning agents</b> with their own judgement. <b>LangGraph</b> is the natural home: the Module-6 state graph scales up to a whole team &mdash; <b>nodes are agents, edges are handoffs</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 5 — SPECIALIST ROLES ============ -->
+  <section class="slide" data-title="Specialist roles"
+    data-note="Deep-dive on the building block: the specialist. The whole payoff of multi-agent comes from each agent being GOOD at one thing, and that comes from three deliberate design choices per agent. A FOCUSED PROMPT: a short system prompt that defines exactly this role and nothing else -- 'You are a billing specialist. You handle refunds, charges and invoices. You never give technical troubleshooting.' A SMALL TOOL SET: only the tools this role needs -- the billing agent gets lookup_invoice and issue_refund_request, not the tech agent's restart_service. CLEAR BOUNDARIES: the agent knows what's out of scope and hands back rather than guessing. Why this works: a small prompt means the model actually follows it; a small tool set means high selection accuracy; clear boundaries mean predictable behaviour you can test. The design heuristic: give each agent a job description you could hand to a new hire -- if you can't write it in three lines, the role is too broad. This is exactly the separation of concerns that makes the customer-service bot maintainable: you can improve the billing agent without touching tech support.">
+    <div class="kicker"><span class="dot"></span> The building block</div>
+    <h2 class="title">Specialist roles: separation of concerns</h2>
+    <div class="body">
+      <p class="lead">The payoff comes from each agent being <b>good at one thing</b>. That&rsquo;s three deliberate choices per agent:</p>
+      <div class="grid3" style="margin-top:6px">
+        <div class="card cyan"><h3>&#128221; A focused prompt</h3><p>A short role definition &mdash; <b>this job and nothing else</b>. Small prompts get followed.</p></div>
+        <div class="card"><h3>&#128295; A small tool set</h3><p>Only the tools this role needs &mdash; <b>high selection accuracy</b>, no cross-talk.</p></div>
+        <div class="card gold"><h3>&#128682; Clear boundaries</h3><p>Knows what&rsquo;s <b>out of scope</b> and <b>hands back</b> rather than guessing.</p></div>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#128161; Heuristic: give each agent a <b>job description you could hand a new hire</b>. If you can&rsquo;t write it in three lines, the role is too broad. That&rsquo;s what lets you improve the billing agent <b>without touching</b> tech support.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 6 — SUPERVISOR / ROUTER PATTERN (CENTERPIECE) ============ -->
+  <section class="slide" data-title="The supervisor pattern"
+    data-note="The centrepiece pattern -- spend time here. The most common and most useful multi-agent architecture is the SUPERVISOR (a.k.a. router or orchestrator). A supervisor agent sits at the front. It receives the request, decides WHICH specialist should handle it, and routes it there -- exactly the ROUTE pattern from Module 7, except the destinations are agents, not code branches. The specialist does its focused work and returns a result to the supervisor, which decides what's next: done, hand to another specialist, or ask a human. Walk the diagram: user message hits the supervisor; it routes to billing / tech / general; the chosen worker runs (with its own tools); the result comes back to the supervisor, which either returns the answer or re-routes. Key points to stress: (1) the supervisor holds the conversation and the plan -- workers are stateless experts it calls; (2) this is just LangGraph -- supervisor and workers are nodes, the routing decisions are the edges; (3) it degrades gracefully -- an unknown request routes to a general agent or a human. This is the backbone of the customer-service chatbot you'll build. Tie back to Module 7: routing to the right specialist AGENT is where task automation becomes multi-agent collaboration.">
+    <div class="kicker"><span class="dot"></span> The centrepiece &middot; the backbone of the chatbot</div>
+    <h2 class="title">The supervisor (router) pattern</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 250" role="img" aria-label="A supervisor agent receives the user message and routes it to one of three specialist worker agents, each with its own tools, whose result returns to the supervisor">
+          <defs><marker id="sp6" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker>
+          <marker id="sp6b" markerWidth="9" markerHeight="9" refX="1.5" refY="4.5" orient="auto"><path d="M9 0 L0 4.5 L9 9 Z" fill="#0e7490"/></marker></defs>
+          <!-- user -->
+          <rect x="16" y="96" width="130" height="60" rx="11" fill="#312e81" stroke="#06b6d4" stroke-width="2.5"/>
+          <text x="81" y="122" text-anchor="middle" font-size="13" font-weight="700" fill="#67e8f9">User</text>
+          <text x="81" y="142" text-anchor="middle" font-size="10" fill="#c7cbf0">a message</text>
+          <!-- supervisor -->
+          <rect x="196" y="86" width="170" height="80" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="2.5"/>
+          <text x="281" y="118" text-anchor="middle" font-size="15" font-weight="700" fill="#312e81">Supervisor</text>
+          <text x="281" y="138" text-anchor="middle" font-size="10.5" fill="#5b5f7a">routes &amp; holds the plan</text>
+          <!-- workers -->
+          <rect x="470" y="18" width="180" height="58" rx="10" fill="#ecfeff" stroke="#06b6d4" stroke-width="2"/>
+          <text x="560" y="42" text-anchor="middle" font-size="12.5" font-weight="700" fill="#0e7490">Billing agent</text>
+          <text x="560" y="61" text-anchor="middle" font-size="9.5" fill="#5b5f7a">refunds &middot; invoices</text>
+          <rect x="470" y="96" width="180" height="58" rx="10" fill="#ecfeff" stroke="#06b6d4" stroke-width="2"/>
+          <text x="560" y="120" text-anchor="middle" font-size="12.5" font-weight="700" fill="#0e7490">Tech agent</text>
+          <text x="560" y="139" text-anchor="middle" font-size="9.5" fill="#5b5f7a">troubleshooting</text>
+          <rect x="470" y="174" width="180" height="58" rx="10" fill="#ecfeff" stroke="#06b6d4" stroke-width="2"/>
+          <text x="560" y="198" text-anchor="middle" font-size="12.5" font-weight="700" fill="#0e7490">General agent</text>
+          <text x="560" y="217" text-anchor="middle" font-size="9.5" fill="#5b5f7a">everything else</text>
+          <!-- tools hint -->
+          <rect x="710" y="96" width="150" height="58" rx="10" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.8"/>
+          <text x="785" y="120" text-anchor="middle" font-size="11.5" font-weight="700" fill="#92400e">own tools</text>
+          <text x="785" y="139" text-anchor="middle" font-size="9.5" fill="#5b5f7a">per specialist</text>
+          <!-- arrows -->
+          <path d="M146 126 L194 126" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#sp6)"/>
+          <path d="M366 116 C410 80 430 60 468 50" fill="none" stroke="#4f46e5" stroke-width="2" marker-end="url(#sp6)"/>
+          <path d="M366 126 L468 125" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#sp6)"/>
+          <path d="M366 136 C410 172 430 192 468 202" fill="none" stroke="#4f46e5" stroke-width="2" marker-end="url(#sp6)"/>
+          <path d="M650 125 L708 125" stroke="#0891b2" stroke-width="1.8" marker-end="url(#sp6)"/>
+          <!-- return -->
+          <path d="M468 66 C420 96 400 104 368 108" fill="none" stroke="#0e7490" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#sp6b)"/>
+          <text x="418" y="88" text-anchor="middle" font-size="9.5" font-weight="700" fill="#0e7490">result &#8635;</text>
+        </svg>
+        <figcaption>The supervisor <b>routes</b> (Module 7&rsquo;s route pattern &mdash; but to <b>agents</b>, not code), the specialist works with its <b>own tools</b>, and the result returns. In <b>LangGraph</b>: nodes are agents, edges are the routing decisions.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 7 — MESSAGE PASSING & SHARED STATE ============ -->
+  <section class="slide" data-title="Message passing"
+    data-note="Zoom into how agents actually talk to each other -- the plumbing. Coordination needs communication, and there are two dominant styles. MESSAGE PASSING: agents exchange explicit messages -- the supervisor sends the billing agent a message ('handle this refund request, order 4471'), the billing agent replies with its result. It's like a conversation transcript that grows. SHARED STATE: all agents read and write a common state object -- a dict carrying the conversation, the extracted fields, each agent's findings, the current plan. LangGraph uses this: the graph's state flows through every node, each node reading what it needs and adding its contribution. Two design rules that keep it sane. Keep the shared context SMALL and RELEVANT -- don't dump everything to every agent, or you recreate the overloaded-prompt problem at the system level and blow up token cost. And make handoffs EXPLICIT -- an agent should clearly signal 'I'm done, hand back' or 'this needs the tech agent', not leave the next step ambiguous. The failure mode: agents talking past each other because the state is a soup nobody owns. Good message discipline is what makes the difference between a team and a mob.">
+    <div class="kicker"><span class="dot"></span> The plumbing of collaboration</div>
+    <h2 class="title">Message passing &amp; shared state</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card"><h3>&#128233; Message passing</h3><p>Agents exchange <b>explicit messages</b> &mdash; &ldquo;handle this refund, order 4471&rdquo; &rarr; a reply. A growing transcript.</p></div>
+        <div class="card cyan"><h3>&#128451;&#65039; Shared state</h3><p>All agents read/write a <b>common state</b> &mdash; the conversation, fields, findings, the plan. <b>LangGraph</b>&rsquo;s model.</p></div>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#128161; Two rules keep it sane: keep the shared context <b>small &amp; relevant</b> (don&rsquo;t dump everything to everyone &mdash; that recreates the overloaded prompt and blows up cost), and make <b>handoffs explicit</b> (&ldquo;done, hand back&rdquo; / &ldquo;this needs the tech agent&rdquo;). The failure mode is agents <b>talking past each other</b> over a state nobody owns.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 8 — FOUR ORCHESTRATION SHAPES ============ -->
+  <section class="slide" data-title="Orchestration shapes"
+    data-note="Give the mental catalogue -- the four shapes almost every multi-agent system is built from, or composed of. SUPERVISOR (star): a coordinator routes to workers and back -- best for triage and dynamic dispatch, like the chatbot. SEQUENTIAL / PIPELINE (chain): agents run one after another, each transforming the previous output -- researcher then writer then editor. Best when the task has clear stages. PARALLEL / FAN-OUT (broadcast): several agents work the same input at once, and their results are combined -- three reviewers, or three solution attempts. Best for coverage and speed. HIERARCHICAL (tree): supervisors of supervisors -- a top coordinator delegates to team-leads who delegate to workers. Best for large, deep tasks. Walk the little diagrams. Then the key message: these are composable primitives, not rival religions -- a real system might have a supervisor that fans out to parallel reviewers whose critiques feed a sequential synthesise-then-finalise chain. Start with the simplest shape that works (usually supervisor or pipeline) and compose only as needed. Tie forward: the next slides zoom into the two you'll use most -- pipeline and parallel -- then into how parallel results are turned into ONE decision.">
+    <div class="kicker"><span class="dot"></span> The four shapes &middot; composable primitives</div>
+    <h2 class="title">Orchestration shapes</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 240" role="img" aria-label="Four orchestration shapes: supervisor star, sequential pipeline chain, parallel fan-out, and hierarchical tree">
+          <defs><marker id="os8" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="#4f46e5"/></marker></defs>
+          <!-- Supervisor -->
+          <text x="120" y="26" text-anchor="middle" font-size="12.5" font-weight="700" fill="#312e81">Supervisor</text>
+          <circle cx="120" cy="70" r="20" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+          <circle cx="60" cy="140" r="16" fill="#ecfeff" stroke="#06b6d4" stroke-width="1.8"/>
+          <circle cx="120" cy="150" r="16" fill="#ecfeff" stroke="#06b6d4" stroke-width="1.8"/>
+          <circle cx="180" cy="140" r="16" fill="#ecfeff" stroke="#06b6d4" stroke-width="1.8"/>
+          <path d="M107 84 L70 126" stroke="#4f46e5" stroke-width="1.6" marker-end="url(#os8)"/>
+          <path d="M120 90 L120 132" stroke="#4f46e5" stroke-width="1.6" marker-end="url(#os8)"/>
+          <path d="M133 84 L170 126" stroke="#4f46e5" stroke-width="1.6" marker-end="url(#os8)"/>
+          <text x="120" y="196" text-anchor="middle" font-size="10.5" fill="#5b5f7a">route &amp; back &middot; triage</text>
+          <!-- Sequential -->
+          <text x="370" y="26" text-anchor="middle" font-size="12.5" font-weight="700" fill="#312e81">Sequential</text>
+          <circle cx="300" cy="90" r="17" fill="#ecfeff" stroke="#06b6d4" stroke-width="1.8"/>
+          <circle cx="370" cy="90" r="17" fill="#ecfeff" stroke="#06b6d4" stroke-width="1.8"/>
+          <circle cx="440" cy="90" r="17" fill="#ecfeff" stroke="#06b6d4" stroke-width="1.8"/>
+          <path d="M317 90 L351 90" stroke="#4f46e5" stroke-width="1.6" marker-end="url(#os8)"/>
+          <path d="M387 90 L421 90" stroke="#4f46e5" stroke-width="1.6" marker-end="url(#os8)"/>
+          <text x="370" y="150" text-anchor="middle" font-size="10.5" fill="#5b5f7a">a pipeline &middot; stages</text>
+          <text x="370" y="168" text-anchor="middle" font-size="9.5" fill="#5b5f7a">research &rarr; write &rarr; edit</text>
+          <!-- Parallel -->
+          <text x="640" y="26" text-anchor="middle" font-size="12.5" font-weight="700" fill="#312e81">Parallel</text>
+          <circle cx="580" cy="90" r="18" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+          <circle cx="680" cy="52" r="15" fill="#ecfeff" stroke="#06b6d4" stroke-width="1.8"/>
+          <circle cx="680" cy="90" r="15" fill="#ecfeff" stroke="#06b6d4" stroke-width="1.8"/>
+          <circle cx="680" cy="128" r="15" fill="#ecfeff" stroke="#06b6d4" stroke-width="1.8"/>
+          <path d="M596 82 L666 56" stroke="#4f46e5" stroke-width="1.5" marker-end="url(#os8)"/>
+          <path d="M598 90 L664 90" stroke="#4f46e5" stroke-width="1.5" marker-end="url(#os8)"/>
+          <path d="M596 98 L666 124" stroke="#4f46e5" stroke-width="1.5" marker-end="url(#os8)"/>
+          <text x="640" y="168" text-anchor="middle" font-size="10.5" fill="#5b5f7a">fan-out &middot; coverage/speed</text>
+          <!-- Hierarchical -->
+          <text x="880" y="26" text-anchor="middle" font-size="12.5" font-weight="700" fill="#312e81">Hierarchical</text>
+          <circle cx="880" cy="56" r="16" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+          <circle cx="835" cy="112" r="13" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.6"/>
+          <circle cx="925" cy="112" r="13" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.6"/>
+          <circle cx="815" cy="160" r="11" fill="#ecfeff" stroke="#06b6d4" stroke-width="1.5"/>
+          <circle cx="855" cy="160" r="11" fill="#ecfeff" stroke="#06b6d4" stroke-width="1.5"/>
+          <circle cx="905" cy="160" r="11" fill="#ecfeff" stroke="#06b6d4" stroke-width="1.5"/>
+          <circle cx="945" cy="160" r="11" fill="#ecfeff" stroke="#06b6d4" stroke-width="1.5"/>
+          <path d="M869 68 L843 100" stroke="#4f46e5" stroke-width="1.4" marker-end="url(#os8)"/>
+          <path d="M891 68 L917 100" stroke="#4f46e5" stroke-width="1.4" marker-end="url(#os8)"/>
+          <path d="M828 123 L818 149" stroke="#4f46e5" stroke-width="1.3" marker-end="url(#os8)"/>
+          <path d="M841 123 L852 149" stroke="#4f46e5" stroke-width="1.3" marker-end="url(#os8)"/>
+          <path d="M919 123 L908 149" stroke="#4f46e5" stroke-width="1.3" marker-end="url(#os8)"/>
+          <path d="M932 123 L942 149" stroke="#4f46e5" stroke-width="1.3" marker-end="url(#os8)"/>
+          <text x="880" y="192" text-anchor="middle" font-size="10.5" fill="#5b5f7a">teams of teams</text>
+        </svg>
+        <figcaption>Composable primitives, not rival religions &mdash; a real system might have a <b>supervisor</b> that <b>fans out</b> to reviewers whose critiques feed a <b>sequential</b> synthesise step. Start with the simplest shape that works.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 9 — SEQUENTIAL PIPELINE ============ -->
+  <section class="slide" data-title="Sequential pipeline"
+    data-note="Deep dive on the sequential / pipeline shape -- the simplest useful collaboration. Agents run in a fixed order, each transforming the previous one's output: a researcher gathers facts, a writer drafts from them, an editor polishes. It's a relay -- the baton is the shared state, growing as it passes. When to use it: when the task has genuine, ordered STAGES where each needs different expertise, and stage N truly depends on stage N-1. Why it's powerful: each agent sees a clean, focused input (the previous stage's output) instead of the raw mess, so each does its narrow job well -- and you can improve or swap any stage independently. Two cautions. Errors PROPAGATE: a bad research step poisons the writer and editor downstream -- so validate between stages (Module 7's discipline applies here too). And it's inherently SERIAL -- latency is the sum of all stages, so don't pipeline things that could run in parallel. The sequential pipeline is the multi-agent version of the Module-7 automation pipeline: same idea, but each stage is now a reasoning specialist rather than a single step. It's often the right first thing to reach for before anything fancier.">
+    <div class="kicker"><span class="dot"></span> Shape 1 &middot; the relay</div>
+    <h2 class="title">Sequential &mdash; a pipeline of specialists</h2>
+    <div class="body">
+      <p class="lead">Agents run in a <b>fixed order</b>, each transforming the previous output &mdash; researcher &rarr; writer &rarr; editor. A relay where the baton is the <b>shared state</b>.</p>
+      <div class="grid3" style="margin-top:6px">
+        <div class="card cyan"><h3>&#9989; When to use</h3><p>The task has ordered <b>stages</b>, each needing different expertise; stage N depends on N&minus;1.</p></div>
+        <div class="card"><h3>&#128161; Why it works</h3><p>Each agent gets a <b>clean, focused</b> input &mdash; and you can swap any stage independently.</p></div>
+        <div class="card amber"><h3>&#9888;&#65039; Watch out</h3><p>Errors <b>propagate</b> &mdash; validate between stages; and it&rsquo;s <b>serial</b>, so latency adds up.</p></div>
+      </div>
+      <p class="callout" style="margin-top:14px">&#129504; It&rsquo;s the multi-agent version of Module 7&rsquo;s automation pipeline &mdash; same idea, but each <b>stage is a reasoning specialist</b>. Often the right first thing to reach for.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 10 — PARALLEL FAN-OUT ============ -->
+  <section class="slide" data-title="Parallel fan-out"
+    data-note="Deep dive on the parallel / fan-out shape -- and set up the decision-making half of the module. Here several agents work the SAME input at the same time, independently, and their outputs are then combined. Two big use cases. COVERAGE: give the same question to agents with different lenses -- a security reviewer, a performance reviewer, a correctness reviewer -- and you catch what any one would miss. DIVERSITY OF ATTEMPTS: ask three agents to solve the same problem in different ways, then pick or merge the best -- this is how you beat one-shot answers on hard problems. The win is speed (they run concurrently, so latency is the SLOWEST one, not the sum) and robustness (independent views don't share a blind spot). But fan-out creates a new problem, and it's the pivot into the rest of the module: now you have SEVERAL outputs and you need ONE. Three agents reviewed the code -- do you act on all three? Three agents drafted a reply -- which goes out? That convergence step is DECISION MAKING, and it doesn't happen for free -- you have to design it. That's exactly voting, critique and synthesis, the next three slides.">
+    <div class="kicker"><span class="dot"></span> Shape 2 &middot; many views at once</div>
+    <h2 class="title">Parallel &mdash; fan-out for coverage &amp; speed</h2>
+    <div class="body">
+      <p class="lead">Several agents work the <b>same input</b> concurrently; their outputs are then combined. Latency is the <b>slowest</b> agent, not the sum.</p>
+      <div class="grid2" style="margin-top:6px">
+        <div class="card cyan"><h3>&#128270; Coverage</h3><p>Different <b>lenses</b> on one question &mdash; security, performance, correctness reviewers &mdash; catch what one would miss.</p></div>
+        <div class="card"><h3>&#127919; Diverse attempts</h3><p>Several agents solve it <b>different ways</b>; pick or merge the best &mdash; how you beat one-shot answers.</p></div>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#128073; Fan-out creates a new problem &mdash; and it&rsquo;s the pivot of this module: now you have <b>several outputs and need one</b>. That convergence is <b>decision making</b>, and you must design it: <b>voting, critique, synthesis</b> &mdash; next.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 11 — REACHING A DECISION (THE CHALLENGE) ============ -->
+  <section class="slide" data-title="Reaching a decision"
+    data-note="Frame the decision-making problem before the three techniques. When multiple agents contribute -- whether they ran in parallel or handed off in sequence -- you eventually need to converge on ONE outcome: one answer to return, one action to take, one plan to follow. This is the half of the module's title people skip, and it's where naive multi-agent systems fall apart. The failure modes if you DON'T design the decision step: agents endlessly defer to each other ('you decide' / 'no, you decide'); contradictory outputs get concatenated into an incoherent mess; or the loudest / last agent silently wins with no principle behind it. The fix is to choose a deliberate DECISION MECHANISM up front, matched to the situation. Three canonical ones, coming up: VOTING when you have several comparable answers and want the consensus; CRITIQUE / DEBATE when you want to stress-test one answer before trusting it; and SYNTHESIS when the agents produced complementary PARTS that must be combined into a whole. Preview the judgement: the decision step is itself often an agent (a judge, a synthesiser) with its own prompt -- and for anything high-stakes, the final decision-maker is a human. Emphasise: a multi-agent system without an explicit decision mechanism is just noise with extra steps.">
+    <div class="kicker"><span class="dot"></span> The other half of the title</div>
+    <h2 class="title">Reaching a decision &mdash; the challenge</h2>
+    <div class="body">
+      <p class="lead">When several agents contribute, you must <b>converge on one outcome</b> &mdash; one answer, one action, one plan. Skip this and a multi-agent system falls apart:</p>
+      <div class="grid3" style="margin-top:6px">
+        <div class="card amber"><h3>&#128260; Endless deferral</h3><p>Agents defer to each other &mdash; &ldquo;you decide&rdquo; / &ldquo;no, you&rdquo; &mdash; and never converge.</p></div>
+        <div class="card amber"><h3>&#129513; Incoherent merge</h3><p>Contradictory outputs get <b>concatenated</b> into a mess.</p></div>
+        <div class="card amber"><h3>&#128227; Loudest wins</h3><p>The last / loudest agent <b>silently wins</b> &mdash; with no principle behind it.</p></div>
+      </div>
+      <p class="callout" style="margin-top:14px">&#129504; The fix: choose a deliberate <b>decision mechanism</b> up front &mdash; <b>voting</b>, <b>critique</b>, <b>synthesis</b> &mdash; and for high stakes, a <b>human</b> makes the final call. A multi-agent system without one is just <b>noise with extra steps</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 12 — VOTING / CONSENSUS ============ -->
+  <section class="slide" data-title="Voting & consensus"
+    data-note="Decision mechanism 1: voting / consensus. When several agents produce COMPARABLE answers to the same question, take a vote and go with the agreement. Simplest form: majority vote -- run the same question through N agents (or the same agent N times with variation) and pick the answer most of them give. This works because independent errors tend to cancel: if each agent is 70% right and their mistakes are uncorrelated, the majority is much better than 70%. Variants: WEIGHTED voting when some agents are more trustworthy on a topic; SCORED voting where a judge rates each answer and you take the top; and a CONFIDENCE THRESHOLD -- if the vote is split (no clear majority), that's a signal to escalate to a human rather than force a call. When it fits: factual questions, classification, anything with a checkable or comparable answer. When it doesn't: creative or open-ended tasks where 'the average' is meaningless, and cases where the agents share a blind spot (then they'll confidently agree on the same wrong answer -- voting amplifies correlated error). The senior move: use voting for convergent problems, and treat a SPLIT vote as valuable information, not a failure.">
+    <div class="kicker"><span class="dot"></span> Decision mechanism 1 of 3</div>
+    <h2 class="title">Voting &amp; consensus</h2>
+    <div class="body">
+      <p class="lead">Several agents give <b>comparable answers</b>; take the <b>agreement</b>. Independent errors cancel &mdash; if each is 70% right with uncorrelated mistakes, the <b>majority</b> is far better.</p>
+      <div class="grid3" style="margin-top:6px">
+        <div class="card cyan"><h3>&#128499;&#65039; Majority &amp; variants</h3><p>Plain majority &middot; <b>weighted</b> by trust &middot; <b>scored</b> by a judge agent.</p></div>
+        <div class="card gold"><h3>&#128100; Split &rarr; escalate</h3><p>No clear majority is a <b>signal</b> &mdash; escalate to a human, don&rsquo;t force it.</p></div>
+        <div class="card"><h3>&#9989; Fits convergent tasks</h3><p>Facts, classification, <b>checkable</b> answers &mdash; not open-ended creative work.</p></div>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#9888;&#65039; Watch for a <b>shared blind spot</b>: agents that reason alike will confidently agree on the <b>same wrong answer</b> &mdash; voting amplifies correlated error. Treat a <b>split vote as information</b>, not a failure.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 13 — CRITIQUE & DEBATE ============ -->
+  <section class="slide" data-title="Critique & debate"
+    data-note="Decision mechanism 2: critique, debate and reflection. Instead of averaging answers, you STRESS-TEST one. The pattern: one agent proposes; a second agent -- a critic with an adversarial brief -- tries to find what's wrong; the proposer revises, or a judge rules. It's the multi-agent version of the reflection you saw in Module 5, but the critic is a SEPARATE agent with a different prompt, which is what makes it effective: an independent skeptic catches errors the author is blind to, because the author is invested in their own answer. Forms: simple CRITIC (review-and-revise once), DEBATE (two agents argue opposing sides and a judge decides -- great for surfacing trade-offs), and REFLECTION loops (propose, critique, improve, repeat until the critic is satisfied or a cap is hit). Why it works: generating and evaluating are different skills, and separating them raises quality -- the same reason code review beats writing carefully alone. When to use: high-stakes or error-prone outputs where being RIGHT matters more than being fast -- a financial figure, a medical summary, a legal clause. The cost: extra model calls and latency, and you must CAP the loop or two agents will politely argue forever. The rule: for anything you'd want a second pair of eyes on, add a critic.">
+    <div class="kicker"><span class="dot"></span> Decision mechanism 2 of 3</div>
+    <h2 class="title">Critique &amp; debate</h2>
+    <div class="body">
+      <p class="lead">Don&rsquo;t average &mdash; <b>stress-test</b>. One agent proposes; an independent <b>critic</b> tries to find what&rsquo;s wrong; the proposer revises, or a judge rules.</p>
+      <div class="grid3" style="margin-top:6px">
+        <div class="card cyan"><h3>&#128269; Critic</h3><p>A separate agent with an <b>adversarial brief</b> reviews &amp; revises &mdash; catches the author&rsquo;s blind spots.</p></div>
+        <div class="card"><h3>&#9878;&#65039; Debate</h3><p>Two agents argue <b>opposing sides</b>; a judge decides &mdash; surfaces the trade-offs.</p></div>
+        <div class="card"><h3>&#128260; Reflection loop</h3><p>Propose &rarr; critique &rarr; improve, <b>capped</b> &mdash; or they argue forever.</p></div>
+      </div>
+      <p class="callout" style="margin-top:14px">&#129504; Generating and evaluating are <b>different skills</b> &mdash; separating them raises quality, just as <b>code review</b> beats writing carefully alone. Use it when being <b>right</b> matters more than being fast; it costs extra calls &amp; latency.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 14 — SYNTHESIS ============ -->
+  <section class="slide" data-title="Synthesis"
+    data-note="Decision mechanism 3: synthesis / aggregation. Voting is for comparable WHOLE answers; synthesis is for complementary PARTS. When agents each contributed a different piece -- the billing agent found the refund status, the tech agent diagnosed the bug, the research agent pulled the policy -- you need one agent to weave those pieces into a single coherent response. That's the synthesiser (or aggregator): its whole job is to take the collected findings from the shared state and produce one well-structured, non-redundant, consistent output. Keys to a good synthesiser. It must RESOLVE CONFLICTS, not just concatenate -- if two agents disagree, it flags or reconciles rather than pasting both. It should ATTRIBUTE and stay grounded -- built only from what the agents actually found, inventing nothing (Module 7's grounding discipline). And it OWNS THE VOICE -- one consistent tone, even though many agents contributed. This is the last step in the customer-service chatbot: after the specialists have each done their part, a synthesiser composes the single reply the customer sees -- and then, for anything risky, a human approves it (Module 7's draft-not-send, now at the team level). Tie the three together: vote to converge comparable answers, critique to harden a risky one, synthesise to combine complementary parts -- pick the mechanism the situation calls for.">
+    <div class="kicker"><span class="dot"></span> Decision mechanism 3 of 3</div>
+    <h2 class="title">Synthesis &mdash; combine the parts</h2>
+    <div class="body">
+      <p class="lead">Voting is for comparable <b>whole answers</b>; synthesis is for complementary <b>parts</b>. One agent weaves the collected findings into a single coherent response.</p>
+      <div class="grid3" style="margin-top:6px">
+        <div class="card cyan"><h3>&#129513; Resolve, don&rsquo;t paste</h3><p>Reconcile or <b>flag conflicts</b> &mdash; never just concatenate contradictory outputs.</p></div>
+        <div class="card"><h3>&#128204; Stay grounded</h3><p>Built only from what agents <b>actually found</b> &mdash; invents nothing (Module 7).</p></div>
+        <div class="card gold"><h3>&#127908; Own the voice</h3><p>One consistent <b>tone</b>, though many agents contributed.</p></div>
+      </div>
+      <p class="callout" style="margin-top:14px">&#129504; The three, together: <b>vote</b> to converge comparable answers, <b>critique</b> to harden a risky one, <b>synthesise</b> to combine parts. It&rsquo;s the last step of the chatbot &mdash; then a <b>human approves</b> anything risky (draft-not-send, at team level).</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 15 — WORKED EXAMPLE: CUSTOMER-SERVICE CHATBOT (CENTERPIECE) ============ -->
+  <section class="slide" data-title="The customer-service chatbot"
+    data-note="Now assemble everything into the worked example that IS your Lab 4.2: a multi-agent customer-service chatbot. Walk the flow end to end with a concrete case. A customer message arrives -- 'I was charged twice for order 4471 and the app keeps crashing.' The SUPERVISOR reads it and sees TWO intents, so it routes to two specialists. The BILLING agent (its own prompt, its own tools -- lookup_invoice, refund_request) handles the double charge: finds the duplicate, prepares a refund request. In parallel, the TECH agent (restart_service, known_issues) diagnoses the crash: matches a known issue, gets the fix steps. Both write their findings to the shared state. The SYNTHESISER takes both and composes ONE coherent reply that addresses both problems in a consistent voice -- not two disjointed messages. Then, because a refund is irreversible, the draft goes to a HUMAN for approval before anything is sent or actioned -- Module 7's draft-not-send, now at the team level. Point out how every concept lands here: specialists (separation of concerns), supervisor (routing to agents), parallel fan-out (two agents at once), shared state (findings), synthesis (one reply), human-in-the-loop (the send). This is exactly what they'll build. Emphasise: no single agent could be a great billing AND tech expert -- the team is what makes the answer good.">
+    <div class="kicker"><span class="dot"></span> The worked example &middot; your Lab 4.2</div>
+    <h2 class="title">The multi-agent customer-service chatbot</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 250" role="img" aria-label="A customer message goes to a supervisor which routes to billing and tech specialist agents in parallel; their findings are synthesised into one reply that a human approves before it is sent">
+          <defs><marker id="cb15" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker></defs>
+          <!-- message -->
+          <rect x="12" y="94" width="140" height="66" rx="11" fill="#312e81" stroke="#06b6d4" stroke-width="2.5"/>
+          <text x="82" y="120" text-anchor="middle" font-size="12" font-weight="700" fill="#67e8f9">Customer msg</text>
+          <text x="82" y="138" text-anchor="middle" font-size="8.8" fill="#c7cbf0">&ldquo;charged twice + app crashes&rdquo;</text>
+          <!-- supervisor -->
+          <rect x="182" y="96" width="130" height="62" rx="11" fill="#eef2ff" stroke="#4f46e5" stroke-width="2.5"/>
+          <text x="247" y="122" text-anchor="middle" font-size="13" font-weight="700" fill="#312e81">Supervisor</text>
+          <text x="247" y="140" text-anchor="middle" font-size="9" fill="#5b5f7a">two intents &rarr; route both</text>
+          <!-- billing -->
+          <rect x="350" y="40" width="170" height="60" rx="10" fill="#ecfeff" stroke="#06b6d4" stroke-width="2"/>
+          <text x="435" y="64" text-anchor="middle" font-size="12" font-weight="700" fill="#0e7490">Billing agent</text>
+          <text x="435" y="82" text-anchor="middle" font-size="9" fill="#5b5f7a">finds the double charge</text>
+          <!-- tech -->
+          <rect x="350" y="152" width="170" height="60" rx="10" fill="#ecfeff" stroke="#06b6d4" stroke-width="2"/>
+          <text x="435" y="176" text-anchor="middle" font-size="12" font-weight="700" fill="#0e7490">Tech agent</text>
+          <text x="435" y="194" text-anchor="middle" font-size="9" fill="#5b5f7a">matches a known issue</text>
+          <!-- synthesise -->
+          <rect x="556" y="96" width="150" height="62" rx="11" fill="#eef2ff" stroke="#4f46e5" stroke-width="2.5"/>
+          <text x="631" y="120" text-anchor="middle" font-size="12.5" font-weight="700" fill="#312e81">Synthesise</text>
+          <text x="631" y="138" text-anchor="middle" font-size="9" fill="#5b5f7a">one coherent reply</text>
+          <!-- approve -->
+          <rect x="740" y="96" width="140" height="62" rx="11" fill="#fffbeb" stroke="#f59e0b" stroke-width="2.5"/>
+          <text x="810" y="120" text-anchor="middle" font-size="12" font-weight="700" fill="#92400e">&#128100; Approve</text>
+          <text x="810" y="138" text-anchor="middle" font-size="9" fill="#5b5f7a">refund is irreversible</text>
+          <!-- send -->
+          <rect x="908" y="104" width="80" height="46" rx="10" fill="#059669" stroke="#047857" stroke-width="2"/>
+          <text x="948" y="132" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">Send</text>
+          <!-- arrows -->
+          <path d="M152 127 L180 127" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#cb15)"/>
+          <path d="M312 116 C332 86 340 74 348 68" fill="none" stroke="#4f46e5" stroke-width="2" marker-end="url(#cb15)"/>
+          <path d="M312 138 C332 168 340 178 348 184" fill="none" stroke="#4f46e5" stroke-width="2" marker-end="url(#cb15)"/>
+          <path d="M520 70 C540 92 546 100 555 108" fill="none" stroke="#0e7490" stroke-width="1.8" marker-end="url(#cb15)"/>
+          <path d="M520 182 C540 160 546 150 555 142" fill="none" stroke="#0e7490" stroke-width="1.8" marker-end="url(#cb15)"/>
+          <path d="M706 127 L738 127" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#cb15)"/>
+          <path d="M880 127 L906 127" stroke="#059669" stroke-width="2.5" marker-end="url(#cb15)"/>
+        </svg>
+        <figcaption>Every concept in one flow: <b>specialists</b> (billing, tech), a <b>supervisor</b> routing to agents, <b>parallel</b> fan-out, <b>shared state</b>, <b>synthesis</b> into one reply, and a <b>human</b> on the irreversible act. No soloist could be a great billing <i>and</i> tech expert.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 16 — CHATBOT TRACE ============ -->
+  <section class="slide" data-title="The chatbot trace"
+    data-note="Make the flow concrete with a run trace -- the multi-agent version of the traces from Modules 5-7. Walk it line by line. The customer message triggers the run. The supervisor reasons that there are two intents -- a billing problem and a technical problem -- and routes to both specialists. The billing agent runs: it calls lookup_invoice, sees two charges for order 4471, and records that a refund is warranted. The tech agent runs: it calls known_issues, matches the crash to a known bug, and records the fix. Both findings land in the shared state. The synthesiser reads both and composes one reply that handles the refund AND the crash in a single, consistent voice. And the last line is the key one: because the reply involves an irreversible refund, the system emits status = needs_approval -- it drafted the whole resolution but STOPPED before acting, exactly as in Module 7, now at the team level. Point out what the trace makes visible: which agent did what, in what order, and where the human gate is. This is precisely what scrolls past when they run the chatbot with verbose logging in the lab -- and it's why observability matters so much for multi-agent systems, which we'll hit shortly.">
+    <div class="kicker"><span class="dot"></span> The run, made visible</div>
+    <h2 class="title">The chatbot&rsquo;s trace</h2>
+    <div class="body">
+      <div class="terminal">
+<span class="you">Message:</span> "I was charged twice for order 4471 and the app keeps crashing."
+
+<span class="kw">Supervisor:</span> two intents &mdash; billing + technical. Route to both.
+
+<span class="kw">&#8627; Billing agent</span> <span class="fn">lookup_invoice</span>(<span class="str">"4471"</span>)
+<span class="out">  Observation: 2 charges found -> duplicate. Refund warranted.</span>
+
+<span class="kw">&#8627; Tech agent</span> <span class="fn">known_issues</span>(<span class="str">"app crash on open"</span>)
+<span class="out">  Observation: matches BUG-231 -> fix: update to v4.2.</span>
+
+<span class="kw">Synthesise:</span> <span class="you">"Hi &mdash; I've flagged the duplicate charge on 4471 for refund,</span>
+<span class="you">           and the crash is a known issue fixed in v4.2..."</span>
+
+<span class="kw">Final:</span> <span class="fn">status</span>=<span class="str">"needs_approval"</span>  <span class="com"># refund is irreversible -- a human approves</span>
+      </div>
+      <p class="callout warn" style="margin-top:12px">&#128073; The trace shows <b>which agent did what, in what order</b>, and where the <b>human gate</b> is. The team drafted a full resolution to two problems &mdash; then <b>stopped before the irreversible refund</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 17 — CHATBOT IN CODE ============ -->
+  <section class="slide" data-title="The chatbot in code"
+    data-note="A short, illustrative code peek in the LangGraph idiom -- not a coding lesson. This is the shape of the chatbot they'll build in Lab 4.2. Point out the pieces they already know. (1) Specialists: each is just a create_react_agent from Module 6 with its OWN focused prompt and its OWN small tool list -- billing_agent gets the billing tools, tech_agent gets the tech tools. (2) The supervisor: a routing function -- the route pattern from Module 7, but the labels are agent names, not code branches. (3) The graph: a LangGraph StateGraph wires supervisor and workers as NODES with edges; the shared state flows through. (4) The decision step: a synthesise node combines the findings. (5) The guardrail, unchanged from Module 7: the refund tool is behind a human-approval gate -- the agents draft, a human approves. Stress the through-line: everything here is composed from parts they built on Days 3-4 -- @tool, create_react_agent, a state graph, route, draft-not-send. Multi-agent isn't a new toolkit; it's those same parts, arranged as a team. Keep it high-level -- the labs are where they wire it up.">
+    <div class="kicker"><span class="dot"></span> Illustrative &middot; the shape of Lab 4.2</div>
+    <h2 class="title">The chatbot, in code</h2>
+    <div class="body">
+      <div class="terminal">
+<span class="com"># Each specialist is a Module-6 agent with its OWN prompt + small tool set</span>
+billing_agent = <span class="fn">create_react_agent</span>(llm, [lookup_invoice, refund_request], billing_prompt)
+tech_agent    = <span class="fn">create_react_agent</span>(llm, [known_issues, restart_service], tech_prompt)
+
+<span class="kw">def</span> <span class="fn">supervisor</span>(state):                 <span class="com"># route pattern (Module 7) -> to AGENTS</span>
+    <span class="kw">return</span> <span class="fn">classify_intents</span>(state[<span class="str">"message"</span>])   <span class="com"># e.g. ["billing", "tech"]</span>
+
+graph = <span class="fn">StateGraph</span>()                     <span class="com"># LangGraph: nodes are agents, edges are handoffs</span>
+graph.<span class="fn">add_node</span>(<span class="str">"billing"</span>, billing_agent); graph.<span class="fn">add_node</span>(<span class="str">"tech"</span>, tech_agent)
+graph.<span class="fn">add_node</span>(<span class="str">"synthesise"</span>, synthesise)   <span class="com"># combine findings -> one reply</span>
+
+reply = graph.<span class="fn">invoke</span>({<span class="str">"message"</span>: msg})   <span class="com"># returns a DRAFT reply</span>
+<span class="kw">if</span> reply.needs_refund <span class="kw">and</span> <span class="fn">human_approves</span>(reply):  <span class="com"># draft-not-send, at team level</span>
+    <span class="fn">issue_refund</span>(reply)
+      </div>
+      <p class="callout warn" style="margin-top:12px">&#128073; Nothing new here &mdash; it&rsquo;s all Days 3&ndash;4 parts <b>arranged as a team</b>: <span class="mono">@tool</span>, <span class="mono">create_react_agent</span>, a state graph, the route pattern, and the draft-not-send gate. Multi-agent is <b>composition</b>, not a new toolkit.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 18 — DESIGNING A MULTI-AGENT SYSTEM ============ -->
+  <section class="slide" data-title="When to build a team"
+    data-note="The senior-judgement slide -- as important as all the mechanics. Multi-agent is powerful and therefore over-used; the mark of experience is knowing when NOT to reach for it. Start from the default: a SINGLE well-built agent, or even a fixed workflow, should be your first attempt -- it's cheaper, faster, and far easier to debug. Escalate to multi-agent only when you hit a real wall: the task needs genuinely DISTINCT expertise that bloats one prompt; you need PARALLELISM for coverage or speed; or one agent's tool list has grown so large that selection is failing. Good candidates: customer service across departments, research that needs gather-then-critique, complex workflows with clear specialist stages. The costs you're taking on, and must justify: MORE MODEL CALLS (each agent is calls; a team multiplies your token bill and latency), MORE FAILURE MODES (handoff loops, agents talking past each other, coordination bugs), and HARDER DEBUGGING (the failure is now spread across several agents and a shared state). The rule of thumb: every agent you add should earn its keep with capability you genuinely couldn't get otherwise. Quote the reality check -- Anthropic's 'Building effective agents' guidance: prefer the simplest thing that works; add agents and orchestration only when simpler approaches fall short. Keep it as simple as the problem allows -- and no simpler.">
+    <div class="kicker"><span class="dot"></span> The senior judgement</div>
+    <h2 class="title">When to build a team &mdash; and when not to</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card cyan"><h3>&#9989; Reach for multi-agent when</h3>
+          <ul>
+            <li>The task needs genuinely <b>distinct expertise</b> that bloats one prompt</li>
+            <li>You need <b>parallelism</b> for coverage or speed</li>
+            <li>One agent&rsquo;s <b>tool list</b> has grown so large selection fails</li>
+            <li>There are clear <b>specialist stages</b> or departments</li>
+          </ul>
+        </div>
+        <div class="card amber"><h3>&#9940; The costs you take on</h3>
+          <ul>
+            <li><b>More model calls</b> &mdash; a team multiplies token bill &amp; latency</li>
+            <li><b>More failure modes</b> &mdash; handoff loops, coordination bugs</li>
+            <li><b>Harder debugging</b> &mdash; spread across agents &amp; shared state</li>
+            <li>A single agent / workflow is <b>your first attempt</b></li>
+          </ul>
+        </div>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#129504; Every agent you add must <b>earn its keep</b>. Anthropic&rsquo;s reality check: prefer the <b>simplest thing that works</b>; add agents &amp; orchestration only when simpler approaches fall short. Keep it as simple as the problem allows &mdash; and no simpler.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 19 — FAILURE MODES & OBSERVABILITY ============ -->
+  <section class="slide" data-title="Failure modes & observability"
+    data-note="Close the engineering arc -- multi-agent systems fail in new ways, and you can't run one you can't see. Name the coordination-specific failure modes. HANDOFF LOOPS: agent A hands to B, B hands back to A, forever -- the multi-agent version of an infinite loop; cap total handoffs just as you cap max_iterations. TALKING PAST EACH OTHER: a shared state that's a soup nobody owns, so agents miss or overwrite each other's context. COST / LATENCY EXPLOSION: each agent is model calls, so a chatty team can 10x your bill and response time before you notice. LOST ACCOUNTABILITY: when the answer is wrong, WHICH agent was responsible? Without tracing you can't tell. The defence is observability, and it's non-negotiable here: log every agent invocation, every message and handoff, every tool call, and the final decision -- so you can replay the whole conversation, find which agent went wrong, measure per-agent quality, and watch cost. This is exactly what LangSmith and Langfuse -- the course stack -- give you for multi-agent graphs. Tie to Karpathy's eval loop: once you can see per-agent behaviour, you can improve the weak specialist without disturbing the others. The slogan: a multi-agent system is only as trustworthy as it is observable.">
+    <div class="kicker"><span class="dot"></span> New failure modes &mdash; make them visible</div>
+    <h2 class="title">Failure modes &amp; observability</h2>
+    <div class="body">
+      <div class="grid4">
+        <div class="card amber"><h3>&#128260; Handoff loops</h3><p>A &rarr; B &rarr; A forever &mdash; <b>cap total handoffs</b>, like max_iterations.</p></div>
+        <div class="card amber"><h3>&#128172; Talking past</h3><p>A shared state <b>nobody owns</b> &mdash; agents miss or overwrite context.</p></div>
+        <div class="card blue"><h3>&#128176; Cost / latency</h3><p>Each agent is calls &mdash; a chatty team can <b>10&times;</b> your bill.</p></div>
+        <div class="card blue"><h3>&#128269; Lost accountability</h3><p>Which agent was <b>wrong</b>? Without tracing you can&rsquo;t tell.</p></div>
+      </div>
+      <p class="callout" style="margin-top:14px">&#128202; The defence is <b>observability</b>: log every agent, message, handoff, tool call &amp; final decision &mdash; so you can <b>replay</b> the conversation, find the faulty agent, and watch cost. <b>LangSmith / Langfuse</b> do this for graphs. A multi-agent system is only as trustworthy as it is <b>observable</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 20 — KEY TAKEAWAYS ============ -->
+  <section class="slide dark" data-title="Key takeaways"
+    data-note="Recap crisply, then the quiz. Five points. One: reach for multiple agents when a single one is overloaded -- multi-agent is decomposition applied to agents, with specialist roles and separation of concerns. Two: coordinate them with a pattern -- the supervisor/router is the backbone, plus sequential pipelines and parallel fan-out, wired by message passing over shared state. Three: collaboration creates a NEW problem -- reaching one decision -- so choose a mechanism: voting to converge, critique to harden, synthesis to combine. Four: the customer-service chatbot ties it together -- supervisor routes to billing and tech specialists, a synthesiser makes one reply, a human approves the irreversible act; that's your Lab 4.2. Five: a team costs more calls, latency and failure modes than a soloist -- so it must earn its complexity, and it must be observable. Then: a quick 10-question check before they build the chatbot.">
+    <div class="kicker"><span class="dot"></span> Recap</div>
+    <h2 class="title">Five things to carry forward</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card"><h3>1 &middot; Decompose into specialists</h3><p>Reach for a team when one agent is <b>overloaded</b> &mdash; focused roles, separation of concerns.</p></div>
+        <div class="card cyan"><h3>2 &middot; Coordinate with a pattern</h3><p><b>Supervisor</b> + pipeline + parallel, over <b>message passing / shared state</b>.</p></div>
+        <div class="card"><h3>3 &middot; Design the decision</h3><p><b>Vote</b> to converge, <b>critique</b> to harden, <b>synthesise</b> to combine.</p></div>
+        <div class="card"><h3>4 &middot; The chatbot</h3><p>Supervisor &rarr; specialists &rarr; synthesise &rarr; <b>human approves</b> &mdash; your Lab 4.2.</p></div>
+        <div class="card gold" style="grid-column:1/-1"><h3>5 &middot; A team must earn its keep</h3><p>More calls, latency &amp; failure modes than a soloist &mdash; add agents only when needed, and make it <b>observable</b>.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 21 — QUIZ INTRO ============ -->
+  <section class="slide dark" data-title="Quiz — intro"
+    data-note="Quick formative check -- 10 questions, mixed easy/medium, all on Module 8. Format: each question slide, then its answer slide with the explanation. Run it interactively -- read the question, let them call A/B/C/D, advance to reveal. The goal is to surface and fix misconceptions before they build the multi-agent chatbot. Keep it light and fast.">
+    <div class="body center">
+      <div class="kicker"><span class="dot"></span> Lock it in</div>
+      <h2 class="title" style="border-bottom-color:var(--cyan)">Quick check &mdash; 10 questions</h2>
+      <p class="lead" style="color:#e7e9fb">Each <b>question</b> appears first; the <b>answer</b> &amp; a one-line why are on the next slide. Call out A / B / C / D before you advance.</p>
+      <div class="title-meta" style="margin-top:14px">
+        <span class="pill cyan">10 questions</span>
+        <span class="pill gold">mixed: easy &amp; medium</span>
+        <span class="pill ghost" style="color:#c7cbf0;border-color:rgba(255,255,255,.3)">all on Module 8</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 22 — Q1 ============ -->
+  <section class="slide" data-title="Quiz Q1 — why multi-agent"
+    data-note="Answer: B. A single agent overloaded with every role and tool degrades; focused specialists are more reliable.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q1 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Why move from a single agent to a multi-agent system?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Multiple agents always cost less to run.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>One agent overloaded with every role &amp; tool degrades; focused specialists are more reliable.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>A single agent cannot call any tools.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>More agents guarantee a correct answer.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 23 — A1 ============ -->
+  <section class="slide" data-title="Answer Q1"
+    data-note="Multi-agent is decomposition applied to agents: split an overloaded prompt into focused specialists with small tool sets, each easier to prompt, test and debug.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q1 / 10</div>
+    <h2 class="title">Why multi-agent</h2>
+    <div class="body center">
+      <p class="quiz-restate">Decomposition applied to agents.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Multiple agents always cost less to run.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>One agent overloaded with every role &amp; tool degrades; focused specialists are more reliable. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>A single agent cannot call any tools.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>More agents guarantee a correct answer.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Split an overloaded prompt into <b>focused specialists</b> with small tool sets &mdash; each easier to prompt, test &amp; debug. A team actually costs <b>more</b>, so it must earn its keep.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 24 — Q2 ============ -->
+  <section class="slide" data-title="Quiz Q2 — supervisor pattern"
+    data-note="Answer: B. The supervisor (router) is a coordinating agent that routes each request to the right specialist worker.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q2 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">What is the supervisor (router) pattern?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>An agent that never delegates and does everything itself.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>A coordinating agent that routes each request to the right specialist worker agent.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>A tool that shuts the system down on error.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>A database that stores conversation logs.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 25 — A2 ============ -->
+  <section class="slide" data-title="Answer Q2"
+    data-note="It's Module 7's route pattern, but the destinations are agents, not code branches. In LangGraph the supervisor and workers are nodes; the routing decisions are edges.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q2 / 10</div>
+    <h2 class="title">The supervisor pattern</h2>
+    <div class="body center">
+      <p class="quiz-restate">Route &mdash; but to agents.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>An agent that never delegates and does everything itself.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>A coordinating agent that routes each request to the right specialist worker agent. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>A tool that shuts the system down on error.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>A database that stores conversation logs.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;It&rsquo;s Module 7&rsquo;s <b>route</b> pattern &mdash; but the destinations are <b>agents</b>, not code branches. In LangGraph the supervisor &amp; workers are <b>nodes</b>; routing decisions are <b>edges</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 26 — Q3 ============ -->
+  <section class="slide" data-title="Quiz Q3 — specialist roles"
+    data-note="Answer: B. Separation of concerns: a focused prompt + small tool set makes each agent more reliable and easier to debug.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q3 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">What&rsquo;s the main benefit of giving each agent a specialist role?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>It lets you use a smaller language model for free.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Separation of concerns &mdash; a focused prompt &amp; small tool set make each agent reliable &amp; debuggable.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>It removes the need for any coordination.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>It guarantees the agents never disagree.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 27 — A3 ============ -->
+  <section class="slide" data-title="Answer Q3"
+    data-note="A small prompt gets followed; a small tool set keeps selection accurate; clear boundaries make behaviour predictable. You can improve one specialist without touching the others.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q3 / 10</div>
+    <h2 class="title">Specialist roles</h2>
+    <div class="body center">
+      <p class="quiz-restate">Separation of concerns.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>It lets you use a smaller language model for free.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>Separation of concerns &mdash; a focused prompt &amp; small tool set make each agent reliable &amp; debuggable. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>It removes the need for any coordination.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>It guarantees the agents never disagree.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;A small prompt gets <b>followed</b>; a small tool set keeps <b>selection accurate</b>; clear boundaries make behaviour predictable &mdash; and you can improve one specialist <b>without touching</b> the others.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 28 — Q4 ============ -->
+  <section class="slide" data-title="Quiz Q4 — message passing"
+    data-note="Answer: B. Agents share information through message passing or a shared state that carries context between them.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q4 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">How do agents in a multi-agent system share information?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>They can&rsquo;t &mdash; each is fully isolated.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Through message passing / a shared state that carries context between them.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>By retraining the model after every turn.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Only by writing to the user&rsquo;s screen.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 29 — A4 ============ -->
+  <section class="slide" data-title="Answer Q4"
+    data-note="Keep the shared context small and relevant, and make handoffs explicit. Dumping everything to everyone recreates the overloaded-prompt problem and blows up cost.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q4 / 10</div>
+    <h2 class="title">Message passing &amp; shared state</h2>
+    <div class="body center">
+      <p class="quiz-restate">How agents talk.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>They can&rsquo;t &mdash; each is fully isolated.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>Through message passing / a shared state that carries context between them. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>By retraining the model after every turn.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Only by writing to the user&rsquo;s screen.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Keep the shared context <b>small &amp; relevant</b> and make <b>handoffs explicit</b>. Dumping everything to everyone recreates the overloaded prompt and blows up cost.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 30 — Q5 ============ -->
+  <section class="slide" data-title="Quiz Q5 — orchestration shapes"
+    data-note="Answer: B. The common orchestration shapes are supervisor, sequential (pipeline), parallel (fan-out) and hierarchical.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q5 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Which are the common multi-agent orchestration shapes?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Train, validate, test, deploy.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Supervisor, sequential (pipeline), parallel (fan-out), hierarchical.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Encode, attend, decode, embed.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Map, shuffle, reduce, store.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 31 — A5 ============ -->
+  <section class="slide" data-title="Answer Q5"
+    data-note="They're composable primitives, not rivals: a supervisor can fan out to parallel reviewers whose critiques feed a sequential synthesise step. Start with the simplest that works.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q5 / 10</div>
+    <h2 class="title">Orchestration shapes</h2>
+    <div class="body center">
+      <p class="quiz-restate">Four composable primitives.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Train, validate, test, deploy.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>Supervisor, sequential (pipeline), parallel (fan-out), hierarchical. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Encode, attend, decode, embed.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Map, shuffle, reduce, store.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;They&rsquo;re <b>composable</b>, not rivals: a supervisor can <b>fan out</b> to reviewers whose critiques feed a <b>sequential</b> synthesise step. Start with the simplest that works.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 32 — Q6 ============ -->
+  <section class="slide" data-title="Quiz Q6 — voting"
+    data-note="Answer: B. Voting converges several comparable answers into one by majority (or scored) agreement; a split vote is a signal to escalate.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q6 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">What is voting/consensus used for in a multi-agent system?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>To let agents elect a permanent leader.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>To converge several comparable answers into one by majority (or scored) agreement.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>To delete the least popular agent.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>To increase the model&rsquo;s temperature.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 33 — A6 ============ -->
+  <section class="slide" data-title="Answer Q6"
+    data-note="Independent errors cancel, so the majority beats any one agent. But watch for a shared blind spot -- agents that reason alike agree on the same wrong answer. A split vote is information: escalate.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q6 / 10</div>
+    <h2 class="title">Voting &amp; consensus</h2>
+    <div class="body center">
+      <p class="quiz-restate">Converge comparable answers.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>To let agents elect a permanent leader.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>To converge several comparable answers into one by majority (or scored) agreement. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>To delete the least popular agent.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>To increase the model&rsquo;s temperature.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Independent errors cancel, so the majority beats any one agent &mdash; but watch for a <b>shared blind spot</b>. A <b>split vote is information</b>: escalate rather than force it.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 34 — Q7 ============ -->
+  <section class="slide" data-title="Quiz Q7 — critique"
+    data-note="Answer: B. A critic/debate step has an independent agent review or challenge another's output to catch errors before acting.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q7 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">What does a critic / debate step add?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>It makes the answer longer.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>An independent agent reviews or challenges another&rsquo;s output to catch errors before acting.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>It removes the need to validate anything.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>It trains the proposing agent on new data.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 35 — A7 ============ -->
+  <section class="slide" data-title="Answer Q7"
+    data-note="Generating and evaluating are different skills; a separate skeptic catches the author's blind spots, just as code review beats writing carefully alone. Cap the loop so it doesn't argue forever.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q7 / 10</div>
+    <h2 class="title">Critique &amp; debate</h2>
+    <div class="body center">
+      <p class="quiz-restate">Stress-test, don&rsquo;t average.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>It makes the answer longer.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>An independent agent reviews or challenges another&rsquo;s output to catch errors before acting. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>It removes the need to validate anything.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>It trains the proposing agent on new data.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Generating and evaluating are <b>different skills</b>; a separate skeptic catches the author&rsquo;s blind spots &mdash; like <b>code review</b>. Cap the loop so it doesn&rsquo;t argue forever.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 36 — Q8 ============ -->
+  <section class="slide" data-title="Quiz Q8 — synthesis"
+    data-note="Answer: B. Synthesis combines several agents' partial results into one coherent answer, resolving conflicts rather than concatenating.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q8 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">What does a synthesis step do?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>It picks one agent and ignores the rest at random.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>It combines several agents&rsquo; partial results into one coherent answer, resolving conflicts.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>It splits the task into more sub-tasks.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>It compresses the model weights.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 37 — A8 ============ -->
+  <section class="slide" data-title="Answer Q8"
+    data-note="Voting is for comparable whole answers; synthesis is for complementary parts. A good synthesiser reconciles conflicts, stays grounded in what agents found, and owns one consistent voice.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q8 / 10</div>
+    <h2 class="title">Synthesis</h2>
+    <div class="body center">
+      <p class="quiz-restate">Combine the parts.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>It picks one agent and ignores the rest at random.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>It combines several agents&rsquo; partial results into one coherent answer, resolving conflicts. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>It splits the task into more sub-tasks.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>It compresses the model weights.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Voting is for comparable <b>whole</b> answers; synthesis is for complementary <b>parts</b>. A good synthesiser <b>reconciles</b> conflicts, stays <b>grounded</b>, and owns <b>one voice</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 38 — Q9 ============ -->
+  <section class="slide" data-title="Quiz Q9 — when not to"
+    data-note="Answer: B. Don't build a multi-agent system when a single agent or a fixed workflow already solves it -- multi-agent adds cost, latency and failure modes.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q9 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">When should you NOT build a multi-agent system?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Whenever the task involves more than one tool.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>When a single agent or a fixed workflow already solves it &mdash; a team adds cost, latency &amp; failure modes.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Only when you have fewer than ten agents.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Never &mdash; more agents are always better.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 39 — A9 ============ -->
+  <section class="slide" data-title="Answer Q9"
+    data-note="A single agent or workflow is your first attempt -- cheaper, faster, easier to debug. Every agent you add must earn its keep. Anthropic: prefer the simplest thing that works.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q9 / 10</div>
+    <h2 class="title">When not to build a team</h2>
+    <div class="body center">
+      <p class="quiz-restate">Keep it as simple as the problem allows.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Whenever the task involves more than one tool.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>When a single agent or a fixed workflow already solves it &mdash; a team adds cost, latency &amp; failure modes. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Only when you have fewer than ten agents.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Never &mdash; more agents are always better.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;A single agent / workflow is your <b>first attempt</b> &mdash; cheaper, faster, easier to debug. Every agent you add must <b>earn its keep</b>. Prefer the <b>simplest thing that works</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 40 — Q10 ============ -->
+  <section class="slide" data-title="Quiz Q10 — observability"
+    data-note="Answer: B. Many agents and handoffs make failures hard to trace, so you must log every agent, message and decision to debug and audit.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q10 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Why is observability especially important for multi-agent systems?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>It makes the agents run in parallel automatically.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Many agents &amp; handoffs make failures hard to trace &mdash; log every agent, message &amp; decision.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>It replaces the need for a supervisor.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>It lets you skip human approval.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 41 — A10 ============ -->
+  <section class="slide" data-title="Answer Q10"
+    data-note="Log every agent invocation, message, handoff, tool call and the final decision so you can replay the conversation, find the faulty agent and watch cost. LangSmith/Langfuse do this for graphs.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q10 / 10</div>
+    <h2 class="title">Why observability</h2>
+    <div class="body center">
+      <p class="quiz-restate">A team is only as trustworthy as it is visible.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>It makes the agents run in parallel automatically.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>Many agents &amp; handoffs make failures hard to trace &mdash; log every agent, message &amp; decision. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>It replaces the need for a supervisor.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>It lets you skip human approval.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Log every agent, message, handoff, tool call &amp; final decision so you can <b>replay</b> the conversation, <b>find the faulty agent</b> and watch cost. <b>LangSmith / Langfuse</b> do this for graphs.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 42 — REFERENCES ============ -->
+  <section class="slide" data-title="References &amp; further study"
+    data-note="Point to the best companions. LangGraph's multi-agent and supervisor tutorials are the direct build-along for the chatbot lab. Its concepts page on multi-agent architectures maps exactly to the four shapes. Anthropic's 'Building effective agents' is the reality check on when orchestration is worth it -- read it before over-engineering. The multi-agent research system post shows a real parallel/synthesis system at scale. CrewAI and AutoGen are the other popular frameworks worth knowing. Langfuse anchors the observability slide. All links live in the HTML; skim the LangGraph multi-agent tutorial before the labs.">
+    <div class="kicker"><span class="dot"></span> Go deeper &middot; curated, mostly free</div>
+    <h2 class="title">References &amp; further study</h2>
+    <div class="body">
+      <ul class="refs">
+        <li><a href="https://langchain-ai.github.io/langgraph/concepts/multi_agent/" target="_blank" rel="noopener">LangGraph &mdash; Multi-agent architectures</a><span class="d">The four shapes in code &mdash; supervisor, pipeline, parallel, hierarchical.</span></li>
+        <li><a href="https://langchain-ai.github.io/langgraph/tutorials/multi_agent/agent_supervisor/" target="_blank" rel="noopener">LangGraph &mdash; Agent supervisor tutorial</a><span class="d">The direct build-along for the chatbot lab&rsquo;s supervisor.</span></li>
+        <li><a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noopener">Anthropic &mdash; Building effective agents</a><span class="d">When orchestration is worth it &mdash; the simplicity reality check.</span></li>
+        <li><a href="https://www.anthropic.com/engineering/built-multi-agent-research-system" target="_blank" rel="noopener">Anthropic &mdash; A multi-agent research system</a><span class="d">A real parallel + synthesis system at scale &mdash; and its costs.</span></li>
+        <li><a href="https://docs.crewai.com/" target="_blank" rel="noopener">CrewAI &mdash; role-based agent teams</a><span class="d">A popular framework built around specialist roles &amp; crews.</span></li>
+        <li><a href="https://microsoft.github.io/autogen/" target="_blank" rel="noopener">AutoGen &mdash; conversational multi-agent</a><span class="d">Agents that collaborate via structured conversation.</span></li>
+        <li><a href="https://langfuse.com/docs" target="_blank" rel="noopener">Langfuse &mdash; tracing &amp; observability</a><span class="d">Trace every agent, message &amp; decision &mdash; slide 19.</span></li>
+        <li><a href="../course-outline-building-intelligent-ai-agents.html">Course outline (internal)</a><span class="d">Where this module sits in the 5-day arc &mdash; all decks &amp; labs.</span></li>
+      </ul>
+      <p class="small" style="margin-top:12px">All external links open in a new tab. Skim the <b>LangGraph multi-agent tutorial</b> before the labs.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 43 — CLOSING ============ -->
+  <section class="slide title-slide" data-title="What's next"
+    data-note="Close warm and bridge to Day 5. Today you learned to build a TEAM: when one agent is overloaded, decompose into specialists; coordinate them with a supervisor, pipelines and parallel fan-out over shared state; and -- the hard part -- reach one decision with voting, critique or synthesis. The worked example, the multi-agent customer-service chatbot, is your Lab 4.2. And you learned the discipline that keeps it honest: a team must earn its complexity and stay observable. That completes Day 4 -- agents that do real work, solo and in teams. Day 5 turns to where these agents actually get deployed and the responsibility that comes with it: agents in finance, healthcare and cybersecurity, and then ethics, safety and responsible AI -- guardrails, bias, oversight and debugging. End on: you can now build a team of agents that solves a real problem; next, you learn to deploy them where the stakes are real, and to do it responsibly.">
+    <div class="body center">
+      <div class="kicker"><span class="dot"></span> End of Module 8 &middot; End of Day 4</div>
+      <h1>From one agent to <span class="accent">a team</span>.</h1>
+      <p class="subtitle">Specialists that coordinate and decide &mdash; the customer-service chatbot. Next: <b>Day 5</b> &mdash; agents in the real world, and responsible AI.</p>
+      <div class="rule"></div>
+      <div class="title-meta">
+        <span class="pill gold">Next: Day 5 &mdash; Advanced &amp; Responsible Agents</span>
+        <span class="pill green">Now: <a href="../hands-on/module-8/index.html" style="color:#fff;text-decoration:underline">Module 8 labs</a></span>
+      </div>
+      <p class="trainer" style="margin-top:22px"><b>Rajesh Gheware</b> &middot;
+        <a href="day4-module7-task-automation.html">&#8592; Module 7 deck</a> &middot;
+        <a href="day5-module9-agents-in-industry.html">Module 9 deck &#8594;</a> &middot;
+        <a href="../course-outline-building-intelligent-ai-agents.html">Course outline</a> &middot;
+        <a href="https://devops.gheware.com" target="_blank" rel="noopener">devops.gheware.com</a>
+      </p>
+    </div>
+  </section>
+
+</div><!-- /deck -->
+
+<!-- ===== Overview (O / ESC) ===== -->
+<div id="overview">
+  <h3>Module 8 &mdash; jump to a slide</h3>
+  <p class="ovsub">Press O or ESC again to close &middot; click any slide</p>
+  <div class="ovgrid" id="ovgrid"></div>
+</div>
+
+<!-- ===== Presenter notes (N) ===== -->
+<div id="notes"><span class="tag">Presenter note &middot; press N to hide</span><span id="noteText"></span></div>
+
+<!-- ===== Chrome ===== -->
+<div id="counter">1 / 43</div>
+<div class="hint">&larr; &rarr; / Space to navigate &middot; <b>N</b> notes &middot; <b>O</b>/Esc overview &middot; <b>F</b> fullscreen</div>
+<div class="nav">
+  <button id="prev" title="Previous (←)" aria-label="Previous slide">&#8249;</button>
+  <button id="next" title="Next (→)" aria-label="Next slide">&#8250;</button>
+</div>
+<div class="footer">
+  <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
+  <span>Day 4 · Module 8 — Multi-Agent Collaboration &amp; Decision Making</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.0</span>
+</div>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var total = slides.length;
+  var i = 0;
+  var counter = document.getElementById('counter');
+  var noteText = document.getElementById('noteText');
+  var progress = document.getElementById('progress');
+  var prevBtn = document.getElementById('prev');
+  var nextBtn = document.getElementById('next');
+
+  function render(){
+    slides.forEach(function(s,idx){ s.classList.toggle('active', idx===i); });
+    counter.textContent = (i+1)+' / '+total;
+    progress.style.width = ((i)/(total-1)*100)+'%';
+    noteText.textContent = ' ' + (slides[i].getAttribute('data-note')||'—');
+    prevBtn.disabled = (i===0);
+    nextBtn.disabled = (i===total-1);
+    if (location.hash !== '#'+(i+1)) history.replaceState(null,'','#'+(i+1));
+    slides[i].scrollTop = 0;
+  }
+  function go(n){ i = Math.max(0, Math.min(total-1, n)); render(); }
+  function next(){ go(i+1); }
+  function prev(){ go(i-1); }
+
+  nextBtn.addEventListener('click', next);
+  prevBtn.addEventListener('click', prev);
+
+  document.addEventListener('keydown', function(e){
+    if (e.key==='ArrowRight' || e.key==='PageDown' || e.key===' '){ e.preventDefault(); next(); }
+    else if (e.key==='ArrowLeft' || e.key==='PageUp'){ e.preventDefault(); prev(); }
+    else if (e.key==='Home'){ e.preventDefault(); go(0); }
+    else if (e.key==='End'){ e.preventDefault(); go(total-1); }
+    else if (e.key==='n' || e.key==='N'){ document.body.classList.toggle('show-notes'); }
+    else if (e.key==='o' || e.key==='O'){ document.body.classList.toggle('show-overview'); }
+    else if (e.key==='Escape'){ document.body.classList.toggle('show-overview'); }
+    else if (e.key==='f' || e.key==='F'){
+      if (!document.fullscreenElement){ document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); }
+      else { document.exitFullscreen && document.exitFullscreen(); }
+    }
+  });
+
+  // build overview
+  var ov = document.getElementById('ovgrid');
+  slides.forEach(function(s,idx){
+    var c = document.createElement('div');
+    c.className='ovcard';
+    c.innerHTML = '<div class="num">'+(idx+1).toString().padStart(2,'0')+'</div><div class="ttl">'+(s.getAttribute('data-title')||('Slide '+(idx+1)))+'</div>';
+    c.addEventListener('click', function(){ go(idx); document.body.classList.remove('show-overview'); });
+    ov.appendChild(c);
+  });
+
+  // swipe (touch)
+  var x0=null;
+  document.addEventListener('touchstart',function(e){ x0=e.touches[0].clientX; },{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(x0===null) return; var dx=e.changedTouches[0].clientX-x0;
+    if(Math.abs(dx)>50){ dx<0?next():prev(); } x0=null;
+  });
+
+  // deep link
+  var start = parseInt((location.hash||'').replace('#',''),10);
+  if(start>=1 && start<=total) i=start-1;
+  render();
+})();
+</script>
+</body>
+</html>
