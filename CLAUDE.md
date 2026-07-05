@@ -16,17 +16,19 @@ autonomous, industry-ready AI agents.*
   Python recommended but not mandatory.
 - **Audience:** developers, data/automation professionals, technical leads/architects moving
   into agentic AI.
-- **Stage:** early build &mdash; **Days 1&ndash;4 complete** (Modules 1&ndash;8: decks + labs). Decks:
+- **Stage:** early build &mdash; **Days 1&ndash;4 complete + Module 9 deck complete**
+  (Modules 1&ndash;8: decks + labs; Module 9: deck only). Decks:
   `presentation/day1-module1-...` (22 slides), `day1-module2-...` (20), `day2-module3-why-transformers...`
   (19), `day2-module4-pretrained-models-and-fine-tuning...` (20), `day3-module5-what-is-agentic-ai...`
   (42 slides), `day3-module6-frameworks-for-building-ai-agents...` (43 slides),
   `day4-module7-task-automation...` (43 slides),
-  `day4-module8-multi-agent-collaboration...` (43 slides) &mdash; the last four each carry a 10-question quiz
+  `day4-module8-multi-agent-collaboration...` (43 slides),
+  `day5-module9-agents-in-industry...` (43 slides) &mdash; the last five each carry a 10-question quiz
   (Q slide &rarr; answer slide interleaved, 4 choices each). Labs:
   `hands-on/module-1/` &hellip; `module-8/` (12 labs each + `index.html` + `solutions/` + `_generators/`).
-  Outline cross-links all of them (Slides badge per module 1&ndash;8; 12-Labs badges for modules 1&ndash;8;
-  Day-1/2/3/4 labs boxes summarise the sets). Remaining: **Day 5** (Modules 9&ndash;10: agents in
-  finance/health/cyber, and ethics &amp; responsible AI &mdash; decks + labs), not built yet.
+  Outline cross-links all of them (Slides badge per module 1&ndash;9; 12-Labs badges for modules 1&ndash;8;
+  Day-1/2/3/4 labs boxes summarise the sets). Remaining: **Module 9 labs** (financial-report insight
+  agent) and **Module 10** (deck + labs, ethics &amp; responsible AI), not built yet.
 
 ## Hands-on labs (the convention that's now established)
 
