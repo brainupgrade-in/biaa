@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 3 · Module 6 — Frameworks for Building AI Agents</title>
+<style>
+  :root{
+    --ink-900:#1e1b4b; --ink-800:#312e81; --ind-600:#4f46e5;
+    --ind-300:#a5b4fc; --ind-50:#eef2ff;
+    --cyan:#06b6d4; --cyan-l:#67e8f9; --amber:#f59e0b; --amber-d:#b45309; --blue:#0891b2;
+    --ok:#059669; --bg:#f5f6fb; --ink:#1e1f33; --muted:#5b5f7a; --line:#d8dcf0;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+    background:var(--ink-900); color:var(--ink);
+    overflow:hidden;
+  }
+  a{color:var(--ind-600);}
+
+  /* ---------- Deck / slide framework ---------- */
+  .deck{position:fixed;inset:0;}
+  .slide{
+    position:absolute;inset:0;
+    display:none;
+    flex-direction:column;
+    background:var(--bg);
+    padding:clamp(20px,3.2vh,40px) clamp(28px,5vw,80px) 64px;
+    overflow:auto;
+  }
+  .slide.active{display:flex;animation:fade .35s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+  .kicker{
+    display:flex;align-items:center;gap:10px;
+    font-size:clamp(.7rem,1.1vw,.85rem);font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--ind-600);margin-bottom:6px;
+  }
+  .kicker .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);}
+  .kicker .sub{color:var(--muted);font-weight:600;}
+  h2.title{
+    margin:0 0 14px;color:var(--ink-800);
+    font-size:clamp(1.5rem,3.4vw,2.5rem);line-height:1.1;
+    border-bottom:3px solid var(--cyan);padding-bottom:10px;
+  }
+  .body{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;}
+  .center{justify-content:center;}
+  p.lead{font-size:clamp(1rem,1.7vw,1.3rem);line-height:1.5;max-width:62ch;color:#26273f;}
+  .small{font-size:clamp(.8rem,1.2vw,.95rem);color:var(--muted);}
+
+  /* ---------- Generic helpers ---------- */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:clamp(14px,2vw,26px);}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(12px,1.6vw,20px);}
+  .grid4{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(12px,1.6vw,18px);}
+  .card{
+    background:#fff;border:1px solid var(--line);border-left:4px solid var(--ind-600);
+    border-radius:6px;padding:clamp(12px,1.6vw,18px);box-shadow:0 1px 4px rgba(30,27,75,.06);
+  }
+  .card.gold{border-left-color:var(--amber);background:#fffbeb;}
+  .card.amber{border-left-color:var(--amber-d);}
+  .card.blue{border-left-color:var(--blue);}
+  .card.cyan{border-left-color:var(--cyan);}
+  .card h3{margin:0 0 8px;color:var(--ink-800);font-size:clamp(1rem,1.5vw,1.2rem);
+    display:flex;align-items:center;gap:8px;}
+  .card p,.card li{font-size:clamp(.82rem,1.2vw,1rem);line-height:1.45;}
+  .card ul{margin:6px 0 0;padding-left:20px;}
+  .card ul li{margin-bottom:4px;}
+
+  ul.bullets{font-size:clamp(.95rem,1.6vw,1.25rem);line-height:1.7;padding-left:26px;max-width:64ch;}
+  ul.bullets li{margin-bottom:10px;}
+  ul.bullets li b{color:var(--ink-800);}
+
+  table{border-collapse:collapse;width:100%;font-size:clamp(.8rem,1.2vw,1.02rem);background:#fff;
+    box-shadow:0 1px 4px rgba(30,27,75,.07);border-radius:6px;overflow:hidden;}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top;}
+  thead th{background:var(--ink-800);color:#fff;font-weight:600;}
+  tbody tr:nth-child(even){background:var(--ind-50);}
+  td .yes{color:var(--ok);font-weight:700;}
+  td .no{color:#b91c1c;font-weight:700;}
+  caption{caption-side:bottom;font-size:.8rem;color:var(--muted);padding-top:8px;text-align:left;}
+
+  .pill{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.72em;font-weight:700;
+    vertical-align:middle;letter-spacing:.02em;}
+  .pill.green{background:var(--ind-600);color:#fff;}
+  .pill.gold{background:var(--amber);color:var(--ink-900);}
+  .pill.amber{background:var(--amber-d);color:#fff;}
+  .pill.blue{background:var(--blue);color:#fff;}
+  .pill.cyan{background:var(--cyan);color:var(--ink-900);}
+  .pill.ghost{background:#fff;border:1px solid var(--line);color:var(--muted);}
+
+  .callout{background:var(--ind-50);border:1px solid var(--ind-300);border-radius:8px;
+    padding:14px 18px;font-size:clamp(.9rem,1.4vw,1.1rem);color:#262248;}
+  .callout.warn{background:#fffbeb;border-color:var(--amber);}
+  .callout b{color:var(--ink-800);}
+
+  figure{margin:0;text-align:center;}
+  figure svg{width:100%;height:auto;max-height:60vh;}
+  figcaption{font-size:clamp(.78rem,1.1vw,.92rem);color:var(--muted);margin-top:8px;}
+
+  .mono{font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;}
+  .terminal{background:#14143a;color:#e0e3f5;border-radius:8px;padding:16px 18px;
+    font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:clamp(.72rem,1.1vw,.95rem);
+    line-height:1.6;box-shadow:0 4px 16px rgba(0,0,0,.3);overflow:auto;white-space:pre-wrap;}
+  .terminal .com{color:#7f86b8;}
+  .terminal .kw{color:var(--cyan-l);}
+  .terminal .str{color:#fcd34d;}
+  .terminal .fn{color:#a5b4fc;}
+  .terminal .out{color:#6ee7b7;}
+  .terminal .you{color:#fff;}
+
+  /* ---------- reference list ---------- */
+  ul.refs{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;
+    gap:10px 26px;font-size:clamp(.82rem,1.2vw,1rem);}
+  ul.refs li{padding:8px 12px;background:#fff;border:1px solid var(--line);
+    border-left:3px solid var(--cyan);border-radius:6px;line-height:1.4;}
+  ul.refs li a{font-weight:600;text-decoration:none;}
+  ul.refs li a:hover{text-decoration:underline;}
+  ul.refs li .d{display:block;color:var(--muted);font-size:.82em;margin-top:2px;}
+  @media(max-width:760px){ul.refs{grid-template-columns:1fr;} .grid2,.grid3,.grid4{grid-template-columns:1fr;}}
+
+  /* ---------- Quiz ---------- */
+  .quiz-q{font-size:clamp(1.1rem,2vw,1.5rem);color:var(--ink-800);font-weight:700;line-height:1.3;margin:0 0 16px;}
+  .quiz-restate{font-size:clamp(.92rem,1.4vw,1.12rem);color:var(--muted);font-weight:600;line-height:1.35;margin:0 0 14px;}
+  .quiz-opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .quiz-opt{display:flex;align-items:flex-start;gap:12px;background:#fff;border:1px solid var(--line);
+    border-left:4px solid var(--ind-300);border-radius:8px;padding:12px 16px;font-size:clamp(.9rem,1.4vw,1.1rem);line-height:1.4;}
+  .quiz-opt .ltr{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--ind-50);color:var(--ind-600);
+    font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .quiz-opt.correct{border-left-color:var(--ok);background:#ecfdf5;}
+  .quiz-opt.correct .ltr{background:var(--ok);color:#fff;}
+  .quiz-opt.dim{opacity:.5;}
+  .quiz-why{margin-top:16px;}
+  .quiz-badge{display:inline-block;background:var(--amber);color:var(--ink-900);font-weight:700;font-size:.72em;padding:2px 10px;border-radius:12px;}
+  @media(max-width:760px){.quiz-opts{grid-template-columns:1fr;}}
+
+  /* ---------- Title slide ---------- */
+  .title-slide{background:linear-gradient(135deg,#312e81 0%,#1e1b4b 100%);color:#fff;
+    border-bottom:none;align-items:flex-start;justify-content:center;}
+  .title-slide .kicker{color:var(--cyan-l);}
+  .title-slide h1{font-size:clamp(2rem,5.2vw,3.6rem);margin:0 0 6px;line-height:1.08;}
+  .title-slide .accent{color:var(--cyan-l);}
+  .title-slide .subtitle{font-size:clamp(1rem,2vw,1.5rem);color:#c7cbf0;margin:4px 0 0;font-weight:500;}
+  .title-slide .rule{width:120px;height:4px;background:var(--cyan);margin:22px 0;border-radius:2px;}
+  .title-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;}
+  .title-meta .pill{font-size:.85rem;padding:5px 14px;}
+  .title-slide .trainer{margin-top:26px;font-size:clamp(.85rem,1.4vw,1.05rem);color:#a9adda;}
+  .title-slide .trainer b{color:#fff;}
+  .title-slide a{color:var(--cyan-l);}
+  .homelink{position:fixed;top:10px;right:16px;z-index:46;font-size:.74rem;text-decoration:none;
+    background:rgba(255,255,255,.9);border:1px solid var(--line);color:var(--ink-800);
+    padding:5px 12px;border-radius:14px;font-weight:600;}
+  .homelink:hover{background:#fff;}
+
+  /* ---------- dark slides ---------- */
+  .dark{background:linear-gradient(135deg,#312e81 0%,#1e1b4b 100%);color:#fff;border-bottom:none;}
+  .dark h2.title{color:#fff;border-bottom-color:var(--cyan);}
+  .dark .kicker{color:var(--cyan-l);}
+  .dark p.lead,.dark li{color:#e7e9fb;}
+  .dark .card{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.15);color:#eef0ff;}
+  .dark .card h3{color:var(--cyan-l);}
+
+  /* ---------- Chrome ---------- */
+  #progress{position:fixed;top:0;left:0;height:4px;background:var(--cyan);width:0;z-index:50;
+    transition:width .3s ease;}
+  .footer{position:fixed;bottom:0;left:0;right:0;height:34px;display:flex;align-items:center;
+    justify-content:space-between;padding:0 16px;font-size:.72rem;color:var(--muted);
+    background:rgba(255,255,255,.85);backdrop-filter:blur(4px);border-top:1px solid var(--line);z-index:40;}
+  .footer .brand{font-weight:600;color:var(--ink-800);}
+  .footer a{text-decoration:none;}
+  .nav{position:fixed;bottom:44px;right:18px;display:flex;gap:8px;z-index:45;}
+  .nav button{border:none;cursor:pointer;width:42px;height:42px;border-radius:50%;
+    background:var(--ink-800);color:#fff;font-size:1.1rem;box-shadow:0 2px 8px rgba(0,0,0,.25);
+    display:flex;align-items:center;justify-content:center;transition:background .2s,transform .1s;}
+  .nav button:hover{background:var(--ind-600);}
+  .nav button:active{transform:scale(.92);}
+  .nav button:disabled{opacity:.35;cursor:default;}
+  #counter{position:fixed;bottom:46px;left:18px;z-index:45;background:var(--ink-800);color:#fff;
+    font-size:.8rem;font-weight:600;padding:6px 12px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.25);}
+  .hint{position:fixed;bottom:46px;left:50%;transform:translateX(-50%);z-index:45;
+    font-size:.72rem;color:var(--muted);background:rgba(255,255,255,.8);
+    padding:5px 12px;border-radius:12px;border:1px solid var(--line);}
+  @media(max-width:700px){.hint{display:none;}}
+
+  /* ---------- Presenter notes ---------- */
+  #notes{position:fixed;left:0;right:0;bottom:34px;z-index:48;display:none;
+    background:#14143a;color:#e4e6fb;padding:14px 20px 16px;border-top:3px solid var(--cyan);
+    font-size:.92rem;line-height:1.5;max-height:38vh;overflow:auto;}
+  body.show-notes #notes{display:block;}
+  #notes b{color:var(--cyan-l);}
+  #notes .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ind-300);
+    display:block;margin-bottom:4px;}
+
+  /* ---------- Overview ---------- */
+  #overview{position:fixed;inset:0;z-index:60;background:rgba(30,27,75,.97);color:#fff;
+    display:none;flex-direction:column;padding:32px clamp(20px,5vw,80px);overflow:auto;}
+  body.show-overview #overview{display:flex;}
+  #overview h3{color:var(--cyan-l);margin:0 0 4px;font-size:1.4rem;}
+  #overview .ovsub{color:#a9adda;margin:0 0 20px;font-size:.9rem;}
+  .ovgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+  .ovcard{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:8px;
+    padding:12px 14px;cursor:pointer;transition:background .15s,border-color .15s;}
+  .ovcard:hover{background:rgba(6,182,212,.18);border-color:var(--cyan);}
+  .ovcard .num{font-size:.72rem;color:var(--cyan-l);font-weight:700;}
+  .ovcard .ttl{font-size:.95rem;margin-top:3px;color:#fff;}
+
+  svg text{font-family:'Segoe UI',sans-serif;}
+
+  @media print{
+    body{overflow:visible;background:#fff;}
+    .slide{display:flex!important;position:relative;inset:auto;min-height:96vh;page-break-after:always;
+      border:1px solid #ccc;}
+    #progress,.footer,.nav,#counter,.hint,#notes,#overview,.homelink{display:none!important;}
+  }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<a class="homelink" href="../course-outline-building-intelligent-ai-agents.html" title="Back to course outline">&#8962; Course outline</a>
+
+<div class="deck" id="deck">
+
+  <!-- ============ SLIDE 1 — TITLE ============ -->
+  <section class="slide title-slide" data-title="Title"
+    data-note="Welcome back. In Module 5 we learned what an agent IS -- a model wrapped in a goal, a loop, tools and memory. We even traced ReAct by hand and, in the labs, built the loop from scratch in plain Python. That was the point: you now know what's under the hood. This module is where we stop hand-rolling and pick up the power tools. A FRAMEWORK is the scaffolding that runs the agent loop for you -- it manages tools, memory, prompts, retries and tracing so you write intent, not plumbing. We'll meet the landscape (LangChain, LangGraph, AutoGPT, the multi-agent crowd), go deep on LangChain since that's what your labs use, see when to graduate to LangGraph, and learn how to choose. By the end you'll read a LangChain agent fluently and know which framework fits which job -- then you'll build real ones in the labs.">
+    <div class="body center">
+      <div class="kicker"><span class="dot"></span> 5-Day Course &nbsp;&middot;&nbsp; <span class="sub">Day 3 &middot; Module 6 of 10</span></div>
+      <h1>Frameworks for <span class="accent">Building AI Agents</span></h1>
+      <p class="subtitle">Stop hand-rolling the loop &mdash; pick up the <b>scaffolding</b> that runs tools, memory &amp; tracing for you.</p>
+      <div class="rule"></div>
+      <div class="title-meta">
+        <span class="pill gold">Beginner &rarr; Practitioner</span>
+        <span class="pill green">Agentic AI Foundations</span>
+        <span class="pill ghost" style="color:#c7cbf0;border-color:rgba(255,255,255,.3)">~75 min &middot; pairs with Module 6 labs</span>
+      </div>
+      <p class="trainer">Trainer: <b>Rajesh Gheware</b> &middot; 25+ yrs (JPMorgan Chase &middot; Deutsche Bank &middot; Morgan Stanley) &middot; 5,000+ trained &middot; 4.91/5</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 2 — AGENDA ============ -->
+  <section class="slide" data-title="What we'll cover"
+    data-note="Map the hour. Start with WHY a framework at all -- you just wrote the loop by hand, so what does a framework buy you? Then the landscape: a quick map so no name is scary. Then the deep dive on LangChain -- building blocks, defining a tool, building a ReAct agent, the AgentExecutor, memory -- because that's the framework the labs use. Then when the simple loop isn't enough we graduate to LangGraph, and I'll give you a clean rule for LangChain vs LangGraph. Then the autonomous end of the spectrum (AutoGPT) and the multi-agent frameworks, connecting to real external tools, observability, and a decision guide for choosing. Finish with the bridge to your two Day-3 labs. Tell them: this is the module that turns 'I understand agents' into 'I can build one that ships'.">
+    <div class="kicker"><span class="dot"></span> Day 3 &middot; Module 6 <span class="sub">— Frameworks for Building AI Agents</span></div>
+    <h2 class="title">What we&rsquo;ll cover</h2>
+    <div class="body">
+      <div class="grid3">
+        <div class="card"><h3>&#9312; Why a framework</h3><p>You hand-rolled the loop &mdash; now let scaffolding run the <b>plumbing</b>.</p></div>
+        <div class="card"><h3>&#9313; The landscape</h3><p>A map: LangChain, LangGraph, AutoGPT &amp; the <b>multi-agent</b> crowd.</p></div>
+        <div class="card cyan"><h3>&#9314; LangChain deep-dive</h3><p>Tools, agents, executor, memory &mdash; the framework your <b>labs use</b>.</p></div>
+        <div class="card cyan"><h3>&#9315; LangGraph</h3><p>When the simple loop isn&rsquo;t enough &mdash; <b>state graphs</b> &amp; control.</p></div>
+        <div class="card gold"><h3>&#9316; Ecosystem &amp; choosing</h3><p>Autonomous &amp; multi-agent frameworks &mdash; and <b>how to choose</b>.</p></div>
+        <div class="card gold"><h3>&#9317; Into the labs</h3><p>Build a real LangChain agent &amp; connect it to <b>live APIs</b>.</p></div>
+      </div>
+      <p class="callout" style="margin-top:18px">&#129504; <b>The throughline:</b> a framework doesn&rsquo;t make agents <i>smarter</i> &mdash; it makes them <b>buildable</b>. It handles the loop, the tools, the memory and the tracing, so you write <b>intent</b>, not plumbing.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 3 — WHY A FRAMEWORK ============ -->
+  <section class="slide" data-title="Why a framework"
+    data-note="Justify the whole module by contrasting with what they already did. In the Module-5 labs they wrote the ReAct loop by hand: parse the model's output, decide which tool matches, run it, format the observation, append to the scratchpad, re-prompt, count steps, stop. That's brilliant for LEARNING -- but in production it's a pile of brittle string-parsing and glue you must maintain. A framework gives you all of that, battle-tested: robust output parsing, a tool registry, memory objects, prompt templates, retries, streaming, and tracing hooks. The senior framing: hand-roll ONCE to understand it (which you did), then never again -- use the framework so your code expresses the agent, not the parser. Emphasise this is exactly the same move as using a web framework instead of raw sockets.">
+    <div class="kicker"><span class="dot"></span> You already wrote the loop by hand</div>
+    <h2 class="title">Why not just hand-roll it?</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card amber"><h3>&#128296; Hand-rolled (Module 5 labs)</h3>
+          <ul>
+            <li>You parse the model&rsquo;s text, match a tool, run it, format the result</li>
+            <li>You manage the scratchpad, step counter and stop logic</li>
+            <li>Great to <b>learn</b> &mdash; brittle string-glue to <b>maintain</b></li>
+            <li>Re-invent memory, retries, streaming, tracing yourself</li>
+          </ul>
+        </div>
+        <div class="card cyan"><h3>&#129520; With a framework</h3>
+          <ul>
+            <li>Robust output parsing &amp; a <b>tool registry</b>, done for you</li>
+            <li>Ready-made <b>memory</b>, prompt templates, retries, streaming</li>
+            <li>Built-in <b>tracing</b> hooks &mdash; see every step</li>
+            <li>You write <b>intent</b>; the framework runs the plumbing</li>
+          </ul>
+        </div>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#128161; Same move as using a <b>web framework</b> instead of raw sockets. Hand-roll <b>once</b> to understand it &mdash; you did &mdash; then let the framework carry the boilerplate so your code expresses the <b>agent</b>, not the parser.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 4 — WHAT A FRAMEWORK GIVES YOU ============ -->
+  <section class="slide" data-title="What a framework gives you"
+    data-note="Name the concrete building blocks every agent framework provides, so the vocabulary lands before the code. MODEL WRAPPERS: one uniform interface over many providers (Ollama, Groq, OpenAI, Anthropic) so you swap models with one line -- exactly the Day-1-to-Day-2 Ollama-to-Groq switch, made trivial. TOOL ABSTRACTION: wrap any function as a tool with a name/description/schema the model can read. THE LOOP / ORCHESTRATION: the agent executor that runs reason-act-observe and enforces max steps. MEMORY: ready objects for scratchpad and conversation history. PROMPT MANAGEMENT: templates and the ReAct prompt, versioned. INTEGRATIONS: hundreds of pre-built tool and vector-store connectors. OBSERVABILITY: tracing/callbacks. Tell them: these six are the checklist you can use to evaluate ANY framework, not just LangChain.">
+    <div class="kicker"><span class="dot"></span> The six things every framework provides</div>
+    <h2 class="title">What a framework gives you</h2>
+    <div class="body">
+      <div class="grid3">
+        <div class="card"><h3>&#128268; Model wrappers</h3><p>One interface over many providers &mdash; swap <b>Ollama &harr; Groq &harr; OpenAI</b> in a line.</p></div>
+        <div class="card cyan"><h3>&#128295; Tool abstraction</h3><p>Wrap any function as a tool with a <b>name, description &amp; schema</b> the model reads.</p></div>
+        <div class="card"><h3>&#128260; Loop / orchestration</h3><p>The <b>agent executor</b> that runs reason&rarr;act&rarr;observe and caps the steps.</p></div>
+        <div class="card cyan"><h3>&#129516; Memory</h3><p>Ready objects for the <b>scratchpad</b> and conversation history.</p></div>
+        <div class="card gold"><h3>&#128279; Integrations</h3><p>Hundreds of pre-built <b>tools &amp; connectors</b> &mdash; search, DBs, vector stores.</p></div>
+        <div class="card gold"><h3>&#128202; Observability</h3><p>Tracing &amp; callbacks &mdash; <b>see every</b> thought, action &amp; observation.</p></div>
+      </div>
+      <p class="callout" style="margin-top:16px">&#129504; These six are your <b>checklist</b> for evaluating <i>any</i> agent framework &mdash; not just the ones we&rsquo;ll name today.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 5 — THE LANDSCAPE ============ -->
+  <section class="slide" data-title="The landscape"
+    data-note="De-mystify the zoo of names by placing them on one axis: how much structure and autonomy each imposes. On the LEFT, low ceremony: LangChain -- the general-purpose toolkit and the default first agent. In the MIDDLE, more structure: LangGraph -- explicit state-machine control for complex, cyclic or multi-actor flows; and LlamaIndex -- data/RAG-centric agents. On the RIGHT, more autonomy or more actors: CrewAI and AutoGen for multi-agent teams, and AutoGPT for fully autonomous, self-prompting agents. smolagents sits as a tiny, readable option to see the loop in code. Key message: you do NOT need to learn all of them. LangChain is where everyone starts and where your labs live; the rest are things to reach for when a specific need appears. This is a map, not a syllabus.">
+    <div class="kicker"><span class="dot"></span> Don&rsquo;t be scared of the zoo of names</div>
+    <h2 class="title">The agent-framework landscape</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 300" role="img" aria-label="A map of agent frameworks from general-purpose toolkits to structured graphs to multi-agent and autonomous systems">
+          <defs><marker id="ls5" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#4f46e5"/></marker></defs>
+          <line x1="60" y1="52" x2="940" y2="52" stroke="#4f46e5" stroke-width="3" marker-end="url(#ls5)"/>
+          <text x="60" y="34" font-size="12.5" font-weight="700" fill="#312e81">general toolkit</text>
+          <text x="500" y="34" text-anchor="middle" font-size="12.5" font-weight="700" fill="#0e7490">more structure &amp; control</text>
+          <text x="940" y="34" text-anchor="end" font-size="12.5" font-weight="700" fill="#b45309">more actors / autonomy</text>
+          <!-- node 1 : LangChain -->
+          <circle cx="150" cy="52" r="9" fill="#a5b4fc"/>
+          <rect x="40" y="82" width="230" height="118" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="2.5"/>
+          <text x="155" y="110" text-anchor="middle" font-size="15" font-weight="700" fill="#312e81">LangChain</text>
+          <text x="155" y="133" text-anchor="middle" font-size="11" fill="#5b5f7a">general-purpose toolkit</text>
+          <text x="155" y="151" text-anchor="middle" font-size="11" fill="#5b5f7a">tools, agents, memory</text>
+          <text x="155" y="182" text-anchor="middle" font-size="11" font-weight="700" fill="#4f46e5">&#9733; your labs start here</text>
+          <!-- node 2 : LangGraph / LlamaIndex -->
+          <circle cx="500" cy="52" r="9" fill="#06b6d4"/>
+          <rect x="330" y="82" width="230" height="118" rx="12" fill="#ecfeff" stroke="#06b6d4" stroke-width="2"/>
+          <text x="445" y="110" text-anchor="middle" font-size="15" font-weight="700" fill="#0e7490">LangGraph</text>
+          <text x="445" y="133" text-anchor="middle" font-size="11" fill="#5b5f7a">explicit state graphs</text>
+          <text x="445" y="151" text-anchor="middle" font-size="11" fill="#5b5f7a">cycles, branching, HITL</text>
+          <rect x="575" y="118" width="120" height="66" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+          <text x="635" y="145" text-anchor="middle" font-size="12" font-weight="700" fill="#475569">LlamaIndex</text>
+          <text x="635" y="165" text-anchor="middle" font-size="10" fill="#64748b">data / RAG agents</text>
+          <!-- node 3 : multi-agent + autonomous -->
+          <circle cx="850" cy="52" r="9" fill="#f59e0b"/>
+          <rect x="720" y="82" width="240" height="118" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="2.5"/>
+          <text x="840" y="108" text-anchor="middle" font-size="14" font-weight="700" fill="#92400e">CrewAI &middot; AutoGen</text>
+          <text x="840" y="128" text-anchor="middle" font-size="11" fill="#5b5f7a">multi-agent teams</text>
+          <text x="840" y="152" text-anchor="middle" font-size="14" font-weight="700" fill="#92400e">AutoGPT</text>
+          <text x="840" y="172" text-anchor="middle" font-size="11" fill="#5b5f7a">fully autonomous, self-prompting</text>
+          <!-- smolagents footnote node -->
+          <rect x="330" y="222" width="365" height="52" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+          <text x="512" y="248" text-anchor="middle" font-size="12" font-weight="700" fill="#475569">smolagents &mdash; tiny &amp; readable</text>
+          <text x="512" y="266" text-anchor="middle" font-size="10.5" fill="#64748b">great for seeing the loop in a few hundred lines of code</text>
+        </svg>
+        <figcaption>You don&rsquo;t need all of these. <b>LangChain</b> is where everyone starts &amp; where your labs live; the rest are tools to <b>reach for when a specific need appears</b>. A map, not a syllabus.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 6 — MEET LANGCHAIN ============ -->
+  <section class="slide" data-title="Meet LangChain"
+    data-note="Introduce LangChain as the framework the rest of the module (and the labs) live in. Positioning: it's the most widely used open-source toolkit for building LLM apps and agents -- huge ecosystem, hundreds of integrations, the default answer to 'what should I build my first agent with?'. What it is at heart: a set of composable building blocks -- model wrappers, prompt templates, tools, memory -- plus an agent runtime that wires them into the ReAct loop. It is deliberately model-agnostic: the SAME code runs your Day-1 local Ollama model and your Day-2 Groq model with a one-line swap, which is exactly why the course uses it. Also mention the modern package split (langchain-core, langchain, and provider packages like langchain-ollama / langchain-groq) so the imports in the labs make sense. Keep it welcoming: it's just Lego for agents.">
+    <div class="kicker"><span class="dot"></span> The framework your labs use</div>
+    <h2 class="title">Meet LangChain</h2>
+    <div class="body">
+      <p class="lead">The most widely used open-source toolkit for building LLM apps &amp; agents &mdash; composable <b>building blocks</b> (models, prompts, tools, memory) plus an <b>agent runtime</b> that wires them into the ReAct loop.</p>
+      <div class="grid3" style="margin-top:8px">
+        <div class="card cyan"><h3>&#129513; Composable</h3><p>Lego for agents &mdash; snap together models, prompts, tools &amp; memory.</p></div>
+        <div class="card"><h3>&#128268; Model-agnostic</h3><p>Same code runs local <b>Ollama</b> and cloud <b>Groq</b> &mdash; a one-line swap.</p></div>
+        <div class="card gold"><h3>&#128230; Huge ecosystem</h3><p>Hundreds of pre-built <b>tool &amp; data</b> integrations out of the box.</p></div>
+      </div>
+      <p class="callout" style="margin-top:14px">&#128073; Packages you&rsquo;ll import: <span class="mono">langchain-core</span> (the primitives), <span class="mono">langchain</span> (agents &amp; chains), and providers like <span class="mono">langchain-ollama</span> / <span class="mono">langchain-groq</span> &mdash; that&rsquo;s why the lab imports look the way they do.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 7 — LANGCHAIN BUILDING BLOCKS ============ -->
+  <section class="slide" data-title="LangChain building blocks"
+    data-note="Give them the five nouns that make LangChain code readable. CHAT MODEL: the wrapped LLM -- ChatOllama, ChatGroq -- you .invoke() with messages. PROMPT TEMPLATE: a reusable prompt with slots, including the special ReAct/agent prompt that tells the model how to format Thought/Action/Observation. TOOL: a function exposed to the model, usually via the @tool decorator. AGENT: the reasoning core that, given the model + tools + prompt, decides the next action. AGENT EXECUTOR: the runtime that actually runs the loop -- calls the agent, executes the chosen tool, feeds back the observation, enforces max_iterations. Map each back to Module 5's anatomy slide: model = brain, tool = hands, executor = orchestrator, prompt = the instructions, memory = the scratchpad. The whole point: once you know these five nouns, any LangChain agent snippet reads like a sentence.">
+    <div class="kicker"><span class="dot"></span> Five nouns that make the code readable</div>
+    <h2 class="title">LangChain&rsquo;s core building blocks</h2>
+    <div class="body">
+      <div class="grid3">
+        <div class="card cyan"><h3>&#129504; Chat model</h3><p>The wrapped LLM &mdash; <span class="mono">ChatOllama</span>, <span class="mono">ChatGroq</span>. You <span class="mono">.invoke()</span> it.</p></div>
+        <div class="card"><h3>&#128221; Prompt template</h3><p>A reusable prompt with slots &mdash; incl. the <b>ReAct</b> format instructions.</p></div>
+        <div class="card gold"><h3>&#128295; Tool</h3><p>A function exposed to the model &mdash; usually via the <span class="mono">@tool</span> decorator.</p></div>
+        <div class="card"><h3>&#129302; Agent</h3><p>The reasoning core: given model + tools + prompt, it <b>decides</b> the next action.</p></div>
+        <div class="card cyan"><h3>&#9881;&#65039; Agent executor</h3><p>The <b>runtime</b> that runs the loop, executes tools &amp; caps the steps.</p></div>
+        <div class="card gold"><h3>&#129516; Memory</h3><p>The scratchpad &amp; chat history objects, wired into the loop.</p></div>
+      </div>
+      <p class="callout" style="margin-top:16px">&#128073; Map to Module 5&rsquo;s anatomy: model = <b>brain</b>, tool = <b>hands</b>, executor = <b>orchestrator</b>, prompt = <b>instructions</b>, memory = <b>scratchpad</b>. Learn these five nouns and any LangChain snippet reads like a sentence.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 8 — DEFINING A TOOL ============ -->
+  <section class="slide" data-title="Defining a tool"
+    data-note="Slow down on the single most important thing you write when building an agent: a tool. Walk the code. The @tool decorator turns a plain Python function into something the agent can use. THREE things matter and the model sees all three: the NAME (the function name -- keep it verb-like and clear); the DOCSTRING (this becomes the tool's description -- the model reads THIS to decide when to call it, so write it for the model, not for a human colleague); and the SIGNATURE / type hints (which become the input schema, so the model knows what arguments to pass). Stress the docstring point hard -- a vague docstring is the #1 reason an agent picks the wrong tool or ignores a good one. The return value becomes the Observation fed back into the loop. Tie back: this is the concrete version of 'a tool has a name, a description and inputs' from Module 5.">
+    <div class="kicker"><span class="dot"></span> The most important thing you&rsquo;ll write</div>
+    <h2 class="title">Defining a tool &mdash; <span class="mono" style="font-size:.8em">@tool</span></h2>
+    <div class="body">
+      <div class="terminal">
+<span class="kw">from</span> langchain_core.tools <span class="kw">import</span> tool
+
+<span class="fn">@tool</span>
+<span class="kw">def</span> <span class="fn">get_weather</span>(city: str) -> str:
+    <span class="str">"""Get the current temperature for a city, in Celsius.
+    Use this whenever the user asks about current weather."""</span>   <span class="com"># &larr; the MODEL reads this</span>
+    <span class="kw">return</span> weather_api.<span class="fn">current</span>(city)          <span class="com"># return value = the Observation</span>
+
+<span class="com"># The model sees THREE things and uses them to decide:</span>
+<span class="com">#   name      -> get_weather        (keep it clear &amp; verb-like)</span>
+<span class="com">#   docstring -> the description     (WHEN to call it -- write it for the model)</span>
+<span class="com">#   signature -> {city: str}         (the input schema -- WHAT to pass)</span>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#128161; The <b>docstring is not a comment for humans</b> &mdash; it&rsquo;s the instruction the model reads to decide <i>whether</i> to use the tool. A vague docstring is the #1 reason an agent picks the wrong tool. This is Module 5&rsquo;s &ldquo;name + description + inputs&rdquo;, in real code.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 9 — BUILD A REACT AGENT ============ -->
+  <section class="slide" data-title="Build a ReAct agent"
+    data-note="Now assemble a whole agent in the shape they'll type tomorrow. Four moves, map each to a building block. ONE: create the model -- ChatGroq or ChatOllama, the model-agnostic swap. TWO: collect your tools into a list -- the agent's hands. THREE: pull a ReAct prompt (from the hub or write one) that tells the model the Thought/Action/Observation format. FOUR: create_react_agent(model, tools, prompt) makes the reasoning core, then wrap it in an AgentExecutor with verbose=True and max_iterations as a guardrail. Then invoke with a goal. Emphasise how little code this is versus the hand-rolled version they wrote -- the framework absorbed all the parsing and looping. Note verbose=True prints the ReAct trace, which is the next slide. This is essentially Lab 6.1.">
+    <div class="kicker"><span class="dot"></span> The shape you&rsquo;ll type tomorrow &middot; &asymp; Lab 6.1</div>
+    <h2 class="title">Assemble a ReAct agent</h2>
+    <div class="body">
+      <div class="terminal">
+<span class="kw">from</span> langchain.agents <span class="kw">import</span> create_react_agent, AgentExecutor
+<span class="kw">from</span> langchain_groq <span class="kw">import</span> ChatGroq
+
+model = <span class="fn">ChatGroq</span>(model=<span class="str">"llama-3.1-8b-instant"</span>)   <span class="com"># 1. the brain (swap for ChatOllama)</span>
+tools = [get_weather, calculator]                  <span class="com"># 2. the hands</span>
+prompt = hub.<span class="fn">pull</span>(<span class="str">"hwchase17/react"</span>)              <span class="com"># 3. the ReAct format instructions</span>
+
+agent    = <span class="fn">create_react_agent</span>(model, tools, prompt)   <span class="com"># 4. the reasoning core</span>
+executor = <span class="fn">AgentExecutor</span>(agent=agent, tools=tools,
+                        verbose=<span class="kw">True</span>, max_iterations=<span class="str">6</span>)   <span class="com"># the loop + a guardrail</span>
+
+executor.<span class="fn">invoke</span>({<span class="str">"input"</span>: <span class="str">"Is Tokyo warmer than 20C right now?"</span>})
+      </div>
+      <p class="callout" style="margin-top:14px">&#128073; Four moves &mdash; <b>model &rarr; tools &rarr; prompt &rarr; agent + executor</b> &mdash; and the framework absorbs all the parsing and looping you wrote by hand in Module 5. <span class="mono">verbose=True</span> prints the ReAct trace (next slide); <span class="mono">max_iterations</span> is your guardrail in one line.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 10 — THE EXECUTOR TRACE ============ -->
+  <section class="slide" data-title="The executor trace"
+    data-note="Show what verbose=True actually prints, so the abstraction becomes visible. This is the SAME ReAct trace they traced by hand in Module 5, now emitted by the framework for free. Walk it: the executor sends the goal to the model; the model returns a Thought and an Action (tool name + input); the executor RUNS the real tool and captures the Observation; it appends everything to the scratchpad and calls the model again; the model reasons over the new observation, decides it's done, and returns the Final Answer. Point at the division of labour: the model only ever emitted text ('Action: get_weather'); the EXECUTOR did the actual calling. That's the reason/execute split from Module 5 -- and it's why this is debuggable: every line here is a log you can inspect. Tell them this scroll is the single most useful debugging surface they'll have.">
+    <div class="kicker"><span class="dot"></span> What <span class="mono" style="font-size:.85em">verbose=True</span> prints &mdash; for free</div>
+    <h2 class="title">The AgentExecutor loop, made visible</h2>
+    <div class="body">
+      <div class="terminal">
+<span class="you">&gt; Entering AgentExecutor chain...</span>
+
+<span class="kw">Thought:</span> The user wants Tokyo&rsquo;s current temperature. I&rsquo;ll use get_weather.
+<span class="kw">Action:</span> <span class="fn">get_weather</span>
+<span class="kw">Action Input:</span> <span class="str">"Tokyo"</span>
+<span class="out">Observation: 24</span>                        <span class="com"># &lt;- the executor RAN the tool, not the model</span>
+
+<span class="kw">Thought:</span> 24C is greater than 20C. I have my answer.
+<span class="kw">Final Answer:</span> <span class="you">Yes &mdash; it&rsquo;s about 24&deg;C in Tokyo, warmer than 20&deg;C.</span>
+
+<span class="you">&gt; Finished chain.</span>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#128073; Identical to the ReAct trace you read by hand in Module 5 &mdash; now the framework emits it. The model only <b>emitted text</b> (&ldquo;Action: get_weather&rdquo;); the <b>executor</b> did the calling. Every line is a log &mdash; this scroll is your #1 <b>debugging surface</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 11 — MEMORY IN A FRAMEWORK ============ -->
+  <section class="slide" data-title="Memory in a framework"
+    data-note="Show how the framework turns Module 5's memory concept into objects you just plug in. Two kinds, matching the earlier lesson. SHORT-TERM / conversation: the framework keeps the running message history and re-injects it each turn, so a follow-up like 'and what about Osaka?' works without you re-stating context. You add it by passing a history/checkpointer to the agent -- a couple of lines, not a parsing project. LONG-TERM: you connect a vector store (Chroma, FAISS) as a retriever tool or memory, so the agent can recall facts across sessions by meaning -- the bridge to RAG, which is the very next topic on Day 3. The framing: memory that was a concept in Module 5 and a manual scratchpad-list in the Module-5 labs is, in the framework, a first-class component you attach. Don't overload -- the point is 'the framework gives you memory as a part, not a chore'.">
+    <div class="kicker"><span class="dot"></span> The concept, now a first-class part</div>
+    <h2 class="title">Memory &mdash; plugged in, not hand-built</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card cyan"><h3>&#128172; Short-term &middot; conversation</h3>
+          <ul>
+            <li>Framework keeps the <b>message history</b> &amp; re-injects it each turn</li>
+            <li>&ldquo;And what about <b>Osaka</b>?&rdquo; just works &mdash; no re-stating context</li>
+            <li>Add it by passing a history / <b>checkpointer</b> &mdash; a couple of lines</li>
+          </ul>
+        </div>
+        <div class="card"><h3>&#128451;&#65039; Long-term &middot; vector store</h3>
+          <ul>
+            <li>Connect <b>Chroma / FAISS</b> as a retriever tool or memory</li>
+            <li>Recall facts <b>across sessions</b>, retrieved by meaning</li>
+            <li>The bridge to <b>RAG</b> &mdash; the very next topic on Day 3</li>
+          </ul>
+        </div>
+      </div>
+      <p class="callout" style="margin-top:14px">&#129504; In Module 5 memory was a <b>concept</b>, and in its labs a hand-built scratchpad list. In a framework it&rsquo;s a <b>component you attach</b> &mdash; memory as a part, not a chore.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 12 — WHEN THE SIMPLE LOOP ISN'T ENOUGH (LANGGRAPH) ============ -->
+  <section class="slide" data-title="LangGraph"
+    data-note="Motivate LangGraph by the pain the simple AgentExecutor hits. The basic ReAct executor is a single implicit loop -- great until you need real control: branching ('if the tool failed, try a different path'), cycles you steer, MULTIPLE cooperating steps or agents, a durable pause for human approval, or the ability to resume after a crash. LangGraph (from the LangChain team) models the agent as an explicit STATE GRAPH: nodes are steps (call the model, run a tool, ask a human), edges are transitions you control, and a shared state object flows through. Because the graph is explicit you get things the implicit loop can't easily give: conditional routing, checkpointing/durability, streaming of each node, and clean human-in-the-loop pauses. Show the little graph. The message: LangChain gives you the agent; LangGraph gives you CONTROL over how it flows. Don't oversell -- most first agents don't need it; you graduate to it.">
+    <div class="kicker"><span class="dot"></span> When one implicit loop isn&rsquo;t enough</div>
+    <h2 class="title">LangGraph &mdash; agents as state graphs</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 260" role="img" aria-label="A LangGraph state graph: start flows to the model node, which routes to a tool node and loops back, or to a human approval node, then to the end">
+          <defs><marker id="lg12" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker>
+          <marker id="lg12a" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#f59e0b"/></marker></defs>
+          <!-- start -->
+          <circle cx="70" cy="130" r="26" fill="#312e81" stroke="#06b6d4" stroke-width="2.5"/>
+          <text x="70" y="134" text-anchor="middle" font-size="12" font-weight="700" fill="#67e8f9">start</text>
+          <!-- model node -->
+          <rect x="220" y="95" width="180" height="70" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="2.5"/>
+          <text x="310" y="125" text-anchor="middle" font-size="14" font-weight="700" fill="#312e81">Model node</text>
+          <text x="310" y="146" text-anchor="middle" font-size="10.5" fill="#5b5f7a">reason / decide route</text>
+          <!-- tool node -->
+          <rect x="500" y="18" width="180" height="70" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="2.5"/>
+          <text x="590" y="48" text-anchor="middle" font-size="14" font-weight="700" fill="#92400e">Tool node</text>
+          <text x="590" y="69" text-anchor="middle" font-size="10.5" fill="#5b5f7a">run tool &rarr; observe</text>
+          <!-- human node -->
+          <rect x="500" y="172" width="180" height="70" rx="12" fill="#ecfeff" stroke="#06b6d4" stroke-width="2"/>
+          <text x="590" y="202" text-anchor="middle" font-size="14" font-weight="700" fill="#0e7490">Human approval</text>
+          <text x="590" y="223" text-anchor="middle" font-size="10.5" fill="#5b5f7a">pause &amp; resume</text>
+          <!-- end -->
+          <circle cx="900" cy="130" r="26" fill="#059669" stroke="#047857" stroke-width="2.5"/>
+          <text x="900" y="134" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">end</text>
+          <!-- edges -->
+          <path d="M96 130 L216 130" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#lg12)"/>
+          <path d="M370 100 C430 70 460 58 496 54" fill="none" stroke="#f59e0b" stroke-width="2.5" marker-end="url(#lg12a)"/>
+          <text x="430" y="66" text-anchor="middle" font-size="10" font-weight="700" fill="#b45309">needs a tool</text>
+          <path d="M500 70 C440 92 430 100 402 118" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="6 5" marker-end="url(#lg12a)"/>
+          <text x="452" y="108" text-anchor="middle" font-size="10" font-weight="700" fill="#b45309">loop back &#8635;</text>
+          <path d="M370 155 C430 185 460 200 496 205" fill="none" stroke="#06b6d4" stroke-width="2.5" marker-end="url(#lg12)"/>
+          <text x="430" y="198" text-anchor="middle" font-size="10" font-weight="700" fill="#0e7490">risky action</text>
+          <path d="M680 200 C760 190 800 160 878 140" fill="none" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#lg12)"/>
+          <path d="M400 122 C560 118 740 128 874 130" fill="none" stroke="#059669" stroke-width="2.5" stroke-dasharray="6 5" marker-end="url(#lg12)"/>
+          <text x="720" y="120" text-anchor="middle" font-size="10" font-weight="700" fill="#047857">done &rarr;</text>
+        </svg>
+        <figcaption><b>Nodes</b> are steps, <b>edges</b> are transitions you control, a shared <b>state</b> flows through. That buys conditional routing, <b>checkpointing / durability</b>, streaming, and clean <b>human-in-the-loop</b> pauses.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 13 — LANGCHAIN VS LANGGRAPH ============ -->
+  <section class="slide" data-title="LangChain vs LangGraph"
+    data-note="Give the clean decision rule so they never agonise. LangChain's prebuilt agent is right for the common case: a single agent, a handful of tools, a reason-act loop, get an answer -- most first agents and most of your labs. Reach for LangGraph when you need CONTROL the simple loop can't give: explicit branching, cycles you steer, multiple cooperating agents, durable state / checkpointing, or a human approval step mid-run. One-liner to remember: LangChain to get an agent RUNNING; LangGraph to get an agent's flow UNDER CONTROL. They're not rivals -- LangGraph is by the LangChain team and uses the same models and tools; it's the next gear, not a different car. Warn against the common mistake of jumping to LangGraph for a task a plain executor handles -- start simple, graduate when a real need appears (same lesson as agent-vs-workflow in Module 5).">
+    <div class="kicker"><span class="dot"></span> A clean rule so you never agonise</div>
+    <h2 class="title">LangChain <span style="color:var(--muted)">vs</span> LangGraph</h2>
+    <div class="body">
+      <table>
+        <thead><tr><th style="width:24%"></th><th>LangChain agent</th><th>LangGraph</th></tr></thead>
+        <tbody>
+          <tr><td><b>Shape</b></td><td>One implicit reason&ndash;act loop</td><td>An explicit <b>state graph</b> of nodes &amp; edges</td></tr>
+          <tr><td><b>Best for</b></td><td>Single agent, a few tools, get an answer</td><td>Branching, cycles, multi-agent, durable state</td></tr>
+          <tr><td><b>Control</b></td><td>Convenient defaults</td><td>You steer <b>routing &amp; checkpoints</b></td></tr>
+          <tr><td><b>Human-in-the-loop</b></td><td>Bolt-on</td><td><span class="yes">First-class</span> pause &amp; resume</td></tr>
+          <tr><td><b>Reach for it when&hellip;</b></td><td>Most first agents &amp; <b>your labs</b></td><td>The simple loop can&rsquo;t express the flow</td></tr>
+        </tbody>
+      </table>
+      <p class="callout warn" style="margin-top:14px">&#9878;&#65039; <b>LangChain to get an agent <i>running</i>; LangGraph to get its flow <i>under control</i>.</b> Not rivals &mdash; LangGraph is by the same team, same models &amp; tools. The next gear, not a different car. Start simple; graduate when a real need appears.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 14 — AUTOGPT & AUTONOMOUS AGENTS ============ -->
+  <section class="slide" data-title="AutoGPT & autonomous agents"
+    data-note="Cover the far, fully-autonomous end honestly -- it's in the client spec and it's where the hype lives. AutoGPT (2023) was the viral demo: give it a high-level GOAL ('research the market and write a report'), and it self-prompts -- generating its own sub-tasks, choosing tools, executing, and looping with almost no human input. It captured imaginations because it looked like a fully autonomous digital worker. The reality check, from a practitioner: with long, open-ended autonomy these agents tend to LOOP, drift off-task, rack up cost, and get stuck -- the exact risks from Module 5, amplified. That's why the field has largely moved toward more STRUCTURED, bounded designs (constrained tools, step limits, human checkpoints, graphs) rather than unbounded autonomy. Frame AutoGPT as an important milestone that taught the field its limits -- worth understanding, not the pattern you'll reach for first. The capstone will be bounded and guardrailed, not an unleashed AutoGPT.">
+    <div class="kicker"><span class="dot"></span> The fully-autonomous end &mdash; and its reality check</div>
+    <h2 class="title">AutoGPT &amp; autonomous agents</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card"><h3>&#128640; The ambition</h3>
+          <ul>
+            <li>Give a <b>high-level goal</b> &mdash; &ldquo;research the market, write a report&rdquo;</li>
+            <li>The agent <b>self-prompts</b>: makes its own sub-tasks, picks tools, loops</li>
+            <li>2023&rsquo;s viral demo &mdash; looked like an autonomous <b>digital worker</b></li>
+          </ul>
+        </div>
+        <div class="card amber"><h3>&#9888;&#65039; The reality check</h3>
+          <ul>
+            <li>Long open-ended autonomy tends to <b>loop &amp; drift</b> off-task</li>
+            <li>Cost piles up; it gets <b>stuck</b> &mdash; Module 5&rsquo;s risks, amplified</li>
+            <li>The field moved toward <b>bounded, structured</b> designs</li>
+          </ul>
+        </div>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#128161; AutoGPT is an important <b>milestone that taught the field its limits</b> &mdash; worth understanding, not the first pattern you reach for. Real systems <b>constrain</b> autonomy: fewer tools, step caps, human checkpoints, graphs. Your capstone will be <b>guardrailed</b>, not unleashed.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 15 — THE MULTI-AGENT ECOSYSTEM ============ -->
+  <section class="slide" data-title="Multi-agent frameworks"
+    data-note="Preview the multi-agent frameworks so Day 4's collaboration module has a hook, without going deep. The idea: instead of one agent doing everything, use SEVERAL specialised agents that collaborate -- a researcher, a writer, a reviewer -- each with its own role, tools and prompt, passing work between them. Two names to know. CrewAI: role-based 'crews' -- you define agents with roles and goals and a process (sequential or hierarchical) and they hand off tasks; very readable, popular for business workflows. AutoGen (Microsoft): conversation-based multi-agent -- agents literally chat to solve a problem, including a human or a code-executor agent. Also mention this is a natural fit for the customer-service chatbot lab on Day 4. Keep the message crisp: more agents can mean better division of labour AND more coordination cost and more ways to fail -- same right-sizing discipline as before. Depth comes on Day 4.">
+    <div class="kicker"><span class="dot"></span> Preview of Day 4 &middot; many agents, not one</div>
+    <h2 class="title">Multi-agent frameworks</h2>
+    <div class="body">
+      <p class="lead">Instead of one agent doing everything, use <b>several specialised agents</b> that collaborate &mdash; a researcher, a writer, a reviewer &mdash; each with its own role, tools &amp; prompt, passing work between them.</p>
+      <div class="grid2" style="margin-top:6px">
+        <div class="card cyan"><h3>&#128101; CrewAI</h3>
+          <ul>
+            <li><b>Role-based crews</b>: agents with a role, goal &amp; tools</li>
+            <li>A <b>process</b> (sequential / hierarchical) hands off tasks</li>
+            <li>Readable &mdash; popular for business workflows</li>
+          </ul>
+        </div>
+        <div class="card"><h3>&#128172; AutoGen <span class="small">(Microsoft)</span></h3>
+          <ul>
+            <li><b>Conversation-based</b>: agents chat to solve a problem</li>
+            <li>Can include a human or a <b>code-executor</b> agent</li>
+            <li>Strong for coding &amp; tool-heavy collaboration</li>
+          </ul>
+        </div>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#129504; More agents = better <b>division of labour</b> <i>and</i> more coordination cost &amp; more ways to fail. Same right-sizing discipline as before. We go deep on this &mdash; the <b>customer-service chatbot</b> &mdash; on <b>Day 4</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 16 — CONNECTING TO THE WORLD ============ -->
+  <section class="slide" data-title="Connecting to real tools"
+    data-note="This is the slide that makes Lab 6.2 concrete: giving the agent real, live capabilities. The framework ships pre-built integrations so you rarely write a tool from scratch. GOOGLE SEARCH (via a Search API wrapper like Serp/Google): live facts beyond the model's training cutoff -- today's news, prices, events. WOLFRAM ALPHA: real computation and curated knowledge -- exact math, unit conversions, scientific/geographic facts -- exactly where LLMs are weak. Both are in the client's lab spec. The pattern is always the same three steps: get an API key, wrap the service as a tool (often one line from a prebuilt integration), add it to the tools list. Then the SAME agent from slide 9 can suddenly answer questions no static model could. Tie to the Module-5 'day in the life' trace: this is that trace, for real, with real APIs. Mention keys live in .env (GROQ_API_KEY pattern they've seen) and never in code.">
+    <div class="kicker"><span class="dot"></span> Give the agent live capabilities &middot; &asymp; Lab 6.2</div>
+    <h2 class="title">Connecting to real tools &amp; APIs</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card"><h3>&#128270; Google Search</h3>
+          <ul>
+            <li>Live facts <b>beyond the training cutoff</b> &mdash; news, prices, events</li>
+            <li>A prebuilt <b>search-API</b> wrapper &mdash; often one line</li>
+          </ul>
+        </div>
+        <div class="card cyan"><h3>&#128290; Wolfram Alpha</h3>
+          <ul>
+            <li>Exact <b>computation &amp; curated knowledge</b> &mdash; math, units, science</li>
+            <li>Precisely where LLMs are weak &mdash; offload it</li>
+          </ul>
+        </div>
+      </div>
+      <p class="lead" style="margin-top:12px">The pattern is always the same three steps:</p>
+      <p class="callout" style="margin-top:6px">&#9312; get an <b>API key</b> (in <span class="mono">.env</span>, never in code) &nbsp;&rarr;&nbsp; &#9313; wrap the service as a <b>tool</b> (usually a prebuilt integration) &nbsp;&rarr;&nbsp; &#9314; add it to the <span class="mono">tools</span> list. Now the <b>same agent</b> answers questions no static model could &mdash; Module 5&rsquo;s &ldquo;day in the life&rdquo; trace, for real.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 17 — OBSERVABILITY ============ -->
+  <section class="slide" data-title="Observability & debugging"
+    data-note="Close the practitioner loop: you cannot fix what you cannot see, and agents are non-deterministic, so observability is not optional. Three levels. LEVEL 1, free: verbose=True prints the ReAct trace we saw -- enough to debug your first agents. LEVEL 2, callbacks: hook into every model call and tool call to log latency, tokens and errors programmatically. LEVEL 3, a tracing platform: LangSmith (from LangChain) or Langfuse (open-source, and part of THIS course's stack per the outline) capture every run as a visual trace -- inputs, each thought/action/observation, token cost, timing -- so you can inspect failures, compare prompt versions, and even run evals. Tie back to Karpathy-style iteration and to the AutoResearch eval idea: once you can see and score runs, you can improve the agent systematically instead of guessing. Message: tracing is what turns 'it sometimes works' into 'here's exactly where it broke'.">
+    <div class="kicker"><span class="dot"></span> You can&rsquo;t fix what you can&rsquo;t see</div>
+    <h2 class="title">Observability &amp; debugging</h2>
+    <div class="body">
+      <div class="grid3">
+        <div class="card"><h3>1 &middot; <span class="mono" style="font-size:.8em">verbose=True</span></h3><p>Prints the ReAct trace &mdash; <b>free</b>, enough to debug your first agents.</p></div>
+        <div class="card cyan"><h3>2 &middot; Callbacks</h3><p>Hook every model &amp; tool call &mdash; log <b>latency, tokens, errors</b> in code.</p></div>
+        <div class="card gold"><h3>3 &middot; Tracing platform</h3><p><b>LangSmith / Langfuse</b> &mdash; every run as a visual trace you can inspect &amp; score.</p></div>
+      </div>
+      <p class="callout" style="margin-top:16px">&#129504; Agents are <b>non-deterministic</b> &mdash; so tracing isn&rsquo;t optional. Once you can <b>see and score</b> runs (inputs, each step, cost, timing), you improve the agent <b>systematically</b> instead of guessing &mdash; the difference between &ldquo;it sometimes works&rdquo; and &ldquo;here&rsquo;s exactly where it broke.&rdquo;</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 18 — CHOOSING A FRAMEWORK ============ -->
+  <section class="slide" data-title="Choosing a framework"
+    data-note="Synthesise everything into a decision guide they can actually use on Monday. Walk the four rows as a flow. If it's a SINGLE agent with a few tools -> LangChain's prebuilt agent (and that's your labs and most first projects). If you need explicit control -- branching, cycles, durable state, human approval -> LangGraph. If the job is genuinely several specialised roles collaborating -> a multi-agent framework (CrewAI / AutoGen), but only when one agent truly can't do it. If you just want to SEE the loop to learn -> smolagents or your own hand-rolled version. The meta-rule, echoing Module 5's agent-vs-workflow: always start with the SIMPLEST thing that works and graduate only when a concrete need forces you up. Over-engineering the framework choice is the classic beginner mistake. End by pointing at the labs: you'll use exactly the left column -- LangChain -- and that's the right call for where you are.">
+    <div class="kicker"><span class="dot"></span> A guide you can use on Monday</div>
+    <h2 class="title">Choosing a framework</h2>
+    <div class="body">
+      <table>
+        <thead><tr><th style="width:52%">If your task is&hellip;</th><th>Reach for</th></tr></thead>
+        <tbody>
+          <tr><td>A single agent, a few tools, get an answer</td><td><b>LangChain</b> prebuilt agent <span class="pill cyan">your labs</span></td></tr>
+          <tr><td>Branching, cycles, durable state, human approval</td><td><b>LangGraph</b></td></tr>
+          <tr><td>Several specialised roles genuinely collaborating</td><td><b>CrewAI / AutoGen</b> <span class="pill ghost">Day 4</span></td></tr>
+          <tr><td>You just want to <i>see</i> the loop &amp; learn</td><td><b>smolagents</b> / hand-rolled</td></tr>
+        </tbody>
+      </table>
+      <p class="callout warn" style="margin-top:16px">&#9878;&#65039; The meta-rule &mdash; same as agent-vs-workflow in Module 5: <b>start with the simplest thing that works</b> and graduate only when a concrete need forces you up. Over-engineering the framework choice is the classic beginner mistake. Your labs use the left column &mdash; and that&rsquo;s the right call.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 19 — CONNECT TO LABS ============ -->
+  <section class="slide" data-title="This connects to your labs"
+    data-note="Hand off to the keyboards. Module 6's labs turn everything on these slides into a running agent. Lab 6.1: build a real LangChain agent -- create the model (Ollama or Groq), define a tool with @tool, create_react_agent + AgentExecutor, invoke a goal, and read the verbose ReAct trace you saw on slide 10. That's the framework version of the loop you hand-built in Module 5. Lab 6.2: connect it to the world -- add Google Search for live facts and Wolfram Alpha for computation, so your agent answers questions no static model could, plus wire in memory and a max_iterations guardrail. This is the client's Day-3 lab spec, for real. Encourage them: this is the payoff -- from understanding agents, to building one that reaches the live internet. Then Day 4 makes agents DO real work: task automation and multi-agent collaboration.">
+    <div class="kicker"><span class="dot"></span> From slides to keyboards</div>
+    <h2 class="title">Now build it &mdash; Module 6 labs</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card"><h3>&#9654; Lab 6.1 &middot; A real LangChain agent</h3>
+          <ul>
+            <li>Create the model (<b>Ollama</b> or <b>Groq</b>), define a tool with <span class="mono">@tool</span></li>
+            <li><span class="mono">create_react_agent</span> + <span class="mono">AgentExecutor</span> &mdash; the loop, for free</li>
+            <li>Read the <b>verbose ReAct trace</b> you saw on slide 10</li>
+            <li>The framework version of the loop you hand-built in Module 5</li>
+          </ul>
+        </div>
+        <div class="card cyan"><h3>&#9654; Lab 6.2 &middot; Connect to external APIs</h3>
+          <ul>
+            <li>Add <b>Google Search</b> &mdash; live facts beyond training data</li>
+            <li>Add <b>Wolfram Alpha</b> &mdash; real computation &amp; knowledge</li>
+            <li>Wire in <b>memory</b> &amp; a <span class="mono">max_iterations</span> guardrail</li>
+            <li>Answer questions a static model never could</li>
+          </ul>
+        </div>
+      </div>
+      <p class="callout warn" style="margin-top:16px">&#128218; Open <b><a href="../hands-on/module-6/index.html">Module 6&rsquo;s hands-on labs</a></b> &mdash; the payoff: from <i>understanding</i> agents to building one that reaches the <b>live internet</b>. Next &mdash; <b>Day 4</b>: making agents <b>do real work</b> (task automation &amp; multi-agent collaboration).</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 20 — KEY TAKEAWAYS ============ -->
+  <section class="slide dark" data-title="Key takeaways"
+    data-note="Recap crisply, then the quiz. Five points: a framework runs the loop so you write intent not plumbing; LangChain's five nouns -- model, prompt, tool, agent, executor -- make any snippet readable; the @tool docstring is the model's instruction, so write it for the model; graduate from LangChain to LangGraph only when you need explicit control; and always start with the simplest framework that works, with observability from day one. Then tell them: a quick 10-question check to lock it in before the labs.">
+    <div class="kicker"><span class="dot"></span> Recap</div>
+    <h2 class="title">Five things to carry forward</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card"><h3>1 &middot; Frameworks run the loop</h3><p>They handle tools, memory &amp; tracing &mdash; you write <b>intent</b>, not plumbing.</p></div>
+        <div class="card cyan"><h3>2 &middot; Five nouns</h3><p>Model &middot; prompt &middot; tool &middot; agent &middot; <b>executor</b> &mdash; and any LangChain snippet reads clearly.</p></div>
+        <div class="card"><h3>3 &middot; The docstring is the API</h3><p>A tool&rsquo;s <b>description</b> is what the model reads to decide &mdash; write it for the model.</p></div>
+        <div class="card"><h3>4 &middot; Graduate deliberately</h3><p>LangChain to <b>run</b>; LangGraph for <b>control</b>; multi-agent only when needed.</p></div>
+        <div class="card gold" style="grid-column:1/-1"><h3>5 &middot; Simplest thing + observability</h3><p>Start with the simplest framework that works, and <b>trace from day one</b> &mdash; you can&rsquo;t fix what you can&rsquo;t see. Next: build one (Module 6 labs).</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 21 — QUIZ INTRO ============ -->
+  <section class="slide dark" data-title="Quiz — intro"
+    data-note="Quick formative check -- 10 questions, mixed easy/medium, all on Module 6. Format: each question slide, then its answer slide with the explanation. Run it interactively -- read the question, let them call A/B/C/D, advance to reveal. The goal is to surface and fix misconceptions before they touch a keyboard. Keep it light and fast.">
+    <div class="body center">
+      <div class="kicker"><span class="dot"></span> Lock it in</div>
+      <h2 class="title" style="border-bottom-color:var(--cyan)">Quick check &mdash; 10 questions</h2>
+      <p class="lead" style="color:#e7e9fb">Each <b>question</b> appears first; the <b>answer</b> &amp; a one-line why are on the next slide. Call out A / B / C / D before you advance.</p>
+      <div class="title-meta" style="margin-top:14px">
+        <span class="pill cyan">10 questions</span>
+        <span class="pill gold">mixed: easy &amp; medium</span>
+        <span class="pill ghost" style="color:#c7cbf0;border-color:rgba(255,255,255,.3)">all on Module 6</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 22 — Q1 ============ -->
+  <section class="slide" data-title="Quiz Q1 — why a framework"
+    data-note="Answer: B. A framework provides the loop, tools, memory and tracing as battle-tested parts -- it doesn't make the model smarter.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q1 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">What is the main value of an agent framework like LangChain?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>It makes the underlying language model more intelligent.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>It provides the loop, tools, memory &amp; tracing as ready parts &mdash; you write intent, not plumbing.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>It removes the need for a language model entirely.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>It guarantees the agent can never make a mistake.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 23 — A1 ============ -->
+  <section class="slide" data-title="Answer Q1"
+    data-note="A framework is scaffolding: robust parsing, a tool registry, memory, retries and tracing. The model is unchanged; the plumbing is done for you.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q1 / 10</div>
+    <h2 class="title">The value of a framework</h2>
+    <div class="body center">
+      <p class="quiz-restate">What a framework actually buys you.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>It makes the underlying language model more intelligent.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>It provides the loop, tools, memory &amp; tracing as ready parts &mdash; you write intent, not plumbing. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>It removes the need for a language model entirely.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>It guarantees the agent can never make a mistake.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;A framework is <b>scaffolding</b> &mdash; robust parsing, a tool registry, memory, retries and tracing. The model is <b>unchanged</b>; the plumbing you hand-rolled in Module 5 is done for you.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 24 — Q2 ============ -->
+  <section class="slide" data-title="Quiz Q2 — the @tool docstring"
+    data-note="Answer: B. The docstring becomes the tool's description -- the text the model reads to decide when to call the tool.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q2 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">When you define a tool with <span class="mono">@tool</span>, why does the docstring matter?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>It&rsquo;s only a comment for other developers.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>It becomes the tool&rsquo;s description &mdash; the model reads it to decide when to use the tool.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>It sets the model&rsquo;s temperature.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>It has no effect at run time.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 25 — A2 ============ -->
+  <section class="slide" data-title="Answer Q2"
+    data-note="The model never sees your code -- only the tool's name, description (the docstring) and input schema. A vague docstring makes the agent pick the wrong tool.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q2 / 10</div>
+    <h2 class="title">Why the tool docstring matters</h2>
+    <div class="body center">
+      <p class="quiz-restate">What the <span class="mono">@tool</span> docstring is really for.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>It&rsquo;s only a comment for other developers.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>It becomes the tool&rsquo;s description &mdash; the model reads it to decide when to use the tool. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>It sets the model&rsquo;s temperature.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>It has no effect at run time.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;The model never sees your code &mdash; only the tool&rsquo;s <b>name, description (the docstring) and input schema</b>. A vague docstring is the #1 reason an agent picks the wrong tool.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 26 — Q3 ============ -->
+  <section class="slide" data-title="Quiz Q3 — AgentExecutor"
+    data-note="Answer: B. The AgentExecutor runs the loop: calls the model, executes the chosen tool, feeds the observation back, and enforces max_iterations.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q3 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">In LangChain, what is the job of the <span class="mono">AgentExecutor</span>?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>To train the language model on your data.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>To run the loop &mdash; call the model, execute the chosen tool, feed back the observation, cap the steps.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>To convert text into embeddings.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>To replace the need for tools.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 27 — A3 ============ -->
+  <section class="slide" data-title="Answer Q3"
+    data-note="The agent DECIDES the next action; the executor EXECUTES it and manages the loop, including the max_iterations guardrail. That's the reason/execute split, in code.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q3 / 10</div>
+    <h2 class="title">The job of the AgentExecutor</h2>
+    <div class="body center">
+      <p class="quiz-restate">What actually runs the loop.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>To train the language model on your data.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>To run the loop &mdash; call the model, execute the chosen tool, feed back the observation, cap the steps. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>To convert text into embeddings.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>To replace the need for tools.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;The <b>agent decides</b> the next action; the <b>executor executes</b> it and manages the loop &mdash; including the <span class="mono">max_iterations</span> guardrail. That&rsquo;s Module 5&rsquo;s reason/execute split, in code.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 28 — Q4 ============ -->
+  <section class="slide" data-title="Quiz Q4 — model-agnostic"
+    data-note="Answer: B. LangChain wraps many providers behind one interface, so swapping Ollama for Groq is a one-line change.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q4 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Why can the same LangChain agent code run on both local Ollama and cloud Groq?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Because Ollama and Groq are the same company.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>LangChain wraps many providers behind one interface &mdash; swapping the model is a one-line change.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Because the agent retrains itself for each provider.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>It can&rsquo;t &mdash; you must rewrite the whole agent.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 29 — A4 ============ -->
+  <section class="slide" data-title="Answer Q4"
+    data-note="Model wrappers (ChatOllama, ChatGroq) share a common interface, so the rest of the agent -- tools, prompt, executor -- is unchanged. This is exactly the Day-1-to-Day-2 model swap.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q4 / 10</div>
+    <h2 class="title">Why the model swap is one line</h2>
+    <div class="body center">
+      <p class="quiz-restate">The point of model-agnostic wrappers.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Because Ollama and Groq are the same company.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>LangChain wraps many providers behind one interface &mdash; swapping the model is a one-line change. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Because the agent retrains itself for each provider.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>It can&rsquo;t &mdash; you must rewrite the whole agent.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Model wrappers (<span class="mono">ChatOllama</span>, <span class="mono">ChatGroq</span>) share a common interface, so the tools, prompt &amp; executor are unchanged. It&rsquo;s exactly your Day-1&rarr;Day-2 model swap.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 30 — Q5 ============ -->
+  <section class="slide" data-title="Quiz Q5 — LangGraph"
+    data-note="Answer: B. LangGraph models the agent as an explicit state graph -- nodes, edges and shared state -- for branching, cycles, durability and human-in-the-loop.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q5 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">What does LangGraph add over a basic LangChain agent?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>A bigger language model.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>An explicit state graph &mdash; nodes, edges &amp; shared state &mdash; for branching, cycles, durability &amp; human-in-the-loop.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>It removes the ability to use tools.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>It only works without any LLM.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 31 — A5 ============ -->
+  <section class="slide" data-title="Answer Q5"
+    data-note="The simple executor is one implicit loop. LangGraph makes the flow explicit -- you control routing, checkpoint state, and pause for a human -- which the implicit loop can't easily do.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q5 / 10</div>
+    <h2 class="title">What LangGraph adds</h2>
+    <div class="body center">
+      <p class="quiz-restate">Beyond the simple reason&ndash;act loop.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>A bigger language model.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>An explicit state graph &mdash; nodes, edges &amp; shared state &mdash; for branching, cycles, durability &amp; human-in-the-loop. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>It removes the ability to use tools.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>It only works without any LLM.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;The simple executor is <b>one implicit loop</b>. LangGraph makes the flow <b>explicit</b> &mdash; you control routing, checkpoint state, and pause for a human &mdash; which the implicit loop can&rsquo;t easily do.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 32 — Q6 ============ -->
+  <section class="slide" data-title="Quiz Q6 — LangChain vs LangGraph"
+    data-note="Answer: B. Start with LangChain for a single-agent loop; reach for LangGraph when you need explicit control the simple loop can't express.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q6 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">When should you reach for LangGraph instead of a basic LangChain agent?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Always &mdash; never use a plain LangChain agent.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>When you need explicit control &mdash; branching, cycles, durable state or human approval &mdash; the simple loop can&rsquo;t express.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Only when you have no tools at all.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Never &mdash; they do exactly the same thing.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 33 — A6 ============ -->
+  <section class="slide" data-title="Answer Q6"
+    data-note="LangChain to get an agent running; LangGraph to get its flow under control. Start simple and graduate only when a concrete need forces you up -- same discipline as agent-vs-workflow.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q6 / 10</div>
+    <h2 class="title">When to graduate to LangGraph</h2>
+    <div class="body center">
+      <p class="quiz-restate">Choosing between the two.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Always &mdash; never use a plain LangChain agent.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>When you need explicit control &mdash; branching, cycles, durable state or human approval &mdash; the simple loop can&rsquo;t express. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Only when you have no tools at all.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Never &mdash; they do exactly the same thing.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;<b>LangChain to get an agent running; LangGraph to get its flow under control.</b> Start simple; graduate only when a concrete need forces you up &mdash; same discipline as agent-vs-workflow.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 34 — Q7 ============ -->
+  <section class="slide" data-title="Quiz Q7 — AutoGPT"
+    data-note="Answer: B. AutoGPT-style agents take a high-level goal and self-prompt with minimal human input -- ambitious, but prone to looping, drifting and cost.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q7 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">What characterises an AutoGPT-style autonomous agent?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>It requires a human to approve every single step.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>It takes a high-level goal and self-prompts with minimal human input &mdash; ambitious, but prone to looping &amp; drift.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>It cannot use any tools.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>It is always cheaper and more reliable than a simple agent.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 35 — A7 ============ -->
+  <section class="slide" data-title="Answer Q7"
+    data-note="AutoGPT was 2023's viral autonomous demo. Its lesson: open-ended autonomy loops, drifts and burns cost -- so the field moved to bounded, structured, guardrailed designs.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q7 / 10</div>
+    <h2 class="title">What AutoGPT-style agents are</h2>
+    <div class="body center">
+      <p class="quiz-restate">The fully-autonomous end of the spectrum.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>It requires a human to approve every single step.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>It takes a high-level goal and self-prompts with minimal human input &mdash; ambitious, but prone to looping &amp; drift. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>It cannot use any tools.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>It is always cheaper and more reliable than a simple agent.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;AutoGPT was 2023&rsquo;s viral autonomous demo. Its lesson: open-ended autonomy <b>loops, drifts and burns cost</b> &mdash; so the field moved to <b>bounded, structured, guardrailed</b> designs.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 36 — Q8 ============ -->
+  <section class="slide" data-title="Quiz Q8 — multi-agent"
+    data-note="Answer: B. Multi-agent frameworks (CrewAI, AutoGen) coordinate several specialised agents -- roles like researcher, writer, reviewer -- that collaborate on a task.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q8 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">What do multi-agent frameworks like CrewAI and AutoGen do?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Run a single agent faster on a GPU.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Coordinate several specialised agents &mdash; e.g. researcher, writer, reviewer &mdash; that collaborate on a task.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Compress a model to run on a phone.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Remove the need for any language model.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 37 — A8 ============ -->
+  <section class="slide" data-title="Answer Q8"
+    data-note="Instead of one agent doing everything, several role-based agents divide the labour and pass work between them. More capability, but more coordination cost -- the Day-4 topic.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q8 / 10</div>
+    <h2 class="title">What multi-agent frameworks do</h2>
+    <div class="body center">
+      <p class="quiz-restate">CrewAI &amp; AutoGen in one line.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Run a single agent faster on a GPU.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>Coordinate several specialised agents &mdash; e.g. researcher, writer, reviewer &mdash; that collaborate on a task. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Compress a model to run on a phone.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Remove the need for any language model.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Instead of one agent doing everything, several <b>role-based agents</b> divide the labour and pass work between them. More capability &mdash; but more coordination cost. That&rsquo;s the <b>Day-4</b> topic.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 38 — Q9 ============ -->
+  <section class="slide" data-title="Quiz Q9 — external APIs"
+    data-note="Answer: B. You give an agent live capabilities by wrapping a service (Google Search, Wolfram Alpha) as a tool and adding it to the tools list -- usually a prebuilt integration.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q9 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">How do you give a LangChain agent access to Google Search or Wolfram Alpha?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Retrain the model on the whole internet first.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Wrap the service as a tool (often a prebuilt integration) and add it to the agent&rsquo;s tools list.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>You can&rsquo;t &mdash; agents only use their training data.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Paste the API key into the user&rsquo;s question.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 39 — A9 ============ -->
+  <section class="slide" data-title="Answer Q9"
+    data-note="The pattern is always: get an API key (in .env), wrap the service as a tool, add it to the tools list. The same agent then reaches live facts and real computation.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q9 / 10</div>
+    <h2 class="title">Connecting an agent to live APIs</h2>
+    <div class="body center">
+      <p class="quiz-restate">Giving the agent real capabilities.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Retrain the model on the whole internet first.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>Wrap the service as a tool (often a prebuilt integration) and add it to the agent&rsquo;s tools list. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>You can&rsquo;t &mdash; agents only use their training data.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Paste the API key into the user&rsquo;s question.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Always the same pattern: get an <b>API key</b> (in <span class="mono">.env</span>) &rarr; <b>wrap</b> the service as a tool &rarr; <b>add</b> it to the tools list. The same agent then reaches live facts &amp; real computation &mdash; that&rsquo;s Lab 6.2.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 40 — Q10 ============ -->
+  <section class="slide" data-title="Quiz Q10 — observability"
+    data-note="Answer: B. Tracing tools like LangSmith and Langfuse capture every run -- inputs, each thought/action/observation, cost and timing -- so you can debug, evaluate and audit.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q10 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Why use a tracing tool like LangSmith or Langfuse?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>To make the model run without electricity.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>To capture every run &mdash; inputs, each step, cost &amp; timing &mdash; so you can debug, evaluate &amp; audit.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>To permanently increase the model&rsquo;s accuracy.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Tracing is unnecessary because agents are deterministic.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 41 — A10 ============ -->
+  <section class="slide" data-title="Answer Q10"
+    data-note="Agents are non-deterministic, so you can't fix what you can't see. Tracing turns 'it sometimes works' into 'here's exactly where it broke' -- and lets you compare prompt versions and run evals.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q10 / 10</div>
+    <h2 class="title">Why observability matters</h2>
+    <div class="body center">
+      <p class="quiz-restate">The role of tracing platforms.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>To make the model run without electricity.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>To capture every run &mdash; inputs, each step, cost &amp; timing &mdash; so you can debug, evaluate &amp; audit. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>To permanently increase the model&rsquo;s accuracy.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Tracing is unnecessary because agents are deterministic.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Agents are <b>non-deterministic</b> &mdash; you can&rsquo;t fix what you can&rsquo;t see. Tracing turns &ldquo;it sometimes works&rdquo; into &ldquo;here&rsquo;s exactly where it broke&rdquo; &mdash; and lets you compare prompt versions &amp; run evals.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 42 — REFERENCES ============ -->
+  <section class="slide" data-title="References &amp; further study"
+    data-note="Point to the best companions to the labs. LangChain's agents concept page and the how-to for building an agent are the direct companions to Lab 6.1/6.2. The LangGraph docs are the next step for control. LangChain's own 'how to think about agent frameworks' blog is a superb map of the space. Anthropic's 'Building effective agents' remains the practitioner reality check. CrewAI and AutoGen docs preview Day 4. Langfuse is the tracing tool in this course's stack. All links live in the HTML; skim the LangChain agents page before the labs.">
+    <div class="kicker"><span class="dot"></span> Go deeper &middot; curated, mostly free</div>
+    <h2 class="title">References &amp; further study</h2>
+    <div class="body">
+      <ul class="refs">
+        <li><a href="https://python.langchain.com/docs/concepts/agents/" target="_blank" rel="noopener">LangChain &mdash; Agents (concepts)</a><span class="d">The direct companion to Lab 6.1 &mdash; agents, tools &amp; the executor.</span></li>
+        <li><a href="https://python.langchain.com/docs/how_to/agent_executor/" target="_blank" rel="noopener">LangChain &mdash; Build an Agent (how-to)</a><span class="d">A runnable walkthrough of the code on these slides.</span></li>
+        <li><a href="https://langchain-ai.github.io/langgraph/" target="_blank" rel="noopener">LangGraph docs</a><span class="d">State graphs, cycles, durability &amp; human-in-the-loop &mdash; the next gear.</span></li>
+        <li><a href="https://blog.langchain.dev/how-to-think-about-agent-frameworks/" target="_blank" rel="noopener">LangChain &mdash; How to think about agent frameworks</a><span class="d">A clear map of the landscape &amp; when to use what.</span></li>
+        <li><a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noopener">Anthropic &mdash; Building effective agents</a><span class="d">The practitioner&rsquo;s reality check: simplest thing that works.</span></li>
+        <li><a href="https://docs.crewai.com/" target="_blank" rel="noopener">CrewAI docs</a><span class="d">Role-based multi-agent crews &mdash; a preview of Day 4.</span></li>
+        <li><a href="https://microsoft.github.io/autogen/" target="_blank" rel="noopener">AutoGen (Microsoft)</a><span class="d">Conversation-based multi-agent collaboration.</span></li>
+        <li><a href="https://langfuse.com/docs" target="_blank" rel="noopener">Langfuse &mdash; tracing &amp; observability</a><span class="d">Open-source run tracing &mdash; part of this course&rsquo;s stack.</span></li>
+      </ul>
+      <p class="small" style="margin-top:12px">All external links open in a new tab. Skim the <b>LangChain &ldquo;Agents (concepts)&rdquo;</b> page before the labs.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 43 — CLOSING ============ -->
+  <section class="slide title-slide" data-title="What's next"
+    data-note="Close warm and bridge to Day 4. Today we picked up the power tools: a framework runs the agent loop -- tools, memory, tracing -- so you build agents by expressing intent, not wiring plumbing. You can now read a LangChain agent fluently, know when to reach for LangGraph, and can choose a framework deliberately. Next, in the labs, you'll build a real LangChain agent and connect it to the live internet. Then Day 4 turns agents loose on REAL work: an email-drafting task-automation agent, and a multi-agent customer-service chatbot. End on: you know what an agent is (Module 5) and how to build one with a framework (Module 6) -- now let's make it do a job.">
+    <div class="body center">
+      <div class="kicker"><span class="dot"></span> End of Module 6</div>
+      <h1>Frameworks make agents <span class="accent">buildable</span>.</h1>
+      <p class="subtitle">You know what an agent <b>is</b> and how to <b>build</b> one. Next: make it <b>do real work</b> &mdash; task automation &amp; multi-agent collaboration.</p>
+      <div class="rule"></div>
+      <div class="title-meta">
+        <span class="pill gold">Next: Module 7 &mdash; Task Automation (Day 4)</span>
+        <span class="pill green">Now: <a href="../hands-on/module-6/index.html" style="color:#fff;text-decoration:underline">Module 6 labs</a></span>
+      </div>
+      <p class="trainer" style="margin-top:22px"><b>Rajesh Gheware</b> &middot;
+        <a href="day3-module5-what-is-agentic-ai.html">&#8592; Module 5 deck</a> &middot;
+        <a href="day4-module7-task-automation.html">Module 7 deck &#8594;</a> &middot;
+        <a href="../course-outline-building-intelligent-ai-agents.html">Course outline</a> &middot;
+        <a href="https://devops.gheware.com" target="_blank" rel="noopener">devops.gheware.com</a>
+      </p>
+    </div>
+  </section>
+
+</div><!-- /deck -->
+
+<!-- ===== Overview (O / ESC) ===== -->
+<div id="overview">
+  <h3>Module 6 &mdash; jump to a slide</h3>
+  <p class="ovsub">Press O or ESC again to close &middot; click any slide</p>
+  <div class="ovgrid" id="ovgrid"></div>
+</div>
+
+<!-- ===== Presenter notes (N) ===== -->
+<div id="notes"><span class="tag">Presenter note &middot; press N to hide</span><span id="noteText"></span></div>
+
+<!-- ===== Chrome ===== -->
+<div id="counter">1 / 43</div>
+<div class="hint">&larr; &rarr; / Space to navigate &middot; <b>N</b> notes &middot; <b>O</b>/Esc overview &middot; <b>F</b> fullscreen</div>
+<div class="nav">
+  <button id="prev" title="Previous (←)" aria-label="Previous slide">&#8249;</button>
+  <button id="next" title="Next (→)" aria-label="Next slide">&#8250;</button>
+</div>
+<div class="footer">
+  <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
+  <span>Day 3 · Module 6 — Frameworks for Building AI Agents</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.0</span>
+</div>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var total = slides.length;
+  var i = 0;
+  var counter = document.getElementById('counter');
+  var noteText = document.getElementById('noteText');
+  var progress = document.getElementById('progress');
+  var prevBtn = document.getElementById('prev');
+  var nextBtn = document.getElementById('next');
+
+  function render(){
+    slides.forEach(function(s,idx){ s.classList.toggle('active', idx===i); });
+    counter.textContent = (i+1)+' / '+total;
+    progress.style.width = ((i)/(total-1)*100)+'%';
+    noteText.textContent = ' ' + (slides[i].getAttribute('data-note')||'—');
+    prevBtn.disabled = (i===0);
+    nextBtn.disabled = (i===total-1);
+    if (location.hash !== '#'+(i+1)) history.replaceState(null,'','#'+(i+1));
+    slides[i].scrollTop = 0;
+  }
+  function go(n){ i = Math.max(0, Math.min(total-1, n)); render(); }
+  function next(){ go(i+1); }
+  function prev(){ go(i-1); }
+
+  nextBtn.addEventListener('click', next);
+  prevBtn.addEventListener('click', prev);
+
+  document.addEventListener('keydown', function(e){
+    if (e.key==='ArrowRight' || e.key==='PageDown' || e.key===' '){ e.preventDefault(); next(); }
+    else if (e.key==='ArrowLeft' || e.key==='PageUp'){ e.preventDefault(); prev(); }
+    else if (e.key==='Home'){ e.preventDefault(); go(0); }
+    else if (e.key==='End'){ e.preventDefault(); go(total-1); }
+    else if (e.key==='n' || e.key==='N'){ document.body.classList.toggle('show-notes'); }
+    else if (e.key==='o' || e.key==='O'){ document.body.classList.toggle('show-overview'); }
+    else if (e.key==='Escape'){ document.body.classList.toggle('show-overview'); }
+    else if (e.key==='f' || e.key==='F'){
+      if (!document.fullscreenElement){ document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); }
+      else { document.exitFullscreen && document.exitFullscreen(); }
+    }
+  });
+
+  // build overview
+  var ov = document.getElementById('ovgrid');
+  slides.forEach(function(s,idx){
+    var c = document.createElement('div');
+    c.className='ovcard';
+    c.innerHTML = '<div class="num">'+(idx+1).toString().padStart(2,'0')+'</div><div class="ttl">'+(s.getAttribute('data-title')||('Slide '+(idx+1)))+'</div>';
+    c.addEventListener('click', function(){ go(idx); document.body.classList.remove('show-overview'); });
+    ov.appendChild(c);
+  });
+
+  // swipe (touch)
+  var x0=null;
+  document.addEventListener('touchstart',function(e){ x0=e.touches[0].clientX; },{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(x0===null) return; var dx=e.changedTouches[0].clientX-x0;
+    if(Math.abs(dx)>50){ dx<0?next():prev(); } x0=null;
+  });
+
+  // deep link
+  var start = parseInt((location.hash||'').replace('#',''),10);
+  if(start>=1 && start<=total) i=start-1;
+  render();
+})();
+</script>
+</body>
+</html>
