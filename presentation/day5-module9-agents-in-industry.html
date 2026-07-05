@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 5 · Module 9 — Agents in Finance, Healthcare &amp; Cybersecurity</title>
+<style>
+  :root{
+    --ink-900:#1e1b4b; --ink-800:#312e81; --ind-600:#4f46e5;
+    --ind-300:#a5b4fc; --ind-50:#eef2ff;
+    --cyan:#06b6d4; --cyan-l:#67e8f9; --amber:#f59e0b; --amber-d:#b45309; --blue:#0891b2;
+    --ok:#059669; --bg:#f5f6fb; --ink:#1e1f33; --muted:#5b5f7a; --line:#d8dcf0;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+    background:var(--ink-900); color:var(--ink);
+    overflow:hidden;
+  }
+  a{color:var(--ind-600);}
+
+  /* ---------- Deck / slide framework ---------- */
+  .deck{position:fixed;inset:0;}
+  .slide{
+    position:absolute;inset:0;
+    display:none;
+    flex-direction:column;
+    background:var(--bg);
+    padding:clamp(20px,3.2vh,40px) clamp(28px,5vw,80px) 64px;
+    overflow:auto;
+  }
+  .slide.active{display:flex;animation:fade .35s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+  .kicker{
+    display:flex;align-items:center;gap:10px;
+    font-size:clamp(.7rem,1.1vw,.85rem);font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--ind-600);margin-bottom:6px;
+  }
+  .kicker .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);}
+  .kicker .sub{color:var(--muted);font-weight:600;}
+  h2.title{
+    margin:0 0 14px;color:var(--ink-800);
+    font-size:clamp(1.5rem,3.4vw,2.5rem);line-height:1.1;
+    border-bottom:3px solid var(--cyan);padding-bottom:10px;
+  }
+  .body{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;}
+  .center{justify-content:center;}
+  p.lead{font-size:clamp(1rem,1.7vw,1.3rem);line-height:1.5;max-width:62ch;color:#26273f;}
+  .small{font-size:clamp(.8rem,1.2vw,.95rem);color:var(--muted);}
+
+  /* ---------- Generic helpers ---------- */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:clamp(14px,2vw,26px);}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(12px,1.6vw,20px);}
+  .grid4{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(12px,1.6vw,18px);}
+  .card{
+    background:#fff;border:1px solid var(--line);border-left:4px solid var(--ind-600);
+    border-radius:6px;padding:clamp(12px,1.6vw,18px);box-shadow:0 1px 4px rgba(30,27,75,.06);
+  }
+  .card.gold{border-left-color:var(--amber);background:#fffbeb;}
+  .card.amber{border-left-color:var(--amber-d);}
+  .card.blue{border-left-color:var(--blue);}
+  .card.cyan{border-left-color:var(--cyan);}
+  .card h3{margin:0 0 8px;color:var(--ink-800);font-size:clamp(1rem,1.5vw,1.2rem);
+    display:flex;align-items:center;gap:8px;}
+  .card p,.card li{font-size:clamp(.82rem,1.2vw,1rem);line-height:1.45;}
+  .card ul{margin:6px 0 0;padding-left:20px;}
+  .card ul li{margin-bottom:4px;}
+
+  ul.bullets{font-size:clamp(.95rem,1.6vw,1.25rem);line-height:1.7;padding-left:26px;max-width:64ch;}
+  ul.bullets li{margin-bottom:10px;}
+  ul.bullets li b{color:var(--ink-800);}
+
+  table{border-collapse:collapse;width:100%;font-size:clamp(.8rem,1.2vw,1.02rem);background:#fff;
+    box-shadow:0 1px 4px rgba(30,27,75,.07);border-radius:6px;overflow:hidden;}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top;}
+  thead th{background:var(--ink-800);color:#fff;font-weight:600;}
+  tbody tr:nth-child(even){background:var(--ind-50);}
+  td .yes{color:var(--ok);font-weight:700;}
+  td .no{color:#b91c1c;font-weight:700;}
+  caption{caption-side:bottom;font-size:.8rem;color:var(--muted);padding-top:8px;text-align:left;}
+
+  .pill{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.72em;font-weight:700;
+    vertical-align:middle;letter-spacing:.02em;}
+  .pill.green{background:var(--ind-600);color:#fff;}
+  .pill.gold{background:var(--amber);color:var(--ink-900);}
+  .pill.amber{background:var(--amber-d);color:#fff;}
+  .pill.blue{background:var(--blue);color:#fff;}
+  .pill.cyan{background:var(--cyan);color:var(--ink-900);}
+  .pill.ghost{background:#fff;border:1px solid var(--line);color:var(--muted);}
+
+  .callout{background:var(--ind-50);border:1px solid var(--ind-300);border-radius:8px;
+    padding:14px 18px;font-size:clamp(.9rem,1.4vw,1.1rem);color:#262248;}
+  .callout.warn{background:#fffbeb;border-color:var(--amber);}
+  .callout b{color:var(--ink-800);}
+
+  figure{margin:0;text-align:center;}
+  figure svg{width:100%;height:auto;max-height:60vh;}
+  figcaption{font-size:clamp(.78rem,1.1vw,.92rem);color:var(--muted);margin-top:8px;}
+
+  .mono{font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;}
+  .terminal{background:#14143a;color:#e0e3f5;border-radius:8px;padding:16px 18px;
+    font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:clamp(.72rem,1.1vw,.95rem);
+    line-height:1.6;box-shadow:0 4px 16px rgba(0,0,0,.3);overflow:auto;white-space:pre-wrap;}
+  .terminal .com{color:#7f86b8;}
+  .terminal .kw{color:var(--cyan-l);}
+  .terminal .str{color:#fcd34d;}
+  .terminal .fn{color:#a5b4fc;}
+  .terminal .out{color:#6ee7b7;}
+  .terminal .you{color:#fff;}
+
+  /* ---------- reference list ---------- */
+  ul.refs{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;
+    gap:10px 26px;font-size:clamp(.82rem,1.2vw,1rem);}
+  ul.refs li{padding:8px 12px;background:#fff;border:1px solid var(--line);
+    border-left:3px solid var(--cyan);border-radius:6px;line-height:1.4;}
+  ul.refs li a{font-weight:600;text-decoration:none;}
+  ul.refs li a:hover{text-decoration:underline;}
+  ul.refs li .d{display:block;color:var(--muted);font-size:.82em;margin-top:2px;}
+  @media(max-width:760px){ul.refs{grid-template-columns:1fr;} .grid2,.grid3,.grid4{grid-template-columns:1fr;}}
+
+  /* ---------- Quiz ---------- */
+  .quiz-q{font-size:clamp(1.1rem,2vw,1.5rem);color:var(--ink-800);font-weight:700;line-height:1.3;margin:0 0 16px;}
+  .quiz-restate{font-size:clamp(.92rem,1.4vw,1.12rem);color:var(--muted);font-weight:600;line-height:1.35;margin:0 0 14px;}
+  .quiz-opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .quiz-opt{display:flex;align-items:flex-start;gap:12px;background:#fff;border:1px solid var(--line);
+    border-left:4px solid var(--ind-300);border-radius:8px;padding:12px 16px;font-size:clamp(.9rem,1.4vw,1.1rem);line-height:1.4;}
+  .quiz-opt .ltr{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--ind-50);color:var(--ind-600);
+    font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .quiz-opt.correct{border-left-color:var(--ok);background:#ecfdf5;}
+  .quiz-opt.correct .ltr{background:var(--ok);color:#fff;}
+  .quiz-opt.dim{opacity:.5;}
+  .quiz-why{margin-top:16px;}
+  .quiz-badge{display:inline-block;background:var(--amber);color:var(--ink-900);font-weight:700;font-size:.72em;padding:2px 10px;border-radius:12px;}
+  @media(max-width:760px){.quiz-opts{grid-template-columns:1fr;}}
+
+  /* ---------- Title slide ---------- */
+  .title-slide{background:linear-gradient(135deg,#312e81 0%,#1e1b4b 100%);color:#fff;
+    border-bottom:none;align-items:flex-start;justify-content:center;}
+  .title-slide .kicker{color:var(--cyan-l);}
+  .title-slide h1{font-size:clamp(2rem,5.2vw,3.6rem);margin:0 0 6px;line-height:1.08;}
+  .title-slide .accent{color:var(--cyan-l);}
+  .title-slide .subtitle{font-size:clamp(1rem,2vw,1.5rem);color:#c7cbf0;margin:4px 0 0;font-weight:500;}
+  .title-slide .rule{width:120px;height:4px;background:var(--cyan);margin:22px 0;border-radius:2px;}
+  .title-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;}
+  .title-meta .pill{font-size:.85rem;padding:5px 14px;}
+  .title-slide .trainer{margin-top:26px;font-size:clamp(.85rem,1.4vw,1.05rem);color:#a9adda;}
+  .title-slide .trainer b{color:#fff;}
+  .title-slide a{color:var(--cyan-l);}
+  .homelink{position:fixed;top:10px;right:16px;z-index:46;font-size:.74rem;text-decoration:none;
+    background:rgba(255,255,255,.9);border:1px solid var(--line);color:var(--ink-800);
+    padding:5px 12px;border-radius:14px;font-weight:600;}
+  .homelink:hover{background:#fff;}
+
+  /* ---------- dark slides ---------- */
+  .dark{background:linear-gradient(135deg,#312e81 0%,#1e1b4b 100%);color:#fff;border-bottom:none;}
+  .dark h2.title{color:#fff;border-bottom-color:var(--cyan);}
+  .dark .kicker{color:var(--cyan-l);}
+  .dark p.lead,.dark li{color:#e7e9fb;}
+  .dark .card{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.15);color:#eef0ff;}
+  .dark .card h3{color:var(--cyan-l);}
+
+  /* ---------- Chrome ---------- */
+  #progress{position:fixed;top:0;left:0;height:4px;background:var(--cyan);width:0;z-index:50;
+    transition:width .3s ease;}
+  .footer{position:fixed;bottom:0;left:0;right:0;height:34px;display:flex;align-items:center;
+    justify-content:space-between;padding:0 16px;font-size:.72rem;color:var(--muted);
+    background:rgba(255,255,255,.85);backdrop-filter:blur(4px);border-top:1px solid var(--line);z-index:40;}
+  .footer .brand{font-weight:600;color:var(--ink-800);}
+  .footer a{text-decoration:none;}
+  .nav{position:fixed;bottom:44px;right:18px;display:flex;gap:8px;z-index:45;}
+  .nav button{border:none;cursor:pointer;width:42px;height:42px;border-radius:50%;
+    background:var(--ink-800);color:#fff;font-size:1.1rem;box-shadow:0 2px 8px rgba(0,0,0,.25);
+    display:flex;align-items:center;justify-content:center;transition:background .2s,transform .1s;}
+  .nav button:hover{background:var(--ind-600);}
+  .nav button:active{transform:scale(.92);}
+  .nav button:disabled{opacity:.35;cursor:default;}
+  #counter{position:fixed;bottom:46px;left:18px;z-index:45;background:var(--ink-800);color:#fff;
+    font-size:.8rem;font-weight:600;padding:6px 12px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.25);}
+  .hint{position:fixed;bottom:46px;left:50%;transform:translateX(-50%);z-index:45;
+    font-size:.72rem;color:var(--muted);background:rgba(255,255,255,.8);
+    padding:5px 12px;border-radius:12px;border:1px solid var(--line);}
+  @media(max-width:700px){.hint{display:none;}}
+
+  /* ---------- Presenter notes ---------- */
+  #notes{position:fixed;left:0;right:0;bottom:34px;z-index:48;display:none;
+    background:#14143a;color:#e4e6fb;padding:14px 20px 16px;border-top:3px solid var(--cyan);
+    font-size:.92rem;line-height:1.5;max-height:38vh;overflow:auto;}
+  body.show-notes #notes{display:block;}
+  #notes b{color:var(--cyan-l);}
+  #notes .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ind-300);
+    display:block;margin-bottom:4px;}
+
+  /* ---------- Overview ---------- */
+  #overview{position:fixed;inset:0;z-index:60;background:rgba(30,27,75,.97);color:#fff;
+    display:none;flex-direction:column;padding:32px clamp(20px,5vw,80px);overflow:auto;}
+  body.show-overview #overview{display:flex;}
+  #overview h3{color:var(--cyan-l);margin:0 0 4px;font-size:1.4rem;}
+  #overview .ovsub{color:#a9adda;margin:0 0 20px;font-size:.9rem;}
+  .ovgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+  .ovcard{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:8px;
+    padding:12px 14px;cursor:pointer;transition:background .15s,border-color .15s;}
+  .ovcard:hover{background:rgba(6,182,212,.18);border-color:var(--cyan);}
+  .ovcard .num{font-size:.72rem;color:var(--cyan-l);font-weight:700;}
+  .ovcard .ttl{font-size:.95rem;margin-top:3px;color:#fff;}
+
+  svg text{font-family:'Segoe UI',sans-serif;}
+
+  @media print{
+    body{overflow:visible;background:#fff;}
+    .slide{display:flex!important;position:relative;inset:auto;min-height:96vh;page-break-after:always;
+      border:1px solid #ccc;}
+    #progress,.footer,.nav,#counter,.hint,#notes,#overview,.homelink{display:none!important;}
+  }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<a class="homelink" href="../course-outline-building-intelligent-ai-agents.html" title="Back to course outline">&#8962; Course outline</a>
+
+<div class="deck" id="deck">
+  <!-- ============ SLIDE 1 — TITLE ============ -->
+  <section class="slide title-slide" data-title="Title"
+    data-note="Welcome to Day 5 -- the day agents grow up and go to work in the real world, where the stakes are real. Days 1-4 built the machine: models, transformers, agents, frameworks, task automation, and teams of agents. Today, Module 9, we point all of that at three domains where being wrong is expensive: FINANCE, HEALTHCARE and CYBERSECURITY. The engineering doesn't change -- it's the same ground-reason-structure-guardrail-human loop you already know -- but the BAR changes: accuracy, auditability, compliance, privacy and human oversight all become non-negotiable. The worked example all module is the FINANCIAL-REPORT INSIGHT AGENT -- your Lab 5.1: an agent that reads a company's financial report, extracts and grounds the key figures, flags risks, and produces a structured, cited summary for a human analyst -- and, crucially, NEVER gives investment advice and NEVER trades. That last point is the theme of the whole day: in high-stakes domains, agents are ASSISTIVE, not autonomous. By the end you'll know how to build an agent that's genuinely useful in a regulated, high-consequence setting -- and where the human must stay in control.">
+    <div class="body center">
+      <div class="kicker"><span class="dot"></span> 5-Day Course &nbsp;&middot;&nbsp; <span class="sub">Day 5 &middot; Module 9 of 10</span></div>
+      <h1>Agents in <span class="accent">Finance, Health &amp; Cyber</span></h1>
+      <p class="subtitle">High-stakes domains, a higher bar &mdash; and the <b>financial-report insight agent</b> that assists, never decides.</p>
+      <div class="rule"></div>
+      <div class="title-meta">
+        <span class="pill gold">Practitioner</span>
+        <span class="pill green">Advanced &amp; Responsible</span>
+        <span class="pill ghost" style="color:#c7cbf0;border-color:rgba(255,255,255,.3)">~75 min &middot; pairs with Module 9 labs</span>
+      </div>
+      <p class="trainer">Trainer: <b>Rajesh Gheware</b> &middot; 25+ yrs (JPMorgan Chase &middot; Deutsche Bank &middot; Morgan Stanley) &middot; 5,000+ trained &middot; 4.91/5</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 2 — AGENDA ============ -->
+  <section class="slide" data-title="What we'll cover"
+    data-note="Map the hour. Start with the shift: from general-purpose agents to high-stakes DOMAINS, and what changes when you get there -- the new bar of accuracy, auditability, compliance, privacy and oversight. Then the reusable shape: the domain-agent pattern, which is just the days 3-4 loop with the rigor turned up. Then the deep dive on FINANCE and the flagship worked example -- the financial-report insight agent, in a diagram, a trace and a code peek -- which is your Lab 5.1. Then shorter deep dives on HEALTHCARE (assistive, never diagnostic) and CYBERSECURITY (the SOC copilot). Then the cross-cutting disciplines that every high-stakes agent needs: grounding with RAG and citations, structured output and audit trails, and data privacy and compliance. Then the golden rule -- assistive, not autonomous -- and the judgement of when to trust an agent here and when not. Throughline for the whole day: the value is real, but so is the harm -- in these domains, the human stays in control of anything consequential.">
+    <div class="kicker"><span class="dot"></span> Day 5 &middot; Module 9 <span class="sub">— Agents in Finance, Healthcare &amp; Cybersecurity</span></div>
+    <h2 class="title">What we&rsquo;ll cover</h2>
+    <div class="body">
+      <div class="grid3">
+        <div class="card"><h3>&#9312; High-stakes domains</h3><p>The shift to regulated, high-consequence settings &mdash; and the <b>new bar</b>.</p></div>
+        <div class="card"><h3>&#9313; The domain-agent pattern</h3><p>The days 3&ndash;4 loop with the <b>rigor turned up</b>.</p></div>
+        <div class="card gold"><h3>&#9314; The finance agent</h3><p>The financial-report insight agent &mdash; your <b>Lab 5.1</b>.</p></div>
+        <div class="card cyan"><h3>&#9315; Health &amp; cyber</h3><p>Assistive clinical support &amp; the <b>SOC copilot</b>.</p></div>
+        <div class="card cyan"><h3>&#9316; Cross-cutting</h3><p><b>Grounding</b>, auditability, privacy &amp; compliance.</p></div>
+        <div class="card gold"><h3>&#9317; Assistive, not autonomous</h3><p>The golden rule &mdash; and when to <b>trust</b> an agent here.</p></div>
+      </div>
+      <p class="callout" style="margin-top:18px">&#129504; <b>The throughline:</b> the value is real, but so is the harm. In finance, health &amp; cyber, the human stays in control of anything <b>consequential</b> &mdash; the agent <b>informs</b>, it does not decide.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 3 — FROM GENERAL TO HIGH-STAKES ============ -->
+  <section class="slide" data-title="From general to high-stakes"
+    data-note="Anchor the Day 4 to Day 5 shift. Everything you've built so far -- the email agent, the customer-service team -- lives in a forgiving world: a wrong draft is edited, a mis-routed ticket is re-routed, and the cost of an error is small and catchable. Day 5 moves into domains where that's not true. In FINANCE, a wrong number in a report summary or an unsupervised trade can cost millions and breach regulation. In HEALTHCARE, a wrong clinical inference can harm a patient, and the data is protected by law. In CYBERSECURITY, a missed alert is a breach and an over-eager auto-remediation can take down production. The capability is exactly the same -- these are still agents that ground, reason, use tools and act. What changes is the CONSEQUENCE of being wrong, and therefore the amount of engineering rigor and human oversight you must wrap around them. Frame it plainly: Day 5 isn't about new AI; it's about DEPLOYING the AI you have where mistakes are expensive -- and doing it responsibly. Set up the next slide: so what exactly is the higher bar?">
+    <div class="kicker"><span class="dot"></span> Day 4 built capability &mdash; Day 5 raises the stakes</div>
+    <h2 class="title">From a forgiving world to a high-stakes one</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card cyan"><h3>&#128172; The forgiving world (so far)</h3>
+          <ul>
+            <li>A wrong draft is <b>edited</b>; a mis-routed ticket is <b>re-routed</b></li>
+            <li>Errors are <b>small, cheap &amp; catchable</b></li>
+            <li>Great for learning the loop and shipping everyday value</li>
+          </ul>
+        </div>
+        <div class="card amber"><h3>&#9888;&#65039; The high-stakes world (today)</h3>
+          <ul>
+            <li><b>Finance:</b> a wrong figure or an unsupervised trade &mdash; millions, and regulation</li>
+            <li><b>Health:</b> a wrong inference harms a patient; data is protected by law</li>
+            <li><b>Cyber:</b> a missed alert is a breach; a bad auto-fix takes down production</li>
+          </ul>
+        </div>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#129504; <b>Same capability, higher consequence.</b> Day 5 isn&rsquo;t new AI &mdash; it&rsquo;s <b>deploying</b> the agents you have where mistakes are expensive, wrapped in the rigor and oversight that makes them <b>safe</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 4 — WHAT CHANGES: THE NEW BAR ============ -->
+  <section class="slide" data-title="The new bar"
+    data-note="Make the higher bar concrete -- five things become non-negotiable in a high-stakes domain, where in the forgiving world they were nice-to-haves. ACCURACY & GROUNDING: every claim must be correct and traceable to a source -- a hallucinated revenue figure or drug interaction is unacceptable, so answers must be grounded in real data, not the model's memory. AUDITABILITY: you must be able to show WHY the agent said what it said -- a regulator, an auditor or a doctor needs the trail: which sources, which steps, which figures. COMPLIANCE: the domain has rules -- SEC/financial regulation, HIPAA/health privacy, security standards -- and the agent's behavior must respect them. PRIVACY: the data is sensitive -- financial records, PHI, security logs -- and must be minimized, protected and not leaked to external services. HUMAN OVERSIGHT: a qualified human -- an analyst, a clinician, a security engineer -- reviews and owns any consequential decision; the agent assists, it doesn't decide. Stress: none of these are new TECHNIQUES -- you learned grounding, structured output, validation and human-in-the-loop on days 3-4. What's new is that here they're MANDATORY, not optional. The domain raises the floor.">
+    <div class="kicker"><span class="dot"></span> What becomes non-negotiable</div>
+    <h2 class="title">The new bar for a high-stakes agent</h2>
+    <div class="body">
+      <div class="grid3">
+        <div class="card cyan"><h3>&#127919; Accuracy &amp; grounding</h3><p>Every claim correct &amp; <b>traceable to a source</b> &mdash; no hallucinated figures.</p></div>
+        <div class="card"><h3>&#128220; Auditability</h3><p>Show <b>why</b> it said what it said &mdash; sources, steps, figures.</p></div>
+        <div class="card"><h3>&#9878;&#65039; Compliance</h3><p>Respect the domain&rsquo;s <b>rules</b> &mdash; financial, health-privacy, security.</p></div>
+        <div class="card blue"><h3>&#128274; Privacy</h3><p>Sensitive data <b>minimized, protected</b>, never leaked externally.</p></div>
+        <div class="card gold"><h3>&#128100; Human oversight</h3><p>A qualified human <b>owns</b> any consequential decision.</p></div>
+        <div class="card amber"><h3>&#129504; Same skills, mandatory</h3><p>Grounding, structure, validation, HITL &mdash; now <b>required</b>, not optional.</p></div>
+      </div>
+      <p class="callout warn" style="margin-top:12px">&#128161; You already learned every one of these on Days 3&ndash;4. The domain doesn&rsquo;t need new techniques &mdash; it <b>raises the floor</b> and makes them mandatory.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 5 — THE DOMAIN-AGENT PATTERN (CENTERPIECE) ============ -->
+  <section class="slide" data-title="The domain-agent pattern"
+    data-note="The reusable shape -- spend time here. Every high-stakes domain agent follows the same pipeline, which is the days 3-4 loop with two stages hardened. GROUND: pull the domain facts from authoritative sources -- the filing, the patient record, the log -- via tools and RAG; never reason from the model's memory. REASON: the LLM does the domain work -- analyze the figures, summarize the case, triage the alert. STRUCTURE + CITE: emit a structured, machine-checkable output where every conclusion carries a CITATION back to its source -- this is what makes it auditable. GUARDRAIL: enforce the domain's hard limits -- no investment advice, no autonomous diagnosis, no auto-remediation of production -- often by simply NOT giving the agent the dangerous tool. HUMAN: a qualified expert reviews the structured, cited output and owns the decision. Walk the arrows. Then the key message: notice this is EXACTLY the email-agent pipeline from Module 7 -- trigger, gather, draft, validate, approve -- with grounding and citation hardened and the guardrail made domain-specific. You're not learning a new architecture; you're applying the one you have with discipline. Every lab today maps onto this.">
+    <div class="kicker"><span class="dot"></span> The reusable shape &middot; days 3&ndash;4, hardened</div>
+    <h2 class="title">The domain-agent pattern</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 250" role="img" aria-label="The domain-agent pattern: ground in authoritative sources, reason, produce structured cited output, enforce guardrails, then a human expert owns the decision">
+          <defs><marker id="da5" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker></defs>
+          <rect x="14" y="72" width="150" height="80" rx="12" fill="#ecfeff" stroke="#06b6d4" stroke-width="2.5"/>
+          <text x="89" y="104" text-anchor="middle" font-size="14" font-weight="700" fill="#0e7490">Ground</text>
+          <text x="89" y="124" text-anchor="middle" font-size="9.5" fill="#5b5f7a">sources / RAG</text>
+          <rect x="184" y="72" width="150" height="80" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="2.5"/>
+          <text x="259" y="100" text-anchor="middle" font-size="14" font-weight="700" fill="#312e81">Reason</text>
+          <text x="259" y="120" text-anchor="middle" font-size="9.5" fill="#5b5f7a">the domain work</text>
+          <text x="259" y="136" text-anchor="middle" font-size="8.5" fill="#4f46e5">(days 3-4 loop)</text>
+          <rect x="354" y="72" width="160" height="80" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="434" y="100" text-anchor="middle" font-size="13.5" font-weight="700" fill="#312e81">Structure + cite</text>
+          <text x="434" y="122" text-anchor="middle" font-size="9.5" fill="#5b5f7a">auditable output</text>
+          <rect x="534" y="72" width="150" height="80" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="2.5"/>
+          <text x="609" y="100" text-anchor="middle" font-size="13.5" font-weight="700" fill="#92400e">Guardrail</text>
+          <text x="609" y="122" text-anchor="middle" font-size="9.5" fill="#5b5f7a">domain hard limits</text>
+          <text x="609" y="138" text-anchor="middle" font-size="8.5" fill="#b45309">no advice / no auto-act</text>
+          <rect x="704" y="72" width="150" height="80" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="2.5"/>
+          <text x="779" y="100" text-anchor="middle" font-size="13.5" font-weight="700" fill="#92400e">&#128100; Human</text>
+          <text x="779" y="122" text-anchor="middle" font-size="9.5" fill="#5b5f7a">expert owns it</text>
+          <rect x="874" y="82" width="112" height="60" rx="11" fill="#059669" stroke="#047857" stroke-width="2"/>
+          <text x="930" y="108" text-anchor="middle" font-size="12.5" font-weight="700" fill="#fff">Decision</text>
+          <text x="930" y="127" text-anchor="middle" font-size="9" fill="#d1fae5">owned by a human</text>
+          <path d="M164 112 L182 112" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#da5)"/>
+          <path d="M334 112 L352 112" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#da5)"/>
+          <path d="M514 112 L532 112" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#da5)"/>
+          <path d="M684 112 L702 112" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#da5)"/>
+          <path d="M854 112 L872 112" stroke="#059669" stroke-width="2.5" marker-end="url(#da5)"/>
+        </svg>
+        <figcaption>Exactly Module 7&rsquo;s pipeline &mdash; with <b>grounding &amp; citation hardened</b> and the <b>guardrail made domain-specific</b>. Not a new architecture; the one you have, applied with discipline.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 6 — FINANCE: THE LANDSCAPE ============ -->
+  <section class="slide" data-title="Finance — the landscape"
+    data-note="Open the finance deep dive with the landscape -- where agents genuinely help in financial services. REPORT & FILING ANALYSIS: read a 10-K, an earnings release or a research note and extract the key figures, trends and risks -- the tedious first-pass reading a junior analyst does, at scale. This is your Lab 5.1. RISK & COMPLIANCE: scan transactions, communications or portfolios against policy -- flag anomalies, potential breaches, KYC/AML signals -- for a human to review. FRAUD DETECTION SUPPORT: surface suspicious patterns and assemble the evidence for an investigator. OPERATIONS: reconcile, summarize, draft client communications (grounded, human-approved -- exactly Module 7). Then the crucial boundary, and say it clearly because it's also a hard rule for you as an assistant: these agents INFORM analysts and investors; they do NOT give personalized investment advice and they do NOT execute trades autonomously. Automated trading is a specialised, heavily-regulated discipline that is out of scope here and dangerous to hand to a general LLM agent. The safe, valuable sweet spot is ANALYSIS and SUMMARIZATION with a human deciding -- which is exactly what the insight agent does. Set up the worked example.">
+    <div class="kicker"><span class="dot"></span> Finance &middot; where agents help</div>
+    <h2 class="title">Finance &mdash; the landscape</h2>
+    <div class="body">
+      <div class="grid4">
+        <div class="card cyan"><h3>&#128202; Report &amp; filing analysis</h3><p>Read a 10-K / earnings release &mdash; extract figures, trends, risks. <b>Your Lab 5.1.</b></p></div>
+        <div class="card"><h3>&#128737;&#65039; Risk &amp; compliance</h3><p>Scan for anomalies, policy breaches, KYC/AML signals &mdash; for a human to review.</p></div>
+        <div class="card"><h3>&#128269; Fraud support</h3><p>Surface suspicious patterns &amp; assemble evidence for an investigator.</p></div>
+        <div class="card"><h3>&#128188; Operations</h3><p>Reconcile, summarize, draft client comms &mdash; grounded &amp; human-approved.</p></div>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#9940; <b>The boundary:</b> these agents <b>inform</b> analysts &amp; investors &mdash; they do <b>not</b> give personalized investment advice and do <b>not</b> execute trades. The valuable, safe sweet spot is <b>analysis &amp; summarization with a human deciding</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 7 — FINANCIAL-REPORT INSIGHT AGENT (CENTERPIECE) ============ -->
+  <section class="slide" data-title="The financial-report insight agent"
+    data-note="Now the flagship worked example that IS your Lab 5.1: a financial-report insight agent. Walk the pipeline end to end with a concrete case -- a quarterly report lands. GROUND: the agent uses tools to pull the actual numbers from the report -- revenue, net income, margins, cash -- and retrieves the prior period for comparison; every figure comes from the document, not the model's memory. ANALYZE: it computes the derived metrics a human cares about -- year-over-year growth, margin change, notable movements -- and flags anomalies (a margin that collapsed, debt that spiked). STRUCTURE + CITE: it emits a structured insight summary -- each finding as a field with the SOURCE it came from (page/line/figure), so an analyst can verify every claim in seconds. VALIDATE: it checks the numbers are grounded and internally consistent, and that it produced no forbidden content. GUARDRAIL: the output is explicitly informational -- it contains NO buy/sell recommendation and the agent has NO trading tool, so it literally cannot act. HUMAN: a financial analyst reviews the cited summary and makes any decision. Point at the guardrail: withholding the trade tool and banning advice is the same draft-not-send discipline from Module 7, applied to finance. Every concept in the module, in one flow -- and it's exactly what they'll build.">
+    <div class="kicker"><span class="dot"></span> The worked example &middot; your Lab 5.1</div>
+    <h2 class="title">The financial-report insight agent, end to end</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 250" role="img" aria-label="A financial report is grounded by extracting figures, analyzed into derived metrics and flags, structured into a cited summary, validated, and reviewed by a human analyst; the agent has no trading tool">
+          <defs><marker id="fi7" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker></defs>
+          <rect x="12" y="90" width="140" height="70" rx="11" fill="#312e81" stroke="#06b6d4" stroke-width="2.5"/>
+          <text x="82" y="118" text-anchor="middle" font-size="12.5" font-weight="700" fill="#67e8f9">Report (10-Q)</text>
+          <text x="82" y="137" text-anchor="middle" font-size="9" fill="#c7cbf0">revenue, income...</text>
+          <rect x="180" y="90" width="140" height="70" rx="11" fill="#ecfeff" stroke="#06b6d4" stroke-width="2"/>
+          <text x="250" y="114" text-anchor="middle" font-size="12.5" font-weight="700" fill="#0e7490">Ground</text>
+          <text x="250" y="133" text-anchor="middle" font-size="9" fill="#5b5f7a">extract the figures</text>
+          <rect x="348" y="90" width="140" height="70" rx="11" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="418" y="114" text-anchor="middle" font-size="12.5" font-weight="700" fill="#312e81">Analyze</text>
+          <text x="418" y="133" text-anchor="middle" font-size="9" fill="#5b5f7a">YoY, margins, flags</text>
+          <rect x="516" y="90" width="150" height="70" rx="11" fill="#eef2ff" stroke="#4f46e5" stroke-width="2.5"/>
+          <text x="591" y="114" text-anchor="middle" font-size="12.5" font-weight="700" fill="#312e81">Cite + validate</text>
+          <text x="591" y="133" text-anchor="middle" font-size="9" fill="#5b5f7a">every figure sourced</text>
+          <rect x="694" y="90" width="150" height="70" rx="11" fill="#fffbeb" stroke="#f59e0b" stroke-width="2.5"/>
+          <text x="769" y="114" text-anchor="middle" font-size="12" font-weight="700" fill="#92400e">&#128100; Analyst</text>
+          <text x="769" y="133" text-anchor="middle" font-size="9" fill="#5b5f7a">reviews &amp; decides</text>
+          <rect x="872" y="76" width="116" height="44" rx="9" fill="#fee2e2" stroke="#b91c1c" stroke-width="1.8"/>
+          <text x="930" y="94" text-anchor="middle" font-size="10.5" font-weight="700" fill="#b91c1c">NO trade tool</text>
+          <text x="930" y="110" text-anchor="middle" font-size="8.5" fill="#b91c1c">no advice</text>
+          <rect x="872" y="130" width="116" height="44" rx="9" fill="#ecfdf5" stroke="#059669" stroke-width="1.8"/>
+          <text x="930" y="148" text-anchor="middle" font-size="10.5" font-weight="700" fill="#047857">Insight</text>
+          <text x="930" y="164" text-anchor="middle" font-size="8.5" fill="#047857">cited summary</text>
+          <path d="M152 125 L178 125" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#fi7)"/>
+          <path d="M320 125 L346 125" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#fi7)"/>
+          <path d="M488 125 L514 125" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#fi7)"/>
+          <path d="M666 125 L692 125" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#fi7)"/>
+          <path d="M844 118 L870 106" stroke="#b91c1c" stroke-width="1.6" marker-end="url(#fi7)"/>
+          <path d="M844 132 L870 144" stroke="#059669" stroke-width="1.6" marker-end="url(#fi7)"/>
+        </svg>
+        <figcaption>Ground every figure &rarr; analyze &rarr; a <b>cited, validated</b> summary &rarr; a human analyst decides. The agent has <b>no trading tool</b> and gives <b>no advice</b> &mdash; the draft-not-send guardrail, applied to finance.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 8 — INSIGHT AGENT TRACE ============ -->
+  <section class="slide" data-title="Insight agent trace"
+    data-note="Make it concrete with a run trace -- the same ReAct trace shape you've seen since Module 5, now doing financial analysis. Walk it. The quarterly report triggers the run. The agent reasons it needs the actual figures and calls a tool to extract revenue and net income from the document -- the observation carries the real numbers AND their source location. It calls again for the prior period. It reasons and computes the derived metric -- revenue up 12% year over year, but net margin down -- and flags the margin as noteworthy. It assembles a STRUCTURED insight with each figure carrying its citation. Validation confirms every number is grounded in the document and the output contains no buy/sell language. And the final line is the key one: the agent returns an insight summary flagged for analyst review -- it did NOT recommend an action and had no tool to trade. Point at that last line: the output is analysis plus a needs_review flag, never a decision. This is exactly what scrolls past in the lab. Emphasise how the citations make it auditable -- an analyst can click straight to the source for any figure.">
+    <div class="kicker"><span class="dot"></span> The run, made visible</div>
+    <h2 class="title">The insight agent&rsquo;s trace</h2>
+    <div class="body">
+      <div class="terminal">
+<span class="you">Trigger:</span> Q3 report for ACME Corp &mdash; analyze key figures.
+
+<span class="kw">Thought:</span> I need the actual numbers, not my memory.
+<span class="kw">Action:</span> <span class="fn">extract_figure</span>(<span class="str">"revenue"</span>)
+<span class="out">Observation: {value: 120.0M, source: "p4, income stmt"}</span>
+
+<span class="kw">Action:</span> <span class="fn">extract_figure</span>(<span class="str">"net_income"</span>)
+<span class="out">Observation: {value: 9.0M, source: "p4, income stmt"}</span>
+
+<span class="kw">Thought:</span> Compute YoY vs last year (107.1M) and the margin.
+<span class="kw">Action:</span> <span class="fn">compute</span>(<span class="str">"(120-107.1)/107.1*100"</span>)   <span class="out">-> 12.0%  revenue growth</span>
+
+<span class="kw">Draft insight:</span> <span class="you">"Revenue +12% YoY [p4]; net margin 7.5%, down from 9.1% [p4] -- FLAG."</span>
+<span class="out">Validation: OK -- every figure cited; no buy/sell language.</span>
+
+<span class="kw">Final:</span> <span class="fn">status</span>=<span class="str">"needs_review"</span>  <span class="com"># analysis only -- no recommendation, no trade tool</span>
+      </div>
+      <p class="callout warn" style="margin-top:12px">&#128073; The output is <b>analysis + a &ldquo;needs review&rdquo; flag</b>, every figure <b>cited</b> to the document &mdash; never a recommendation. An analyst can click straight to the source for any number.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 9 — INSIGHT AGENT IN CODE ============ -->
+  <section class="slide" data-title="Insight agent in code"
+    data-note="A short, illustrative code peek -- the shape of Lab 5.1 in the LangChain idiom you know. Point out the four familiar pieces. TOOLS: extract_figure pulls a number AND its source from the document, and compute does exact arithmetic -- both defined with @tool exactly as in Module 6, and note the safe calculator, never bare eval, because this is financial math. THE AGENT: create_react_agent binds the model to those tools. THE GUARDRAIL -- and this is the whole point: the tools list contains extract_figure and compute, but there is deliberately NO place_trade and NO give_advice tool. Just as the email agent couldn't send, this agent literally cannot trade or advise; it can only read, compute and summarize. THE OUTPUT: a structured insight where every figure carries its citation, returned with needs_review -- a human analyst owns any decision. Stress the design line on the tools list: in a high-stakes domain, your strongest safety control is the tool you DON'T provide. Everything here is code they've written before; today they point it at a financial report and harden the guardrail. Keep it high level -- the lab is where they wire it up.">
+    <div class="kicker"><span class="dot"></span> Illustrative &middot; the shape of Lab 5.1</div>
+    <h2 class="title">The insight agent, in code</h2>
+    <div class="body">
+      <div class="terminal">
+<span class="com"># Tools read &amp; compute. Note what's MISSING: no place_trade, no give_advice.</span>
+<span class="fn">@tool</span>
+<span class="kw">def</span> <span class="fn">extract_figure</span>(name: str) -> dict:
+    <span class="str">"""Pull a reported figure AND its source location from the filing."""</span>
+    <span class="kw">return</span> report.<span class="fn">lookup</span>(name)          <span class="com"># {value, source} -- grounded, cited</span>
+
+tools = [extract_figure, compute]           <span class="com"># read-only -- the agent CANNOT trade or advise</span>
+agent = <span class="fn">create_react_agent</span>(llm, tools, insight_prompt)
+executor = <span class="fn">AgentExecutor</span>(agent=agent, tools=tools, max_iterations=<span class="str">8</span>)
+
+insight = executor.<span class="fn">invoke</span>({<span class="str">"input"</span>: report})   <span class="com"># structured, CITED summary</span>
+<span class="kw">assert</span> insight.<span class="fn">every_figure_cited</span>()          <span class="com"># auditability guardrail</span>
+<span class="fn">send_to_analyst</span>(insight)                     <span class="com"># a human reviews &amp; decides</span>
+      </div>
+      <p class="callout warn" style="margin-top:12px">&#128073; In a high-stakes domain your strongest safety control is the <b>tool you don&rsquo;t provide</b>. No <span class="mono">place_trade</span>, no <span class="mono">give_advice</span> &mdash; the agent can only <b>read, compute &amp; summarize</b>. A human owns the decision.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 10 — HEALTHCARE: LANDSCAPE & NON-NEGOTIABLES ============ -->
+  <section class="slide" data-title="Healthcare — the landscape"
+    data-note="Shift to healthcare -- the domain with the highest stakes and the strictest rules. Where agents genuinely help, all as ASSISTANTS to clinicians. CLINICAL DOCUMENTATION: summarize a patient's notes, draft a discharge summary, turn a consultation into structured notes -- saving clinicians the paperwork that burns them out. LITERATURE & GUIDELINES: retrieve and summarize the relevant research or care guideline for a clinician's question -- grounded, cited. TRIAGE & INTAKE SUPPORT: gather symptoms, structure intake, surface what a clinician should look at -- routing attention, not making calls. ADMIN: scheduling, prior-authorization drafting, billing-code suggestion for human confirmation. Then the non-negotiables, stated firmly -- healthcare has bright lines. The agent must NEVER autonomously diagnose or prescribe -- it surfaces information for a licensed clinician who decides. Patient data is PHI, protected by law (HIPAA and equivalents) -- it must be minimized, secured and not sent to services that aren't compliant. And a human clinician is always in the loop on anything clinical. Say it plainly, and note it's also a rule for you as an assistant: agents in health are decision SUPPORT, never the decision-maker.">
+    <div class="kicker"><span class="dot"></span> Healthcare &middot; assist the clinician</div>
+    <h2 class="title">Healthcare &mdash; help, and hard lines</h2>
+    <div class="body">
+      <div class="grid4">
+        <div class="card cyan"><h3>&#128221; Documentation</h3><p>Summarize notes, draft discharge summaries &mdash; ease the paperwork burden.</p></div>
+        <div class="card"><h3>&#128218; Literature &amp; guidelines</h3><p>Retrieve &amp; summarize research / care guidelines &mdash; grounded &amp; cited.</p></div>
+        <div class="card"><h3>&#129658; Triage support</h3><p>Gather symptoms, structure intake, <b>surface</b> what a clinician should see.</p></div>
+        <div class="card"><h3>&#128197; Admin</h3><p>Scheduling, prior-auth drafts, code suggestions &mdash; for human confirmation.</p></div>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#9940; <b>Hard lines:</b> never <b>autonomously diagnose or prescribe</b>; patient data is <b>PHI</b> (protected by law) &mdash; minimize &amp; secure it; a licensed clinician is <b>always</b> in the loop. Health agents are <b>decision support</b>, never the decision-maker.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 11 — HEALTHCARE: ASSISTIVE NOT AUTONOMOUS ============ -->
+  <section class="slide" data-title="Assistive, not autonomous"
+    data-note="Drive home the single most important principle for healthcare -- and really for the whole day -- with a clean contrast. On the left, the WRONG framing: an autonomous agent that reads symptoms and outputs a diagnosis or a prescription, acting as if it were the clinician. This is unsafe, usually illegal, and it fails the moment the model is confidently wrong about a rare presentation -- which it will be. On the right, the RIGHT framing: an assistive agent that does the grounded, tedious work -- pull the history, summarize the notes, retrieve the relevant guideline, structure the intake, surface the differential the clinician might consider -- and hands a clear, cited briefing to the human, who examines the patient and makes the call. Same underlying capability; completely different safety profile. Why assistive wins: it captures most of the value (the clinician's time saved, information surfaced) while keeping a qualified human -- who carries the training, the liability and the accountability -- firmly in control of the decision. Generalise it: across every high-stakes domain, the pattern is the agent does the 90% of grounded legwork and the human owns the 10% that's the actual judgement. Assistive, not autonomous, isn't a limitation you tolerate -- it's the design that makes these agents deployable at all.">
+    <div class="kicker"><span class="dot"></span> The principle for the whole day</div>
+    <h2 class="title">Assistive, not autonomous</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card amber"><h3>&#9940; Autonomous (wrong)</h3>
+          <ul>
+            <li>Reads symptoms &rarr; <b>outputs a diagnosis / prescription</b></li>
+            <li>Acts as if it were the clinician</li>
+            <li>Unsafe, often illegal &mdash; and fails on the rare case</li>
+          </ul>
+        </div>
+        <div class="card cyan"><h3>&#9989; Assistive (right)</h3>
+          <ul>
+            <li>Pulls history, summarizes notes, <b>retrieves the guideline</b></li>
+            <li><b>Surfaces</b> a cited briefing &mdash; the clinician examines &amp; decides</li>
+            <li>Most of the value, with a qualified human in control</li>
+          </ul>
+        </div>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#129504; The pattern across <b>every</b> high-stakes domain: the agent does the <b>90% of grounded legwork</b>; the human owns the <b>10% that&rsquo;s judgement</b>. Assistive-not-autonomous is what makes these agents <b>deployable at all</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 12 — CYBERSECURITY: THE LANDSCAPE ============ -->
+  <section class="slide" data-title="Cybersecurity — the landscape"
+    data-note="Shift to cybersecurity -- a domain drowning in data and short on analysts, which makes it a natural fit for agents as copilots. Where they help. ALERT TRIAGE: a security operations center gets thousands of alerts a day, most of them noise; an agent can enrich each alert with context, correlate related ones, assess likely severity and summarize it so a human analyst spends time on the real threats, not the noise. This is the SOC copilot -- the worked pattern next slide. LOG & INCIDENT ANALYSIS: sift huge volumes of logs to reconstruct what happened, build a timeline, and draft the incident summary. THREAT INTELLIGENCE: gather and summarize intel on a new CVE or actor, mapped to your environment. PHISHING & REPORT TRIAGE: assess reported emails and user reports. Then the boundary, which mirrors the other domains. The agent ASSISTS the analyst -- it triages, enriches and summarizes; it does NOT autonomously remediate. Auto-blocking an IP or isolating a host feels tempting, but an over-eager automated response can take down production or be weaponised by an attacker who triggers false alarms. Consequential actions -- block, isolate, disable -- go through a human, exactly like the trade tool and the prescription. Value is in speed and coverage of ANALYSIS; the human still pulls the trigger.">
+    <div class="kicker"><span class="dot"></span> Cybersecurity &middot; the SOC copilot</div>
+    <h2 class="title">Cybersecurity &mdash; the landscape</h2>
+    <div class="body">
+      <div class="grid4">
+        <div class="card cyan"><h3>&#128680; Alert triage</h3><p>Enrich, correlate &amp; rank thousands of alerts &mdash; humans see the <b>real threats</b>.</p></div>
+        <div class="card"><h3>&#128220; Log &amp; incident analysis</h3><p>Reconstruct the timeline, draft the <b>incident summary</b>.</p></div>
+        <div class="card"><h3>&#128225; Threat intel</h3><p>Summarize a new CVE / actor, <b>mapped to your environment</b>.</p></div>
+        <div class="card"><h3>&#128231; Phishing triage</h3><p>Assess reported emails &amp; user reports for an analyst.</p></div>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#9940; <b>The boundary:</b> the agent <b>triages, enriches &amp; summarizes</b> &mdash; it does <b>not</b> autonomously remediate. Auto-blocking or isolating can take down production or be weaponised; <b>block / isolate / disable go through a human</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 13 — CYBERSECURITY: THE ALERT-TRIAGE COPILOT ============ -->
+  <section class="slide" data-title="The alert-triage copilot"
+    data-note="Make the cyber pattern concrete with the alert-triage copilot -- and notice it's the same domain-agent pipeline, just with security tools. An alert fires. GATHER/ENRICH: the agent pulls context -- who is this asset, is this IP known-bad on threat intel, are there related alerts, what does the log show around this event -- via read-only tools. ASSESS: it reasons about likely severity and whether it's probably a true positive or noise, grounded in that enriched context. STRUCTURE: it emits a structured triage -- severity, a one-line assessment, the evidence, and a RECOMMENDED action -- each backed by what it found. RECOMMEND, DON'T ACT: the recommendation (e.g. 'isolate host X') is exactly that -- a recommendation the analyst approves or rejects; the agent has no tool to isolate anything itself. HUMAN: the analyst reviews the enriched, structured triage in seconds instead of minutes and pulls the trigger on any response. Walk the little diagram. Then the payoff: the copilot doesn't reduce the analyst's authority -- it removes the tedious enrichment work so the analyst's judgement is spent where it matters, on more alerts, faster. Same shape as the finance and health agents: ground, assess, structure, recommend -- human decides.">
+    <div class="kicker"><span class="dot"></span> Cyber &middot; same pipeline, security tools</div>
+    <h2 class="title">The alert-triage copilot</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 232" role="img" aria-label="A security alert is enriched with context, assessed for severity, structured into a triage with a recommended action, which a human analyst approves; the agent cannot remediate itself">
+          <defs><marker id="cy13" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker></defs>
+          <rect x="14" y="84" width="140" height="66" rx="11" fill="#312e81" stroke="#06b6d4" stroke-width="2.5"/>
+          <text x="84" y="111" text-anchor="middle" font-size="12.5" font-weight="700" fill="#67e8f9">Alert fires</text>
+          <text x="84" y="130" text-anchor="middle" font-size="9" fill="#c7cbf0">one of thousands</text>
+          <rect x="182" y="84" width="150" height="66" rx="11" fill="#ecfeff" stroke="#06b6d4" stroke-width="2"/>
+          <text x="257" y="108" text-anchor="middle" font-size="12" font-weight="700" fill="#0e7490">Enrich</text>
+          <text x="257" y="127" text-anchor="middle" font-size="8.8" fill="#5b5f7a">asset, intel, logs</text>
+          <rect x="360" y="84" width="150" height="66" rx="11" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="435" y="108" text-anchor="middle" font-size="12" font-weight="700" fill="#312e81">Assess</text>
+          <text x="435" y="127" text-anchor="middle" font-size="8.8" fill="#5b5f7a">severity, true positive?</text>
+          <rect x="538" y="84" width="160" height="66" rx="11" fill="#eef2ff" stroke="#4f46e5" stroke-width="2.5"/>
+          <text x="618" y="108" text-anchor="middle" font-size="12" font-weight="700" fill="#312e81">Structured triage</text>
+          <text x="618" y="127" text-anchor="middle" font-size="8.8" fill="#5b5f7a">+ recommended action</text>
+          <rect x="726" y="84" width="140" height="66" rx="11" fill="#fffbeb" stroke="#f59e0b" stroke-width="2.5"/>
+          <text x="796" y="108" text-anchor="middle" font-size="12" font-weight="700" fill="#92400e">&#128100; Analyst</text>
+          <text x="796" y="127" text-anchor="middle" font-size="8.8" fill="#5b5f7a">approves the response</text>
+          <rect x="884" y="92" width="104" height="50" rx="10" fill="#fee2e2" stroke="#b91c1c" stroke-width="1.8"/>
+          <text x="936" y="112" text-anchor="middle" font-size="9.5" font-weight="700" fill="#b91c1c">no auto-</text>
+          <text x="936" y="127" text-anchor="middle" font-size="9.5" font-weight="700" fill="#b91c1c">remediate</text>
+          <path d="M154 117 L180 117" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#cy13)"/>
+          <path d="M332 117 L358 117" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#cy13)"/>
+          <path d="M510 117 L536 117" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#cy13)"/>
+          <path d="M698 117 L724 117" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#cy13)"/>
+          <path d="M866 117 L882 117" stroke="#b91c1c" stroke-width="1.8" marker-end="url(#cy13)"/>
+        </svg>
+        <figcaption>Same shape as finance &amp; health: <b>ground &rarr; assess &rarr; structure &rarr; recommend</b>, human decides. The copilot removes the tedious enrichment so the analyst&rsquo;s <b>judgement</b> covers more alerts, faster &mdash; it never remediates on its own.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 14 — GROUNDING: RAG & CITATIONS ============ -->
+  <section class="slide" data-title="Grounding & citations"
+    data-note="Now the cross-cutting disciplines every high-stakes agent needs -- start with grounding, the most important. In these domains the model's parametric memory is not just unreliable, it's dangerous: a hallucinated revenue figure, a made-up drug interaction, an invented CVE detail. The fix is GROUNDING -- the agent answers only from retrieved, authoritative sources, never from memory. Two mechanisms you already know. TOOLS pull exact facts from systems of record -- the filing, the EHR, the log store. RAG (retrieval-augmented generation, from Day 3) retrieves the relevant passages from a domain corpus -- guidelines, policies, prior filings, threat intel -- and the model reasons over THOSE, not its training. And the piece that makes it trustworthy in a regulated setting: CITATIONS. Every claim carries a pointer back to its source -- page, record, document -- so a human can verify it and an auditor can trace it. A grounded, cited answer is checkable; an ungrounded one is a liability dressed up as an answer. Tie back: this is Day 3's RAG and Module 7's gather-first discipline, now mandatory. The rule for high-stakes agents: if it isn't grounded and cited, it doesn't ship.">
+    <div class="kicker"><span class="dot"></span> Cross-cutting 1 &middot; ground everything</div>
+    <h2 class="title">Grounding: RAG &amp; citations</h2>
+    <div class="body">
+      <p class="lead">In these domains the model&rsquo;s memory isn&rsquo;t just unreliable &mdash; it&rsquo;s <b>dangerous</b>. The agent must answer <b>only from retrieved, authoritative sources</b>.</p>
+      <div class="grid3" style="margin-top:6px">
+        <div class="card cyan"><h3>&#128295; Tools for facts</h3><p>Exact figures from the <b>systems of record</b> &mdash; the filing, the record, the log.</p></div>
+        <div class="card"><h3>&#128218; RAG for knowledge</h3><p>Retrieve the relevant <b>passages</b> (guidelines, policy, intel); reason over those.</p></div>
+        <div class="card gold"><h3>&#128278; Citations</h3><p>Every claim points to its <b>source</b> &mdash; verifiable by a human, traceable by an auditor.</p></div>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#129504; Day 3&rsquo;s RAG and Module 7&rsquo;s gather-first, now <b>mandatory</b>. The rule for high-stakes agents: <b>if it isn&rsquo;t grounded and cited, it doesn&rsquo;t ship</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 15 — AUDITABILITY: STRUCTURED OUTPUT & THE AUDIT TRAIL ============ -->
+  <section class="slide" data-title="Auditability"
+    data-note="Cross-cutting discipline two: auditability. In a regulated domain, producing the right answer isn't enough -- you must be able to PROVE, after the fact, how the agent got there. A regulator asks why a transaction was flagged; a doctor asks what the summary was based on; an incident review asks what the triage saw. If you can't answer, the agent is unusable no matter how good it is. Two practices make an agent auditable. STRUCTURED OUTPUT -- from Module 7: every conclusion is a defined, machine-readable field with its citation, not a paragraph -- so each claim is individually inspectable and checkable. And the AUDIT TRAIL -- from Module 7/8's observability: log the whole run -- the trigger, every tool call and its observation, every figure retrieved, the reasoning, the final structured output, and the human's decision. Together they give you a complete, replayable record: for any conclusion, you can point to the exact source and the exact step that produced it. This is also what lets you IMPROVE the agent -- the trail shows you where it went wrong -- and what satisfies compliance. Tie it together: structured output makes each answer checkable; the audit trail makes the whole run accountable. In high-stakes domains, an unauditable agent is a non-starter.">
+    <div class="kicker"><span class="dot"></span> Cross-cutting 2 &middot; prove how it got there</div>
+    <h2 class="title">Auditability: structure &amp; the trail</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card cyan"><h3>&#128290; Structured output</h3><p>Every conclusion a <b>defined field with its citation</b> &mdash; individually inspectable &amp; checkable (Module 7).</p></div>
+        <div class="card"><h3>&#128203; The audit trail</h3><p>Log the whole run &mdash; trigger, tool calls, figures, reasoning, output, human decision (Module 7&ndash;8).</p></div>
+      </div>
+      <p class="callout" style="margin-top:14px">&#129504; Together: a complete, <b>replayable record</b> &mdash; for any conclusion, point to the exact source &amp; step. It satisfies <b>compliance</b>, and the trail is how you <b>debug &amp; improve</b> the agent. An unauditable high-stakes agent is a non-starter.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 16 — PRIVACY, COMPLIANCE & DATA HANDLING ============ -->
+  <section class="slide" data-title="Privacy & compliance"
+    data-note="Cross-cutting discipline three: privacy, compliance and data handling -- the part that's easy to overlook and expensive to get wrong. These domains run on the most sensitive data there is: financial records and MNPI, protected health information, security logs and credentials. Four disciplines. MINIMIZE: send the model only what the task needs -- redact or tokenize identifiers, don't dump a whole record when a summary field will do. Less exposed data is less risk. PROTECT: encrypt in transit and at rest, control access, and be deliberate about WHERE the data goes -- a general public LLM API may be the wrong place for PHI or MNPI; a compliant, private, or on-prem deployment (like the local models this course uses) may be required. Note this connects to why Day 1 started with local Ollama models. COMPLY: know the regime -- HIPAA for health, financial regulation and MNPI rules for finance, security and data-protection standards -- and design the agent to respect it, not bolt it on later. RETAIN & LOG carefully: audit trails are good, but they now contain sensitive data too, so they need the same protection. The one-liner: in high-stakes domains, data handling is a first-class design constraint, not an afterthought -- decide where the data can go before you build.">
+    <div class="kicker"><span class="dot"></span> Cross-cutting 3 &middot; the sensitive data</div>
+    <h2 class="title">Privacy, compliance &amp; data handling</h2>
+    <div class="body">
+      <div class="grid4">
+        <div class="card cyan"><h3>&#9986;&#65039; Minimize</h3><p>Send only what the task needs &mdash; <b>redact / tokenize</b> identifiers.</p></div>
+        <div class="card blue"><h3>&#128274; Protect</h3><p>Encrypt, control access, and be deliberate about <b>where data goes</b> (private / on-prem).</p></div>
+        <div class="card"><h3>&#9878;&#65039; Comply</h3><p>Know the regime &mdash; <b>HIPAA, financial &amp; security rules</b> &mdash; and design for it.</p></div>
+        <div class="card amber"><h3>&#128451;&#65039; Guard the logs</h3><p>Audit trails hold sensitive data too &mdash; <b>same protection</b>.</p></div>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#128161; It&rsquo;s why Day 1 started on <b>local models</b>: a public API may be the wrong place for PHI or MNPI. Data handling is a <b>first-class design constraint</b> &mdash; decide where the data can go <b>before</b> you build.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 17 — ASSISTIVE, NOT AUTONOMOUS (THE GOLDEN RULE) ============ -->
+  <section class="slide" data-title="The golden rule"
+    data-note="Consolidate the day's central rule into one memorable frame -- the human-authority spectrum. Picture a dial from fully manual on the left to fully autonomous on the right. In the forgiving domains of Day 4, you can slide fairly far right -- let the email agent draft and, as trust grows, even auto-send the easy cases. In the high-stakes domains of Day 5, you deliberately DON'T: the dial stays firmly on the left of any consequential action. The agent can be highly autonomous on the SAFE work -- gathering, grounding, computing, summarizing, drafting, recommending -- because none of that is irreversible. But the CONSEQUENTIAL act -- the trade, the diagnosis, the prescription, the host isolation, the money movement -- stays with a qualified, accountable human. This isn't timidity; it's the design that makes the agent both useful and safe: you get the full speed of automation on the 90% that's legwork, and full human control on the 10% that carries the risk and the liability. And the implementation is the simplest thing in the world, the same move from Module 7: don't give the agent the dangerous tool. No trade tool, no prescribe tool, no auto-remediate tool. Withholding the capability is stronger than any prompt instruction. The golden rule of Day 5: in high-stakes domains, agents are assistive, not autonomous -- and you enforce it by what you DON'T build.">
+    <div class="kicker"><span class="dot"></span> The golden rule of Day 5</div>
+    <h2 class="title">Assistive on judgement, autonomous on legwork</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card cyan"><h3>&#9889; Autonomous on the safe 90%</h3><p>Gather, ground, compute, summarize, draft, <b>recommend</b> &mdash; none of it irreversible.</p></div>
+        <div class="card gold"><h3>&#128100; Human on the risky 10%</h3><p>The trade, the diagnosis, the isolation, the money movement &mdash; a <b>qualified human</b> owns it.</p></div>
+      </div>
+      <p class="callout warn" style="margin-top:16px">&#128073; Enforce it the simplest way &mdash; the Module 7 move: <b>don&rsquo;t give the agent the dangerous tool</b>. No trade, no prescribe, no auto-remediate. Withholding the capability beats any prompt instruction. <b>Assistive, not autonomous &mdash; enforced by what you don&rsquo;t build.</b></p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 18 — WHEN TO TRUST AN AGENT HERE ============ -->
+  <section class="slide" data-title="When to trust it"
+    data-note="Give the practitioner's judgement for choosing high-stakes use cases well -- because even within these domains, some tasks are great fits and some are traps. A GOOD high-stakes fit has four properties: the work is grounded and checkable (the answer can be traced to a source and verified), the output is assistive (it informs a human who decides), errors are catchable before they cause harm (a human reviews, the action is reversible or gated), and the value is real (it saves expert time or surfaces things humans miss). Report analysis, clinical documentation, alert triage -- all four hold. A BAD fit inverts them: the task demands an autonomous, irreversible, high-stakes decision with no human in the loop -- autonomous trading, autonomous diagnosis, autonomous remediation of production. The tell is simple: if a single wrong output causes irreversible harm and no human sees it first, don't automate the decision -- at most, assist it. The senior move is to decompose: take the high-stakes workflow and hand the agent the grounded, assistive, checkable PARTS, while the human keeps the consequential decision. You rarely automate the whole thing; you automate the legwork and elevate the human to the judgement. Frame the transition to the last slide: and when it does go wrong -- because eventually it will -- what does that cost, and how do you contain it?">
+    <div class="kicker"><span class="dot"></span> Choosing the use case well</div>
+    <h2 class="title">When to trust an agent here &mdash; and when not</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card cyan"><h3>&#9989; A good high-stakes fit</h3>
+          <ul>
+            <li>Grounded &amp; <b>checkable</b> &mdash; traceable to a source</li>
+            <li><b>Assistive</b> &mdash; it informs a human who decides</li>
+            <li>Errors <b>catchable</b> &mdash; reviewed, reversible or gated</li>
+            <li>Real value &mdash; saves expert time, surfaces what humans miss</li>
+          </ul>
+        </div>
+        <div class="card amber"><h3>&#9940; A trap</h3>
+          <ul>
+            <li>Demands an <b>autonomous, irreversible</b> decision</li>
+            <li><b>No human</b> in the loop</li>
+            <li>A single wrong output causes <b>irreversible harm</b></li>
+            <li>Autonomous trading / diagnosis / remediation</li>
+          </ul>
+        </div>
+      </div>
+      <p class="callout warn" style="margin-top:12px">&#129504; The senior move: <b>decompose</b>. Hand the agent the grounded, assistive, checkable <b>parts</b>; keep the consequential decision with the human. Automate the legwork, <b>elevate the human</b> to the judgement.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 19 — FAILURE MODES & THE COST OF BEING WRONG ============ -->
+  <section class="slide" data-title="The cost of being wrong"
+    data-note="Close the engineering arc by naming the failure modes and what they cost -- because in these domains, being wrong isn't a bug ticket, it's a headline. Four to watch. HALLUCINATED FACTS: an invented figure, interaction or indicator presented with total confidence -- the deadliest failure here, and the reason grounding-and-citation is mandatory; the defence is never trust an ungrounded claim. AUTOMATION BIAS: humans over-trust a confident machine and rubber-stamp its output without really checking -- so the human-in-the-loop becomes a formality, not a safeguard; the defence is to make the agent SHOW ITS WORK (citations, structured evidence) so review is real, and to train reviewers to stay skeptical. DATA LEAKAGE: sensitive data sent somewhere it shouldn't go -- the privacy failure; the defence is minimize, protect, and control where data flows. SILENT DRIFT: the agent worked at launch but the filings changed format, the guidelines updated, the attack patterns shifted, and quality quietly degraded -- the defence is monitoring against the audit trail. The unifying point: the cost of being wrong is what separates Day 5 from Day 4, and every discipline in this module -- grounding, citations, structured output, audit trails, privacy, and above all keeping a human on consequential decisions -- exists to lower the probability and contain the blast radius of an error. You don't eliminate mistakes; you make them grounded, visible, catchable and non-catastrophic. That is what responsible deployment means -- and Module 10 goes deeper on the ethics and safety of it.">
+    <div class="kicker"><span class="dot"></span> Being wrong here is a headline, not a ticket</div>
+    <h2 class="title">Failure modes &amp; the cost of being wrong</h2>
+    <div class="body">
+      <div class="grid4">
+        <div class="card amber"><h3>&#128169; Hallucinated facts</h3><p>An invented figure stated confidently &mdash; defended by <b>grounding + citation</b>.</p></div>
+        <div class="card amber"><h3>&#129302; Automation bias</h3><p>Humans <b>rubber-stamp</b> a confident machine &mdash; make it <b>show its work</b>.</p></div>
+        <div class="card blue"><h3>&#128228; Data leakage</h3><p>Sensitive data sent where it shouldn&rsquo;t &mdash; <b>minimize &amp; control</b> the flow.</p></div>
+        <div class="card blue"><h3>&#128201; Silent drift</h3><p>Formats / guidelines change, quality slips &mdash; caught by <b>monitoring</b>.</p></div>
+      </div>
+      <p class="callout warn" style="margin-top:14px">&#129504; Every discipline today &mdash; grounding, citations, structure, audit trails, privacy, and a <b>human on consequential decisions</b> &mdash; exists to lower the odds and <b>contain the blast radius</b> of an error. Make mistakes grounded, visible, catchable &amp; non-catastrophic. Module 10 goes deeper.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 20 — KEY TAKEAWAYS ============ -->
+  <section class="slide dark" data-title="Key takeaways"
+    data-note="Recap crisply, then the quiz. Five points. One: high-stakes domains -- finance, health, cyber -- don't need new AI, they raise the BAR: accuracy, auditability, compliance, privacy, oversight. Two: they all use the same domain-agent pattern -- ground, reason, structure and cite, guardrail, human -- which is your days 3-4 loop, hardened. Three: the flagship is the financial-report insight agent -- it grounds every figure, cites its sources, and produces a structured summary for an analyst; it has no trade tool and gives no advice -- your Lab 5.1. Four: grounding-with-citations, structured output with audit trails, and disciplined data handling are the cross-cutting must-haves. Five, the golden rule: assistive, not autonomous -- the agent does the grounded legwork, a qualified human owns any consequential decision, and you enforce it by not building the dangerous tool. Then: a quick 10-question check before they build the insight agent.">
+    <div class="kicker"><span class="dot"></span> Recap</div>
+    <h2 class="title">Five things to carry forward</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="card"><h3>1 &middot; A higher bar, not new AI</h3><p>Accuracy, <b>auditability</b>, compliance, privacy, oversight &mdash; the domain raises the floor.</p></div>
+        <div class="card cyan"><h3>2 &middot; The domain-agent pattern</h3><p>Ground &rarr; reason &rarr; <b>structure + cite</b> &rarr; guardrail &rarr; human. Days 3&ndash;4, hardened.</p></div>
+        <div class="card"><h3>3 &middot; The insight agent</h3><p>Grounds &amp; <b>cites</b> every figure for an analyst &mdash; no trade tool, no advice. Lab 5.1.</p></div>
+        <div class="card"><h3>4 &middot; Ground, audit, protect</h3><p>Citations, structured <b>audit trails</b>, disciplined data handling.</p></div>
+        <div class="card gold" style="grid-column:1/-1"><h3>5 &middot; Assistive, not autonomous</h3><p>The agent does the legwork; a <b>human owns the consequential decision</b> &mdash; enforced by the tool you don&rsquo;t build. Next: <b>Module 10 &mdash; ethics &amp; responsible AI</b>.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 21 — QUIZ INTRO ============ -->
+  <section class="slide dark" data-title="Quiz — intro"
+    data-note="Quick formative check -- 10 questions, mixed easy/medium, all on Module 9. Format: each question slide, then its answer slide with the explanation. Run it interactively -- read the question, let them call A/B/C/D, advance to reveal. The goal is to surface and fix misconceptions before they build the financial-report insight agent. Keep it light and fast.">
+    <div class="body center">
+      <div class="kicker"><span class="dot"></span> Lock it in</div>
+      <h2 class="title" style="border-bottom-color:var(--cyan)">Quick check &mdash; 10 questions</h2>
+      <p class="lead" style="color:#e7e9fb">Each <b>question</b> appears first; the <b>answer</b> &amp; a one-line why are on the next slide. Call out A / B / C / D before you advance.</p>
+      <div class="title-meta" style="margin-top:14px">
+        <span class="pill cyan">10 questions</span>
+        <span class="pill gold">mixed: easy &amp; medium</span>
+        <span class="pill ghost" style="color:#c7cbf0;border-color:rgba(255,255,255,.3)">all on Module 9</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 22 — Q1 ============ -->
+  <section class="slide" data-title="Quiz Q1 — the new bar"
+    data-note="Answer: B. High-stakes domains don't need new AI -- they raise the bar: accuracy, auditability, compliance, privacy and human oversight become mandatory.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q1 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">What changes when you deploy an agent in a high-stakes domain?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>You need an entirely new kind of AI model.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>The bar rises &mdash; accuracy, auditability, compliance, privacy &amp; oversight become mandatory.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Nothing &mdash; you build it exactly as before.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>You must remove all tools from the agent.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 23 — A1 ============ -->
+  <section class="slide" data-title="Answer Q1"
+    data-note="Same techniques you learned on days 3-4 -- grounding, structured output, validation, human-in-the-loop -- but now mandatory rather than optional. The domain raises the floor.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q1 / 10</div>
+    <h2 class="title">The new bar</h2>
+    <div class="body center">
+      <p class="quiz-restate">A higher floor, not new AI.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>You need an entirely new kind of AI model.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>The bar rises &mdash; accuracy, auditability, compliance, privacy &amp; oversight become mandatory. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Nothing &mdash; you build it exactly as before.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>You must remove all tools from the agent.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;The same days 3&ndash;4 techniques &mdash; grounding, structured output, validation, HITL &mdash; but now <b>mandatory</b>. The domain <b>raises the floor</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 24 — Q2 ============ -->
+  <section class="slide" data-title="Quiz Q2 — the domain-agent pattern"
+    data-note="Answer: B. The domain-agent pattern is ground -> reason -> structure & cite -> guardrail -> human -- the days 3-4 loop, hardened.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q2 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">What is the domain-agent pattern for a high-stakes agent?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Guess &rarr; act &rarr; hope no one checks.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Ground &rarr; reason &rarr; structure &amp; cite &rarr; guardrail &rarr; a human owns the decision.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Train a new model on the domain and let it run.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Route everything to a bigger model.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 25 — A2 ============ -->
+  <section class="slide" data-title="Answer Q2"
+    data-note="It's exactly Module 7's pipeline with grounding and citation hardened and the guardrail made domain-specific. Not a new architecture -- the one you have, applied with discipline.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q2 / 10</div>
+    <h2 class="title">The domain-agent pattern</h2>
+    <div class="body center">
+      <p class="quiz-restate">Days 3&ndash;4, hardened.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Guess &rarr; act &rarr; hope no one checks.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>Ground &rarr; reason &rarr; structure &amp; cite &rarr; guardrail &rarr; a human owns the decision. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Train a new model on the domain and let it run.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Route everything to a bigger model.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;It&rsquo;s Module 7&rsquo;s pipeline with <b>grounding &amp; citation hardened</b> and the guardrail made domain-specific &mdash; the architecture you already have, applied with discipline.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 26 — Q3 ============ -->
+  <section class="slide" data-title="Quiz Q3 — the insight agent"
+    data-note="Answer: B. The financial-report insight agent extracts and grounds the key figures and produces a structured, cited summary for an analyst -- it never gives advice or trades.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q3 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">What does the financial-report insight agent do?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Executes trades based on the report.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Extracts &amp; grounds key figures into a structured, cited summary for an analyst &mdash; no advice, no trades.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Gives personalized buy/sell recommendations.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Predicts next quarter&rsquo;s stock price.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 27 — A3 ============ -->
+  <section class="slide" data-title="Answer Q3"
+    data-note="It reads the report, grounds every figure with a citation, flags anomalies, and produces a structured summary for a human analyst. It has no trading tool and gives no advice -- the draft-not-send guardrail, in finance.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q3 / 10</div>
+    <h2 class="title">The insight agent</h2>
+    <div class="body center">
+      <p class="quiz-restate">Analysis, not advice.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Executes trades based on the report.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>Extracts &amp; grounds key figures into a structured, cited summary for an analyst &mdash; no advice, no trades. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Gives personalized buy/sell recommendations.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Predicts next quarter&rsquo;s stock price.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;It grounds every figure with a <b>citation</b>, flags anomalies, and hands a structured summary to a human. <b>No trading tool, no advice</b> &mdash; draft-not-send, in finance.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 28 — Q4 ============ -->
+  <section class="slide" data-title="Quiz Q4 — healthcare"
+    data-note="Answer: B. In healthcare an agent should assist a clinician -- summarize, retrieve, surface -- and never autonomously diagnose or prescribe.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q4 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">In healthcare, an AI agent should&hellip;</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Diagnose patients autonomously to save time.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Assist a clinician &mdash; summarize, retrieve, surface &mdash; and never autonomously diagnose or prescribe.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Prescribe medication when confident enough.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Store patient data on any public service.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 29 — A4 ============ -->
+  <section class="slide" data-title="Answer Q4"
+    data-note="Health agents are decision support, never the decision-maker: they do the grounded legwork and a licensed clinician makes every clinical call. And patient data is PHI -- protected by law.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q4 / 10</div>
+    <h2 class="title">Healthcare &mdash; assistive only</h2>
+    <div class="body center">
+      <p class="quiz-restate">Decision support, never the decision-maker.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Diagnose patients autonomously to save time.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>Assist a clinician &mdash; summarize, retrieve, surface &mdash; and never autonomously diagnose or prescribe. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Prescribe medication when confident enough.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Store patient data on any public service.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;The agent does the grounded legwork; a <b>licensed clinician</b> makes every clinical call. And patient data is <b>PHI</b> &mdash; protected by law.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 30 — Q5 ============ -->
+  <section class="slide" data-title="Quiz Q5 — cybersecurity"
+    data-note="Answer: B. A good cyber use case is triaging and enriching alerts for a human analyst (a copilot) -- not autonomously blocking or isolating.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q5 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Which is the right role for a cybersecurity agent?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Autonomously block IPs and isolate hosts on any alert.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Triage &amp; enrich alerts and recommend actions for a human analyst to approve (a copilot).</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Delete suspicious files without review.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Disable user accounts whenever it is unsure.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 31 — A5 ============ -->
+  <section class="slide" data-title="Answer Q5"
+    data-note="The copilot enriches and ranks alerts so the analyst spends judgement on the real threats -- but consequential actions like block or isolate go through a human, because an over-eager auto-response can take down production or be weaponised.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q5 / 10</div>
+    <h2 class="title">Cyber &mdash; the SOC copilot</h2>
+    <div class="body center">
+      <p class="quiz-restate">Triage for a human, don&rsquo;t auto-remediate.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Autonomously block IPs and isolate hosts on any alert.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>Triage &amp; enrich alerts and recommend actions for a human analyst to approve (a copilot). &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Delete suspicious files without review.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Disable user accounts whenever it is unsure.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;It ranks alerts so the analyst spends judgement on real threats &mdash; but <b>block / isolate go through a human</b>: an over-eager auto-response can take down production or be weaponised.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 32 — Q6 ============ -->
+  <section class="slide" data-title="Quiz Q6 — grounding"
+    data-note="Answer: B. Grounding with RAG and citations means the agent answers only from retrieved authoritative sources, with a pointer back to each source -- not from the model's memory.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q6 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Why is grounding with citations essential in these domains?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>It makes the model respond faster.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>The agent answers only from retrieved sources, each claim traceable &mdash; not from unreliable memory.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>It removes the need for a human reviewer.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>It lets the agent skip validation.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 33 — A6 ============ -->
+  <section class="slide" data-title="Answer Q6"
+    data-note="A hallucinated figure or interaction is dangerous here, so the model must reason over retrieved sources (tools + RAG) and cite each claim. A grounded, cited answer is checkable; an ungrounded one is a liability.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q6 / 10</div>
+    <h2 class="title">Grounding &amp; citations</h2>
+    <div class="body center">
+      <p class="quiz-restate">If it isn&rsquo;t grounded and cited, it doesn&rsquo;t ship.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>It makes the model respond faster.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>The agent answers only from retrieved sources, each claim traceable &mdash; not from unreliable memory. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>It removes the need for a human reviewer.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>It lets the agent skip validation.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;A hallucinated figure is dangerous here, so the model reasons over retrieved sources (tools + RAG) and <b>cites each claim</b>. Grounded &amp; cited is <b>checkable</b>; ungrounded is a liability.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 34 — Q7 ============ -->
+  <section class="slide" data-title="Quiz Q7 — auditability"
+    data-note="Answer: B. Structured output and an audit trail make every conclusion traceable and the whole run replayable -- required for compliance and for debugging.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q7 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Why do these agents need structured output &amp; an audit trail?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>To make the output look more professional.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>So every conclusion is traceable and the whole run is replayable &mdash; for compliance &amp; debugging.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>To reduce the number of tokens used.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>So the agent can run without any tools.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 35 — A7 ============ -->
+  <section class="slide" data-title="Answer Q7"
+    data-note="A regulator, doctor or incident reviewer needs to know WHY the agent concluded what it did. Structured output makes each claim inspectable; the audit trail makes the whole run accountable and replayable.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q7 / 10</div>
+    <h2 class="title">Auditability</h2>
+    <div class="body center">
+      <p class="quiz-restate">Prove how it got there.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>To make the output look more professional.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>So every conclusion is traceable and the whole run is replayable &mdash; for compliance &amp; debugging. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>To reduce the number of tokens used.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>So the agent can run without any tools.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;A regulator or reviewer needs to know <b>why</b>. Structured output makes each claim <b>inspectable</b>; the audit trail makes the run <b>accountable &amp; replayable</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 36 — Q8 ============ -->
+  <section class="slide" data-title="Quiz Q8 — privacy"
+    data-note="Answer: B. Sensitive data (PHI, financial, security) must be minimized, protected, and kept within compliant systems -- not sent to just any external service.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q8 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">How should a high-stakes agent handle sensitive data?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Send the full record to any public LLM for best results.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Minimize, protect &amp; keep it in compliant systems &mdash; not sent to just any external service.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Store it in plain text for easy debugging.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Ignore privacy rules if the task is urgent.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 37 — A8 ============ -->
+  <section class="slide" data-title="Answer Q8"
+    data-note="Minimize (send only what's needed, redact identifiers), protect (encrypt, control access), and comply (HIPAA, financial and security rules). It's why Day 1 started on local models -- a public API can be the wrong place for PHI or MNPI.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q8 / 10</div>
+    <h2 class="title">Privacy &amp; compliance</h2>
+    <div class="body center">
+      <p class="quiz-restate">Decide where the data can go &mdash; first.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Send the full record to any public LLM for best results.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>Minimize, protect &amp; keep it in compliant systems &mdash; not sent to just any external service. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Store it in plain text for easy debugging.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Ignore privacy rules if the task is urgent.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Minimize, protect &amp; comply (HIPAA, financial, security). It&rsquo;s why Day 1 started on <b>local models</b> &mdash; a public API can be the wrong place for PHI or MNPI.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 38 — Q9 ============ -->
+  <section class="slide" data-title="Quiz Q9 — the golden rule"
+    data-note="Answer: B. The golden rule: assistive, not autonomous -- the agent does the grounded legwork and a qualified human owns any consequential decision, enforced by withholding the dangerous tool.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q9 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">What is the golden rule for high-stakes agents?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Automate the consequential decision to move fast.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Assistive, not autonomous &mdash; a human owns consequential decisions, enforced by withholding the tool.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Give the agent every tool so it is flexible.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Trust the model when its confidence is high.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 39 — A9 ============ -->
+  <section class="slide" data-title="Answer Q9"
+    data-note="The agent can be autonomous on the safe 90% -- gather, ground, compute, summarize, recommend -- but the risky 10% (trade, diagnose, isolate) stays with a qualified human. Enforce it by not building the dangerous tool.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q9 / 10</div>
+    <h2 class="title">Assistive, not autonomous</h2>
+    <div class="body center">
+      <p class="quiz-restate">Enforced by the tool you don&rsquo;t build.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Automate the consequential decision to move fast.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>Assistive, not autonomous &mdash; a human owns consequential decisions, enforced by withholding the tool. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Give the agent every tool so it is flexible.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Trust the model when its confidence is high.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Autonomous on the safe 90% (gather, ground, summarize, recommend); the risky 10% (trade, diagnose, isolate) stays with a <b>qualified human</b>. Enforce it by <b>not building the dangerous tool</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 40 — Q10 ============ -->
+  <section class="slide" data-title="Quiz Q10 — automation bias"
+    data-note="Answer: B. Automation bias is humans over-trusting and rubber-stamping a confident machine; the defence is to make the agent show its work (citations, structured evidence) so review is real.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q10 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">What is &ldquo;automation bias,&rdquo; and how do you fight it?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>The model preferring newer data; fix it by retraining.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Humans rubber-stamping a confident machine; fight it by making the agent show its work (citations).</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Agents running too slowly; fix it with more compute.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>A bug in the tool router; fix it with a retry.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 41 — A10 ============ -->
+  <section class="slide" data-title="Answer Q10"
+    data-note="If the human reviewer just approves whatever the confident agent says, the human-in-the-loop becomes a formality. The defence: make the agent show its work -- citations and structured evidence -- so review is genuine, and keep reviewers skeptical.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q10 / 10</div>
+    <h2 class="title">Automation bias</h2>
+    <div class="body center">
+      <p class="quiz-restate">Make the review real.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>The model preferring newer data; fix it by retraining.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>Humans rubber-stamping a confident machine; fight it by making the agent show its work (citations). &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Agents running too slowly; fix it with more compute.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>A bug in the tool router; fix it with a retry.</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;If reviewers just approve whatever the confident agent says, the human-in-the-loop is a formality. Make it <b>show its work</b> (citations, evidence) so review is genuine.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 42 — REFERENCES ============ -->
+  <section class="slide" data-title="References &amp; further study"
+    data-note="Point to the best companions. NIST's AI Risk Management Framework is the canonical reference for governing high-stakes AI -- skim it for the vocabulary of trustworthy AI. The EU AI Act's risk tiers show how regulators think about high-risk systems. LangChain's extraction and RAG tutorials are the direct build-along for the insight agent's ground-and-cite steps. FINRA and HHS/HIPAA pages anchor the finance and health boundaries. Anthropic's responsible scaling and 'building effective agents' round out the safety framing, which Module 10 goes deeper on. All links live in the HTML; skim the extraction tutorial and the NIST framing before the labs.">
+    <div class="kicker"><span class="dot"></span> Go deeper &middot; curated, mostly free</div>
+    <h2 class="title">References &amp; further study</h2>
+    <div class="body">
+      <ul class="refs">
+        <li><a href="https://www.nist.gov/itl/ai-risk-management-framework" target="_blank" rel="noopener">NIST &mdash; AI Risk Management Framework</a><span class="d">The canonical reference for governing high-stakes AI &mdash; trustworthy-AI vocabulary.</span></li>
+        <li><a href="https://artificialintelligenceact.eu/" target="_blank" rel="noopener">EU AI Act &mdash; risk tiers</a><span class="d">How regulators classify &amp; constrain high-risk AI systems.</span></li>
+        <li><a href="https://python.langchain.com/docs/tutorials/extraction/" target="_blank" rel="noopener">LangChain &mdash; Extraction tutorial</a><span class="d">The insight agent&rsquo;s ground-and-structure step &mdash; figures from a document.</span></li>
+        <li><a href="https://python.langchain.com/docs/tutorials/rag/" target="_blank" rel="noopener">LangChain &mdash; RAG tutorial</a><span class="d">Grounding answers in a domain corpus, with citations.</span></li>
+        <li><a href="https://www.finra.org/rules-guidance/key-topics/fintech/report/artificial-intelligence-in-the-securities-industry" target="_blank" rel="noopener">FINRA &mdash; AI in the securities industry</a><span class="d">The finance boundary &mdash; oversight of AI in markets.</span></li>
+        <li><a href="https://www.hhs.gov/hipaa/for-professionals/index.html" target="_blank" rel="noopener">HHS &mdash; HIPAA for professionals</a><span class="d">The health boundary &mdash; protecting patient data (PHI).</span></li>
+        <li><a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noopener">Anthropic &mdash; Building effective agents</a><span class="d">When to keep a human in the loop &mdash; the reliability reality check.</span></li>
+        <li><a href="../course-outline-building-intelligent-ai-agents.html">Course outline (internal)</a><span class="d">Where this module sits in the 5-day arc &mdash; all decks &amp; labs.</span></li>
+      </ul>
+      <p class="small" style="margin-top:12px">All external links open in a new tab. Skim the <b>Extraction tutorial</b> and the <b>NIST framework</b> before the labs.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 43 — CLOSING ============ -->
+  <section class="slide title-slide" data-title="What's next"
+    data-note="Close warm and bridge to Module 10. Today you put agents to work where the stakes are real: finance, healthcare and cybersecurity. You learned that these domains don't need new AI -- they raise the bar, and they all use the same domain-agent pattern with grounding, citations, structured audit trails and disciplined data handling. The flagship, the financial-report insight agent, is your Lab 5.1 -- it grounds and cites every figure for an analyst, and it has no trade tool and gives no advice. And you learned the golden rule that ties the whole day together: assistive, not autonomous -- the human owns any consequential decision, enforced by the tool you don't build. That golden rule is really an ethical stance, which is exactly where we go next. Module 10, the final module, steps back to the responsibility itself: bias and fairness, transparency, safety and guardrails, accountability, and how to debug and govern an agent you can trust. End on: you can now build a genuinely useful agent in a high-stakes domain; the last step is learning to do it responsibly -- for everyone it touches.">
+    <div class="body center">
+      <div class="kicker"><span class="dot"></span> End of Module 9</div>
+      <h1>Useful where it <span class="accent">matters most</span>.</h1>
+      <p class="subtitle">High-stakes value with a human on every consequential call. Next: the responsibility itself &mdash; <b>ethics &amp; responsible AI</b>.</p>
+      <div class="rule"></div>
+      <div class="title-meta">
+        <span class="pill gold">Next: Module 10 &mdash; Ethics &amp; Responsible AI</span>
+        <span class="pill green">Now: <a href="../hands-on/module-9/index.html" style="color:#fff;text-decoration:underline">Module 9 labs</a></span>
+      </div>
+      <p class="trainer" style="margin-top:22px"><b>Rajesh Gheware</b> &middot;
+        <a href="day4-module8-multi-agent-collaboration.html">&#8592; Module 8 deck</a> &middot;
+        <a href="day5-module10-ethics-responsible-ai.html">Module 10 deck &#8594;</a> &middot;
+        <a href="../course-outline-building-intelligent-ai-agents.html">Course outline</a> &middot;
+        <a href="https://devops.gheware.com" target="_blank" rel="noopener">devops.gheware.com</a>
+      </p>
+    </div>
+  </section>
+
+</div><!-- /deck -->
+
+<!-- ===== Overview (O / ESC) ===== -->
+<div id="overview">
+  <h3>Module 9 &mdash; jump to a slide</h3>
+  <p class="ovsub">Press O or ESC again to close &middot; click any slide</p>
+  <div class="ovgrid" id="ovgrid"></div>
+</div>
+
+<!-- ===== Presenter notes (N) ===== -->
+<div id="notes"><span class="tag">Presenter note &middot; press N to hide</span><span id="noteText"></span></div>
+
+<!-- ===== Chrome ===== -->
+<div id="counter">1 / 43</div>
+<div class="hint">&larr; &rarr; / Space to navigate &middot; <b>N</b> notes &middot; <b>O</b>/Esc overview &middot; <b>F</b> fullscreen</div>
+<div class="nav">
+  <button id="prev" title="Previous (←)" aria-label="Previous slide">&#8249;</button>
+  <button id="next" title="Next (→)" aria-label="Next slide">&#8250;</button>
+</div>
+<div class="footer">
+  <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
+  <span>Day 5 · Module 9 — Agents in Finance, Healthcare &amp; Cybersecurity</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.0</span>
+</div>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var total = slides.length;
+  var i = 0;
+  var counter = document.getElementById('counter');
+  var noteText = document.getElementById('noteText');
+  var progress = document.getElementById('progress');
+  var prevBtn = document.getElementById('prev');
+  var nextBtn = document.getElementById('next');
+
+  function render(){
+    slides.forEach(function(s,idx){ s.classList.toggle('active', idx===i); });
+    counter.textContent = (i+1)+' / '+total;
+    progress.style.width = ((i)/(total-1)*100)+'%';
+    noteText.textContent = ' ' + (slides[i].getAttribute('data-note')||'—');
+    prevBtn.disabled = (i===0);
+    nextBtn.disabled = (i===total-1);
+    if (location.hash !== '#'+(i+1)) history.replaceState(null,'','#'+(i+1));
+    slides[i].scrollTop = 0;
+  }
+  function go(n){ i = Math.max(0, Math.min(total-1, n)); render(); }
+  function next(){ go(i+1); }
+  function prev(){ go(i-1); }
+
+  nextBtn.addEventListener('click', next);
+  prevBtn.addEventListener('click', prev);
+
+  document.addEventListener('keydown', function(e){
+    if (e.key==='ArrowRight' || e.key==='PageDown' || e.key===' '){ e.preventDefault(); next(); }
+    else if (e.key==='ArrowLeft' || e.key==='PageUp'){ e.preventDefault(); prev(); }
+    else if (e.key==='Home'){ e.preventDefault(); go(0); }
+    else if (e.key==='End'){ e.preventDefault(); go(total-1); }
+    else if (e.key==='n' || e.key==='N'){ document.body.classList.toggle('show-notes'); }
+    else if (e.key==='o' || e.key==='O'){ document.body.classList.toggle('show-overview'); }
+    else if (e.key==='Escape'){ document.body.classList.toggle('show-overview'); }
+    else if (e.key==='f' || e.key==='F'){
+      if (!document.fullscreenElement){ document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); }
+      else { document.exitFullscreen && document.exitFullscreen(); }
+    }
+  });
+
+  // build overview
+  var ov = document.getElementById('ovgrid');
+  slides.forEach(function(s,idx){
+    var c = document.createElement('div');
+    c.className='ovcard';
+    c.innerHTML = '<div class="num">'+(idx+1).toString().padStart(2,'0')+'</div><div class="ttl">'+(s.getAttribute('data-title')||('Slide '+(idx+1)))+'</div>';
+    c.addEventListener('click', function(){ go(idx); document.body.classList.remove('show-overview'); });
+    ov.appendChild(c);
+  });
+
+  // swipe (touch)
+  var x0=null;
+  document.addEventListener('touchstart',function(e){ x0=e.touches[0].clientX; },{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(x0===null) return; var dx=e.changedTouches[0].clientX-x0;
+    if(Math.abs(dx)>50){ dx<0?next():prev(); } x0=null;
+  });
+
+  // deep link
+  var start = parseInt((location.hash||'').replace('#',''),10);
+  if(start>=1 && start<=total) i=start-1;
+  render();
+})();
+</script>
+</body>
+</html>
