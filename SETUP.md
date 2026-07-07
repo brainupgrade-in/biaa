@@ -6,7 +6,7 @@
 ---
 
 ## ⭐ Read this first
-- The workshop is **119+ hands-on labs** delivered as Jupyter notebooks (`.ipynb`), run **locally**.
+- The workshop is **120 hands-on labs** delivered as Jupyter notebooks (`.ipynb`), run **locally**.
 - **The curriculum requires** working with **MNIST**, a **real LLM** (agent labs), and **external APIs — Google Search & Wolfram Alpha** (Day 3). Set these up — they are **not** optional.
 - Every lab also ships a **built-in offline fallback** (see §5). That is a **safety net** so a flaky key or a blocked port never strands a participant mid-session — **not** a reason to skip setup.
 - Notebooks + full answer keys are **provided by the trainer** — participants don't fetch course files.
@@ -20,7 +20,7 @@
 - **Permissions:** ability to **install software** and **run local servers** on `localhost` — ports `8888` (Jupyter) and `11434` (Ollama, if used)
 
 ## 2. TIER 1 — Required core software (every lab)
-- **Python 3.11 or 3.12** recommended (3.10+ works; 3.11/3.12 have the widest package support)
+- **Python 3.12** &mdash; **please use this exact version.** It has mature, well-tested wheels for every workshop package (incl. TensorFlow), which avoids environment/install troubleshooting. *(Other versions may work but are not supported for this workshop.)*
 - **A virtual environment** (built-in `venv`)
 - **Jupyter** — JupyterLab / Notebook, **or** VS Code with the Jupyter extension
 - **Editor:** VS Code recommended
