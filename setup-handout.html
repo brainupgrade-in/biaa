@@ -116,9 +116,10 @@ pip install jupyterlab ipykernel nbformat numpy scikit-learn matplotlib tensorfl
       </div>
     </div>
     <div class="callout warn" style="margin-top:6px">
-      <b>&#128273; BYOK &mdash; OpenAI (bring your own key).</b> The LLM labs run on <b>Groq / Ollama by default</b>. To use <b>OpenAI</b>
-      instead, bring your own key: create an OpenAI account, set <code>OPENAI_API_KEY</code>, and <code>pip install langchain-openai</code>
-      &mdash; the optional real-LLM cells will use it. <i>(OpenAI is paid/metered; Groq and Ollama are free &mdash; hence the default.)</i>
+      <b>&#128273; BYOK &mdash; OpenAI (bring your own key).</b> The LLM labs run on <b>Groq / Ollama by default</b>. OpenAI is supported
+      bring-your-own-key: set <code>OPENAI_API_KEY</code>, then <code>pip install openai</code> for the <b>Day-2 GPT text-gen</b> snippet
+      (a commented reference in that lab), or <code>pip install langchain-openai</code> to use OpenAI as the <b>agent LLM (Days 3&ndash;5)</b>.
+      <i>(OpenAI is paid/metered; Groq and Ollama are free &mdash; hence the default.)</i>
     </div>
   </div>
 

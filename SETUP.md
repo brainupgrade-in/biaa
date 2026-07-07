@@ -53,7 +53,7 @@ Pick **either** (both free, no paid account):
 pip install langchain langchain-community langchain-ollama langchain-groq langgraph
 ```
 
-> **💡 BYOK — OpenAI (bring your own key):** the LLM labs run on **Groq / Ollama by default**. If a participant (or the client) prefers **OpenAI**, it's supported on a **Bring-Your-Own-Key** basis — create an OpenAI account, set **`OPENAI_API_KEY`**, and `pip install langchain-openai`; the optional real-LLM cells will use it. *(OpenAI is paid/metered; Groq and Ollama are free — hence the default.)*
+> **💡 BYOK — OpenAI (bring your own key):** the LLM labs run on **Groq / Ollama by default**. OpenAI is supported on a **Bring-Your-Own-Key** basis — create an OpenAI account and set **`OPENAI_API_KEY`**, then install its client for the use you want: `pip install openai` for the **Day-2 GPT text-generation** snippet (shown as a commented reference in that lab), or `pip install langchain-openai` to use **OpenAI as the LLM in the Day 3–5 agent labs** (swap for `ChatGroq`). *(OpenAI is paid/metered; Groq and Ollama are free — hence the default.)*
 
 ### 3c. External APIs — Google Search & Wolfram Alpha (Day 3, Module 6)
 The Day-3 "connect agents to external APIs" lab uses both. Create the free keys **before** the workshop:
