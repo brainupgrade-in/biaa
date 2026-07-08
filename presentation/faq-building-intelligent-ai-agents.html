@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FAQ &amp; Quick Revision — Building Intelligent AI Agents</title>
+<style>
+  :root{
+    --ink-900:#1e1b4b; --ink-800:#312e81; --ind-600:#4f46e5;
+    --ind-300:#a5b4fc; --ind-50:#eef2ff;
+    --cyan:#06b6d4; --cyan-l:#67e8f9; --amber:#f59e0b; --amber-d:#b45309; --blue:#0891b2;
+    --ok:#059669; --bg:#f5f6fb; --ink:#1e1f33; --muted:#5b5f7a; --line:#d8dcf0;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;scroll-padding-top:150px;}
+  body{margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.5;}
+  a{color:var(--ind-600);}
+
+  /* ---------- Banner ---------- */
+  .banner{background:linear-gradient(135deg,#312e81 0%,#1e1b4b 100%);color:#fff;
+    padding:clamp(26px,5vw,52px) clamp(20px,5vw,80px) clamp(22px,4vw,40px);}
+  .banner .kicker{display:flex;align-items:center;gap:10px;font-size:clamp(.7rem,1.1vw,.85rem);
+    font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cyan-l);margin-bottom:10px;}
+  .banner .kicker .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);}
+  .banner h1{font-size:clamp(1.8rem,4.6vw,3.1rem);margin:0 0 6px;line-height:1.08;}
+  .banner h1 .accent{color:var(--cyan-l);}
+  .banner .subtitle{font-size:clamp(1rem,1.9vw,1.4rem);color:#c7cbf0;margin:4px 0 0;font-weight:500;max-width:70ch;}
+  .banner .rule{width:120px;height:4px;background:var(--cyan);margin:20px 0;border-radius:2px;}
+  .banner .meta{display:flex;flex-wrap:wrap;gap:10px;}
+  .banner .trainer{margin-top:22px;font-size:clamp(.85rem,1.4vw,1.02rem);color:#a9adda;}
+  .banner .trainer b{color:#fff;}
+  .banner a{color:var(--cyan-l);}
+  .pill{display:inline-block;padding:5px 14px;border-radius:12px;font-size:.82rem;font-weight:700;letter-spacing:.02em;}
+  .pill.gold{background:var(--amber);color:var(--ink-900);}
+  .pill.green{background:var(--ind-600);color:#fff;}
+  .pill.cyan{background:var(--cyan);color:var(--ink-900);}
+  .pill.ghost{background:transparent;border:1px solid rgba(255,255,255,.3);color:#c7cbf0;}
+
+  .homelink{position:fixed;top:12px;right:16px;z-index:60;font-size:.74rem;text-decoration:none;
+    background:rgba(255,255,255,.92);border:1px solid var(--line);color:var(--ink-800);
+    padding:6px 13px;border-radius:14px;font-weight:600;}
+  .homelink:hover{background:#fff;}
+
+  /* ---------- Sticky control bar ---------- */
+  .controls{position:sticky;top:0;z-index:50;background:rgba(245,246,251,.94);backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--line);padding:12px clamp(20px,5vw,80px);}
+  .controls .search{position:relative;margin-bottom:10px;}
+  .controls .search input{width:100%;padding:9px 14px 9px 36px;border:1px solid var(--line);border-radius:20px;
+    font-size:.95rem;background:#fff;color:var(--ink);}
+  .controls .search input:focus{outline:2px solid var(--ind-300);border-color:var(--ind-600);}
+  .controls .search::before{content:"\1F50D";position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:.9rem;opacity:.6;}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;}
+  .chips a{text-decoration:none;font-size:.76rem;font-weight:700;padding:5px 11px;border-radius:14px;
+    background:#fff;border:1px solid var(--line);color:var(--ind-600);white-space:nowrap;}
+  .chips a:hover{background:var(--ind-50);border-color:var(--ind-300);}
+  .noresult{display:none;padding:24px clamp(20px,5vw,80px);color:var(--muted);font-size:1.05rem;}
+
+  /* ---------- Layout ---------- */
+  .wrap{padding:8px clamp(20px,5vw,80px) 60px;max-width:1080px;margin:0 auto;}
+  .dayband{margin:38px 0 4px;font-size:.78rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--amber-d);border-bottom:2px solid var(--amber);padding-bottom:6px;}
+  .dayband:first-of-type{margin-top:14px;}
+  .day-header{margin:20px 0 14px;padding:12px 18px;border-radius:8px;
+    background:linear-gradient(135deg,#312e81 0%,#1e1b4b 100%);color:#fff;
+    display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
+  .day-header .tag{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--cyan-l);}
+  .day-header h2{margin:0;font-size:clamp(1.15rem,2.4vw,1.6rem);}
+  .day-header .cnt{margin-left:auto;font-size:.78rem;color:#a9adda;font-weight:600;}
+
+  /* ---------- FAQ accordion ---------- */
+  details.faq{background:#fff;border:1px solid var(--line);border-left:4px solid var(--ind-600);
+    border-radius:8px;margin:10px 0;box-shadow:0 1px 4px rgba(30,27,75,.06);overflow:hidden;}
+  details.faq[open]{border-left-color:var(--cyan);box-shadow:0 3px 12px rgba(30,27,75,.10);}
+  details.faq summary{cursor:pointer;list-style:none;padding:15px 20px;font-size:clamp(1rem,1.6vw,1.16rem);
+    font-weight:700;color:var(--ink-800);display:flex;align-items:flex-start;gap:12px;}
+  details.faq summary::-webkit-details-marker{display:none;}
+  details.faq summary .q{flex:0 0 auto;width:26px;height:26px;border-radius:6px;background:var(--ind-50);
+    color:var(--ind-600);font-size:.9rem;display:flex;align-items:center;justify-content:center;font-weight:800;}
+  details.faq[open] summary .q{background:var(--cyan);color:var(--ink-900);}
+  details.faq summary .tw{margin-left:auto;flex:0 0 auto;color:var(--muted);font-weight:400;transition:transform .2s;}
+  details.faq[open] summary .tw{transform:rotate(180deg);color:var(--cyan);}
+  details.faq summary:hover{background:#fafbff;}
+  .faq-body{padding:2px 20px 20px 58px;font-size:clamp(.92rem,1.3vw,1.04rem);color:#26273f;}
+  .faq-body p{margin:10px 0;}
+  .faq-body ul{margin:10px 0;padding-left:22px;}
+  .faq-body li{margin-bottom:6px;}
+  .faq-body b{color:var(--ink-800);}
+  .faq-body h4{margin:18px 0 6px;color:var(--ink-800);font-size:1.02rem;}
+  @media(max-width:640px){.faq-body{padding-left:20px;}}
+
+  .quick{background:var(--ind-50);border:1px solid var(--ind-300);border-left:4px solid var(--cyan);
+    border-radius:8px;padding:12px 16px;margin:6px 0 14px;font-size:.98rem;}
+  .quick b{color:var(--ink-800);}
+  .quick .lbl{display:inline-block;font-size:.68rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--cyan);background:#fff;border:1px solid var(--cyan-l);border-radius:10px;padding:1px 8px;margin-right:8px;}
+
+  table{border-collapse:collapse;width:100%;font-size:.92rem;background:#fff;margin:12px 0;
+    box-shadow:0 1px 4px rgba(30,27,75,.07);border-radius:6px;overflow:hidden;}
+  th,td{border:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top;}
+  thead th{background:var(--ink-800);color:#fff;font-weight:600;}
+  tbody tr:nth-child(even){background:var(--ind-50);}
+  .tbl-scroll{overflow-x:auto;}
+
+  .terminal{background:#14143a;color:#e0e3f5;border-radius:8px;padding:15px 18px;margin:12px 0;
+    font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:clamp(.74rem,1.1vw,.92rem);
+    line-height:1.6;box-shadow:0 4px 16px rgba(0,0,0,.28);overflow-x:auto;white-space:pre-wrap;}
+  .terminal .com{color:#7f86b8;} .terminal .kw{color:var(--cyan-l);} .terminal .str{color:#fcd34d;}
+  .terminal .out{color:#6ee7b7;} .terminal .hi{color:#fff;font-weight:700;}
+  code.inl{font-family:'SFMono-Regular',Consolas,Menlo,monospace;background:#eef0fb;border:1px solid var(--line);
+    border-radius:4px;padding:1px 6px;font-size:.88em;color:#3730a3;}
+
+  .refs{list-style:none;padding:0;margin:8px 0;}
+  .refs li{padding:8px 12px;background:#fff;border:1px solid var(--line);border-left:3px solid var(--cyan);
+    border-radius:6px;margin-bottom:8px;}
+  .refs li a{font-weight:600;text-decoration:none;} .refs li a:hover{text-decoration:underline;}
+
+  .footer{margin-top:20px;padding:18px clamp(20px,5vw,80px);border-top:1px solid var(--line);
+    background:#fff;font-size:.78rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:10px;
+    justify-content:space-between;align-items:center;}
+  .footer .brand{font-weight:600;color:var(--ink-800);}
+  .footer a{text-decoration:none;}
+
+  @media print{
+    .homelink,.controls{display:none!important;}
+    body{background:#fff;}
+    details.faq{break-inside:avoid;box-shadow:none;border:1px solid #bbb;}
+    details.faq .faq-body{display:block!important;}
+    .terminal{background:#f4f4fb;color:#222;box-shadow:none;}
+    .terminal .com,.terminal .kw,.terminal .str,.terminal .out,.terminal .hi{color:#222;}
+  }
+</style>
+</head>
+<body>
+
+<a class="homelink" href="course-outline-building-intelligent-ai-agents.html" title="Back to course outline">&#8962; Course outline</a>
+
+<!-- ============ BANNER ============ -->
+<header class="banner">
+  <div class="kicker"><span class="dot"></span> Building Intelligent AI Agents &nbsp;&middot;&nbsp; Participant Reference</div>
+  <h1>FAQ &amp; <span class="accent">Quick Revision</span></h1>
+  <p class="subtitle">The sharp, "wait&mdash;isn't X just Y?" questions that come up in the room &mdash; answered for fast revision after the workshop.</p>
+  <div class="rule"></div>
+  <div class="meta">
+    <span class="pill gold">Beginner &rarr; Practitioner</span>
+    <span class="pill green">All 10 modules</span>
+    <span class="pill cyan">Searchable</span>
+    <span class="pill ghost">Grows through the course</span>
+  </div>
+  <p class="trainer">Trainer: <b>Rajesh Gheware</b> &middot; 25+ yrs (JPMorgan Chase &middot; Deutsche Bank &middot; Morgan Stanley) &middot; 5,000+ trained &middot; 4.91/5 &middot; <a href="https://devops.gheware.com" target="_blank" rel="noopener">devops.gheware.com</a></p>
+</header>
+
+<!-- ============ CONTROLS ============ -->
+<div class="controls">
+  <div class="search"><input id="q" type="search" placeholder="Search the FAQ (e.g. attention, overfitting, guardrails, ReAct)&hellip;" autocomplete="off" aria-label="Search FAQ"></div>
+  <nav class="chips" aria-label="Jump to module">
+    <a href="#m1">M1 &middot; AI Evolution</a>
+    <a href="#m2">M2 &middot; Deep Learning</a>
+    <a href="#m3">M3 &middot; Transformers</a>
+    <a href="#m4">M4 &middot; Fine-tuning</a>
+    <a href="#m5">M5 &middot; Agentic AI</a>
+    <a href="#m6">M6 &middot; Frameworks</a>
+    <a href="#m7">M7 &middot; Automation</a>
+    <a href="#m8">M8 &middot; Multi-agent</a>
+    <a href="#m9">M9 &middot; Industry</a>
+    <a href="#m10">M10 &middot; Ethics</a>
+  </nav>
+</div>
+
+<p class="noresult" id="noresult">No questions match that search. Try a different word.</p>
+
+<div class="wrap">
+
+  <!-- ================================ DAY 1 ================================ -->
+  <div class="dayband">Day 1 &mdash; Foundations of AI &amp; Deep Learning</div>
+
+  <!-- ================= MODULE 1 ================= -->
+  <div class="day-header" id="m1">
+    <span class="tag">Day 1 &middot; Module 1</span>
+    <h2>AI &amp; Its Evolution</h2>
+    <span class="cnt">5 questions</span>
+  </div>
+
+  <details class="faq" id="m1-ai-ml-dl">
+    <summary><span class="q">Q</span><span>What's the difference between AI, machine learning, and deep learning?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>They're <b>nested circles</b>, not rivals. <b>AI</b> is the broadest goal (machines doing smart things). <b>ML</b> is one way to get there (learn from data instead of hand-coded rules). <b>Deep learning</b> is one kind of ML (multi-layer neural networks).</div>
+      <p>AI &sup; ML &sup; DL. A hand-written chess rules engine is AI but not ML. A spam filter that learns from examples is ML. A neural net that reads handwriting is deep learning. Deep learning is dominant today because it scales with data and compute where older ML plateaus.</p>
+      <p><b>In this course:</b> Module 1 walks the whole progression &mdash; rules &rarr; data &rarr; ML pipeline &rarr; a neural net &mdash; so you feel where each layer sits.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m1-why-ml-over-rules">
+    <summary><span class="q">Q</span><span>If we can just write rules, why do we need machine learning?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Because for many problems <b>nobody can write the rules</b>. How do you write an <code class="inl">if</code>-statement that recognises a handwritten "7"? ML lets the computer <b>infer the rules from examples</b> instead.</div>
+      <p>Rules are great when the logic is known and stable (tax brackets, business validation). They collapse when the problem is fuzzy, high-dimensional, or constantly changing (images, language, fraud). ML trades "a human writes the rules" for "a human provides labelled examples and the model finds the pattern."</p>
+      <p><b>In this course:</b> the first labs literally start rule-based, hit the wall, then switch to a data-driven model &mdash; you experience why the switch happens.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m1-what-is-learning">
+    <summary><span class="q">Q</span><span>What does it actually mean for a model to "learn"? Isn't it just memorising?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Learning = <b>adjusting internal numbers (weights) to reduce error</b> on examples, in a way that <b>generalises to data it has never seen</b>. Pure memorising is the <em>failure</em> mode &mdash; it's called overfitting.</div>
+      <p>Training shows the model examples, measures how wrong it is (loss), and nudges the weights to be less wrong. The goal isn't to ace the training data &mdash; it's to do well on <em>new</em> data. A model that only memorised would score perfectly on what it saw and fail on everything else.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m1-overfitting">
+    <summary><span class="q">Q</span><span>What is overfitting &mdash; why is a model that scores 100% on training data a problem?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Overfitting is when a model <b>memorises the training data (including its noise)</b> instead of learning the general pattern. It scores great on what it saw and <b>poorly on new data</b> &mdash; the only score that matters.</div>
+      <p>Analogy: a student who memorises the answer key vs. one who understands the subject. The first aces the practice test and fails the real exam. That's why we always hold out a <b>validation/test set</b> the model never trains on &mdash; the gap between training and validation accuracy reveals overfitting.</p>
+      <p><b>In this course:</b> a Module 1 lab deliberately overfits so you can <em>see</em> the train-vs-test gap open up; Module 2 adds early stopping to fight it.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m1-brain">
+    <summary><span class="q">Q</span><span>Is a neural network the same as how the human brain works?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>No &mdash; it's <b>loosely brain-<em>inspired</em></b>, not a model of the brain. Artificial "neurons" are simple math (weighted sum + activation). Real neurons are vastly more complex, and the brain doesn't learn by backpropagation.</div>
+      <p>The metaphor is useful for intuition and stops there. Treat "neuron" and "network" as convenient names for math, not biology &mdash; it prevents a lot of confusion later.</p>
+    </div>
+  </details>
+
+  <!-- ================= MODULE 2 ================= -->
+  <div class="day-header" id="m2">
+    <span class="tag">Day 1 &middot; Module 2</span>
+    <h2>Introduction to Deep Learning</h2>
+    <span class="cnt">6 questions</span>
+  </div>
+
+  <details class="faq" id="m2-neuron">
+    <summary><span class="q">Q</span><span>What is a "neuron" in a neural network?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>A neuron is a tiny function: it takes inputs, multiplies each by a <b>weight</b>, adds them up plus a <b>bias</b>, and passes the result through an <b>activation function</b>. That's it.</div>
+      <div class="terminal">output = activation( w1&middot;x1 + w2&middot;x2 + ... + b )</div>
+      <p>The weights and bias are the numbers <b>learned</b> during training. A "deep" network is just many of these stacked in layers, so the output of one layer feeds the next.</p>
+      <p><b>In this course:</b> Module 2's first labs build a single neuron by hand in NumPy before stacking them.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m2-activation">
+    <summary><span class="q">Q</span><span>Why do we need activation functions? What breaks without them?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>They add <b>non-linearity</b>. Without them, stacking 100 layers is mathematically identical to <b>one</b> layer &mdash; the network could only ever draw straight lines.</div>
+      <p>A weighted sum is linear. Chain linear things together and you still get a linear thing. Activations (ReLU, sigmoid, tanh) bend the output, letting the network model curves, corners, and complex patterns. ReLU (<code class="inl">max(0, x)</code>) is the modern default because it's simple and trains fast.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m2-loss">
+    <summary><span class="q">Q</span><span>What is a loss function and why do we need one?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>A loss function is a <b>single number that measures how wrong the model is</b>. Training is nothing more than <b>making that number smaller</b>.</div>
+      <p>Without a loss you can't tell "better" from "worse", so there's nothing to improve toward. Regression often uses <b>MSE</b> (mean squared error); classification uses <b>cross-entropy</b>. The loss is the target the whole training loop optimises.</p>
+      <p><b>In this course:</b> Module 2 has a dedicated MSE lab, then uses it to drive gradient descent.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m2-gradient-descent">
+    <summary><span class="q">Q</span><span>What is gradient descent &mdash; how does the model actually improve?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Gradient descent is "<b>which way is downhill, take a small step, repeat</b>". The gradient says how the loss changes as you nudge each weight; you step the weights in the direction that lowers loss.</div>
+      <p>Analogy: fog on a hillside, you can't see the bottom, but you can feel the slope under your feet and step downhill. The <b>learning rate</b> is how big each step is. <b>Backpropagation</b> is the efficient algorithm that computes those slopes for every weight at once.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m2-training-knobs">
+    <summary><span class="q">Q</span><span>What are epochs, batches, and the learning rate?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span><b>Epoch</b> = one full pass over the training data. <b>Batch</b> = the chunk of examples processed before each weight update. <b>Learning rate</b> = how big each update step is.</div>
+      <ul>
+        <li><b>Learning rate too high</b> &rarr; overshoots, loss bounces or explodes.</li>
+        <li><b>Too low</b> &rarr; trains painfully slowly, may get stuck.</li>
+        <li><b>Too few epochs</b> &rarr; underfit; <b>too many</b> &rarr; overfit.</li>
+      </ul>
+      <p>These are <b>hyperparameters</b> &mdash; you set them, the model doesn't learn them. Tuning them is a core skill; a Module 2 lab has you sweep them and read the curves.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m2-more-layers">
+    <summary><span class="q">Q</span><span>Why doesn't adding more layers/neurons always help?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>A bigger network has more capacity to <b>memorise</b> &mdash; so past a point it overfits, trains slower, and needs more data. Bigger is only better if you have the data (and regularisation) to match.</div>
+      <p>Capacity is a budget: too little and the model underfits (can't capture the pattern); too much and it overfits (captures noise). The right size is found empirically by watching the validation curve, not by assuming "more is better."</p>
+    </div>
+  </details>
+
+  <!-- ================================ DAY 2 ================================ -->
+  <div class="dayband">Day 2 &mdash; Transformer Models</div>
+
+  <!-- ================= MODULE 3 ================= -->
+  <div class="day-header" id="m3">
+    <span class="tag">Day 2 &middot; Module 3</span>
+    <h2>Why Transformers?</h2>
+    <span class="cnt">9 questions</span>
+  </div>
+
+  <details class="faq" id="m3-tokenization">
+    <summary><span class="q">Q</span><span>What is tokenization &mdash; why not just feed the model words or letters?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Tokenization splits text into <b>subword pieces</b> (roughly 4 characters each), each with an integer ID. It's a compromise between whole words (vocabulary explodes, can't handle new words) and single letters (sequences get too long, meaning too thin).</div>
+      <p>Subwords let a model represent <code class="inl">"tokenization"</code> as <code class="inl">token</code> + <code class="inl">ization</code> &mdash; so it handles rare or unseen words by composing pieces, while keeping the vocabulary manageable (~50k&ndash;100k tokens). Everything downstream (embeddings, attention) operates on these token IDs.</p>
+      <p><b>In this course:</b> Module 3 has both a tokenization lab and a subword-tokenizer lab.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m3-what-are-embeddings">
+    <summary><span class="q">Q</span><span>What are embeddings?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span><b>Embeddings turn things (words, sentences, images) into vectors of numbers</b>, arranged so that <b>similar things sit close together</b> and different things sit far apart. Meaning becomes geometry.</div>
+      <p>A computer can't work with the word <code class="inl">"king"</code> directly, so we map it to a list of numbers (e.g. 300 or 768 of them). The numbers aren't random &mdash; they're <b>learned</b> so that relationships are encoded as positions in space:</p>
+      <ul>
+        <li><code class="inl">"king"</code> and <code class="inl">"queen"</code> land near each other; <code class="inl">"king"</code> and <code class="inl">"banana"</code> land far apart.</li>
+        <li>Relationships become arithmetic: <code class="inl">king - man + woman &asymp; queen</code>.</li>
+      </ul>
+      <p><b>Why it matters:</b> raw words are discrete and meaningless to math. Embeddings give a dense, meaningful space where you can measure <b>similarity</b> (usually <b>cosine similarity</b> &mdash; the angle between vectors), do <b>semantic search</b>, and feed vectors into models.</p>
+      <div class="terminal"><span class="kw">def</span> cosine_similarity(a, b):
+    <span class="kw">return</span> np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+<span class="com"># ~1.0 = very similar,  ~0 = unrelated,  negative = opposite</span></div>
+      <p><b>In this course:</b> Module 3 labs build embeddings + cosine similarity by hand (offline NumPy), and semantic search with TF-IDF. The same idea powers <b>ChromaDB + RAG</b> in the later agent modules.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m3-embeddings-in-llm">
+    <summary><span class="q">Q</span><span>What do embeddings mean <em>inside</em> an LLM?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>An LLM only ever computes on vectors. Text is turned into <b>token embeddings</b>, refined layer by layer into <b>contextual embeddings</b>, then converted back into a probability over the next token.</div>
+      <h4>1. Token embeddings &mdash; the entry point</h4>
+      <p>Text &rarr; tokens (subwords) &rarr; integer token IDs &rarr; a lookup in a learnable <b>embedding matrix</b> of shape <code class="inl">[vocab_size, d_model]</code> (one vector per token in the vocabulary).</p>
+      <h4>2. Positional information</h4>
+      <p><code class="inl">"dog bites man"</code> &ne; <code class="inl">"man bites dog"</code>, so the model adds <b>positional encoding</b> (sinusoidal, or modern <b>RoPE</b>) so each vector knows <em>what</em> the token is <em>and where</em> it sits.</p>
+      <h4>3. Contextual embeddings &mdash; the key insight</h4>
+      <p>Old static embeddings (Word2Vec) gave <code class="inl">"bank"</code> one fixed vector forever. In an LLM, <b>attention</b> lets each token look at the others and update itself &mdash; so <code class="inl">"bank"</code> in <em>"river bank"</em> ends up near <em>water</em>, and in <em>"bank loan"</em> near <em>money</em>. Same token, different vector, depending on context.</p>
+      <h4>4. Output &mdash; back to tokens</h4>
+      <p>The final vector is multiplied by the vocabulary matrix &rarr; a logit per token &rarr; softmax &rarr; <code class="inl">P(next token)</code>.</p>
+      <div class="quick"><span class="lbl">Two things called "embeddings"</span><b>Internal token embeddings</b> flow through the LLM to generate text. <b>Embedding models</b> (e.g. <code class="inl">text-embedding-3</code>, sentence-transformers) output <b>one vector per sentence/document</b> &mdash; that's what you store in a vector DB for RAG.</div>
+    </div>
+  </details>
+
+  <details class="faq" id="m3-attention-step">
+    <summary><span class="q">Q</span><span>How does the attention step actually work?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Each token asks a <b>Query</b>, compares it against every token's <b>Key</b> to get scores, softmaxes the scores into weights, then takes a <b>weighted sum of Values</b>. That blend becomes its new, context-aware vector.</div>
+      <p>Every token vector is projected into three vectors with learned matrices:</p>
+      <ul>
+        <li><b>Query (Q)</b> &mdash; "what am I looking for?"</li>
+        <li><b>Key (K)</b> &mdash; "what do I advertise?"</li>
+        <li><b>Value (V)</b> &mdash; "what info do I pass on?"</li>
+      </ul>
+      <p><b>Library analogy:</b> your Query is the topic you want, each book's Key is its spine label, its Value is the content inside. Match query to keys, then collect content from the best matches.</p>
+      <h4>The four steps (for one token)</h4>
+      <ul>
+        <li><b>1. Score:</b> dot Q with every K &rarr; relevance scores.</li>
+        <li><b>2. Scale:</b> divide by <code class="inl">&radic;d_k</code> for numerical stability.</li>
+        <li><b>3. Softmax:</b> turn scores into weights that sum to 1.</li>
+        <li><b>4. Weighted sum:</b> blend the Values by those weights &rarr; the new vector.</li>
+      </ul>
+      <div class="terminal"><span class="hi">Attention(Q, K, V) = softmax( Q&middot;K&#7488; / &radic;d_k ) &middot; V</span></div>
+      <p><b>Multi-head attention:</b> run many of these in parallel, each learning a different relationship (grammatical subject, adjacency, long-range reference), then concatenate.</p>
+      <p><b>Causal mask (GPT-style):</b> future tokens' scores are set to &minus;&infin; before softmax, so a token can only attend to itself and the past. That one change is the difference between BERT (bidirectional) and GPT (left-to-right).</p>
+      <p><b>In this course:</b> Module 3's "attention-by-hand" lab computes these four steps in NumPy; the "attention heatmap" lab plots the softmax weights.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m3-attention-worked-example">
+    <summary><span class="q">Q</span><span>Can you show a tiny worked numerical example of attention?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Sentence <code class="inl">"cat sat mat"</code>, 2-D vectors. We compute the new vector for <b>"cat"</b> and get <code class="inl">[6.69, 3.31]</code> &mdash; a blend of the Values "cat" chose to attend to.</div>
+      <p><b>Setup</b> (Q for "cat" is <code class="inl">[2, 0]</code>; <code class="inl">d_k = 2</code>, so <code class="inl">&radic;d_k &asymp; 1.414</code>):</p>
+      <div class="tbl-scroll"><table>
+        <thead><tr><th>Token</th><th>Key (K)</th><th>Value (V)</th></tr></thead>
+        <tbody>
+          <tr><td>cat</td><td>[1, 0]</td><td>[10, 0]</td></tr>
+          <tr><td>sat</td><td>[0, 1]</td><td>[0, 10]</td></tr>
+          <tr><td>mat</td><td>[1, 1]</td><td>[5, 5]</td></tr>
+        </tbody>
+      </table></div>
+      <div class="terminal"><span class="com"># Step 1 - Score: Q&middot;K for each token</span>
+Q&middot;K_cat = [2,0]&middot;[1,0] = 2
+Q&middot;K_sat = [2,0]&middot;[0,1] = 0
+Q&middot;K_mat = [2,0]&middot;[1,1] = 2          <span class="com"># raw scores [2, 0, 2]</span>
+
+<span class="com"># Step 2 - Scale by &radic;d_k = 1.414</span>
+[2, 0, 2] / 1.414 = [1.414, 0, 1.414]
+
+<span class="com"># Step 3 - Softmax -> weights (sum to 1)</span>
+e^1.414=4.11  e^0=1.00  e^1.414=4.11   sum=9.22
+weights = [0.446, 0.108, 0.446]
+
+<span class="com"># Step 4 - Weighted sum of Values</span>
+x: 0.446&times;10 + 0.108&times;0  + 0.446&times;5 = 6.69
+y: 0.446&times;0  + 0.108&times;10 + 0.446&times;5 = 3.31
+
+<span class="hi">new_cat &asymp; [6.69, 3.31]</span></div>
+      <p><b>What to notice:</b> equal-scoring tokens (cat, mat) get equal weight; the irrelevant one (sat) is suppressed but <em>not</em> zeroed &mdash; softmax is soft. Change the Query and the whole output changes: the query <em>is</em> "what am I looking for." And the <code class="inl">&radic;d_k</code> divisor stops large dimensions from making softmax too sharp (which would kill gradients).</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m3-positional-encoding">
+    <summary><span class="q">Q</span><span>What is positional encoding, and why is it needed if attention sees everything?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Attention is <b>order-blind</b> by default &mdash; it treats the input as a bag of tokens. Positional encoding <b>injects "where each token sits"</b> into its vector so word order carries meaning.</div>
+      <p>Without it, <code class="inl">"dog bites man"</code> and <code class="inl">"man bites dog"</code> would look identical to the model. The original transformer added fixed <b>sinusoidal</b> patterns; modern LLMs often use <b>RoPE</b> (rotary) which encodes relative position and generalises better to longer inputs.</p>
+      <p><b>In this course:</b> Module 3 has a positional-encoding lab so you see the patterns added to the embeddings.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m3-why-not-rnn">
+    <summary><span class="q">Q</span><span>Why did transformers replace RNNs/LSTMs? What was wrong with them?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>RNNs read text <b>one token at a time, in order</b> &mdash; slow to train (no parallelism) and forgetful over long distances. Transformers process the <b>whole sequence at once</b> and let any token reach any other in a single step.</div>
+      <ul>
+        <li><b>Parallelism:</b> RNNs are sequential by design; transformers compute all positions simultaneously &rarr; far better GPU use &rarr; train on much more data.</li>
+        <li><b>Long-range memory:</b> RNN signal degrades over distance; attention connects distant tokens directly.</li>
+      </ul>
+      <p>That combination is exactly what made today's large models possible.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m3-transformer-paper">
+    <summary><span class="q">Q</span><span>Who published the paper on transformers?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span><b>"Attention Is All You Need"</b> (2017), by eight authors primarily at <b>Google</b> (Brain &amp; Research), presented at <b>NeurIPS 2017</b>. arXiv: <code class="inl">1706.03762</code>.</div>
+      <p><b>The eight authors:</b> Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez (Univ. of Toronto), &#321;ukasz Kaiser, Illia Polosukhin. A footnote states contribution was equal and author order was randomized.</p>
+      <p><b>Why it's a landmark:</b> it dropped recurrence (RNNs/LSTMs) and convolutions entirely, relying <b>only on self-attention</b> &mdash; making training massively parallel and scalable. That directly enabled BERT, GPT, T5 and everything since. 100,000+ citations.</p>
+      <p><b>Trivia:</b> several authors went on to found major AI efforts &mdash; Aidan Gomez co-founded Cohere; Noam Shazeer co-founded Character.AI and later co-led Google Gemini; Illia Polosukhin co-founded NEAR.</p>
+      <ul class="refs"><li><a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener">Vaswani et al. (2017) &mdash; Attention Is All You Need</a></li></ul>
+    </div>
+  </details>
+
+  <details class="faq" id="m3-why-bert-is-a-transformer">
+    <summary><span class="q">Q</span><span>BERT doesn't "transform" anything &mdash; why is it called a Transformer?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>"Transformer" is the <b>name of an architecture</b>, not a description of turning text into other text. The "transform" happens <b>internally</b>: it transforms input vectors into richer vectors, layer by layer &mdash; which BERT does just as much as GPT.</div>
+      <p>Asking "but BERT doesn't transform anything" is a bit like asking "why is it called <em>Java</em> if it's not coffee?" &mdash; the name is a proper noun, not a verb about the output.</p>
+      <p><b>There <em>is</em> a real transform, just not the one you're picturing.</b> Recall the worked example: "cat" went in as <code class="inl">[2, 0]</code> and came out as <code class="inl">[6.69, 3.31]</code>. Each layer <em>transforms</em> every token's representation into a more context-aware one. BERT does exactly this &mdash; it just uses the result to <b>understand</b> (classify, embed) rather than to <b>generate</b> new words.</p>
+      <p><b>Why it's legitimately in the family:</b> BERT is built from transformer components &mdash; self-attention (Q/K/V), stacked transformer blocks, positional encoding. It uses the <b>encoder</b> half (bidirectional); GPT uses the <b>decoder</b> half (causal). The name spells it out: <b>B</b>idirectional <b>E</b>ncoder <b>R</b>epresentations from <b>T</b>ransformers &mdash; the "T" <em>is</em> Transformer.</p>
+      <div class="quick"><b>One-liner:</b> "Transformer" names the architecture, not the task. It transforms vectors &rarr; richer vectors. BERT does this to <b>understand</b>; GPT does this to <b>generate</b>.</div>
+    </div>
+  </details>
+
+  <!-- ================= MODULE 4 ================= -->
+  <div class="day-header" id="m4">
+    <span class="tag">Day 2 &middot; Module 4</span>
+    <h2>Pre-trained Models &amp; Fine-tuning</h2>
+    <span class="cnt">5 questions</span>
+  </div>
+
+  <details class="faq" id="m4-are-bert-gpt-algorithms">
+    <summary><span class="q">Q</span><span>Are BERT and GPT "algorithms"?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Not quite. BERT and GPT are <b>model architectures / families of trained models</b> &mdash; a design + a training objective + the resulting weights. The <b>algorithms</b> are what <em>build</em> them: gradient descent, backpropagation, the attention computation.</div>
+      <h4>The layered vocabulary</h4>
+      <div class="tbl-scroll"><table>
+        <thead><tr><th>Term</th><th>Means</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td><b>Algorithm</b></td><td>A step-by-step procedure</td><td>Backprop, gradient descent, Adam</td></tr>
+          <tr><td><b>Architecture</b></td><td>The <em>shape</em> of the network</td><td>Transformer, CNN, RNN</td></tr>
+          <tr><td><b>Model (family)</b></td><td>Architecture + training objective</td><td>BERT, GPT, T5</td></tr>
+          <tr><td><b>Model (weights)</b></td><td>One trained instance</td><td><code class="inl">gpt-4</code>, <code class="inl">bert-base-uncased</code></td></tr>
+        </tbody>
+      </table></div>
+      <p>Loosely, people say "the GPT algorithm" in casual speech &mdash; not worth fighting over, but strictly it's a model architecture <em>trained by</em> algorithms.</p>
+      <h4>BERT vs GPT &mdash; the real difference</h4>
+      <div class="tbl-scroll"><table>
+        <thead><tr><th></th><th>BERT</th><th>GPT</th></tr></thead>
+        <tbody>
+          <tr><td><b>Name</b></td><td>Bidirectional Encoder Representations from Transformers</td><td>Generative Pre-trained Transformer</td></tr>
+          <tr><td><b>Uses</b></td><td>Encoder stack</td><td>Decoder stack</td></tr>
+          <tr><td><b>Attention</b></td><td>Bidirectional (sees whole sentence)</td><td>Causal (left-to-right only)</td></tr>
+          <tr><td><b>Objective</b></td><td>Masked language modeling (fill the blank)</td><td>Next-token prediction</td></tr>
+          <tr><td><b>Best at</b></td><td><em>Understanding</em> &mdash; classify, search, embed</td><td><em>Generating</em> &mdash; write, chat, complete</td></tr>
+          <tr><td><b>Maker</b></td><td>Google (2018)</td><td>OpenAI (2018&rarr;)</td></tr>
+        </tbody>
+      </table></div>
+      <p><b>In this course:</b> the "fine-tune BERT for sentiment" labs use BERT because it's an understanding/encoder model; the text-generation labs use a GPT-style decoder. Choosing between them <em>is</em> the encoder-vs-decoder decision above.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m4-what-is-finetuning">
+    <summary><span class="q">Q</span><span>What is fine-tuning, and why not just train a model from scratch?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Fine-tuning takes a model that already <b>learned language from billions of examples</b> and nudges it toward <b>your specific task</b> with a small dataset. Training from scratch would need enormous data, compute, and money to re-learn what's already known.</div>
+      <p>The pretrained model already understands grammar, meaning, and context. You're just adapting that general knowledge &mdash; like hiring a fluent speaker and teaching them your company's jargon, rather than teaching a baby to talk. This is a form of <b>transfer learning</b>.</p>
+      <p><b>In this course:</b> Module 4's advanced labs fine-tune a sentiment classifier and show the before-vs-after jump in accuracy.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m4-prompt-vs-finetune-vs-rag">
+    <summary><span class="q">Q</span><span>Prompt engineering vs fine-tuning vs RAG &mdash; when do I use which?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Three ways to steer a model, cheapest first: <b>prompt</b> (change the instructions), <b>RAG</b> (give it the right documents at question time), <b>fine-tune</b> (change the model's weights).</div>
+      <div class="tbl-scroll"><table>
+        <thead><tr><th>Approach</th><th>Changes</th><th>Best for</th></tr></thead>
+        <tbody>
+          <tr><td><b>Prompting</b></td><td>Just the input text</td><td>Behaviour/format tweaks; fast, free, first thing to try</td></tr>
+          <tr><td><b>RAG</b></td><td>Adds retrieved context</td><td>Giving the model <em>knowledge</em> it lacks (your docs, fresh facts)</td></tr>
+          <tr><td><b>Fine-tuning</b></td><td>The model's weights</td><td>A consistent <em>skill/style/format</em> at scale; specialised classification</td></tr>
+        </tbody>
+      </table></div>
+      <p><b>Rule of thumb:</b> try prompting first, reach for RAG when the problem is missing <em>knowledge</em>, fine-tune when it's a missing <em>skill</em> you need reliably and repeatedly. They combine &mdash; a fine-tuned model can still use RAG.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m4-transfer-learning">
+    <summary><span class="q">Q</span><span>What is transfer learning / a "frozen" model?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Transfer learning = <b>reuse a model trained on one task as the starting point for another</b>. "Freezing" means <b>locking most of the pretrained weights</b> and training only a small new head on top.</div>
+      <p>The frozen body acts as a fixed feature extractor (it already knows how to represent language/images); the small trainable head learns your specific labels. This needs far less data and compute than full fine-tuning and resists overfitting.</p>
+      <p><b>In this course:</b> Module 4's offline-graded labs do exactly this &mdash; frozen TF-IDF features + a trainable classifier head, the portable form of fine-tuning.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m4-base-vs-instruct">
+    <summary><span class="q">Q</span><span>What's the difference between a base model and an instruct/chat model?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>A <b>base model</b> just predicts the next token &mdash; it completes text but doesn't reliably follow instructions. An <b>instruct/chat model</b> is a base model further trained (instruction tuning + RLHF) to <b>follow requests and hold a conversation</b>.</div>
+      <p>Ask a base model "What is the capital of France?" and it might continue with more quiz questions instead of answering. The instruct version answers. Almost everything you use as an assistant (ChatGPT, Claude) is the instruct-tuned kind.</p>
+    </div>
+  </details>
+
+  <!-- ================================ DAY 3 ================================ -->
+  <div class="dayband">Day 3 &mdash; Agentic AI Foundations</div>
+
+  <!-- ================= MODULE 5 ================= -->
+  <div class="day-header" id="m5">
+    <span class="tag">Day 3 &middot; Module 5</span>
+    <h2>What Is Agentic AI?</h2>
+    <span class="cnt">6 questions</span>
+  </div>
+
+  <details class="faq" id="m5-llm-vs-agent">
+    <summary><span class="q">Q</span><span>What's the difference between an LLM and an agent? Isn't ChatGPT already an agent?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>An <b>LLM</b> answers in one shot: text in &rarr; text out. An <b>agent</b> wraps the LLM in a <b>goal, a loop, tools, and memory</b> so it can take actions, observe results, and keep going until the task is done.</div>
+      <p>The LLM is the brain; the agent is the brain plus hands and a to-do loop. Plain ChatGPT can only talk. An agent can call a calculator, search the web, read a file, check the result, and decide the next step. The difference is <b>acting in a loop toward a goal</b>, not just responding.</p>
+      <p><b>In this course:</b> Module 5's first lab is literally "model vs agent"; you then build the loop from scratch.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m5-react-loop">
+    <summary><span class="q">Q</span><span>What is the ReAct loop (reason &rarr; act &rarr; observe)?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>ReAct is the core agent cycle: the model <b>Reasons</b> about what to do, <b>Acts</b> by calling a tool, <b>Observes</b> the tool's result, then loops &mdash; until it has the answer.</div>
+      <div class="terminal"><span class="kw">Thought:</span> I need today's exchange rate.
+<span class="kw">Action:</span> get_rate("USD","INR")
+<span class="kw">Observation:</span> 83.2
+<span class="kw">Thought:</span> Now I can compute the total.
+<span class="out">... loop until done ...</span></div>
+      <p>The loop is what turns a one-shot predictor into something that can chain steps and recover from surprises. <b>In this course:</b> Module 5 has you build this loop in plain Python, driven by a deterministic "mock LLM" policy.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m5-what-is-a-tool">
+    <summary><span class="q">Q</span><span>What is a "tool" for an agent &mdash; is it just an API call?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>A tool is <b>any function the agent is allowed to call</b> &mdash; a calculator, a database query, a web search, an email sender. It's how the agent <b>affects or reads the world</b> beyond generating text.</div>
+      <p>Each tool has a name, a description (so the model knows when to use it), and typed inputs/outputs. An API call is one common kind of tool, but a local function or DB lookup counts too. <b>Which tools you give an agent defines what it can &mdash; and can't &mdash; do</b>, which is also your main safety lever.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m5-guardrails">
+    <summary><span class="q">Q</span><span>What stops an agent from running forever or going rogue?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span><b>Guardrails</b> &mdash; explicit limits you code around the loop: a <b>max-steps cap</b>, a tool <b>allow-list</b>, <b>loop detection</b>, and <b>input validation</b>. The agent's autonomy is bounded by design, not by hope.</div>
+      <ul>
+        <li><b>Max steps:</b> the loop can't run more than N iterations.</li>
+        <li><b>Allow-list:</b> it can only call tools you explicitly approved.</li>
+        <li><b>Loop detection:</b> repeating the same action/observation halts it.</li>
+        <li><b>Input validation:</b> reject malformed or dangerous tool arguments.</li>
+      </ul>
+      <p><b>In this course:</b> Module 5 has a dedicated guardrails lab; the theme returns hard in Modules 9&ndash;10.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m5-plan-vs-react">
+    <summary><span class="q">Q</span><span>What's the difference between plan-and-execute and ReAct?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span><b>ReAct</b> decides the next step one at a time as it goes. <b>Plan-and-execute</b> writes the <b>whole plan up front</b>, then carries it out step by step.</div>
+      <p>ReAct is flexible and adapts to surprises but can wander. Plan-and-execute is more structured and predictable for complex multi-step tasks, but a bad initial plan hurts. Many real agents combine them: plan, execute, and re-plan if reality diverges. <b>Reflection/self-critique</b> (a Module 5 lab) adds a step where the agent checks its own work.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m5-does-it-decide">
+    <summary><span class="q">Q</span><span>Does the agent actually "decide", or is it just the LLM predicting text?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Mechanically it's still next-token prediction &mdash; but wrapped in a loop that <b>executes those predictions as actions</b>, the effect <em>is</em> decision-making. The "decision" is the model choosing which tool-call text to emit next.</div>
+      <p>It's useful to hold both truths: there's no little person inside, just prediction; and the loop turns those predictions into real, consequential actions. That's exactly why guardrails matter &mdash; a confident wrong prediction becomes a confident wrong action.</p>
+    </div>
+  </details>
+
+  <!-- ================= MODULE 6 ================= -->
+  <div class="day-header" id="m6">
+    <span class="tag">Day 3 &middot; Module 6</span>
+    <h2>Frameworks for Building AI Agents</h2>
+    <span class="cnt">6 questions</span>
+  </div>
+
+  <details class="faq" id="m6-why-langchain">
+    <summary><span class="q">Q</span><span>Why do I need LangChain &mdash; can't I just call the LLM API myself?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>You can &mdash; and in Module 5 you did. A framework like LangChain just <b>saves you from re-writing the plumbing</b>: the agent loop, tool routing, memory, prompt templating, retries, and tracing. You write intent; it runs the machinery.</div>
+      <p>For a one-off script, raw API calls are fine. As soon as you want tools, memory, multi-step loops, and observability, you're rebuilding a framework by hand. LangChain gives you those as composable pieces. The tradeoff is a layer of abstraction to learn &mdash; which is why the course builds the loop from scratch <em>first</em>, so the framework feels like a shortcut, not magic.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m6-langchain-vs-langgraph">
+    <summary><span class="q">Q</span><span>What's the difference between LangChain and LangGraph?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span><b>LangChain</b> is great for linear "chain of steps" agents. <b>LangGraph</b> models the agent as a <b>graph of nodes with state</b> &mdash; better for loops, branches, human-in-the-loop pauses, and multi-agent flows.</div>
+      <p>Reach for LangGraph when your agent needs cycles, conditional routing, or a human approval step in the middle &mdash; things awkward to express as a straight chain. LangChain is the simpler default; LangGraph is where you graduate when control flow gets complex.</p>
+      <p><b>In this course:</b> Module 6 shows a LangGraph-style state graph with a human-in-the-loop node.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m6-agentexecutor">
+    <summary><span class="q">Q</span><span>What is the AgentExecutor / the loop the framework runs?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>The AgentExecutor is the framework's <b>run-the-ReAct-loop-for-you</b> engine: it asks the model what to do, calls the chosen tool, feeds the result back, and repeats &mdash; up to <code class="inl">max_iterations</code>.</div>
+      <p>It's the exact loop you hand-built in Module 5, now provided and hardened. <code class="inl">max_iterations</code> is a built-in guardrail (the max-steps cap). Understanding it means the framework is never a black box &mdash; you know precisely what it's doing each turn.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m6-tool-decorator">
+    <summary><span class="q">Q</span><span>What's the <code class="inl">@tool</code> decorator actually doing?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>It <b>registers a plain Python function as a tool the agent can call</b> &mdash; taking the function's name, docstring, and signature and turning them into the description the model reads to decide when to use it.</div>
+      <div class="terminal"><span class="kw">@tool</span>
+<span class="kw">def</span> get_weather(city: str) -> str:
+    <span class="str">"""Return the current weather for a city."""</span>
+    ...</div>
+      <p>The docstring matters &mdash; it's how the model knows what the tool does. A vague description means the agent uses the tool badly. <b>In this course:</b> Module 6's first lab is writing your first <code class="inl">@tool</code>.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m6-autogpt">
+    <summary><span class="q">Q</span><span>Is AutoGPT the same kind of thing as LangChain?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Related but different. <b>LangChain</b> is a <b>toolkit/library</b> you build agents <em>with</em>. <b>AutoGPT</b> is a <b>ready-made autonomous agent</b> that tries to self-direct toward a goal with minimal steering.</div>
+      <p>LangChain gives you control and building blocks. AutoGPT is more "set a goal and let it run" &mdash; impressive as a demo, but harder to make reliable and safe for real work. The course leans on LangChain because <b>control and guardrails</b> matter for production agents.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m6-prompttemplate">
+    <summary><span class="q">Q</span><span>What is a PromptTemplate &mdash; why not just use an f-string?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>A PromptTemplate is a <b>reusable prompt with named slots</b>. You can &mdash; for something trivial &mdash; use an f-string; the template adds validation, reuse, composability, and integration with the rest of the framework.</div>
+      <p>It keeps prompts as first-class, testable objects rather than strings scattered through code, and plugs cleanly into chains and agents. For quick experiments an f-string is fine; for a maintained agent, templates pay off.</p>
+    </div>
+  </details>
+
+  <!-- ================================ DAY 4 ================================ -->
+  <div class="dayband">Day 4 &mdash; Real-World Agents</div>
+
+  <!-- ================= MODULE 7 ================= -->
+  <div class="day-header" id="m7">
+    <span class="tag">Day 4 &middot; Module 7</span>
+    <h2>Task Automation</h2>
+    <span class="cnt">6 questions</span>
+  </div>
+
+  <details class="faq" id="m7-agent-vs-script">
+    <summary><span class="q">Q</span><span>How is an automation agent different from a normal script or cron job?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>A script follows <b>fixed steps you wrote</b>. An agent <b>decides steps at run time</b> using an LLM &mdash; it can read messy input, choose tools, adapt, and handle cases you didn't hard-code.</div>
+      <p>Use a script when the process is fixed and known. Use an agent when the input is unstructured or the path varies (e.g. "read this email and draft an appropriate reply"). The cost is less determinism &mdash; which is why agent automation leans hard on validation and human approval.</p>
+      <p><b>In this course:</b> Module 7 builds the email-drafting agent piece by piece as an automation pipeline: trigger &rarr; gather &rarr; draft &rarr; validate &rarr; approve &rarr; act.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m7-draft-not-send">
+    <summary><span class="q">Q</span><span>Why should the email agent draft but not send?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Because sending is <b>irreversible and outward-facing</b>. Draft-not-send keeps a <b>human in the loop</b> for the consequential action &mdash; the agent does the work, a person approves the send.</div>
+      <p>The pattern: give the agent all the <em>gather</em> tools it needs, but <b>withhold</b> <code class="inl">send_email</code>. It returns a <code class="inl">needs_approval</code> draft instead of acting. You get the productivity of automation without the risk of an agent confidently emailing the wrong thing to a customer.</p>
+      <p><b>In this course:</b> this is Module 7's explicit human-in-the-loop gate; the capstone never auto-sends.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m7-structured-output">
+    <summary><span class="q">Q</span><span>What is structured output and why does it matter?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Structured output means the model returns <b>a predictable shape (like JSON with named fields)</b> instead of free-form prose &mdash; so your code can <b>reliably use it</b> without fragile text parsing.</div>
+      <p>"The customer wants a refund of $40 for order 123" is hard to act on programmatically. <code class="inl">{"intent":"refund","amount":40,"order":"123"}</code> is trivial to route and validate. Structured output is the glue that lets an LLM plug into real systems.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m7-extract-route">
+    <summary><span class="q">Q</span><span>What are the extract and route patterns?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span><b>Extract</b> = pull structured fields out of messy input. <b>Route</b> = decide which path/handler/tool the input should go to. Together they turn raw input into a typed decision.</div>
+      <p>A support message comes in &rarr; <b>extract</b> intent + details &rarr; <b>route</b> to the billing flow vs the tech flow. These two patterns show up in almost every real automation agent; Module 7 has dedicated labs for each and chains them in the capstone.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m7-idempotency">
+    <summary><span class="q">Q</span><span>What is idempotency and why does an agent need it?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Idempotent = <b>doing the same action twice has the same effect as doing it once</b>. Agents retry on failure, so without it a retry could send two emails or issue two refunds.</div>
+      <p>You get it with things like unique request keys or "check before acting". Because agents loop and retry, idempotency is what makes retries <b>safe</b> instead of dangerous. Module 7 pairs it with a retry lab.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m7-wrong-action">
+    <summary><span class="q">Q</span><span>How do I stop the agent from doing the wrong action confidently?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Three layers: <b>validate</b> the draft/action before it runs, <b>withhold</b> the dangerous tools, and <b>gate</b> the irreversible step behind a human. Confidence is not correctness.</div>
+      <p>An LLM will state a wrong answer as fluently as a right one. So you never trust the output blindly &mdash; you check it against rules (validation), limit what it <em>can</em> do (least privilege), and require approval for anything you can't undo.</p>
+    </div>
+  </details>
+
+  <!-- ================= MODULE 8 ================= -->
+  <div class="day-header" id="m8">
+    <span class="tag">Day 4 &middot; Module 8</span>
+    <h2>Multi-Agent Collaboration</h2>
+    <span class="cnt">6 questions</span>
+  </div>
+
+  <details class="faq" id="m8-why-multiple">
+    <summary><span class="q">Q</span><span>Why use multiple agents instead of one big smart agent?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span><b>Separation of concerns.</b> Specialist agents (billing, tech, legal) each with a focused prompt and toolset are easier to build, test, and keep reliable than one giant agent trying to do everything.</div>
+      <p>Same reason software has modules and teams have roles: a focused agent has a smaller, clearer job, fewer tools to misuse, and is easier to debug. A <b>supervisor</b> routes each request to the right specialist. The cost is coordination overhead &mdash; which is the rest of this module.</p>
+      <p><b>In this course:</b> Module 8 builds the customer-service chatbot as a team of specialists behind a supervisor.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m8-supervisor">
+    <summary><span class="q">Q</span><span>What is a supervisor / router agent?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>The supervisor is the <b>traffic controller</b>: it reads the request, decides <b>which specialist(s) should handle it</b>, and routes it there &mdash; then optionally synthesises their outputs into one reply.</div>
+      <p>It's the multi-agent version of the route pattern from Module 7, but the destinations are whole agents rather than functions. It also handles <b>multi-intent</b> requests ("I have a billing question <em>and</em> a bug") by dispatching to more than one specialist.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m8-sequential-vs-parallel">
+    <summary><span class="q">Q</span><span>What's the difference between sequential and parallel agent execution?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span><b>Sequential</b> = a pipeline; each agent's output feeds the next. <b>Parallel</b> (fan-out) = several agents work at once on independent parts, then results are combined.</div>
+      <p>Use sequential when steps depend on each other (research &rarr; draft &rarr; edit). Use parallel when parts are independent (get billing info <em>and</em> tech info simultaneously) &mdash; it's faster. A supervisor can do both: fan out, then synthesise.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m8-handoff">
+    <summary><span class="q">Q</span><span>What is a "handoff" and why cap it?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>A handoff is <b>one agent passing control to another</b>. You cap the number of handoffs so agents can't <b>ping-pong forever</b> ("this isn't mine" &rarr; "not mine either" &rarr; ...).</div>
+      <p>Uncapped handoffs are a classic multi-agent failure &mdash; a loop that burns tokens and never resolves. An explicit cap (plus loop detection) is the multi-agent guardrail, the same discipline as max-steps for a single agent.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m8-consensus">
+    <summary><span class="q">Q</span><span>How do agents "agree" &mdash; voting, debate, synthesis?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Three common patterns: <b>voting</b> (run several, take the majority), <b>critique/debate</b> (agents challenge each other's answers in a capped loop), and <b>synthesis</b> (one agent merges multiple outputs into a single grounded reply).</div>
+      <p>Voting improves reliability on factual calls. Debate surfaces weaknesses one agent alone would miss. Synthesis produces the final, coherent answer. Each has a lab in Module 8; the debate loop is capped so it can't run forever.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m8-more-cost">
+    <summary><span class="q">Q</span><span>Doesn't more agents just mean more cost and more ways to fail?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Yes &mdash; multi-agent is not free. It costs more tokens and adds coordination failure modes. Use it when a task genuinely benefits from specialisation or independent perspectives, not by default.</div>
+      <p>A single well-prompted agent is often enough. Reach for multi-agent when the work splits cleanly into roles, or when independent voices materially improve quality (voting/debate). Always add observability and loop-detection &mdash; more moving parts need more visibility.</p>
+    </div>
+  </details>
+
+  <!-- ================================ DAY 5 ================================ -->
+  <div class="dayband">Day 5 &mdash; Advanced &amp; Responsible</div>
+
+  <!-- ================= MODULE 9 ================= -->
+  <div class="day-header" id="m9">
+    <span class="tag">Day 5 &middot; Module 9</span>
+    <h2>Agents in Industry (High-Stakes)</h2>
+    <span class="cnt">6 questions</span>
+  </div>
+
+  <details class="faq" id="m9-no-advice">
+    <summary><span class="q">Q</span><span>Why can't a finance agent just give investment advice?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Because investment advice is <b>regulated, liability-bearing, and consequential</b>. The agent is built to be <b>informational only</b> &mdash; it grounds and explains figures; a licensed human decides.</div>
+      <p>This isn't a limitation to work around &mdash; it's the design. A <b>no-advice guardrail</b> keeps the agent from saying "buy" or "sell", and the trade tool is deliberately withheld. It informs; it doesn't act or advise.</p>
+      <p><b>In this course:</b> Module 9's financial-report insight agent embodies this throughout &mdash; it's the responsible-AI point of the module.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m9-grounding-citing">
+    <summary><span class="q">Q</span><span>What does "grounding" and "citing every claim" mean for an agent?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span><b>Grounding</b> = every figure the agent states is tied back to <b>its source in the actual document</b>. <b>Citing</b> = it shows that source alongside each claim, so a human can verify.</div>
+      <p>This is the antidote to hallucination in high-stakes settings. If the agent says "revenue was &#8377;42 crore", it must point to the line it read that from. No source &rarr; not stated. Grounding + citations make the output <b>auditable</b>, not just plausible.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m9-withhold-trade">
+    <summary><span class="q">Q</span><span>Why withhold the trade tool &mdash; isn't automation the whole point?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Automating <b>insight</b> is valuable; automating an <b>irreversible, high-consequence action</b> (placing a trade) is where you stop. The agent gets read-only tools; a human makes the call.</div>
+      <p>This is <b>least privilege</b> applied to finance: give the agent exactly the tools it needs to inform (<code class="inl">extract_figure</code>, <code class="inl">compute</code>) and nothing that can move money. The value is in fast, grounded analysis &mdash; not in removing the human from the trigger.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m9-automation-bias">
+    <summary><span class="q">Q</span><span>What is automation bias and why do citations fight it?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Automation bias is the human tendency to <b>over-trust a confident machine</b> and stop checking. Citations fight it by making verification easy &mdash; and by signalling the output is a claim <em>to check</em>, not a verdict.</div>
+      <p>An agent that returns a <code class="inl">needs_review</code> flag plus a source for every number nudges the human to actually review, rather than rubber-stamp. Design that assumes people will over-trust is safer than design that hopes they won't.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m9-audit-trail">
+    <summary><span class="q">Q</span><span>What is an audit trail and why does a regulated industry need one?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>An audit trail is a <b>durable log of what the agent did, read, and produced &mdash; and why</b>. Regulated industries need it to prove decisions were sound, reproduce them, and investigate when something goes wrong.</div>
+      <p>"The AI said so" is not defensible. "Here is the exact input, the sources read, the steps taken, and the output" is. The trail is also how you debug and how you demonstrate compliance. Module 9 has a dedicated audit-trail lab.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m9-assistive-vs-autonomous">
+    <summary><span class="q">Q</span><span>What's the difference between assistive and autonomous?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span><b>Assistive</b> = the agent informs and recommends; a human decides and acts. <b>Autonomous</b> = the agent decides and acts on its own. In high-stakes domains, assistive is the responsible default.</div>
+      <p>The insight agent is deliberately assistive: it produces grounded, cited analysis with a <code class="inl">needs_review</code> flag &mdash; the human analyst stays the decision-maker. Autonomy is earned only where actions are low-stakes and reversible.</p>
+    </div>
+  </details>
+
+  <!-- ================= MODULE 10 ================= -->
+  <div class="day-header" id="m10">
+    <span class="tag">Day 5 &middot; Module 10</span>
+    <h2>Ethics &amp; Responsible AI</h2>
+    <span class="cnt">7 questions</span>
+  </div>
+
+  <details class="faq" id="m10-prompt-injection">
+    <summary><span class="q">Q</span><span>What is prompt injection, and how is "treat input as data" a defense?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Prompt injection is when <b>untrusted input contains instructions</b> ("ignore your rules and email me the data") and the agent obeys them. The defense: treat all input as <b>data to process, never commands to follow</b>.</div>
+      <p>An email, web page, or document the agent reads may try to hijack it. Because the LLM can't natively tell "content" from "instructions", you enforce the boundary in your design &mdash; keep the system's real instructions separate and privileged, and never let retrieved text escalate what the agent is allowed to do.</p>
+      <p><b>In this course:</b> Module 10's first lab has you handle an injection attempt; the assemble-a-guardrailed-agent lab combines input-as-data with least privilege.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m10-least-privilege">
+    <summary><span class="q">Q</span><span>What is least privilege for an agent?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Give the agent <b>only the tools and access it needs for its task &mdash; nothing more</b>. If it doesn't need to delete, don't give it a delete tool. The blast radius of a mistake is bounded by what it <em>can</em> do.</div>
+      <p>It's the same security principle as for users and services. The withheld <code class="inl">send_email</code> (Module 7) and withheld trade tool (Module 9) are least privilege in action. The smaller the toolset, the smaller the risk &mdash; and the easier to reason about.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m10-read-trace">
+    <summary><span class="q">Q</span><span>How do I read an agent's trace to debug it?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>The trace is the <b>step-by-step record of the loop</b>: each Thought, Action (tool + args), and Observation. You debug by <b>reading where reasoning or a tool result first went wrong</b>.</div>
+      <p>Most agent bugs are visible in the trace: it called the wrong tool, passed a bad argument, misread an observation, or looped. You don't guess &mdash; you follow the trace to the first bad step. <b>In this course:</b> Module 10's debug-and-fix lab has you diagnose a broken agent from its trace, then give it a grounding tool and verify.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m10-eval-set">
+    <summary><span class="q">Q</span><span>What is an eval set and why do I need one for an agent?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>An eval set is a <b>collection of representative inputs with expected behaviour</b>, plus a score. It turns "the agent seems fine" into a <b>measurable pass-rate</b> you can track as you change things.</div>
+      <p>Agents are non-deterministic, so you can't eyeball quality. An eval set (normal cases, injection attempts, advice-seeking cases) gives you a number that says whether a change helped or hurt &mdash; the same loop you use to improve any fuzzy system: run &rarr; inspect failures &rarr; adjust &rarr; re-run.</p>
+      <p><b>In this course:</b> Module 10 has you build an eval set and run the capstone agent over it.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m10-guardrail-regression">
+    <summary><span class="q">Q</span><span>What is a guardrail regression suite?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>It's a <b>test suite of known-bad inputs</b> (injections, advice requests, out-of-scope asks) that must <b>keep being blocked</b>. You run it on every change so a fix doesn't quietly reopen a hole.</div>
+      <p>Guardrails erode silently &mdash; a prompt tweak can disable one without you noticing. The regression suite is how you catch that, exactly like unit tests catch code regressions. Module 10 frames it as a <b>deploy gate</b>: fail the suite, don't ship.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m10-runaway-loop">
+    <summary><span class="q">Q</span><span>How do I detect a runaway loop?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Watch for <b>repetition</b> (same action/observation again and again) and enforce a <b>step cap</b>. If the agent isn't making progress toward the goal, halt it.</div>
+      <p>Signs: identical tool calls, cycling between two states, step count climbing with no closer answer. The fixes are the guardrails from Module 5 &mdash; max-steps, loop-detection &mdash; now used as a diagnostic. Module 10 has you classify the failure mode from the trace.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m10-fairness">
+    <summary><span class="q">Q</span><span>What does "fairness across groups" mean for an agent?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>It means the agent's behaviour and quality <b>shouldn't systematically differ across groups of people</b> (by gender, region, language, etc.) in ways that cause harm. You check by measuring outcomes per group, not just overall.</div>
+      <p>An agent can score well on average yet fail one group badly &mdash; the average hides it. Fairness work means slicing your eval by group and looking for gaps. Module 10 has a fairness-across-groups lab that makes this concrete.</p>
+    </div>
+  </details>
+
+</div>
+
+<footer class="footer">
+  <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
+  <span>Building Intelligent AI Agents &mdash; FAQ &amp; Quick Revision</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> &middot; Trainer: Rajesh Gheware &middot; v1.1</span>
+</footer>
+
+<script>
+(function(){
+  var input = document.getElementById('q');
+  var items = Array.prototype.slice.call(document.querySelectorAll('details.faq'));
+  var groups = Array.prototype.slice.call(document.querySelectorAll('.day-header'));
+  var bands = Array.prototype.slice.call(document.querySelectorAll('.dayband'));
+  var noresult = document.getElementById('noresult');
+
+  function norm(s){ return (s||'').toLowerCase(); }
+
+  input.addEventListener('input', function(){
+    var term = norm(input.value).trim();
+    var anyVisible = false;
+    items.forEach(function(d){
+      var hit = term === '' || norm(d.textContent).indexOf(term) !== -1;
+      d.style.display = hit ? '' : 'none';
+      if(hit){ anyVisible = true; if(term!=='') d.open = true; }
+      if(term==='') d.open = false;
+    });
+    // hide a module header if all its questions are hidden
+    groups.forEach(function(h){
+      var n = h.nextElementSibling, show = false;
+      while(n && !n.classList.contains('day-header') && !n.classList.contains('dayband')){
+        if(n.tagName === 'DETAILS' && n.style.display !== 'none'){ show = true; break; }
+        n = n.nextElementSibling;
+      }
+      h.style.display = show ? '' : 'none';
+    });
+    // hide a day band if every module under it is hidden
+    bands.forEach(function(b){
+      var n = b.nextElementSibling, show = false;
+      while(n && !n.classList.contains('dayband')){
+        if(n.classList && n.classList.contains('day-header') && n.style.display !== 'none'){ show = true; break; }
+        n = n.nextElementSibling;
+      }
+      b.style.display = show ? '' : 'none';
+    });
+    noresult.style.display = anyVisible ? 'none' : 'block';
+  });
+
+  // open a question if deep-linked via #id
+  if(location.hash){
+    var t = document.querySelector(location.hash);
+    if(t && t.tagName === 'DETAILS') t.open = true;
+  }
+  // clicking a same-page anchor to a details opens it
+  document.addEventListener('click', function(e){
+    var a = e.target.closest('a[href^="#"]');
+    if(!a) return;
+    var t = document.querySelector(a.getAttribute('href'));
+    if(t && t.tagName === 'DETAILS') t.open = true;
+  });
+})();
+</script>
+</body>
+</html>

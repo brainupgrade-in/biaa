@@ -1,0 +1,7 @@
+# Building Intelligent AI Agents - OPTIONAL requirements (Tier 3)
+# Genuinely nice-to-have. Matches SETUP.md section 4.
+# Adds the real Hugging Face bert-tiny / tiny-gpt2 demo cells on Day 2.
+# The graded labs have a complete offline scikit-learn path without these.
+
+transformers
+torch

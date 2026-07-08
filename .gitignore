@@ -5,3 +5,4 @@ hands-on/**/_generators/_meta.json
 __pycache__/
 *.pyc
 .venv/
+biaa-venv/

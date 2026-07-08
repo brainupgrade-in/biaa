@@ -1,0 +1,22 @@
+# Building Intelligent AI Agents - CORE requirements (Tier 1 + Tier 2)
+# Everything needed to run and pass all 120 labs as designed.
+# Matches SETUP.md sections 2 and 3. Install into the biaa-venv virtual env.
+
+# --- Tier 1: run & grade every notebook (Days 1-2) ---
+jupyterlab
+ipykernel
+nbformat
+numpy
+scikit-learn
+matplotlib
+tensorflow-cpu          # Day 1 - MNIST classifier (Module 2 Advanced labs)
+
+# --- Tier 2 (3b): a real LLM for the agent labs (Days 3-5) ---
+langchain
+langchain-community
+langchain-ollama
+langchain-groq
+langgraph
+
+# --- Tier 2 (3c): external APIs (Day 3, Module 6) ---
+wolframalpha            # langchain-community provides the Serper + Wolfram wrappers
