@@ -36,12 +36,21 @@ else
     fi
   done
 fi
+# Fall back to a uv-managed 3.12 (distro/OS-independent; auto-installs if missing).
+if [ -z "$PY_LAUNCH" ] && command -v uv >/dev/null 2>&1; then
+  echo "==> No system Python 3.12; using uv to provide one"
+  uv python install 3.12 >/dev/null 2>&1 || true
+  UVPY="$(uv python find 3.12 2>/dev/null || true)"
+  if [ -n "$UVPY" ] && is312 "$UVPY"; then PY_LAUNCH="$UVPY"; fi
+fi
 if [ -z "$PY_LAUNCH" ]; then
   echo "ERROR: Python 3.12 not found."
-  echo "The workshop requires Python 3.12 (SETUP.md section 2)."
-  echo "Install it from https://www.python.org/downloads/release/python-3120/"
-  echo "  - tick 'Add python.exe to PATH' during install"
-  echo "  - then CLOSE and REOPEN Git Bash, and re-run this script."
+  echo "The workshop requires Python 3.12 (SETUP.md section 2). Either:"
+  echo "  A) Install from https://www.python.org/downloads/release/python-3120/"
+  echo "     - tick 'Add python.exe to PATH' during install"
+  echo "     - then CLOSE and REOPEN Git Bash, and re-run this script."
+  echo "  B) Install uv (powershell): irm https://astral.sh/uv/install.ps1 | iex"
+  echo "     - reopen Git Bash, then re-run: bash scripts/setup-windows.sh"
   exit 1
 fi
 echo "==> Using $($PY_LAUNCH --version 2>&1) (launcher: $PY_LAUNCH)"

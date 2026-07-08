@@ -28,8 +28,18 @@ if it's missing.
 - **Windows:** download from
   [python.org/downloads/release/python-3120](https://www.python.org/downloads/release/python-3120/).
   During install, tick **"Add python.exe to PATH"**, then **close and reopen Git Bash**.
-- **Linux (Ubuntu/Debian):** `sudo apt install python3.12 python3.12-venv`
+- **Linux (Ubuntu 24.04 / Debian):** `sudo apt install python3.12 python3.12-venv`
 - **macOS (Homebrew):** `brew install python@3.12`
+
+> **No `python3.12` apt package?** Newer distros (e.g. **Ubuntu 25.10+**) ship only
+> Python 3.13/3.14 and have no `python3.12` package — `apt install python3.12` fails.
+> The setup scripts handle this automatically **if [`uv`](https://docs.astral.sh/uv/)
+> is installed**: they use uv to provision a standalone Python 3.12 (no sudo, no PPA).
+> Install uv once, reopen your shell, then re-run the setup script:
+> ```bash
+> curl -LsSf https://astral.sh/uv/install.sh | sh          # Linux / macOS
+> # Windows (PowerShell): irm https://astral.sh/uv/install.ps1 | iex
+> ```
 
 We pin 3.12 because it has mature, well-tested wheels for every workshop package
 (including TensorFlow), which avoids install/troubleshooting headaches.

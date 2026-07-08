@@ -21,6 +21,7 @@
 
 ## 2. TIER 1 — Required core software (every lab)
 - **Python 3.12** &mdash; **please use this exact version.** It has mature, well-tested wheels for every workshop package (incl. TensorFlow), which avoids environment/install troubleshooting. *(Other versions may work but are not supported for this workshop.)*
+  - *On newer distros with no `python3.12` apt package (e.g. **Ubuntu 25.10+**, which ship only 3.13/3.14): install [`uv`](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh`), then either run the `scripts/` setup (it provisions 3.12 via uv automatically) or `uv python install 3.12` &rarr; `uv venv biaa-venv --python 3.12`.*
 - **A virtual environment** (built-in `venv`)
 - **Jupyter** — JupyterLab / Notebook, **or** VS Code with the Jupyter extension
 - **Editor:** VS Code recommended

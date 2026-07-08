@@ -21,22 +21,35 @@ echo " (Linux / macOS)"
 echo "=============================================="
 
 # --- 1. find Python 3.12 -------------------------------------------------
+is312() { "$@" -c 'import sys; sys.exit(0 if sys.version_info[:2]==(3,12) else 1)' 2>/dev/null; }
+
 PY=""
+# a) a real 3.12 already on PATH
 for c in python3.12 python3 python; do
-  if command -v "$c" >/dev/null 2>&1 && "$c" -c 'import sys; sys.exit(0 if sys.version_info[:2]==(3,12) else 1)' 2>/dev/null; then
-    PY="$c"; break
-  fi
+  if command -v "$c" >/dev/null 2>&1 && is312 "$c"; then PY="$c"; break; fi
 done
+# b) fall back to a uv-managed 3.12 (distro-independent; auto-installs if missing).
+#    Needed on distros with no python3.12 apt package, e.g. Ubuntu 25.10+.
+if [ -z "$PY" ] && command -v uv >/dev/null 2>&1; then
+  echo "==> No system Python 3.12; using uv to provide one"
+  uv python install 3.12 >/dev/null 2>&1 || true
+  UVPY="$(uv python find 3.12 2>/dev/null || true)"
+  if [ -n "$UVPY" ] && is312 "$UVPY"; then PY="$UVPY"; fi
+fi
 if [ -z "$PY" ]; then
-  echo "ERROR: Python 3.12 not found on PATH."
+  echo "ERROR: Python 3.12 not found and could not be provisioned."
   echo "The workshop requires Python 3.12 (SETUP.md section 2)."
-  echo "Install it, then re-run this script:"
-  echo "  Ubuntu/Debian : sudo apt install python3.12 python3.12-venv"
-  echo "  macOS (brew)  : brew install python@3.12"
-  echo "  or download   : https://www.python.org/downloads/release/python-3120/"
+  echo "Easiest cross-distro install (no sudo):"
+  echo "  1) install uv : curl -LsSf https://astral.sh/uv/install.sh | sh   (then reopen the shell)"
+  echo "  2) re-run     : bash scripts/setup-linux.sh"
+  echo "Alternatives:"
+  echo "  Ubuntu 24.04/Debian (older) : sudo apt install python3.12 python3.12-venv"
+  echo "  Ubuntu 25.10+ (no 3.12 pkg) : use the uv route above"
+  echo "  macOS (brew)                : brew install python@3.12"
+  echo "  or download                 : https://www.python.org/downloads/release/python-3120/"
   exit 1
 fi
-echo "==> Using $($PY --version) ($(command -v "$PY"))"
+echo "==> Using $($PY --version) ($PY)"
 
 # --- 2. create the virtual env ------------------------------------------
 if [ -d "$VENV" ]; then
