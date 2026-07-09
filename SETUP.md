@@ -21,11 +21,32 @@
 
 ## 2. TIER 1 — Required core software (every lab)
 - **Python 3.12** &mdash; **please use this exact version.** It has mature, well-tested wheels for every workshop package (incl. TensorFlow), which avoids environment/install troubleshooting. *(Other versions may work but are not supported for this workshop.)*
-  - *On newer distros with no `python3.12` apt package (e.g. **Ubuntu 25.10+**, which ship only 3.13/3.14): install [`uv`](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh`), then either run the `scripts/` setup (it provisions 3.12 via uv automatically) or `uv python install 3.12` &rarr; `uv venv biaa-venv --python 3.12`.*
-- **A virtual environment** (built-in `venv`)
-- **Jupyter** — JupyterLab / Notebook, **or** VS Code with the Jupyter extension
-- **Editor:** VS Code recommended
+- **A virtual environment** (`biaa-venv`) · **Jupyter** (JupyterLab / Notebook, or VS Code + Jupyter extension) · **Editor:** VS Code recommended
 
+### ✅ Recommended: one-command setup with `uv`
+The **easiest and fastest** way to get set up is the provided scripts, which use
+[`uv`](https://docs.astral.sh/uv/). uv **creates the `biaa-venv` on Python 3.12 and
+installs every package** for you — and it **provisions a standalone Python 3.12
+automatically**, so you don't even have to install Python yourself (this is the fix
+for the `apt install python3.12` failure on newer distros like **Ubuntu 25.10+**,
+which ship only 3.13/3.14).
+
+```bash
+# 1. install uv once, then reopen your shell
+curl -LsSf https://astral.sh/uv/install.sh | sh          # Linux / macOS
+# Windows (PowerShell):  irm https://astral.sh/uv/install.ps1 | iex
+
+# 2. from the course folder, run the setup script for your OS
+bash scripts/setup-linux.sh              # Linux / macOS
+bash scripts/setup-windows.sh            # Windows (Git Bash)
+#   add --with-hf to also install the optional Tier 3 (transformers + CPU-only torch)
+```
+The script also registers a **"Python 3.12 (biaa)"** Jupyter kernel and runs a smoke
+test. See [`scripts/README.md`](scripts/README.md) for details. *(If `uv` isn't
+installed, the same scripts fall back to a system Python 3.12 + `pip` — install
+Python 3.12 yourself first in that case.)*
+
+### Manual alternative (no scripts)
 ```bash
 python -m venv biaa-venv
 # activate:  Windows -> biaa-venv\Scripts\activate   |   macOS/Linux -> source biaa-venv/bin/activate
