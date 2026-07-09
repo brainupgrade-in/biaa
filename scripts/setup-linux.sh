@@ -3,9 +3,14 @@
 # Creates the biaa-venv virtual env and installs everything the 120 labs need.
 # Source of truth: SETUP.md (Python 3.12, Tier 1-3 packages).
 #
+# Uses uv (https://docs.astral.sh/uv/) when it is installed: uv creates the
+# venv on Python 3.12 (fetching a standalone 3.12 automatically if the system
+# has none) and installs packages far faster than pip. Without uv it falls
+# back to a system Python 3.12 + the stdlib venv + pip.
+#
 # Usage:
 #   bash scripts/setup-linux.sh              # core install (all labs)
-#   bash scripts/setup-linux.sh --with-hf    # also install optional Tier 3 (transformers, torch)
+#   bash scripts/setup-linux.sh --with-hf    # also install optional Tier 3 (transformers, CPU torch)
 set -euo pipefail
 
 WITH_HF=0
@@ -20,74 +25,83 @@ echo " Building Intelligent AI Agents - setup"
 echo " (Linux / macOS)"
 echo "=============================================="
 
-# --- 1. find Python 3.12 -------------------------------------------------
+if command -v uv >/dev/null 2>&1; then USE_UV=1; else USE_UV=0; fi
 is312() { "$@" -c 'import sys; sys.exit(0 if sys.version_info[:2]==(3,12) else 1)' 2>/dev/null; }
 
-PY=""
-# a) a real 3.12 already on PATH
-for c in python3.12 python3 python; do
-  if command -v "$c" >/dev/null 2>&1 && is312 "$c"; then PY="$c"; break; fi
-done
-# b) fall back to a uv-managed 3.12 (distro-independent; auto-installs if missing).
-#    Needed on distros with no python3.12 apt package, e.g. Ubuntu 25.10+.
-if [ -z "$PY" ] && command -v uv >/dev/null 2>&1; then
-  echo "==> No system Python 3.12; using uv to provide one"
-  uv python install 3.12 >/dev/null 2>&1 || true
-  UVPY="$(uv python find 3.12 2>/dev/null || true)"
-  if [ -n "$UVPY" ] && is312 "$UVPY"; then PY="$UVPY"; fi
-fi
-if [ -z "$PY" ]; then
-  echo "ERROR: Python 3.12 not found and could not be provisioned."
-  echo "The workshop requires Python 3.12 (SETUP.md section 2)."
-  echo "Easiest cross-distro install (no sudo):"
-  echo "  1) install uv : curl -LsSf https://astral.sh/uv/install.sh | sh   (then reopen the shell)"
-  echo "  2) re-run     : bash scripts/setup-linux.sh"
-  echo "Alternatives:"
-  echo "  Ubuntu 24.04/Debian (older) : sudo apt install python3.12 python3.12-venv"
-  echo "  Ubuntu 25.10+ (no 3.12 pkg) : use the uv route above"
-  echo "  macOS (brew)                : brew install python@3.12"
-  echo "  or download                 : https://www.python.org/downloads/release/python-3120/"
-  exit 1
-fi
-echo "==> Using $($PY --version) ($PY)"
+# Install into the active venv: uv (fast) when available, else pip.
+venv_install() {
+  if [ "$USE_UV" -eq 1 ]; then uv pip install "$@"; else python -m pip install "$@"; fi
+}
 
-# --- 2. create the virtual env ------------------------------------------
-if [ -d "$VENV" ]; then
-  echo "==> Reusing existing venv: $VENV"
+# --- 1. create the virtual env on Python 3.12 ---------------------------
+if [ "$USE_UV" -eq 1 ]; then
+  echo "==> Using uv $(uv --version | awk '{print $2}')"
+  if [ -d "$VENV" ]; then
+    echo "==> Reusing existing venv: $VENV"
+  else
+    # uv fetches a standalone Python 3.12 automatically if the system lacks one
+    # (works on distros with no python3.12 package, e.g. Ubuntu 25.10+).
+    echo "==> Creating venv on Python 3.12 (uv fetches 3.12 if needed): $VENV"
+    uv venv "$VENV" --python 3.12 --seed
+  fi
 else
-  echo "==> Creating venv: $VENV"
-  "$PY" -m venv "$VENV"
+  # No uv: find a real Python 3.12 on PATH, then use the stdlib venv module.
+  PY=""
+  for c in python3.12 python3 python; do
+    if command -v "$c" >/dev/null 2>&1 && is312 "$c"; then PY="$c"; break; fi
+  done
+  if [ -z "$PY" ]; then
+    echo "ERROR: Python 3.12 not found and no uv to provision it."
+    echo "The workshop requires Python 3.12 (SETUP.md section 2)."
+    echo "Easiest cross-distro fix (no sudo) - install uv, then re-run this script:"
+    echo "  curl -LsSf https://astral.sh/uv/install.sh | sh     (then reopen the shell)"
+    echo "Alternatives:"
+    echo "  Ubuntu 24.04/Debian (older) : sudo apt install python3.12 python3.12-venv"
+    echo "  macOS (brew)                : brew install python@3.12"
+    echo "  or download                 : https://www.python.org/downloads/release/python-3120/"
+    exit 1
+  fi
+  echo "==> Using $($PY --version) ($PY)"
+  if [ -d "$VENV" ]; then
+    echo "==> Reusing existing venv: $VENV"
+  else
+    echo "==> Creating venv: $VENV"
+    "$PY" -m venv "$VENV"
+  fi
 fi
+
 # shellcheck disable=SC1091
 source "$VENV/bin/activate"
 
-# --- 3. install packages -------------------------------------------------
-echo "==> Upgrading pip"
-python -m pip install --upgrade pip
+# --- 2. install packages -------------------------------------------------
+if [ "$USE_UV" -eq 0 ]; then
+  echo "==> Upgrading pip"
+  python -m pip install --upgrade pip
+fi
 
-echo "==> Installing CORE requirements (Tier 1 + 2) - this can take a few minutes"
-python -m pip install -r "$ROOT/scripts/requirements-core.txt"
+echo "==> Installing CORE requirements (Tier 1 + 2)"
+venv_install -r "$ROOT/scripts/requirements-core.txt"
 
 if [ "$WITH_HF" -eq 1 ]; then
   echo "==> Installing OPTIONAL requirements (Tier 3: transformers + CPU-only torch)"
-  # Install a CPU-only torch first so we don't drag in ~2.5 GB of CUDA/nvidia
-  # wheels. On Linux, PyPI's default torch is the CUDA build; the cpu index
-  # gives the '+cpu' variant. On macOS the PyPI wheel is already CPU/MPS.
+  # CPU-only torch so we don't drag in ~2.5 GB of CUDA/nvidia wheels. On Linux,
+  # PyPI's default torch is the CUDA build; the cpu index gives the '+cpu'
+  # variant. On macOS the PyPI wheel is already CPU/MPS.
   if [ "$(uname -s)" = "Linux" ]; then
-    python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+    venv_install torch --index-url https://download.pytorch.org/whl/cpu
   else
-    python -m pip install torch
+    venv_install torch
   fi
-  python -m pip install -r "$ROOT/scripts/requirements-optional.txt"
+  venv_install -r "$ROOT/scripts/requirements-optional.txt"
 else
   echo "==> Skipping optional Tier 3 (transformers/torch). Add --with-hf to include it."
 fi
 
-# --- 4. register a Jupyter kernel ---------------------------------------
+# --- 3. register a Jupyter kernel ---------------------------------------
 echo "==> Registering Jupyter kernel 'biaa'"
 python -m ipykernel install --user --name biaa --display-name "Python 3.12 (biaa)" >/dev/null
 
-# --- 5. smoke test -------------------------------------------------------
+# --- 4. smoke test -------------------------------------------------------
 echo
 bash "$ROOT/scripts/smoke-test.sh" || true
 

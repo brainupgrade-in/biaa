@@ -31,15 +31,20 @@ if it's missing.
 - **Linux (Ubuntu 24.04 / Debian):** `sudo apt install python3.12 python3.12-venv`
 - **macOS (Homebrew):** `brew install python@3.12`
 
-> **No `python3.12` apt package?** Newer distros (e.g. **Ubuntu 25.10+**) ship only
-> Python 3.13/3.14 and have no `python3.12` package — `apt install python3.12` fails.
-> The setup scripts handle this automatically **if [`uv`](https://docs.astral.sh/uv/)
-> is installed**: they use uv to provision a standalone Python 3.12 (no sudo, no PPA).
-> Install uv once, reopen your shell, then re-run the setup script:
+> **Fastest path — install [`uv`](https://docs.astral.sh/uv/) (recommended).**
+> If `uv` is on your PATH, the setup scripts use it end-to-end: uv **creates the
+> venv on Python 3.12 and installs every package** (much faster than pip), and
+> **provisions a standalone Python 3.12 automatically** — so you don't need to
+> install Python yourself at all. This is the answer to the common
+> `apt install python3.12` failure on newer distros (e.g. **Ubuntu 25.10+**,
+> which ship only Python 3.13/3.14 and have no `python3.12` package).
+> Install uv once, reopen your shell, then run the setup script:
 > ```bash
 > curl -LsSf https://astral.sh/uv/install.sh | sh          # Linux / macOS
 > # Windows (PowerShell): irm https://astral.sh/uv/install.ps1 | iex
 > ```
+> Without uv, the scripts fall back to a system Python 3.12 + `pip` (install
+> Python 3.12 yourself first, per the bullets above).
 
 We pin 3.12 because it has mature, well-tested wheels for every workshop package
 (including TensorFlow), which avoids install/troubleshooting headaches.
