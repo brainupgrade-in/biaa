@@ -2,6 +2,10 @@
 # Genuinely nice-to-have. Matches SETUP.md section 4.
 # Adds the real Hugging Face bert-tiny / tiny-gpt2 demo cells on Day 2.
 # The graded labs have a complete offline scikit-learn path without these.
+#
+# NOTE: torch is NOT listed here on purpose. The setup scripts install a
+# CPU-ONLY torch from https://download.pytorch.org/whl/cpu so participants
+# without an NVIDIA GPU don't download ~2.5 GB of CUDA/nvidia wheels.
+# transformers does not pull torch in automatically, so this file is safe.
 
 transformers
-torch

@@ -74,7 +74,11 @@ echo "==> Installing CORE requirements (Tier 1 + 2) - this can take several minu
 python -m pip install -r "$ROOT/scripts/requirements-core.txt"
 
 if [ "$WITH_HF" -eq 1 ]; then
-  echo "==> Installing OPTIONAL requirements (Tier 3: transformers, torch)"
+  echo "==> Installing OPTIONAL requirements (Tier 3: transformers + CPU-only torch)"
+  # Install a CPU-only torch explicitly (small; no CUDA/nvidia bloat).
+  # Windows PyPI torch is already CPU, but pinning the cpu index keeps it
+  # consistent and guarantees the smaller download.
+  python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
   python -m pip install -r "$ROOT/scripts/requirements-optional.txt"
 else
   echo "==> Skipping optional Tier 3 (transformers/torch). Add --with-hf to include it."

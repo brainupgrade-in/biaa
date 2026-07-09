@@ -69,7 +69,15 @@ echo "==> Installing CORE requirements (Tier 1 + 2) - this can take a few minute
 python -m pip install -r "$ROOT/scripts/requirements-core.txt"
 
 if [ "$WITH_HF" -eq 1 ]; then
-  echo "==> Installing OPTIONAL requirements (Tier 3: transformers, torch)"
+  echo "==> Installing OPTIONAL requirements (Tier 3: transformers + CPU-only torch)"
+  # Install a CPU-only torch first so we don't drag in ~2.5 GB of CUDA/nvidia
+  # wheels. On Linux, PyPI's default torch is the CUDA build; the cpu index
+  # gives the '+cpu' variant. On macOS the PyPI wheel is already CPU/MPS.
+  if [ "$(uname -s)" = "Linux" ]; then
+    python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+  else
+    python -m pip install torch
+  fi
   python -m pip install -r "$ROOT/scripts/requirements-optional.txt"
 else
   echo "==> Skipping optional Tier 3 (transformers/torch). Add --with-hf to include it."
