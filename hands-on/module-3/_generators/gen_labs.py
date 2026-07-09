@@ -148,7 +148,8 @@ expect_true("encode maps tokens to their ids", lambda: encode(["a", "b"], {"a": 
     tok = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny")
     print(tok.tokenize("Tokenization is unbelievably powerful!"))
 except Exception as e:
-    print("transformers not installed -- optional demo skipped.", type(e).__name__)'''),
+    print("Optional real-model demo skipped (the graded cells above already covered this).")
+    print("  reason:", type(e).__name__, "--", e)'''),
       footer(1, "Every model pipeline starts here: text -> tokens -> IDs. Next we give those tokens *meaning* as vectors."),
     ]
 
@@ -367,7 +368,8 @@ expect_true("'on' is most often followed by 'the'", lambda: fill_mask("on", buil
     for r in fm("the cat sat on the [MASK].")[:3]:
         print(round(r["score"], 3), r["token_str"])
 except Exception as e:
-    print("transformers not installed -- optional demo skipped.", type(e).__name__)'''),
+    print("Optional real-model demo skipped (the graded cells above already covered this).")
+    print("  reason:", type(e).__name__, "--", e)'''),
       footer(5, "Scale this idea to billions of words and a transformer, and you get a model with real language knowledge -- which we *use* on Day 2's pretrained labs (Module 4)."),
     ]
 
@@ -661,7 +663,8 @@ expect_true("generate('the', 4) starts the cat sat on", lambda: generate("the", 
     gen = pipeline("text-generation", model="sshleifer/tiny-gpt2")
     print(gen("The future of AI is", max_new_tokens=15)[0]["generated_text"])
 except Exception as e:
-    print("transformers not installed -- optional demo skipped.", type(e).__name__)
+    print("Optional real-model demo skipped (the graded cells above already covered this).")
+    print("  reason:", type(e).__name__, "--", e)
 
 # --- OPTIONAL: real GPT API (needs your own key; not graded) ---
 # import os; from openai import OpenAI
@@ -731,7 +734,8 @@ expect_true("negative sentence -> 0", lambda: predict("an awful and terrible mov
     import numpy as np
     print("embedding shape (tokens x dims):", np.array(vecs[0]).shape)
 except Exception as e:
-    print("transformers not installed -- optional demo skipped.", type(e).__name__)'''),
+    print("Optional real-model demo skipped (the graded cells above already covered this).")
+    print("  reason:", type(e).__name__, "--", e)'''),
       footer(11, "Features from a big model + a tiny trained head = transfer learning. Module 4 does exactly this, fine-tuning a real BERT for sentiment."),
     ]
 
@@ -804,7 +808,8 @@ expect_true("different sentences -> different vectors", lambda: not np.allclose(
     emb = np.array(fx("the cat ran")[0]).mean(axis=0)
     print("real transformer sentence vector dim:", emb.shape)
 except Exception as e:
-    print("transformers not installed -- optional demo skipped.", type(e).__name__)'''),
+    print("Optional real-model demo skipped (the graded cells above already covered this).")
+    print("  reason:", type(e).__name__, "--", e)'''),
       footer(12, "You built a working transformer encoder from parts you wrote yourself. Day 2 Module 4 takes the real, pretrained versions and fine-tunes them. That completes Module 3."),
     ]
 

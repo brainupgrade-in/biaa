@@ -202,7 +202,8 @@ expect_true("accuracy on the samples == 1.0", lambda: accuracy() == 1.0)'''),
     for t in ["a brilliant and moving masterpiece", "a boring dreadful waste of time"]:
         print(t, "->", clf(t)[0])
 except Exception as e:
-    print("transformers not available -- skipping the real model.", type(e).__name__)
+    print("Optional real-model cell skipped.")
+    print("  reason:", type(e).__name__, "--", e)
     print("The graded lexicon model above already shows the idea: pre-trained = works out of the box.")'''),
       footer(1, "A pre-trained model delivers value with **zero training** &mdash; you just run inference. Next we make this an explicit, reusable **pipeline**."),
     ]
@@ -528,7 +529,8 @@ expect_true("val accuracy >= 0.8 (transfer learning works)", lambda: run() >= 0.
     print("bert-tiny embedding dim:", embed("a great film").shape)
     print("Same recipe: frozen transformer features -> a small trainable head.")
 except Exception as e:
-    print("transformers not available -- the TF-IDF version above already taught the pattern.", type(e).__name__)'''),
+    print("Optional real-model cell skipped -- the TF-IDF version above already taught the pattern.")
+    print("  reason:", type(e).__name__, "--", e)'''),
       footer(7, "Frozen extractor + trainable head = transfer learning. It needs little data and trains in seconds &mdash; the workhorse before you ever unfreeze the big model."),
     ]
 
@@ -730,7 +732,8 @@ expect_true("predicts new positive/negative correctly", lambda: predict_new(['a 
         pred = model(**venc).logits.argmax(-1).numpy()
     print("real bert-tiny val accuracy:", float((pred == np.array(yval)).mean()))
 except Exception as e:
-    print("transformers/torch not available -- the graded head above already fine-tuned a model.", type(e).__name__)'''),
+    print("Optional real-model cell skipped -- the graded head above already fine-tuned a model.")
+    print("  reason:", type(e).__name__, "--", e)'''),
       footer(10, "You fine-tuned a classifier: an untrained baseline, then a head trained on your labels that beats it and predicts new text. Real BERT fine-tuning (optional cell) is the same loop, scaled."),
     ]
 
@@ -876,7 +879,8 @@ expect_true("classifies a tech sentence as 1", lambda: (fit_and_eval(), classify
     print(out["labels"][0], "(", round(out["scores"][0], 3), ")")
     print("Pre-trained models can even classify with NO task training -- zero-shot.")
 except Exception as e:
-    print("transformers not available -- your trained head above already solves the task.", type(e).__name__)'''),
+    print("Optional real-model cell skipped -- your trained head above already solves the task.")
+    print("  reason:", type(e).__name__, "--", e)'''),
       footer(12, "You adapted the pre-trained pipeline to a brand-new task end-to-end. That is Module 4 in one move: stand on a pre-trained model, add a small head, evaluate honestly, ship. Next: Day 3 &mdash; agents."),
     ]
 
