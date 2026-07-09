@@ -456,7 +456,7 @@ The golden rule: judge the model on a **held-out test set** it never trained on.
       code('''# DEMO -- load the data
 from sklearn.datasets import load_iris
 X, y = load_iris(return_X_y=True)
-print("samples:", X.shape[0], "| features:", X.shape[1], "| classes:", sorted(set(y)))'''),
+print("samples:", X.shape[0], "| features:", X.shape[1], "| classes:", sorted(int(c) for c in set(y)))'''),
       md('''## Your Turn
 Complete the pipeline: choose a **test fraction**, **fit** the model, and **predict** on the test set.'''),
       code(render([
@@ -575,7 +575,7 @@ Cluster into the right number of groups and read off the agreement score.'''),
         "",
         "try:",
         "    labs, ari = cluster()",
-        "    print('clusters found:', sorted(set(labs)), '| agreement (ARI):', round(ari,3))",
+        "    print('clusters found:', sorted(int(c) for c in set(labs)), '| agreement (ARI):', round(ari,3))",
         "except Exception as e: print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
       grader('''expect_true("found exactly 3 clusters", lambda: len(set(cluster()[0])) == 3)
