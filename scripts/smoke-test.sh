@@ -67,7 +67,7 @@ echo
 echo "API keys / env vars (Day 3 + LLM) - blank is OK if using the fallback"
 "$PY" - <<'PYEOF'
 import os
-for k in ("GROQ_API_KEY", "SERPER_API_KEY", "WOLFRAM_ALPHA_APPID", "OPENAI_API_KEY"):
+for k in ("GROQ_API_KEY", "SERPER_API_KEY", "WOLFRAM_ALPHA_APPID", "OPENAI_API_KEY", "HF_TOKEN"):
     print(f"  {'[set ]' if os.getenv(k) else '[    ]'} {k}")
 PYEOF
 echo
