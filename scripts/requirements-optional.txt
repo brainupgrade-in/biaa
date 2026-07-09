@@ -7,5 +7,19 @@
 # CPU-ONLY torch from https://download.pytorch.org/whl/cpu so participants
 # without an NVIDIA GPU don't download ~2.5 GB of CUDA/nvidia wheels.
 # transformers does not pull torch in automatically, so this file is safe.
+#
+# transformers is pinned to <5: the optional cells load tiny models like
+# prajjwal1/bert-tiny, which ship no fast `tokenizer.json`. transformers 5.x
+# removed the pure-Python slow-tokenizer path and can't convert bert-tiny's
+# WordPiece tokenizer, raising "Couldn't instantiate the backend tokenizer"
+# (a ValueError) even with sentencepiece/tiktoken installed. 4.x loads it fine.
 
-transformers
+transformers>=4.40,<5
+
+# tf-keras: the core install ships tensorflow-cpu, which brings Keras 3.
+# transformers 4.x probes the TensorFlow backend when you call pipeline(),
+# and it does not support Keras 3 -- it raises "Keras 3 ... not yet supported
+# in Transformers. Please install ... tf-keras". tf-keras is a separate
+# namespace (import tf_keras), so it does NOT disturb the Keras 3 used by the
+# Module 2 MNIST/Keras labs; it just gives transformers a Keras 2 API to probe.
+tf-keras
