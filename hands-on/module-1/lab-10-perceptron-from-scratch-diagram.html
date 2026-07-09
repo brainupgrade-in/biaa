@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab 1.10 &middot; A Single Neuron, Visualized</title>
+<style>
+  :root{
+    --ground:#f5f6fb; --panel:#ffffff; --ink:#1e1f33; --muted:#5b5f7a;
+    --line:#e3e2ef; --line-strong:#c9c7de;
+    --indigo:#4f46e5; --indigo-soft:#eef0ff;
+    --cyan:#0891b2; --cyan-soft:#e0f5fa;
+    --amber:#d97706; --amber-soft:#fdf0dd;
+    --code-bg:#f2f2f9; --code-ink:#2c2a45;
+    --shadow:0 1px 2px rgba(30,27,75,.06),0 8px 28px rgba(30,27,75,.07);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --ground:#100f1e; --panel:#191830; --ink:#e9e8f5; --muted:#a5a2c4;
+      --line:#2a2846; --line-strong:#3a3862;
+      --indigo:#8b83ff; --indigo-soft:#211f45;
+      --cyan:#3ecfe6; --cyan-soft:#0f2b33;
+      --amber:#f5b23e; --amber-soft:#332512;
+      --code-bg:#12111f; --code-ink:#d5d3ee;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="light"]{
+    --ground:#f5f6fb; --panel:#ffffff; --ink:#1e1f33; --muted:#5b5f7a;
+    --line:#e3e2ef; --line-strong:#c9c7de;
+    --indigo:#4f46e5; --indigo-soft:#eef0ff;
+    --cyan:#0891b2; --cyan-soft:#e0f5fa;
+    --amber:#d97706; --amber-soft:#fdf0dd;
+    --code-bg:#f2f2f9; --code-ink:#2c2a45;
+    --shadow:0 1px 2px rgba(30,27,75,.06),0 8px 28px rgba(30,27,75,.07);
+  }
+  :root[data-theme="dark"]{
+    --ground:#100f1e; --panel:#191830; --ink:#e9e8f5; --muted:#a5a2c4;
+    --line:#2a2846; --line-strong:#3a3862;
+    --indigo:#8b83ff; --indigo-soft:#211f45;
+    --cyan:#3ecfe6; --cyan-soft:#0f2b33;
+    --amber:#f5b23e; --amber-soft:#332512;
+    --code-bg:#12111f; --code-ink:#d5d3ee;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.4);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0; padding:0;}
+  body{background:var(--ground);}
+  .wrap{
+    max-width:940px; margin:0 auto; padding:48px 24px 72px;
+    color:var(--ink);
+    font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    line-height:1.6;
+  }
+  code,.mono{font-family:ui-monospace,'JetBrains Mono','SFMono-Regular',Menlo,Consolas,monospace;}
+
+  .home{
+    display:inline-block; margin-bottom:26px; font-size:.82rem; font-weight:600;
+    text-decoration:none; color:var(--indigo);
+  }
+  .home:hover{text-decoration:underline;}
+
+  .eyebrow{
+    font-family:ui-monospace,monospace; font-size:.72rem; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--indigo); font-weight:600; margin:0 0 10px;
+  }
+  h1{
+    font-family:Georgia,'Times New Roman',serif; font-weight:600;
+    font-size:clamp(1.9rem,4.4vw,2.9rem); line-height:1.1; margin:0 0 12px;
+    text-wrap:balance; letter-spacing:-.01em;
+  }
+  .lede{font-size:1.05rem; color:var(--muted); max-width:62ch; margin:0 0 8px;}
+  .lede code{color:var(--ink); background:var(--code-bg); padding:.05em .4em; border-radius:5px; font-size:.9em;}
+
+  h2{font-family:Georgia,serif; font-weight:600; font-size:1.45rem; letter-spacing:-.01em; margin:52px 0 6px;}
+  .sub{color:var(--muted); margin:0 0 22px; font-size:.96rem;}
+
+  .stage{
+    background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    box-shadow:var(--shadow); padding:20px; margin-top:26px; overflow-x:auto;
+  }
+  .stage svg{display:block; width:100%; height:auto; min-width:660px;}
+
+  .lbl{font-family:ui-monospace,monospace; fill:var(--ink);}
+  .lbl-mut{font-family:ui-monospace,monospace; fill:var(--muted);}
+  .node-cap{font-family:Georgia,serif; font-style:italic;}
+
+  .map{display:grid; grid-template-columns:1fr; gap:12px; margin-top:26px;}
+  @media(min-width:640px){ .map{grid-template-columns:1fr 1fr;} }
+  .row{
+    display:flex; gap:14px; align-items:flex-start;
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:14px 16px; box-shadow:var(--shadow);
+  }
+  .swatch{flex:0 0 auto; width:14px; height:14px; border-radius:4px; margin-top:5px;}
+  .s-cyan{background:var(--cyan);} .s-indigo{background:var(--indigo);} .s-amber{background:var(--amber);}
+  .row h3{margin:0 0 3px; font-size:.98rem; font-family:Georgia,serif; font-weight:600;}
+  .row p{margin:0 0 8px; font-size:.86rem; color:var(--muted); line-height:1.5;}
+  .row code{
+    display:inline-block; background:var(--code-bg); color:var(--code-ink);
+    padding:.28em .55em; border-radius:6px; font-size:.8rem; border:1px solid var(--line);
+    white-space:pre-wrap; word-break:break-word;
+  }
+
+  .cols{display:grid; grid-template-columns:1fr; gap:26px; margin-top:26px;}
+  @media(min-width:720px){ .cols{grid-template-columns:auto 1fr; align-items:start; gap:34px;} }
+  table{border-collapse:collapse; font-family:ui-monospace,monospace; font-size:.92rem; font-variant-numeric:tabular-nums;}
+  caption{text-align:left; font-family:Georgia,serif; font-style:italic; color:var(--muted); font-size:.85rem; margin-bottom:8px;}
+  th,td{padding:8px 16px; text-align:center; border:1px solid var(--line);}
+  thead th{background:var(--indigo-soft); color:var(--indigo); font-weight:600; letter-spacing:.03em;}
+  td.out{color:var(--cyan); font-weight:700;}
+  tbody tr:nth-child(even) td{background:color-mix(in srgb,var(--line) 22%, transparent);}
+
+  .cycle{display:grid; grid-template-columns:repeat(2,1fr); gap:12px;}
+  @media(min-width:720px){ .cycle{grid-template-columns:repeat(4,1fr);} }
+  .step{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 14px 15px; box-shadow:var(--shadow);}
+  .step .n{font-family:ui-monospace,monospace; font-size:.7rem; font-weight:700; color:var(--amber); letter-spacing:.1em;}
+  .step h4{margin:4px 0 6px; font-family:Georgia,serif; font-size:1rem; font-weight:600;}
+  .step p{margin:0; font-size:.82rem; color:var(--muted); line-height:1.5;}
+  .step code{font-size:.76rem; color:var(--code-ink); background:var(--code-bg); padding:.1em .4em; border-radius:5px;}
+
+  .callout{margin-top:30px; border-left:3px solid var(--amber); background:var(--amber-soft); padding:14px 18px; border-radius:0 10px 10px 0; font-size:.92rem;}
+  .callout b{color:var(--amber);}
+
+  footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font-size:.8rem; color:var(--muted); display:flex; flex-wrap:wrap; gap:6px 14px; justify-content:space-between;}
+  footer a{color:var(--indigo); text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="home" href="index.html">&#8592; Module 1 labs</a>
+
+  <p class="eyebrow">Module 1 &middot; Lab 1.10 &middot; Perceptron from scratch</p>
+  <h1>One neuron, learning the OR gate</h1>
+  <p class="lede">The whole &ldquo;Your&nbsp;Turn&rdquo; snippet is a single artificial neuron: two inputs flow in, get weighted and summed, pass through a sigmoid, and come out as a decision. Below, every part of the picture is keyed to the exact line of code that builds it.</p>
+
+  <div class="stage" role="img" aria-label="A single neuron: inputs x1 and x2 plus a bias are weighted and summed into z, passed through a sigmoid to give probability p, then thresholded at 0.5 to produce prediction y-hat.">
+    <svg viewBox="0 0 900 430" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="var(--line-strong)"/></marker>
+        <marker id="ar-c" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="var(--cyan)"/></marker>
+        <marker id="ar-a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="var(--amber)"/></marker>
+      </defs>
+
+      <line x1="150" y1="120" x2="372" y2="200" stroke="var(--cyan)" stroke-width="2.4" marker-end="url(#ar-c)"/>
+      <line x1="150" y1="250" x2="372" y2="222" stroke="var(--cyan)" stroke-width="2.4" marker-end="url(#ar-c)"/>
+      <line x1="150" y1="360" x2="372" y2="244" stroke="var(--indigo)" stroke-width="2.2" stroke-dasharray="5 4" marker-end="url(#ar)"/>
+      <line x1="452" y1="220" x2="556" y2="220" stroke="var(--line-strong)" stroke-width="2.6" marker-end="url(#ar)"/>
+      <line x1="676" y1="220" x2="756" y2="220" stroke="var(--amber)" stroke-width="2.6" marker-end="url(#ar-a)"/>
+
+      <g font-size="15">
+        <rect x="238" y="140" width="40" height="22" rx="5" fill="var(--indigo-soft)"/>
+        <text x="258" y="156" text-anchor="middle" class="lbl" fill="var(--indigo)">w&#8321;</text>
+        <rect x="238" y="216" width="40" height="22" rx="5" fill="var(--indigo-soft)"/>
+        <text x="258" y="232" text-anchor="middle" class="lbl" fill="var(--indigo)">w&#8322;</text>
+        <rect x="250" y="292" width="34" height="22" rx="5" fill="var(--indigo-soft)"/>
+        <text x="267" y="308" text-anchor="middle" class="lbl" fill="var(--indigo)">b</text>
+      </g>
+
+      <g>
+        <circle cx="110" cy="120" r="40" fill="var(--cyan-soft)" stroke="var(--cyan)" stroke-width="2.5"/>
+        <text x="110" y="116" text-anchor="middle" class="lbl" font-size="19" font-weight="700">x&#8321;</text>
+        <text x="110" y="136" text-anchor="middle" class="lbl-mut" font-size="12">input</text>
+
+        <circle cx="110" cy="250" r="40" fill="var(--cyan-soft)" stroke="var(--cyan)" stroke-width="2.5"/>
+        <text x="110" y="246" text-anchor="middle" class="lbl" font-size="19" font-weight="700">x&#8322;</text>
+        <text x="110" y="266" text-anchor="middle" class="lbl-mut" font-size="12">input</text>
+
+        <circle cx="110" cy="360" r="30" fill="var(--panel)" stroke="var(--indigo)" stroke-width="2.2" stroke-dasharray="5 4"/>
+        <text x="110" y="358" text-anchor="middle" class="lbl" font-size="16" font-weight="700">1</text>
+        <text x="110" y="374" text-anchor="middle" class="lbl-mut" font-size="10.5">bias</text>
+      </g>
+
+      <circle cx="412" cy="220" r="56" fill="var(--indigo-soft)" stroke="var(--indigo)" stroke-width="2.8"/>
+      <text x="412" y="214" text-anchor="middle" class="lbl" font-size="30" font-weight="700" fill="var(--indigo)">&#931;</text>
+      <text x="412" y="238" text-anchor="middle" class="lbl-mut" font-size="12.5">weighted sum</text>
+      <text x="412" y="304" text-anchor="middle" class="lbl" font-size="14">z = x&#183;w + b</text>
+
+      <rect x="556" y="168" width="120" height="104" rx="14" fill="var(--amber-soft)" stroke="var(--amber)" stroke-width="2.6"/>
+      <path d="M570 256 C598 256 600 184 616 184 C632 184 634 256 662 256" fill="none" stroke="var(--amber)" stroke-width="2.6" transform="translate(0,-4)"/>
+      <text x="616" y="292" text-anchor="middle" class="lbl" font-size="15" fill="var(--amber)">&#963;&#8202;(z)</text>
+      <text x="616" y="156" text-anchor="middle" class="lbl-mut" font-size="12.5">activation</text>
+
+      <circle cx="796" cy="220" r="42" fill="var(--cyan-soft)" stroke="var(--cyan)" stroke-width="2.5"/>
+      <text x="796" y="214" text-anchor="middle" class="lbl" font-size="17" font-weight="700">p</text>
+      <text x="796" y="234" text-anchor="middle" class="lbl-mut" font-size="11">0 &hellip; 1</text>
+
+      <text x="796" y="300" text-anchor="middle" class="node-cap" font-size="13" fill="var(--muted)">threshold</text>
+      <text x="796" y="320" text-anchor="middle" class="lbl" font-size="13.5">&#375; = 1 if p &#8805; 0.5</text>
+
+      <text x="450" y="404" text-anchor="middle" class="node-cap" font-size="13.5" fill="var(--muted)">forward pass&#8202;:&#8202; inputs &#8594; weighted sum &#8594; sigmoid &#8594; probability &#8594; decision</text>
+    </svg>
+  </div>
+
+  <h2>Each part &rarr; its line of code</h2>
+  <p class="sub">The colours above match the swatches below.</p>
+
+  <div class="map">
+    <div class="row"><span class="swatch s-cyan"></span><div>
+      <h3>Inputs &nbsp;x&#8321;, x&#8322;</h3>
+      <p>The two features of one example &mdash; a row of <code class="mono">X</code>. For OR, each is 0 or 1.</p>
+      <code>z = X.dot(w) + b   # the X part</code>
+    </div></div>
+    <div class="row"><span class="swatch s-indigo"></span><div>
+      <h3>Weights &nbsp;w&#8321;, w&#8322; &amp; bias b</h3>
+      <p>The neuron&rsquo;s learnable parameters &mdash; one weight per input, plus a bias. This <em>is</em> the model.</p>
+      <code>w = rng.normal(size=X.shape[1]); b = 0.0</code>
+    </div></div>
+    <div class="row"><span class="swatch s-indigo"></span><div>
+      <h3>&#931; &nbsp;weighted sum (z)</h3>
+      <p>Multiply each input by its weight, add them, add the bias. One number per example &mdash; the &ldquo;logit&rdquo;.</p>
+      <code>z = X.dot(w) + b</code>
+    </div></div>
+    <div class="row"><span class="swatch s-amber"></span><div>
+      <h3>&#963; &nbsp;sigmoid activation</h3>
+      <p>Squashes z into a probability between 0 and 1 &mdash; the neuron&rsquo;s smooth &ldquo;firing strength&rdquo;.</p>
+      <code>def sigmoid(z): return 1/(1+np.exp(-z))
+p = sigmoid(z)</code>
+    </div></div>
+    <div class="row"><span class="swatch s-cyan"></span><div>
+      <h3>Output &nbsp;p &rarr; &#375;</h3>
+      <p>The probability p, then thresholded at 0.5 to give a hard 0/1 prediction.</p>
+      <code>(sigmoid(X.dot(w)+b) &gt;= 0.5).astype(int)</code>
+    </div></div>
+    <div class="row"><span class="swatch s-amber"></span><div>
+      <h3>Learning &nbsp;the loop</h3>
+      <p>3000 times: predict, measure error, nudge every weight downhill against the gradient.</p>
+      <code>w -= lr * X.T.dot(error)/len(y)
+b -= lr * error.mean()</code>
+    </div></div>
+  </div>
+
+  <div class="cols">
+    <table>
+      <caption>The OR gate &mdash; what it must learn</caption>
+      <thead><tr><th>x&#8321;</th><th>x&#8322;</th><th>&#375; (OR)</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td>0</td><td class="out">0</td></tr>
+        <tr><td>0</td><td>1</td><td class="out">1</td></tr>
+        <tr><td>1</td><td>0</td><td class="out">1</td></tr>
+        <tr><td>1</td><td>1</td><td class="out">1</td></tr>
+      </tbody>
+    </table>
+
+    <div>
+      <h2 style="margin-top:0">How it learns &mdash; one epoch, &times;3000</h2>
+      <p class="sub">The loop body is just four moves, repeated until the weights settle.</p>
+      <div class="cycle">
+        <div class="step"><div class="n">01 &middot; FORWARD</div><h4>Predict</h4><p>Weighted sum then sigmoid.<br><code>p = sigmoid(X.dot(w)+b)</code></p></div>
+        <div class="step"><div class="n">02 &middot; COMPARE</div><h4>Measure error</h4><p>How far off, per example.<br><code>error = p - y</code></p></div>
+        <div class="step"><div class="n">03 &middot; GRADIENT</div><h4>Find the slope</h4><p>Blame each weight for the error.<br><code>X.T.dot(error)/len(y)</code></p></div>
+        <div class="step"><div class="n">04 &middot; UPDATE</div><h4>Step downhill</h4><p>Nudge weights &amp; bias against it.<br><code>w -= lr * grad</code></p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <b>Why this matters:</b> this one neuron is the atom of every deep network. Keras and PyTorch in the later modules just stack millions of these and run the same four-step loop. One honest limit &mdash; OR is <em>linearly separable</em>, so a single neuron solves it; <b>XOR is not</b>, and this exact neuron would fail it. That failure is why hidden layers were invented.
+  </div>
+
+  <footer>
+    <span>Building Intelligent AI Agents &middot; Lab 1.10 &middot; Trainer: Rajesh Gheware</span>
+    <span><a href="https://devops.gheware.com">devops.gheware.com</a></span>
+  </footer>
+
+</div>
+</body>
+</html>

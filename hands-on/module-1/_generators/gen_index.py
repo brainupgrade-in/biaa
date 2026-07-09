@@ -15,6 +15,10 @@ def card(k):
     m = meta[k]
     lv = LEVELBADGE[m["level"]][0]
     concepts = "".join(f'<span class="chip">{c}</span>' for c in m["concepts"])
+    # A lab gets a "Visual" link automatically if a <slug>-diagram.html sits beside it.
+    diagram = ""
+    if os.path.exists(os.path.join(D, f'{m["slug"]}-diagram.html')):
+        diagram = f'\n          <a class="viz" href="{m["slug"]}-diagram.html" target="_blank" rel="noopener">&#9673; Visual</a>'
     return f'''      <div class="lab {lv}">
         <div class="lab-top">
           <span class="num">Lab 1.{k}</span>
@@ -25,7 +29,7 @@ def card(k):
         <div class="chips">{concepts}</div>
         <div class="links">
           <a class="open" href="{m["slug"]}.ipynb">&#9654; Open lab</a>
-          <a class="sol" href="solutions/{m["slug"]}.ipynb">Solution</a>
+          <a class="sol" href="solutions/{m["slug"]}.ipynb">Solution</a>{diagram}
         </div>
       </div>'''
 
@@ -84,6 +88,8 @@ html = f'''<!DOCTYPE html>
     .links .open:hover {{ background:#4338ca; }}
     .links .sol {{ background:#fff; color:#5b5f7a; border:1px solid #d8dcf0; }}
     .links .sol:hover {{ border-color:#a5b4fc; color:#4f46e5; }}
+    .links .viz {{ background:#fff; color:#0e7490; border:1px solid #bae6fd; }}
+    .links .viz:hover {{ border-color:#06b6d4; color:#0891b2; }}
     footer {{ background:#1e1b4b; color:#fff; text-align:center; padding:16px; font-size:.85em; margin-top:8px; }}
     footer a {{ color:#a5b4fc; text-decoration:none; }}
   </style>
