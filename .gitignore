@@ -1,6 +1,9 @@
 # Generated artifact written by gen_labs.py (regenerable; not source)
 hands-on/**/_generators/_meta.json
 
+# Secrets - never commit
+.env
+
 # Python
 __pycache__/
 *.pyc
