@@ -180,6 +180,15 @@ answer. Here you build the core move &mdash; extract a figure **and** its source
       realcell([REPORT_FIXTURE],
         '''print("figures on file:", list(REPORT))
 print("revenue entry:", REPORT["revenue"])'''),
+      md('''## Memory vs the document &mdash; why this matters (not graded)
+Ask a model for revenue **from memory** and it may answer a *plausible but wrong* number, with total
+confidence and **no source**. The grounded value comes from the filing, with a page cite. Same
+question &mdash; very different trustworthiness. This is the stake behind everything in this module.'''),
+      code('''MEMORY_GUESS = 118.0            # what a model might "recall" -- plausible, and WRONG
+grounded = REPORT["revenue"]
+print("from memory (ungrounded):", MEMORY_GUESS, "M   <- no source, do NOT trust")
+print("grounded (from filing)  :", grounded["value"], "M  [", grounded["source"], "]")
+print("gap:", round(grounded["value"] - MEMORY_GUESS, 1), "M of pure hallucination risk")'''),
       md('''## Your Turn
 Complete `extract_figure` (return the figure with its source) and `is_grounded` (it must carry a
 citation).'''),
@@ -219,48 +228,52 @@ expect_true("a figure with no source is NOT grounded", lambda: is_grounded({"val
 def _l2(sol):
     return [
       header(2, "Cite Every Claim", "Beginner", 20,
-        ["Build a claim that ties a statement to its value AND source",
-         "Check that every claim in a summary is cited",
-         "See why one uncited claim breaks auditability"],
+        ["Build a claim that carries its statement, value AND the exact source string",
+         "Assemble a multi-claim summary and detect which claims are uncited",
+         "See why one uncited claim in a mix breaks auditability"],
         "Auditability: structure & the trail"),
       setup(2),
       md('''## Concept
-Auditability means every conclusion is **traceable** (deck slide 15): a regulator or analyst must be
-able to see **why** the agent said what it did. So each **claim** is a structured record carrying its
-**citation** &mdash; the source it came from. A summary is only auditable if **every** claim is cited;
-one uncited number breaks the chain.'''),
+Lab 1 checked a *single* figure was grounded. A real summary makes **many** claims at once, and the
+danger is the **mix**: five cited numbers and one silently uncited one. Auditability means every
+conclusion is **traceable** (deck slide 15), so each **claim** carries the exact **source string**
+it came from &mdash; the citation a later validation step (Lab 7) checks for *correctness*. Here you
+build the claim record and a detector that names **which** claims in a summary are uncited.'''),
       realcell([REPORT_FIXTURE],
-        '''print("we will turn figures into cited claims, e.g.:")
-print({"statement": "revenue", "value": 120.0, "source": "p4, income stmt"})'''),
+        '''print("a claim carries the SOURCE STRING through, e.g.:")
+print({"statement": "revenue", "value": 120.0, "source": "p4, income stmt"})
+print("a summary is a LIST of these -- and we must find any that are uncited.")'''),
       md('''## Your Turn
-Complete `make_claim` (carry the citation) and `all_cited` (every claim must have a source).'''),
+Complete `make_claim` (carry the source string through) and `uncited_claims` (return the statements of
+every claim in a summary that is missing a citation &mdash; the mix detector).'''),
       code(render([
         "def make_claim(statement, fig):",
-        '    # a claim ties a statement to its grounded value AND its source citation',
+        '    # a claim ties a statement to its grounded value AND carries its exact source string',
         {"s": '    return {"statement": statement, "value": fig["value"], "source": ___}   # TODO: the citation',
          "a": '    return {"statement": statement, "value": fig["value"], "source": fig["source"]}'},
         "",
-        "def all_cited(claims):",
-        '    # a summary is auditable only if EVERY claim carries a source',
-        {"s": '    return ___   # TODO: True if every claim has a truthy "source"',
-         "a": '    return all(c.get("source") for c in claims)'},
+        "def uncited_claims(claims):",
+        '    # return the STATEMENT of each claim in the summary that is missing a source citation',
+        {"s": '    return [___ for c in claims if not c.get("source")]   # TODO: the statement of each uncited claim',
+         "a": '    return [c["statement"] for c in claims if not c.get("source")]'},
         "",
         "try:",
         "    c = make_claim('revenue', REPORT['revenue'])",
         "    print('claim:', c)",
-        "    good = [make_claim('revenue', REPORT['revenue']), make_claim('net_income', REPORT['net_income'])]",
-        "    bad  = good + [{'statement': 'guess', 'value': 5.0, 'source': ''}]",
-        "    print('all cited (good)?', all_cited(good))",
-        "    print('all cited (bad)? ', all_cited(bad))",
+        "    summary = [make_claim('revenue', REPORT['revenue']),",
+        "               make_claim('net_income', REPORT['net_income']),",
+        "               {'statement': 'guess', 'value': 5.0, 'source': ''}]   # a slipped-in uncited claim",
+        "    print('uncited in the mix:', uncited_claims(summary))",
+        "    print('fully-cited pair  :', uncited_claims(summary[:2]))",
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
       grader('''expect_true("a claim carries its value", lambda: make_claim("revenue", REPORT["revenue"])["value"] == 120.0)
-expect_true("a claim carries its source citation", lambda: make_claim("revenue", REPORT["revenue"])["source"] == "p4, income stmt")
-expect_true("a claim is machine-readable (a dict)", lambda: isinstance(make_claim("revenue", REPORT["revenue"]), dict))
-expect_true("a fully-cited summary passes", lambda: all_cited([make_claim("revenue", REPORT["revenue"]), make_claim("net_income", REPORT["net_income"])]) is True)
-expect_true("one uncited claim fails the whole summary", lambda: all_cited([make_claim("revenue", REPORT["revenue"]), {"statement": "guess", "value": 5.0, "source": ""}]) is False)'''),
-      footer(2, "Every claim carries its citation, so a human can verify any number in seconds and an auditor can trace it. One uncited claim breaks the chain -- structured, cited output is what makes the agent auditable."),
+expect_true("a claim carries the exact source string through", lambda: make_claim("net_income", REPORT["net_income"])["source"] == "p4, income stmt")
+expect_true("a fully-cited summary has no uncited claims", lambda: uncited_claims([make_claim("revenue", REPORT["revenue"]), make_claim("net_income", REPORT["net_income"])]) == [])
+expect_true("the mix detector names the one uncited claim", lambda: uncited_claims([make_claim("revenue", REPORT["revenue"]), {"statement": "guess", "value": 5.0, "source": ""}]) == ["guess"])
+expect_true("several uncited claims are all listed", lambda: set(uncited_claims([{"statement": "a", "source": ""}, {"statement": "b", "source": None}, make_claim("revenue", REPORT["revenue"])])) == {"a", "b"})'''),
+      footer(2, "A summary is a mix of claims, and one silently uncited number breaks the chain. Carrying the exact source string through -- and naming which claims lack it -- is what a validator (Lab 7) checks for correctness and what makes the agent auditable."),
     ]
 
 # ============================================================ LAB 03
@@ -431,16 +444,20 @@ tool. The insight agent gets `extract_figure` and `compute` &mdash; **read-only*
 **no** `place_trade`, no `give_advice`. Just as the email agent couldn't send, this agent literally
 **cannot** trade or advise. Withholding a capability is far stronger than instructing against it.'''),
       code('''FORBIDDEN = {"place_trade", "give_advice", "execute_order", "wire_funds"}
+ALL_TOOLS = ["extract_figure", "compute", "place_trade", "give_advice"]   # a MIXED, untrusted toolbox
+print("all available tools :", ALL_TOOLS)
 print("tools an insight agent must NEVER hold:", FORBIDDEN)'''),
       md('''## Your Turn
-Complete `agent_tools` (read-only) and `can_act` (does the toolset contain a forbidden tool?).'''),
+Complete `agent_tools` &mdash; **filter** the mixed `ALL_TOOLS` toolbox down to the read-only ones &mdash;
+and `can_act` (does the toolset contain a forbidden tool?).'''),
       code(render([
         'FORBIDDEN = {"place_trade", "give_advice", "execute_order", "wire_funds"}',
+        'ALL_TOOLS = ["extract_figure", "compute", "place_trade", "give_advice"]',
         "",
         "def agent_tools():",
-        '    # read-only: the insight agent may extract and compute, but NOT trade or advise',
-        {"s": '    return ___   # TODO: ["extract_figure", "compute"]',
-         "a": '    return ["extract_figure", "compute"]'},
+        '    # read-only: keep every tool from ALL_TOOLS that is NOT a forbidden capability',
+        {"s": '    return ___   # TODO: filter ALL_TOOLS, dropping anything that is in FORBIDDEN',
+         "a": '    return [t for t in ALL_TOOLS if t not in FORBIDDEN]'},
         "",
         "def can_act(tools):",
         '    # True if the toolset contains any consequential (forbidden) tool',
@@ -610,8 +627,8 @@ Complete `redact_account` (mask long digit runs) and `minimize` (keep only neede
         '    return "".join(out).rstrip()',
         "",
         "def minimize(record, needed_fields):",
-        '    # send the model ONLY the fields the task needs',
-        {"s": '    return {k: record[k] for k in needed_fields if k in record}   # TODO',
+        '    # send the model ONLY the fields the task needs -- not the whole record',
+        {"s": '    return ___   # TODO: build a dict of just the needed_fields that exist in record',
          "a": '    return {k: record[k] for k in needed_fields if k in record}'},
         "",
         "try:",
@@ -664,16 +681,18 @@ Complete `make_insight` (flag for review), `reviewable` (require citations), and
          "a": '    return all(c.get("source") for c in insight["claims"])'},
         "",
         "def owns_decision(insight):",
-        '    # who owns any consequential decision -- never the agent',
-        {"s": '    return ___   # TODO: "human"',
-         "a": '    return "human"'},
+        '    # the agent only "owns" a decision it already executed; an assistive (needs_review) insight',
+        '    # is owned by a human -- so branch on the status field to return the owner',
+        {"s": '    return "agent" if ___ else "human"   # TODO: the status shows the agent already acted (executed)',
+         "a": '    return "agent" if insight["status"] == "executed" else "human"'},
         "",
         "try:",
         "    claims = [{'metric': 'revenue', 'source': 'p4'}, {'metric': 'margin', 'source': 'p4'}]",
         "    ins = make_insight('Revenue +12% YoY [p4]; margin down [p4].', claims)",
         "    print('status    :', ins['status'])",
         "    print('reviewable:', reviewable(ins))",
-        "    print('decides   :', owns_decision(ins))",
+        "    print('owns (assistive):', owns_decision(ins))",
+        "    print('owns (if executed):', owns_decision({'status': 'executed'}))",
         "    uncited = make_insight('...', [{'metric': 'guess', 'source': ''}])",
         "    print('uncited reviewable?', reviewable(uncited))",
         "except Exception as e:",
@@ -683,7 +702,8 @@ Complete `make_insight` (flag for review), `reviewable` (require citations), and
 expect_true("the agent never marks a decision as executed", lambda: make_insight("s", [])["status"] != "executed")
 expect_true("a fully-cited insight is genuinely reviewable", lambda: reviewable(make_insight("s", [{"metric": "revenue", "source": "p4"}])) is True)
 expect_true("an uncited claim makes review a rubber-stamp (not reviewable)", lambda: reviewable(make_insight("s", [{"metric": "guess", "source": ""}])) is False)
-expect_true("a human owns the decision", lambda: owns_decision(make_insight("s", [])) == "human")''')
+expect_true("a human owns an assistive (needs_review) decision", lambda: owns_decision(make_insight("s", [])) == "human")
+expect_true("only an already-executed action would be owned by the agent", lambda: owns_decision({"status": "executed"}) == "agent")''')
       ,
       *optional_real(
         "See how the real LangChain exposes structured, citable output (the shape a human reviews).",
@@ -802,36 +822,45 @@ except Exception as e:
 def _l12(sol):
     return [
       header(12, "Capstone: The Financial-Report Insight Agent", "Advanced", 45,
-        ["Chain ground -> compute -> cite -> validate into one analyzer",
+        ["Chain redact -> ground -> compute -> cite -> validate into one analyzer",
          "Reject any output with advice or an uncited claim",
-         "Run it over a SUITE of reports and score it"],
+         "Run it over a MIXED suite (clean / advice / uncited) and score the outcomes"],
         "The financial-report insight agent, end to end"),
       setup(12),
       md('''## Concept
 Capstone: the **financial-report insight agent** (the client's Lab 5.1), end to end. For each report
-it **grounds** the figures, **computes** the metrics, builds a **cited** summary, **validates** that
-every claim is cited and contains **no advice**, and returns it flagged **`needs_review`** for an
-analyst &mdash; never a decision, never a trade. You run it over a **suite** of reports and score the
-outcomes. The helpers below are the ones you built through the module.'''),
+it **redacts** sensitive identifiers (Lab 9), **grounds** the figures, **computes** the metrics, builds
+a **cited** summary, **validates** that every claim is cited and contains **no advice**, and returns it
+flagged **`needs_review`** for an analyst &mdash; never a decision, never a trade. You run it over a
+**mixed suite** &mdash; a clean report, one that slips in advice, one with an uncited figure &mdash; so
+only the good ones ship (a **partial** score is the correct outcome). The helpers below are the ones
+you built through the module.'''),
       realcell([REPORT_FIXTURE],
         '''# The pieces you built this module, provided so you can assemble the whole agent.
+import re
 def margin_pct(ni, rev):
     return round(ni / rev * 100, 1)
+def redact(text):
+    # Lab 9: mask any run of 6+ digits (account/card numbers) before it leaves your systems
+    return re.sub(r"\\d{6,}", "[REDACTED]", text)
 def build_summary(report):
     rev, ni = report["revenue"], report["net_income"]
     m = margin_pct(ni["value"], rev["value"])
+    note = report.get("note", "")               # free-text note -- may hold an account number or advice
     return ("Revenue " + str(rev["value"]) + "M [" + rev["source"] + "]; "
-            "net margin " + str(m) + "% [" + ni["source"] + "].")
+            "net margin " + str(m) + "% [" + ni["source"] + "]. " + note).strip()
 def claims_of(report):
     return [{"metric": "revenue", "source": report["revenue"]["source"]},
             {"metric": "net_income", "source": report["net_income"]["source"]}]
 ADVICE_TERMS = ("buy", "sell", "recommend", "you should", "invest in")
-print("helpers ready: build_summary, claims_of, margin_pct")'''),
+print("helpers ready: redact, build_summary, claims_of, margin_pct")'''),
       md('''## Your Turn
-Assemble `process` (summary + cited + no-advice -> status) and `evaluate` (score the suite).'''),
+Assemble `process` (redact -> cited + no-advice -> status) and `evaluate` (score the mixed suite).'''),
       code(render([
         "def process(report):",
-        "    summary = build_summary(report)",
+        "    raw     = build_summary(report)",
+        {"s": '    summary = ___   # TODO: redact account/card numbers from raw before it leaves your systems',
+         "a": '    summary = redact(raw)'},
         "    claims  = claims_of(report)",
         {"s": '    cited   = ___   # TODO: True if every claim has a source',
          "a": '    cited   = all(c["source"] for c in claims)'},
@@ -842,12 +871,14 @@ Assemble `process` (summary + cited + no-advice -> status) and `evaluate` (score
         '    return {"summary": summary, "cited": cited, "advice": advice, "status": status}',
         "",
         "SUITE = [",
-        '    {"revenue": {"value": 120.0, "source": "p4"}, "net_income": {"value": 9.0, "source": "p4"}},',
-        '    {"revenue": {"value": 80.0,  "source": "p3"}, "net_income": {"value": 12.0, "source": "p3"}},',
+        '    {"revenue": {"value": 120.0, "source": "p4"}, "net_income": {"value": 9.0,  "source": "p4"}, "note": "Acct 1234567890 on file."},',
+        '    {"revenue": {"value": 80.0,  "source": "p3"}, "net_income": {"value": 12.0, "source": "p3"}, "note": "You should buy more."},',
+        '    {"revenue": {"value": 60.0,  "source": ""},   "net_income": {"value": 5.0,  "source": "p2"}, "note": "Solid quarter."},',
+        '    {"revenue": {"value": 200.0, "source": "p5"}, "net_income": {"value": 20.0, "source": "p5"}, "note": "Debt down YoY."},',
         "]",
         "",
         "def evaluate():",
-        '    # a report is handled well if it is cited, advice-free, and flagged needs_review',
+        '    # score the suite: count only the reports that ship (cited AND flagged needs_review)',
         {"s": '    ok = ___   # TODO: count reports where cited and status == "needs_review"',
          "a": '    ok = sum(1 for r in SUITE if process(r)["cited"] and process(r)["status"] == "needs_review")'},
         "    return ok, len(SUITE)",
@@ -855,17 +886,17 @@ Assemble `process` (summary + cited + no-advice -> status) and `evaluate` (score
         "try:",
         "    for r in SUITE:",
         "        out = process(r)",
-        "        print(out['status'], '| cited:', out['cited'], '->', out['summary'][:52])",
-        "    print('score:', evaluate())",
+        "        print(out['status'], '| cited:', out['cited'], '| advice:', out['advice'], '->', out['summary'][:56])",
+        "    print('score (shipped/total):', evaluate())",
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''expect_true("every figure in the summary is cited", lambda: process(SUITE[0])["cited"] is True)
-expect_true("the summary contains no advice language", lambda: process(SUITE[0])["advice"] is False)
-expect_true("the output is needs_review, never a decision or trade", lambda: process(SUITE[0])["status"] == "needs_review")
-expect_true("a report becomes a cited summary", lambda: "p4" in process(SUITE[0])["summary"])
-expect_true("an uncited/advice output would be rejected", lambda: process({"revenue": {"value": 1.0, "source": ""}, "net_income": {"value": 1.0, "source": "p1"}})["status"] == "rejected")
-expect_true("the agent handles the whole suite well", lambda: evaluate() == (2, 2))'''),
+      grader('''expect_true("a clean, cited report is flagged needs_review", lambda: process(SUITE[0])["status"] == "needs_review")
+expect_true("account numbers are redacted before the summary ships", lambda: "1234567890" not in process(SUITE[0])["summary"] and "[REDACTED]" in process(SUITE[0])["summary"])
+expect_true("an advice-laden report is rejected", lambda: process(SUITE[1])["status"] == "rejected")
+expect_true("an uncited report is rejected", lambda: process(SUITE[2])["status"] == "rejected")
+expect_true("every shipped summary still carries its page citations", lambda: "p4" in process(SUITE[0])["summary"])
+expect_true("the mixed suite scores partially -- only 2 of 4 ship for review", lambda: evaluate() == (2, 4))'''),
       *live(
         "Swap the offline pieces for a REAL model insight draft (Ollama / Groq) -- the bridge to Module 10.",
         '''try:
