@@ -16,7 +16,7 @@
 ## 1. Hardware & OS
 - **OS:** Windows 10/11, macOS, or Linux (64-bit)
 - **RAM:** 8 GB minimum · **16 GB recommended** (comfortable for a local model)
-- **Disk:** **~10 GB free** (Python + TensorFlow + a local model + optional libs)
+- **Disk:** **~10 GB free** (Python + TensorFlow + transformers/torch + a local model)
 - **Permissions:** ability to **install software** and **run local servers** on `localhost` — ports `8888` (Jupyter) and `11434` (Ollama, if used)
 
 ## 2. TIER 1 — Required core software (every lab)
@@ -39,7 +39,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh          # Linux / macOS
 # 2. from the course folder, run the setup script for your OS
 bash scripts/setup-linux.sh              # Linux / macOS
 bash scripts/setup-windows.sh            # Windows (Git Bash)
-#   add --with-hf to also install the optional Tier 3 (transformers + CPU-only torch)
+#   installs everything the labs need, including transformers + CPU-only torch
 ```
 The script also registers a **"Python 3.12 (biaa)"** Jupyter kernel and runs a smoke
 test. See [`scripts/README.md`](scripts/README.md) for details. *(If `uv` isn't
@@ -77,6 +77,8 @@ pip install langchain langchain-community langchain-ollama langchain-groq langgr
 
 > **💡 BYOK — OpenAI (bring your own key):** the LLM labs run on **Groq / Ollama by default**. OpenAI is supported on a **Bring-Your-Own-Key** basis — create an OpenAI account and set **`OPENAI_API_KEY`**, then install its client for the use you want: `pip install openai` for the **Day-2 GPT text-generation** snippet (shown as a commented reference in that lab), or `pip install langchain-openai` to use **OpenAI as the LLM in the Day 3–5 agent labs** (swap for `ChatGroq`). *(OpenAI is paid/metered; Groq and Ollama are free — hence the default.)*
 
+> **⚠️ If you use OpenAI's free daily-token tier:** it is granted only in exchange for **opting into OpenAI training on your API traffic**. That is fine for these labs — all lab data is synthetic — but the opt-in is an **org-level** setting, so enabling it on an **employer's** OpenAI org shares that org's API traffic, not just the workshop's. **Opt in on a personal account**, or simply use Groq / Ollama and skip the question entirely.
+
 ### 3c. External APIs — Google Search & Wolfram Alpha (Day 3, Module 6)
 The Day-3 "connect agents to external APIs" lab uses both. Create the free keys **before** the workshop:
 - **Google Serper** (Google Search) → free key → env var **`SERPER_API_KEY`**
@@ -86,12 +88,19 @@ The Day-3 "connect agents to external APIs" lab uses both. Create the free keys 
 pip install wolframalpha       # langchain-community (from 3b) provides the Serper + Wolfram wrappers
 ```
 
-## 4. TIER 3 — Genuinely optional (nice-to-have)
-- **Real Hugging Face transformers** for the Day-2 "real BERT / GPT" demonstration cells:
-  ```bash
-  pip install transformers torch
-  ```
-  *(The Day-2 fine-tune lab has a complete, faithful offline path in scikit-learn — this only adds the real `bert-tiny` demo.)*
+### 3d. Hugging Face transformers (Day 2, Modules 3–4)
+The transformer / pre-trained-model labs use a **real** Hugging Face model, so these are **required**:
+```bash
+pip install "transformers>=4.40,<5" tf-keras
+# CPU-only torch (no ~2.5 GB CUDA wheels) — the setup scripts do this for you:
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+```
+- `transformers` is pinned **<5** (5.x can't load `bert-tiny`'s slow WordPiece tokenizer).
+- `tf-keras` gives `transformers` a Keras-2 API to probe; it does **not** disturb the Keras 3 used by the Day-1 MNIST labs.
+- Participants must be able to **download models** → allow **`huggingface.co`** + **`cdn-lfs.huggingface.co`** (see §6).
+
+## 4. TIER 3 — Genuinely optional (BYOK only)
+- **OpenAI** is the only genuinely-optional add-on — the LLM labs default to **Groq / Ollama**. Bring your own key (`OPENAI_API_KEY`) and `pip install openai` / `langchain-openai` only if you prefer OpenAI. *(See the BYOK note under 3b.)*
 
 ## 5. Built-in resilience (safety net — NOT a reason to skip setup)
 Every lab degrades gracefully if a service is unreachable, so a blocked key or port never halts the session:
@@ -111,7 +120,7 @@ Needed for package install + the Tier-2 services:
 | **Ollama** (LLM, Option B) | `ollama.com`, `registry.ollama.ai` *(runtime is local — `127.0.0.1:11434`)* |
 | **Google Serper** (Day 3) | `serper.dev`, `google.serper.dev` |
 | **Wolfram Alpha** (Day 3) | `developer.wolframalpha.com`, `api.wolframalpha.com` |
-| **Hugging Face** (optional, Day 2) | `huggingface.co`, `cdn-lfs.huggingface.co` |
+| **Hugging Face** (Day 2, required) | `huggingface.co`, `cdn-lfs.huggingface.co` |
 | **OpenAI** (optional, BYOK only) | `platform.openai.com`, `api.openai.com` |
 
 ## 7. Accounts / keys to create BEFORE the workshop
@@ -119,6 +128,12 @@ Needed for package install + the Tier-2 services:
 - ☐ **Serper.dev** free `SERPER_API_KEY` *(Day 3)*
 - ☐ **Wolfram Alpha** developer `WOLFRAM_ALPHA_APPID` *(Day 3)*
 - ☐ *(BYOK, optional)* **OpenAI** account + `OPENAI_API_KEY` — only if using OpenAI instead of Groq
+
+> **⚠️ Create every key on a PERSONAL account, not an employer/org account.** Free tiers are granted
+> on terms an org account should not silently accept — rate limits, usage analytics, and (for OpenAI)
+> opting into training on your API traffic. Those terms bind the **whole org**, not just your workshop
+> use. A personal account keeps the workshop's throwaway keys entirely separate from anything your
+> employer runs, and all keys here are free, so there is no reason to bill them to an org.
 
 *Set keys as environment variables (or in a `.env` file the trainer will point to).*
 
@@ -129,6 +144,7 @@ python --version
 python -c "import numpy, sklearn, matplotlib; print('sci stack OK')"
 python -c "import tensorflow as tf; print('tensorflow', tf.__version__)"
 python -c "import langchain, langchain_community, langgraph; print('langchain stack OK')"
+python -c "import transformers, torch, tf_keras; print('transformers stack OK')"
 jupyter lab --version
 
 # LLM — run ONE of:
