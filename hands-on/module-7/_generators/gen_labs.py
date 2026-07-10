@@ -288,50 +288,74 @@ expect_true("gather grounds on real data (ETA Friday)", lambda: gather("4471", "
 def _l3(sol):
     return [
       header(3, "Structured Output, Not Prose", "Beginner", 20,
-        ["Turn a decision into a defined shape (a dict / JSON record)",
-         "See why a machine can act on fields but not on a paragraph",
-         "Check a record is well-formed before trusting it"],
+        ["Define a SCHEMA: each field's declared type and default",
+         "Coerce a messy record -- fill missing fields, fix wrong types",
+         "Validate that the required fields ended up present"],
         "Structured output, not prose"),
       setup(3),
       md('''## Concept
-Prose is great for a human but terrible for automation &mdash; your code can't reliably act on it
-(deck slide 7). The fix is **structured output**: ask for a **defined shape** (a record with fixed
-fields) instead of a sentence. *"I think we should refund them, seems urgent"* becomes
-`{"intent": "refund", "urgency": "high", "order_id": 4471}` &mdash; machine-readable, **validatable**,
-composable. The mantra: **prose for humans, JSON for machines**.'''),
-      code('''prose = "I think we should refund them, and it seems fairly urgent -- order 4471."
-print("prose (a human reads this):", prose)
-print("...but your code cannot reliably act on a paragraph.")'''),
+Structured output is only useful if it's **well-shaped** &mdash; every field present, every value the
+right type (deck slide 7). Downstream code (route, draft, validate) indexes `rec["order_id"]` and
+`rec["intent"]`, so a record that's **missing a field** or carries a **wrong-typed value** breaks the
+pipeline. The fix is a **schema**: declare each field's **type** and **default**, then **coerce** any
+raw record into that shape &mdash; fill missing fields from their defaults, and convert wrong types (a
+numeric `order_id` becomes the **string** the orders DB is keyed by). Prose for humans, a
+**validated schema** for machines.'''),
+      code('''raw = {"order_id": 4471, "urgency": "high"}   # order_id is an int; intent & attempts are missing
+print("raw (messy, from an upstream extract):", raw)
+print("we want a COMPLETE, correctly-typed record out.")'''),
       md('''## Your Turn
-Build a **record** (the structured shape) and an `is_wellformed` check for the required fields.'''),
+Complete `coerce` (fill defaults for missing fields; coerce wrong-typed values) and `is_valid`
+(the required fields must end up present and non-None).'''),
       code(render([
-        'REQUIRED = ("order_id", "intent", "urgency")',
+        'SCHEMA = {',
+        '    "order_id": {"type": str, "default": None},',
+        '    "intent":   {"type": str, "default": "other"},',
+        '    "urgency":  {"type": str, "default": "low"},',
+        '    "attempts": {"type": int, "default": 0},',
+        '}',
+        'REQUIRED = ("order_id", "intent")',
         "",
-        "def as_record(order_id, intent, urgency):",
-        '    # a machine-readable record instead of a prose sentence',
-        {"s": '    return ___   # TODO: a dict with keys order_id, intent, urgency',
-         "a": '    return {"order_id": order_id, "intent": intent, "urgency": urgency}'},
+        "def coerce(raw):",
+        "    out = {}",
+        "    for field, spec in SCHEMA.items():",
+        '        typ, default = spec["type"], spec["default"]',
+        "        if field not in raw:",
+        {"s": '            out[field] = ___   # TODO: a missing field takes its declared default',
+         "a": '            out[field] = default'},
+        "            continue",
+        "        val = raw[field]",
+        {"s": '        if ___:   # TODO: the value is present but NOT of the declared type',
+         "a": '        if not isinstance(val, typ):'},
+        "            try:",
+        {"s": '                val = ___   # TODO: coerce val to the declared type',
+         "a": '                val = typ(val)'},
+        "            except (ValueError, TypeError):",
+        "                val = default",
+        "        out[field] = val",
+        "    return out",
         "",
-        "def is_wellformed(rec):",
-        '    # well-formed = every required field is present AND order_id is not None',
-        {"s": '    return all(k in rec for k in REQUIRED) and ___   # TODO: order_id must not be None',
-         "a": '    return all(k in rec for k in REQUIRED) and rec["order_id"] is not None'},
+        "def is_valid(rec):",
+        '    # required fields must be present AND non-None after coercion',
+        {"s": '    return all(___ for f in REQUIRED)   # TODO: each REQUIRED field is present and not None',
+         "a": '    return all(rec.get(f) is not None for f in REQUIRED)'},
         "",
         "try:",
-        '    rec = as_record(4471, "refund", "high")',
-        "    print('record   :', rec)",
-        "    print('field    :', rec['intent'])",
-        "    print('wellformed:', is_wellformed(rec))",
-        '    print(\'missing id:\', is_wellformed({"order_id": None, "intent": "x", "urgency": "low"}))',
+        '    print("coerced   :", coerce({"order_id": 4471, "urgency": "high"}))',
+        '    print("defaults  :", coerce({"order_id": "5090"}))',
+        '    print("valid?    :", is_valid(coerce({"order_id": "4471", "intent": "refund"})))',
+        '    print("missing id:", is_valid(coerce({"intent": "refund"})))',
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''expect_true("as_record builds all three fields", lambda: as_record(4471, "refund", "high") == {"order_id": 4471, "intent": "refund", "urgency": "high"})
-expect_true("the record is machine-readable (a dict)", lambda: isinstance(as_record(1, "a", "b"), dict))
-expect_true("fields are addressable by key", lambda: as_record(4471, "refund", "high")["intent"] == "refund")
-expect_true("a full record is well-formed", lambda: is_wellformed(as_record(4471, "refund", "high")) is True)
-expect_true("a record with a missing id is rejected", lambda: is_wellformed({"order_id": None, "intent": "x", "urgency": "low"}) is False)'''),
-      footer(3, "A defined shape can be validated and fed to the next step; a paragraph can't. Structured output is the backbone of every reliable automation -- next we produce one by extraction."),
+      grader('''expect_true("a missing field gets its schema default", lambda: coerce({"order_id": "4471"})["urgency"] == "low")
+expect_true("a missing typed field gets its typed default (0)", lambda: coerce({"order_id": "4471"})["attempts"] == 0)
+expect_true("a wrong-typed order_id is coerced to a STRING", lambda: coerce({"order_id": 4471})["order_id"] == "4471")
+expect_true("the coerced order_id is really a str", lambda: isinstance(coerce({"order_id": 4471})["order_id"], str))
+expect_true("a numeric string coerces to int for a typed field", lambda: coerce({"attempts": "3"})["attempts"] == 3)
+expect_true("a full record with the required fields is valid", lambda: is_valid(coerce({"order_id": "4471", "intent": "refund"})) is True)
+expect_true("a record still missing a required field is invalid", lambda: is_valid(coerce({"intent": "refund"})) is False)'''),
+      footer(3, "A schema of typed fields with defaults turns a messy, half-filled record into something the pipeline can trust. Coerce first, validate second -- next we produce records by extraction."),
     ]
 
 # ============================================================ LAB 04
@@ -350,10 +374,11 @@ def _l4(sol):
       md('''## Concept
 **Extract** turns unstructured input into structured data (deck slide 10): an email *"my order from
 last Tuesday still hasn't arrived, ref 4471, getting frustrated"* becomes
-`{"order_id": 4471, "intent": "delivery", "sentiment": "negative"}`. Keys: a **tight schema** (only
+`{"order_id": "4471", "intent": "delivery", "sentiment": "negative"}`. Keys: a **tight schema** (only
 the fields you'll use, intents from a **closed set**), **handle missing data** (return `None`, don't
-invent an id), and it's usually the **first step** in the chain &mdash; extract &rarr; route &rarr;
-draft.'''),
+invent an id), and **type consistency** &mdash; `order_id` is a **string** because the orders DB is
+keyed by strings. Extract is usually the **first step** in the chain &mdash; extract &rarr; route
+&rarr; draft.'''),
       code('''sample = "Hi, my order from last Tuesday still hasn't arrived, ref 4471, getting frustrated."
 print("unstructured in:", sample)
 print("we want out    : {order_id, intent, sentiment}")'''),
@@ -367,8 +392,8 @@ rough sentiment.'''),
         "    text = email.lower()",
         '    # order id: the digits in the message, or None if there are none',
         '    digits = "".join(ch for ch in email if ch.isdigit())',
-        {"s": '    order_id = ___   # TODO: int(digits) if we found any, else None',
-         "a": '    order_id = int(digits) if digits else None'},
+        {"s": '    order_id = ___   # TODO: the digits as-is if we found any, else None (keep order_id a STRING -- the orders DB is keyed by strings)',
+         "a": '    order_id = digits if digits else None'},
         '    # intent: map keywords to a label from the CLOSED set INTENTS',
         '    if "refund" in text or "money back" in text:',
         '        intent = "refund"',
@@ -391,7 +416,7 @@ rough sentiment.'''),
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''expect_true("pulls the order id from the text", lambda: extract("ref 4471 please")["order_id"] == 4471)
+      grader('''expect_true("pulls the order id as a STRING", lambda: extract("ref 4471 please")["order_id"] == "4471")
 expect_true("a message with no id -> order_id is None", lambda: extract("where is my stuff?")["order_id"] is None)
 expect_true("detects a delivery intent", lambda: extract("my order hasn't arrived, it's late")["intent"] == "delivery")
 expect_true("detects a refund intent", lambda: extract("I want a refund")["intent"] == "refund")
@@ -517,7 +542,7 @@ blindly. Check the record **parses**, the **required fields** are present, the v
 **allowed set**, and &mdash; crucially for a drafted reply &mdash; that it **invents no promises**
 (the ETA in the reply must match the real order). If it fails validation, **don't act**.'''),
       code('''ALLOWED_INTENTS = {"refund", "delivery", "cancel", "other"}
-good = {"order_id": 4471, "intent": "delivery", "reply": "...due Friday..."}
+good = {"order_id": "4471", "intent": "delivery", "reply": "...due Friday..."}
 print("we will check records like:", good)'''),
       md('''## Your Turn
 Complete `validate`: collect problems for a missing id, a bad intent, and an ungrounded ETA.'''),
@@ -541,18 +566,18 @@ Complete `validate`: collect problems for a missing id, a bad intent, and an ung
         "",
         'ORDER = {"id": "4471", "eta": "Friday"}',
         "try:",
-        '    ok = validate({"order_id": 4471, "intent": "delivery", "reply": "due Friday"}, ORDER)',
+        '    ok = validate({"order_id": "4471", "intent": "delivery", "reply": "due Friday"}, ORDER)',
         '    bad = validate({"order_id": None, "intent": "sing", "reply": "due Monday"}, ORDER)',
         "    print('valid  ->', ok)",
         "    print('invalid->', bad)",
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''expect_true("a well-grounded record passes", lambda: validate({"order_id": 4471, "intent": "delivery", "reply": "due Friday"}, {"id": "4471", "eta": "Friday"})["ok"] is True)
+      grader('''expect_true("a well-grounded record passes", lambda: validate({"order_id": "4471", "intent": "delivery", "reply": "due Friday"}, {"id": "4471", "eta": "Friday"})["ok"] is True)
 expect_true("a missing order_id is caught", lambda: "missing order_id" in validate({"order_id": None, "intent": "delivery", "reply": "due Friday"}, {"id": "4471", "eta": "Friday"})["problems"])
-expect_true("a bad intent is caught", lambda: "bad intent" in validate({"order_id": 1, "intent": "sing", "reply": "due Friday"}, {"id": "4471", "eta": "Friday"})["problems"])
-expect_true("an invented date (wrong ETA) is caught", lambda: "ungrounded eta" in validate({"order_id": 1, "intent": "delivery", "reply": "due Monday"}, {"id": "4471", "eta": "Friday"})["problems"])
-expect_true("ok is True only when there are no problems", lambda: validate({"order_id": 1, "intent": "delivery", "reply": "Friday"}, {"id": "4471", "eta": "Friday"})["ok"] and not validate({"order_id": None, "intent": "delivery", "reply": "Friday"}, {"id": "4471", "eta": "Friday"})["ok"])'''),
+expect_true("a bad intent is caught", lambda: "bad intent" in validate({"order_id": "1", "intent": "sing", "reply": "due Friday"}, {"id": "4471", "eta": "Friday"})["problems"])
+expect_true("an invented date (wrong ETA) is caught", lambda: "ungrounded eta" in validate({"order_id": "1", "intent": "delivery", "reply": "due Monday"}, {"id": "4471", "eta": "Friday"})["problems"])
+expect_true("ok is True only when there are no problems", lambda: validate({"order_id": "1", "intent": "delivery", "reply": "Friday"}, {"id": "4471", "eta": "Friday"})["ok"] and not validate({"order_id": None, "intent": "delivery", "reply": "Friday"}, {"id": "4471", "eta": "Friday"})["ok"])'''),
       footer(7, "Validate parses, fields, ranges, and grounding BEFORE you act. An automation that acts on unchecked output is a liability; one that validates first is something you can trust to run."),
     ]
 
@@ -564,8 +589,8 @@ expect_true("ok is True only when there are no problems", lambda: validate({"ord
 def _l8(sol):
     return [
       header(8, "Retry & Idempotency", "Intermediate", 30,
-        ["Retry a flaky call, but cap the attempts so it can't loop forever",
-         "Make sending idempotent with a key, so a re-run is safe",
+        ["Retry a flaky order lookup, but cap the attempts so it can't loop forever",
+         "Make sending idempotent with an order+draft key, so a re-run is safe",
          "See why idempotency matters most for money & messages"],
         "Reliability: retry & idempotency"),
       setup(8),
@@ -574,22 +599,26 @@ Models and tools are flaky, so wrap calls in a **retry** &mdash; but **cap** the
 12). And design for **idempotency**: key each action so running the same task twice is **safe** and
 never **double-sends** an email or **double-charges** a card. This is the subtlest and most important
 discipline for anything that touches **money or messages**.'''),
-      code('''# A helper that fails n_fail times, then succeeds -- to exercise the retry deterministically.
-def flaky(n_fail):
+      code('''# A flaky order lookup: the network hiccups n_fail times, then returns the order.
+import hashlib
+def flaky_lookup(order_id, n_fail):
     calls = {"n": 0}
     def f():
         calls["n"] += 1
         if calls["n"] <= n_fail:
-            raise RuntimeError("transient")
-        return "ok"
+            raise RuntimeError("transient network error")
+        return {"id": order_id, "status": "shipped", "eta": "Friday"}
     return f
 def raises(fn):
     try: fn(); return False
     except Exception: return True
-print("helpers ready: flaky(n) fails n times then returns 'ok'")'''),
+print("helpers ready: flaky_lookup(id, n) fails n times, then returns the order dict")'''),
       md('''## Your Turn
-Complete `with_retry` (capped) and `send_once` (idempotent via a key set).'''),
+Complete `with_retry` (capped), `send_key` (the idempotency key from the order id + a draft hash),
+and `send_once` (idempotent via the key set).'''),
       code(render([
+        "import hashlib",
+        "",
         "def with_retry(fn, max_attempts=3):",
         '    # call fn(); on failure retry up to max_attempts; raise the last error if all fail',
         "    last = None",
@@ -602,6 +631,12 @@ Complete `with_retry` (capped) and `send_once` (idempotent via a key set).'''),
         {"s": '    raise ___   # TODO: re-raise the last error after the cap is hit',
          "a": '    raise last'},
         "",
+        "def send_key(order_id, draft):",
+        '    # the idempotency key ties the EXACT draft to its order -- re-sending the same one is a no-op',
+        '    h = hashlib.sha256(draft.encode()).hexdigest()[:8]',
+        {"s": '    return ___   # TODO: combine the order id and the draft hash h into one key string',
+         "a": '    return f"{order_id}:{h}"'},
+        "",
         "def send_once(key, sent):",
         '    # idempotent: sending the same key twice must NOT double-send',
         {"s": '    if ___:   # TODO: this key was already sent',
@@ -611,20 +646,24 @@ Complete `with_retry` (capped) and `send_once` (idempotent via a key set).'''),
         '    return "sent"',
         "",
         "try:",
-        "    print('first try ok   :', with_retry(flaky(0)))",
-        "    print('after 2 fails  :', with_retry(flaky(2), 3))",
-        "    print('exhausted raises:', raises(lambda: with_retry(flaky(5), 3)))",
+        '    print("first try ok   :", with_retry(flaky_lookup("4471", 0))["status"])',
+        '    print("after 2 fails  :", with_retry(flaky_lookup("4471", 2), 3)["status"])',
+        '    print("exhausted raises:", raises(lambda: with_retry(flaky_lookup("4471", 5), 3)))',
+        '    k = send_key("4471", "Hi Priya, your order 4471 is due Friday.")',
+        '    print("send key        :", k)',
         "    sent = set()",
-        "    print('send 4471 (1st):', send_once('4471', sent))",
-        "    print('send 4471 (2nd):', send_once('4471', sent))",
+        '    print("send (1st)      :", send_once(k, sent))',
+        '    print("send (2nd)      :", send_once(k, sent))',
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''expect_true("returns the result when the call succeeds", lambda: with_retry(flaky(0)) == "ok")
-expect_true("succeeds after transient failures", lambda: with_retry(flaky(2), 3) == "ok")
-expect_true("raises once attempts are exhausted", lambda: raises(lambda: with_retry(flaky(5), 3)))
-expect_true("the first send goes out", lambda: send_once("4471", set()) == "sent")
-expect_true("a duplicate send is suppressed (idempotent)", lambda: (lambda s: (send_once("4471", s), send_once("4471", s))[1])(set()) == "already_sent")'''),
+      grader('''expect_true("returns the order when the lookup succeeds", lambda: with_retry(flaky_lookup("4471", 0))["status"] == "shipped")
+expect_true("succeeds after transient failures", lambda: with_retry(flaky_lookup("4471", 2), 3)["status"] == "shipped")
+expect_true("raises once attempts are exhausted", lambda: raises(lambda: with_retry(flaky_lookup("4471", 5), 3)))
+expect_true("the send key ties the draft to its order id", lambda: send_key("4471", "hello").startswith("4471"))
+expect_true("a different draft yields a different key", lambda: send_key("4471", "hello") != send_key("4471", "goodbye"))
+expect_true("the first send goes out", lambda: send_once(send_key("4471", "hi"), set()) == "sent")
+expect_true("re-sending the SAME order+draft is suppressed (idempotent)", lambda: (lambda s: (send_once(send_key("4471","hi"), s), send_once(send_key("4471","hi"), s))[1])(set()) == "already_sent")'''),
       footer(8, "Retry with a cap, and key every irreversible action so a re-run is safe. Assume every step can fail -- and make failure safe and visible. Idempotency is what lets an automation run unattended."),
     ]
 
@@ -867,20 +906,27 @@ except Exception as e:
 def _l12(sol):
     return [
       header(12, "Capstone: The Email-Drafting Agent", "Advanced", 45,
-        ["Chain the whole pipeline: extract, route, gather, draft, validate",
+        ["Chain the pipeline: extract, route, gather (via the 7.11 agent's tool), draft, validate",
          "Never auto-send -- every result is a needs_approval draft",
-         "Run it over a SUITE of client emails and score the outcomes"],
+         "Run it over a SUITE of client emails and score per-row (a partial score is honest)"],
         "Now build it — Module 7 labs"),
       setup(12),
       md('''## Concept
 Capstone: the **email-drafting agent** (the client's Lab 4.1), end to end. It **extracts** the
-query's fields, **routes** it to a team, **gathers** the order + template, **drafts** a grounded
-reply, **validates** it, and returns a **`needs_approval`** draft &mdash; it **never auto-sends**. You
-run it over a **suite** of incoming emails and score the outcomes. The helpers below are the ones you
+query's fields, **routes** it to a team, **gathers** the order via the **gather-only agent you
+assembled in Lab 7.11** (`send_email` is still withheld), **drafts** a grounded reply, **validates**
+it, and returns a **`needs_approval`** draft &mdash; it **never auto-sends**. You run it over a
+**suite of four incoming emails** &mdash; including an **unknown order** and an angry complaint the
+keyword extractor mis-reads &mdash; and score it **per row**. A real eval yields a **partial** score;
+that's honest, and it shows you exactly where the agent needs work. The helpers below are the ones you
 built through the module; you assemble them into `process` and score with `evaluate`.'''),
       realcell([PROMPT_IMPORT, EMAIL_FIXTURE],
         '''from langchain_core.prompts import PromptTemplate
-# The pieces you built this module, provided here so you can assemble the whole agent.
+from langchain_core.tools import tool
+from langchain_ollama import ChatOllama
+from langchain.agents import create_agent
+
+# --- The pipeline pieces you built this module (provided so you can assemble the whole agent) ---
 def extract(email):
     text = email.lower()
     digits = "".join(ch for ch in email if ch.isdigit())
@@ -904,14 +950,35 @@ def draft(order, intent):
         name=order["name"], id=order["id"], status=order["status"], eta=order["eta"])
 def validate(reply, order):
     return order["eta"] in reply
-print("helpers ready: extract, route, draft, validate + ORDERS/TEMPLATES")'''),
+
+# --- The gather-only agent you assembled in Lab 7.11 (send_email WITHHELD) -- reused here ---
+@tool
+def lookup_order(order_id: str) -> dict:
+    """Look up an order's status, ETA and carrier by id."""
+    return ORDERS.get(order_id, {"status": "unknown"})
+@tool
+def get_template(kind: str) -> str:
+    """Fetch a reply template by kind."""
+    return TEMPLATES.get(kind, "")
+@tool
+def send_email(to: str, body: str) -> str:
+    """Send an email. (Defined to show the capability -- but DELIBERATELY WITHHELD from the agent.)"""
+    return "SENT"
+def gather_tools():
+    return [lookup_order, get_template]                 # gather-only -- send_email is NOT bound
+def make_email_agent():
+    return create_agent(ChatOllama(model="llama3.2:1b"), gather_tools())
+print("helpers ready: extract, route, draft, validate + the gather-only agent (make_email_agent)")'''),
       md('''## Your Turn
-Assemble `process` (chain the pipeline; never send) and `evaluate` (score the suite).'''),
+Assemble `process` (chain the pipeline; gather via the agent's tool; never send) and `evaluate`
+(score the suite per row).'''),
       code(render([
         "def process(email):",
         "    rec    = extract(email)",
         "    routed = route(rec)",
-        '    order  = ORDERS.get(rec["order_id"], {"id": rec["order_id"], "name": "there", "status": "unknown", "eta": "soon"})',
+        "    # gather via the SAME tool the Lab 7.11 agent is built from (reuse, not re-implement)",
+        '    found  = lookup_order.invoke(rec["order_id"]) if rec["order_id"] else {}',
+        '    order  = found if found.get("id") else {"id": rec["order_id"], "name": "there", "status": "unknown", "eta": "soon"}',
         {"s": '    reply  = ___   # TODO: draft a grounded reply for this order & intent',
          "a": '    reply  = draft(order, rec["intent"])'},
         "    ok     = validate(reply, order)",
@@ -921,31 +988,40 @@ Assemble `process` (chain the pipeline; never send) and `evaluate` (score the su
         '    return {"team": routed["team"], "escalate": routed["escalate"],',
         '            "draft": reply, "status": status}',
         "",
+        "# Each row carries the human-labelled expected team + escalation for scoring.",
         "SUITE = [",
-        '    {"email": "Where is my order 4471? It\'s late.", "team": "logistics"},',
-        '    {"email": "Please refund order 5090",           "team": "billing"},',
+        '    {"email": "Where is my order 4471? It\'s late.",             "team": "logistics", "escalate": True},',
+        '    {"email": "Please refund order 5090",                       "team": "billing",   "escalate": False},',
+        '    {"email": "I want to cancel order 4471, I\'m so frustrated", "team": "billing",   "escalate": True},',
+        '    {"email": "My package never showed up and I\'m furious",     "team": "logistics", "escalate": True},   # the keyword extractor mis-reads this one',
         "]",
         "",
         "def evaluate():",
-        '    # count suite emails routed to the expected team AND left as a draft (never sent)',
-        {"s": '    solved = ___   # TODO: sum 1 per email where team matches and status starts with "needs_"',
-         "a": '    solved = sum(1 for t in SUITE if process(t["email"])["team"] == t["team"] and process(t["email"])["status"].startswith("needs_"))'},
+        '    # per-row: solved = routed to the expected team, escalation matches, never auto-sent (needs_*)',
+        "    solved = 0",
+        "    for t in SUITE:",
+        '        r = process(t["email"])',
+        {"s": '        if ___:   # TODO: r team == t team AND r escalate == t escalate AND r status starts with "needs_"',
+         "a": '        if r["team"] == t["team"] and r["escalate"] == t["escalate"] and r["status"].startswith("needs_"):'},
+        "            solved += 1",
         "    return solved, len(SUITE)",
         "",
         "try:",
         "    for t in SUITE:",
         "        r = process(t['email'])",
-        "        print(t['email'][:28], '->', r['team'], '|', r['status'])",
+        "        print(t['email'][:34], '->', r['team'], '| esc', r['escalate'], '|', r['status'])",
         "    print('score:', evaluate())",
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
       grader('''expect_true("a delivery email routes to logistics", lambda: process("Where is my order 4471? It's late.")["team"] == "logistics")
 expect_true("a refund email routes to billing", lambda: process("Please refund order 5090")["team"] == "billing")
+expect_true("a frustrated customer is escalated", lambda: process("I want to cancel order 4471, I'm so frustrated")["escalate"] is True)
 expect_true("the delivery draft is grounded (ETA present)", lambda: "Friday" in process("Where is my order 4471? It's late.")["draft"])
 expect_true("NO email is ever auto-sent (always needs_*)", lambda: all(process(t["email"])["status"].startswith("needs_") for t in SUITE))
-expect_true("a frustrated customer is escalated", lambda: process("I am frustrated, order 4471 still late")["escalate"] is True)
-expect_true("evaluate solves the whole suite", lambda: evaluate() == (2, 2))'''),
+expect_true("evaluate yields a PARTIAL score (the keyword extractor misses one)", lambda: evaluate() == (3, 4))
+expect_true("the capstone REUSES the Lab 7.11 gather-only agent", lambda: type(make_email_agent()).__name__ == "CompiledStateGraph")
+expect_true("that agent still withholds send_email (cannot auto-send)", lambda: "send_email" not in [t.name for t in gather_tools()])'''),
       *live(
         "Swap the template draft for a REAL model draft (Ollama / Groq) -- the bridge to Module 8.",
         '''try:
