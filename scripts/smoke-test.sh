@@ -48,12 +48,9 @@ check "langchain-ollama (Ollama option)"   "$PY" -c "import langchain_ollama"
 check "wolframalpha (Day 3)"               "$PY" -c "import wolframalpha"
 echo
 
-echo "Tier 3 - optional Hugging Face demo (Day 2)"
-if "$PY" -c "import transformers, torch" >/dev/null 2>&1; then
-  echo "  [PASS] transformers / torch (optional)"
-else
-  echo "  [ ok ] transformers / torch not installed - optional, labs still pass"
-fi
+echo "Tier 2 - Hugging Face transformers (Day 2, Modules 3-4)"
+check "transformers / torch"               "$PY" -c "import transformers, torch"
+check "tf-keras (transformers TF backend)" "$PY" -c "import tf_keras"
 echo
 
 echo "LLM reachability (need ONE of these for the full experience)"

@@ -6,13 +6,14 @@ Design: this is the "Multi-Agent Collaboration & Decision Making" module -- the 
 MULTI-AGENT CUSTOMER-SERVICE CHATBOT (the client's Lab 4.2) piece by piece, exactly as the deck
 teaches: specialist roles, the supervisor/router, message passing & shared state, the orchestration
 shapes (sequential pipeline, parallel fan-out, explicit handoff), the decision mechanisms (voting,
-critique/debate, synthesis), observability, and the assembled chatbot. To keep the course's verify
-discipline (every GRADED cell runs offline & deterministically -- no live LLM, no keys, no network),
-the graded cells are pure Python stdlib; the two agent-assembly labs (11-12) reuse the SAME compact
-LangChain-shaped shim as Modules 6-7 (names & shapes mirror real LangChain), driven by a
-deterministic scripted "FakeChatModel". Each Advanced lab (10-12) adds ONE optional, non-graded,
-guarded cell that runs the SAME shapes against the REAL library (LangChain / LangGraph) and degrades
-gracefully. Tools use a small AST-based safe evaluator where needed -- never bare eval()."""
+critique/debate, synthesis), observability, and the assembled chatbot. The labs use the REAL
+LangChain (langchain_core.tools.@tool, PromptTemplate, langchain_ollama.ChatOllama,
+langchain.agents.create_agent) -- no shim. Verify discipline is kept by the GRADE-SCAFFOLDING pattern:
+every GRADED cell asserts only on the deterministic parts (routing, synthesis, tool wiring, the agent
+being a CompiledStateGraph, the refund-human-gate) and NEVER calls an LLM, so the labs verify offline
+against biaa-venv. The agent-assembly lab (11) builds the billing/tech specialists with create_agent;
+its live run is an optional, ollama_up-guarded cell. Tools use a small AST-based safe evaluator where
+needed -- never bare eval()."""
 import json, os, sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -62,10 +63,17 @@ def grader(body):
 
 def setup(nn, extra=""):
     return code(f'''# Setup -- run me first
-import os
+import os, socket
 WORK = "/tmp/biaa-lab-08-{nn:02d}"
 os.makedirs(WORK, exist_ok=True)
-print("Working dir:", WORK){extra}''')
+def ollama_up(host="127.0.0.1", port=11434):
+    """True if a local Ollama server is listening -- the optional live cells self-skip when it isn't."""
+    try:
+        with socket.create_connection((host, port), timeout=1):
+            return True
+    except OSError:
+        return False
+print("Working dir:", WORK, "| Ollama reachable:", ollama_up()){extra}''')
 
 def header(nn, title, level, mins, goals, concept_slide):
     g = "\n".join(f"- {x}" for x in goals)
@@ -78,7 +86,7 @@ def header(nn, title, level, mins, goals, concept_slide):
 
 > **How this lab works (experiential flow):** read the **Concept**, run the **Demo** to see it work, then complete **Your Turn** by replacing every `___` placeholder. Run the **grader** cell at the end &mdash; it prints `[PASS]` / `[FAIL]` / `[TODO]` and a final `Score`. Aim for a full score.
 
-> **Framework note:** the graded steps are **offline &amp; deterministic** (pure Python stdlib); the agent-assembly labs reuse the **LangChain-shaped shim** from Modules 6&ndash;7. Advanced labs end with an **optional** cell that runs the **real** library. You are building the **multi-agent customer-service chatbot** &mdash; the client's Lab 4.2.
+> **Framework note:** these labs use the **real** LangChain (`langchain`, `langchain-core`, `langchain-ollama`). The **graded** cells assert only on the deterministic parts you build &mdash; routing, synthesis, tool wiring, agent structure &mdash; and never call an LLM, so the lab always verifies offline. Cells marked **Optional &mdash; run it for real** call a live local model (`ollama run llama3.2:1b`, or Groq) and self-skip if none is reachable. You are building the **multi-agent customer-service chatbot** &mdash; the client's Lab 4.2.
 
 **Reference:** [Module 8 slides &mdash; {concept_slide}]({DECK}) &nbsp;&middot;&nbsp; [Course outline]({OUTLINE}) &nbsp;&middot;&nbsp; [All Module 8 labs](./index.html)''')
 
@@ -91,89 +99,27 @@ def footer(nn, nxt):
 
 <sub>&copy; 2026 Gheware DevOps &amp; Agentic AI &middot; Building Intelligent AI Agents &middot; devops.gheware.com &middot; Trainer: Rajesh Gheware</sub>''')
 
-def optional_real(intro, body):
-    """An OPTIONAL, non-graded cell that runs the SAME shapes against the REAL LangChain / LangGraph."""
-    return [md(f'''## Optional &mdash; run this against the REAL LangChain / LangGraph (not graded)
-{intro} Safe to skip &mdash; it needs `pip install langchain langchain-ollama langgraph` (then
-`ollama run llama3.2:1b`) or `langchain-groq` with a `GROQ_API_KEY`. If a package, model or key is
-missing the cell prints a friendly note and moves on.
-**The graded steps above are offline &amp; deterministic, so the lab always verifies without a model.**'''),
+def live(intro, body):
+    """An OPTIONAL, non-graded cell that runs REAL LangChain against a live local LLM (or self-skips)."""
+    return [md(f'''## Optional &mdash; run it for real (not graded)
+{intro} This calls a **real** local model via `ChatOllama("llama3.2:1b")` &mdash; start it with
+`ollama run llama3.2:1b` (or swap in `ChatGroq` with a `GROQ_API_KEY`). If none is reachable the cell
+prints a note and moves on. **The graded cells above never call an LLM, so the lab always verifies offline.**
+*(llama3.2:1b is tiny &mdash; tool-calling can be hit-or-miss; the point is to see a real invocation.)*'''),
             code(body)]
 
-# ---- shared building blocks (pure stdlib) -------------------------------------------------
+def optional_real(intro, body):
+    """An OPTIONAL, non-graded cell that shows a REAL LangChain interface (no live model call needed)."""
+    return [md(f'''## Optional &mdash; the real LangChain interface (not graded)
+{intro} It needs only `pip install langchain-core` (already in the course env) and makes **no** network
+call. **The graded steps above never call an LLM, so the lab always verifies offline.**'''),
+            code(body)]
 
-# A tiny LangChain-SHAPED shim (same as Modules 6-7). Names & shapes mirror real LangChain.
-LC_TOOL = '''# --- LangChain-SHAPED shim: a tool has .name, .description (from the docstring), .args, .invoke() ---
-import inspect
-class Tool:
-    def __init__(self, fn, name=None, description=None):
-        self.fn = fn
-        self.name = name or fn.__name__
-        self.description = (description or inspect.getdoc(fn) or "").strip()
-        self.args = list(inspect.signature(fn).parameters)
-    def invoke(self, value):
-        return self.fn(**value) if isinstance(value, dict) else self.fn(value)
-    def __repr__(self):
-        return "Tool(name=%r)" % self.name
-def tool(fn):
-    """The @tool decorator -- wrap a plain function into a Tool (mirrors langchain_core.tools.tool)."""
-    return Tool(fn)'''
+# ---- shared building blocks -------------------------------------------------
 
-LC_MODEL = '''class AIMessage:
-    def __init__(self, content): self.content = content
-class FakeChatModel:
-    """Deterministic stand-in for ChatOllama / ChatGroq: replays a scripted list of replies.
-    Real code: from langchain_ollama import ChatOllama; model = ChatOllama(model="llama3.2:1b").
-    Like the real thing, .invoke(prompt) returns a message whose text is in .content."""
-    def __init__(self, script): self.script = list(script); self.i = 0
-    def invoke(self, prompt):
-        reply = self.script[min(self.i, len(self.script) - 1)]; self.i += 1
-        return AIMessage(reply)'''
-
-LC_PROMPT = '''class PromptTemplate:
-    """Mirrors LangChain: PromptTemplate.from_template(...).format(input=..., ...)."""
-    def __init__(self, template): self.template = template
-    @classmethod
-    def from_template(cls, template): return cls(template)
-    def format(self, **kw):
-        s = self.template
-        for k, v in kw.items():
-            s = s.replace("{" + k + "}", str(v))
-        return s'''
-
-LC_EXEC = '''def create_react_agent(model, tools, prompt):
-    """Bind model + tools + prompt into a ReAct agent (mirrors langchain.agents.create_react_agent)."""
-    return {"model": model, "tools": {t.name: t for t in tools}, "prompt": prompt}
-def parse_react(text):
-    """Turn the model's ReAct text into ('final', answer) or ('action', name, input)."""
-    action = inp = None
-    for line in text.splitlines():
-        s = line.strip()
-        if s.startswith("Final Answer:"): return ("final", s.split(":", 1)[1].strip())
-        if s.startswith("Action Input:"): inp = s.split(":", 1)[1].strip()
-        elif s.startswith("Action:"):      action = s.split(":", 1)[1].strip()
-    return ("action", action, inp)
-class AgentExecutor:
-    """Runs the loop: ask model -> parse -> run tool -> observe -> repeat, capped by max_iterations
-    (mirrors langchain.agents.AgentExecutor). verbose=True prints the ReAct trace."""
-    def __init__(self, agent, tools=None, verbose=False, max_iterations=6):
-        self.agent = agent
-        self.tools = agent["tools"] if tools is None else {t.name: t for t in tools}
-        self.model = agent["model"]; self.prompt = agent["prompt"]
-        self.verbose = verbose; self.max_iterations = max_iterations
-    def invoke(self, inputs):
-        scratch, steps = "", []
-        for _ in range(self.max_iterations):
-            text = self.model.invoke(self.prompt.format(input=inputs["input"], scratchpad=scratch)).content
-            if self.verbose: print(text)
-            parsed = parse_react(text)
-            if parsed[0] == "final":
-                return {"output": parsed[1], "intermediate_steps": steps}
-            name, arg = parsed[1], parsed[2]
-            obs = self.tools[name].invoke(arg) if name in self.tools else ("unknown tool: %s" % name)
-            if self.verbose: print("Observation:", obs)
-            steps.append((name, arg, obs)); scratch += text + "\\nObservation: " + str(obs) + "\\n"
-        return {"output": None, "intermediate_steps": steps}'''
+# Real-LangChain import snippets (dropped into the cells that need them).
+TOOL_IMPORT = "from langchain_core.tools import tool"
+PROMPT_IMPORT = "from langchain_core.prompts import PromptTemplate"
 
 # The customer-service domain fixtures used across the module.
 CS_FIXTURE = '''# The chatbot's context sources: invoices (order 4471 has a DUPLICATE charge) and known issues.
@@ -186,7 +132,8 @@ KNOWN_ISSUES = {
     "login": {"bug": "BUG-118", "fix": "reset your password"},
 }'''
 
-def shimcell(parts, demo):
+def realcell(parts, demo):
+    """A code cell = real-library imports/fixtures + a runnable demo (replaces the old shimcell)."""
     return code("\n\n".join(parts) + "\n\n" + demo)
 
 NB = {}
@@ -273,7 +220,7 @@ message, decides **which specialist** should handle it, and routes there. It is 
 **route** pattern &mdash; but the destinations are **agents**, not code branches. A message can have
 **two intents** (a billing problem *and* a crash), so routing returns a **list**; and an unmatched
 message falls back to a **general** agent (the escape hatch).'''),
-      shimcell([],
+      realcell([],
         '''class Specialist:
     def __init__(self, name, keywords): self.name = name; self.keywords = keywords
     def in_scope(self, message):
@@ -762,29 +709,32 @@ print("The AgentTrace above already logged every agent, action and detail offlin
 # ============================================================ LAB 11
 @lab(11, "lab-11-assemble-chatbot", "Advanced",
      "Assemble the Customer-Service Chatbot", 35,
-     "Wire a supervisor to billing & tech specialist agents, run the matching ones, and synthesise one reply.",
-     ["Multi-agent", "Specialist executors", "needs_approval"])
+     "Build billing & tech specialists with create_agent, route a message to the right ones, and synthesise one reply.",
+     ["Multi-agent", "create_agent specialists", "needs_approval"])
 def _l11(sol):
     return [
       header(11, "Assemble the Customer-Service Chatbot", "Advanced", 35,
-        ["Build billing & tech specialists as real agent executors",
-         "Route a message and run only the matching specialists",
+        ["Build billing & tech specialists as real create_agent agents",
+         "Route a message to only the matching specialists",
          "Synthesise one reply, flagged needs_approval for the refund"],
         "The multi-agent customer-service chatbot"),
       setup(11),
       md('''## Concept
 Now assemble the chatbot from Modules 6&ndash;7 pieces (deck slides 15&ndash;17): each specialist is a
-`create_react_agent` + `AgentExecutor` with its **own** prompt and **own** small tool set. The
-**supervisor** routes the message; the matching specialists run (each grounded by its tool); their
-findings are **synthesised** into one reply. Because a refund is **irreversible**, the reply is flagged
-**`needs_approval`** &mdash; draft-not-send, now at the team level.'''),
-      shimcell([LC_TOOL, LC_MODEL, LC_PROMPT, LC_EXEC, CS_FIXTURE],
-        '''@tool
-def lookup_invoice(order_id):
+**`create_agent`** with its **own** small tool set (a `CompiledStateGraph`). The **supervisor** routes
+the message to only the matching specialists; their findings are **synthesised** into one reply. Because
+a refund is **irreversible**, the reply is flagged **`needs_approval`** &mdash; draft-not-send, now at
+the team level. The routing, synthesis and refund gate are deterministic (graded); the specialists run
+in the optional cell.'''),
+      realcell([TOOL_IMPORT, CS_FIXTURE],
+        '''from langchain_core.tools import tool
+
+@tool
+def lookup_invoice(order_id: str) -> list:
     """Look up the charges on an order by id."""
     return INVOICES.get(order_id, [])
 @tool
-def known_issues(symptom):
+def known_issues(symptom: str) -> dict:
     """Look up a known technical issue by symptom keyword."""
     for k, v in KNOWN_ISSUES.items():
         if k in symptom.lower():
@@ -794,65 +744,68 @@ def synthesize(findings):
     return " ".join(findings[k] for k in sorted(findings)) if findings else "No findings."
 print("tools & synthesise ready:", lookup_invoice.name, "&", known_issues.name)'''),
       md('''## Your Turn
-Complete `run_specialist` (build & run one specialist agent) and `handle_message` (route, run,
-synthesise, flag).'''),
+Build each specialist with `create_agent`, complete `route` (which specialists a message needs), and
+`assemble_reply` (synthesise + flag the refund for approval).'''),
       code(render([
-        "BILLING_SCRIPT = [",
-        '    "Thought: check the charges.\\nAction: lookup_invoice\\nAction Input: 4471",',
-        '    "Thought: two charges -- a duplicate.\\nFinal Answer: On billing: duplicate charge on 4471, refund warranted.",',
-        "]",
-        "TECH_SCRIPT = [",
-        '    "Thought: look up the symptom.\\nAction: known_issues\\nAction Input: crash",',
-        '    "Thought: known bug.\\nFinal Answer: On the app: matches BUG-231, fix is update to v4.2.",',
-        "]",
+        "from langchain_ollama import ChatOllama",
+        "from langchain.agents import create_agent",
         "",
-        "def run_specialist(script, tools):",
-        "    model  = FakeChatModel(script)",
-        '    prompt = PromptTemplate.from_template("Message: {input}\\n{scratchpad}")',
-        {"s": '    agent  = create_react_agent(model, ___, prompt)   # TODO: this specialist\'s own tools',
-         "a": '    agent  = create_react_agent(model, tools, prompt)'},
-        "    return AgentExecutor(agent, max_iterations=6)",
+        "def build_specialist(tools, role):",
+        '    model = ChatOllama(model="llama3.2:1b")',
+        {"s": '    return create_agent(model, ___, system_prompt=f"You are the {role} specialist. Use only your tools.")   # TODO: bind this role own tools',
+         "a": '    return create_agent(model, tools, system_prompt=f"You are the {role} specialist. Use only your tools.")'},
         "",
-        "def handle_message(message):",
+        "billing_agent = build_specialist([lookup_invoice], 'billing')",
+        "tech_agent    = build_specialist([known_issues], 'tech')",
+        "",
+        "def route(message):",
         "    m = message.lower()",
-        "    findings = {}",
+        "    engaged = []",
         '    if any(k in m for k in ("charg", "refund", "invoice", "billed")):',
-        {"s": '        findings["billing"] = ___   # TODO: run the billing specialist, take its "output"',
-         "a": '        findings["billing"] = run_specialist(BILLING_SCRIPT, [lookup_invoice]).invoke({"input": message})["output"]'},
+        '        engaged.append("billing")',
         '    if any(k in m for k in ("crash", "bug", "login", "broken")):',
-        '        findings["tech"] = run_specialist(TECH_SCRIPT, [known_issues]).invoke({"input": message})["output"]',
+        {"s": '        engaged.append(___)   # TODO: the tech specialist',
+         "a": '        engaged.append("tech")'},
+        "    return engaged",
+        "",
+        "def assemble_reply(findings):",
+        '    # synthesise every specialist finding into ONE reply; a refund is irreversible -> needs a human',
         {"s": '    return {"reply": synthesize(findings), "status": ___, "agents": sorted(findings)}   # TODO: needs_approval',
          "a": '    return {"reply": synthesize(findings), "status": "needs_approval", "agents": sorted(findings)}'},
         "",
         "try:",
-        "    out = handle_message('I was charged twice for 4471 and the app keeps crashing')",
-        "    print('agents:', out['agents'])",
-        "    print('status:', out['status'])",
-        "    print('reply :', out['reply'])",
+        "    print('billing agent:', type(billing_agent).__name__)",
+        "    print('route (two-intent):', route('charged twice for 4471 and the app keeps crashing'))",
+        '    demo = assemble_reply({"billing": "duplicate charge, refund warranted", "tech": "matches BUG-231"})',
+        "    print('assembled    :', demo['status'], '| agents:', demo['agents'])",
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''expect_true("the billing specialist reports the duplicate", lambda: "billing" in handle_message("I was charged twice for 4471")["reply"].lower() or "duplicate" in handle_message("I was charged twice for 4471")["reply"].lower())
-expect_true("a two-intent message engages BOTH specialists", lambda: handle_message("charged twice for 4471 and the app keeps crashing")["agents"] == ["billing", "tech"])
-expect_true("the reply synthesises both findings", lambda: (lambda r: "refund" in r.lower() and "bug-231" in r.lower())(handle_message("charged twice and crashing")["reply"]))
-expect_true("a pure tech message engages only tech", lambda: handle_message("the app keeps crashing")["agents"] == ["tech"])
-expect_true("the reply is needs_approval (refund is irreversible)", lambda: handle_message("charged twice")["status"] == "needs_approval")'''),
-      *optional_real(
-        "Swap the scripted specialists for REAL LangChain agents behind a supervisor (LangGraph, or two agents by hand).",
-        '''try:
-    from langchain_ollama import ChatOllama
-    llm = ChatOllama(model="llama3.2:1b")
-    billing = llm.invoke("You are a BILLING agent. In one line, handle: charged twice on order 4471.").content
-    tech    = llm.invoke("You are a TECH agent. In one line, handle: the app keeps crashing.").content
-    print("REAL billing agent:", billing)
-    print("REAL tech agent   :", tech)
-    print("In production: give each its own tools via create_react_agent, and wire them behind a")
-    print("LangGraph StateGraph supervisor -- then synthesise, and gate the refund on human approval.")
+      grader('''expect_true("each specialist is a runnable CompiledStateGraph", lambda: type(billing_agent).__name__ == "CompiledStateGraph" and "tools" in set(tech_agent.nodes))
+expect_true("a two-intent message engages BOTH specialists", lambda: route("charged twice for 4471 and the app keeps crashing") == ["billing", "tech"])
+expect_true("a pure tech message engages only tech", lambda: route("the app keeps crashing") == ["tech"])
+expect_true("a pure billing message engages only billing", lambda: route("I was charged twice") == ["billing"])
+expect_true("synthesis merges both specialists' findings", lambda: (lambda r: "refund" in r.lower() and "bug-231" in r.lower())(assemble_reply({"billing": "refund warranted", "tech": "matches BUG-231"})["reply"]))
+expect_true("the reply is needs_approval (refund is irreversible)", lambda: assemble_reply({"billing": "x"})["status"] == "needs_approval")'''),
+      *live(
+        "Run the real specialists behind the supervisor: route, run each matching agent, synthesise, gate the refund.",
+        '''def specialist_reply(agent, message):
+    result = agent.invoke({"messages": [{"role": "user", "content": message}]}, config={"recursion_limit": 8})
+    return result["messages"][-1].content
+try:
+    if ollama_up():
+        msg = "I was charged twice for order 4471 and the app keeps crashing."
+        agents = {"billing": billing_agent, "tech": tech_agent}
+        findings = {name: specialist_reply(agents[name], msg) for name in route(msg)}
+        out = assemble_reply(findings)
+        print("agents:", out["agents"])
+        print("status:", out["status"], "(refund is irreversible -> a human approves)")
+        print("reply :", out["reply"])
+    else:
+        print("No Ollama reachable -- skipping the live run. The routing/synthesis/refund-gate above are what matters.")
 except Exception as e:
-    print("No local LLM available -- skipping (pip install langchain langchain-ollama langgraph +")
-    print("`ollama run llama3.2:1b`, or langchain-groq with GROQ_API_KEY):", type(e).__name__)
-    print("The offline chatbot above already routed to both specialists and synthesised one needs_approval reply.")'''),
-      footer(11, "Same executors as Module 6, now a TEAM: a supervisor routes, specialists gather with their own tools, a synthesiser makes one reply -- and the refund waits for a human. Next: run it over a whole suite."),
+    print("Live run skipped:", type(e).__name__)'''),
+      footer(11, "A TEAM: a supervisor routes, specialists (each a create_agent with its own tools) gather, a synthesiser makes one reply -- and the refund waits for a human. Next: run it over a whole suite."),
     ]
 
 # ============================================================ LAB 12
@@ -874,7 +827,7 @@ Capstone: the **multi-agent customer-service chatbot** (the client's Lab 4.2), e
 **synthesiser** composes one reply; and anything **irreversible** (a refund) is flagged
 **`needs_approval`** for a human &mdash; never auto-done. You run it over a **suite** of messages and
 score the outcomes. The pieces below are the ones you built through the module; you assemble them.'''),
-      shimcell([],
+      realcell([],
         '''# The pieces you built this module, provided here so you can assemble the whole chatbot.
 SPECIALISTS = {
     "billing": ["charge", "refund", "invoice", "billed"],
@@ -932,22 +885,23 @@ expect_true("the reply is synthesised from the findings", lambda: (lambda r: "re
 expect_true("a refund is gated on human approval", lambda: process("please refund my invoice")["status"] == "needs_approval")
 expect_true("a non-irreversible case is auto_ok", lambda: process("the app keeps crashing")["status"] == "auto_ok")
 expect_true("the chatbot solves the whole suite", lambda: evaluate() == (3, 3))'''),
-      *optional_real(
-        "Swap the scripted team for a REAL LangGraph multi-agent supervisor (Ollama / Groq) -- the bridge to Day 5.",
+      *live(
+        "See a REAL model do the supervisor's intent-routing (Ollama / Groq) -- the bridge to Day 5.",
         '''try:
-    from langchain_ollama import ChatOllama
-    llm = ChatOllama(model="llama3.2:1b")
-    msg = "I was charged twice and the app keeps crashing."
-    intents = llm.invoke("List the intents (billing/tech) in one line: " + msg).content
-    print("REAL supervisor intents:", intents)
-    print("\\nProduction shape (LangGraph): supervisor node routes to billing & tech agent nodes,")
-    print("findings flow through shared state to a synthesise node, and the refund waits on human approval.")
+    if ollama_up():
+        from langchain_ollama import ChatOllama
+        llm = ChatOllama(model="llama3.2:1b")
+        msg = "I was charged twice and the app keeps crashing."
+        intents = llm.invoke("List the intents (billing/tech) in one line: " + msg).content
+        print("REAL supervisor intents:", intents)
+        print("\\nProduction shape (LangGraph): supervisor node routes to billing & tech agent nodes,")
+        print("findings flow through shared state to a synthesise node, and the refund waits on human approval.")
+    else:
+        print("No Ollama reachable -- skipping the live routing. The offline multi-agent chatbot above already ran")
+        print("the whole suite -- routed, synthesised, and gated every refund on human approval.")
     print("Next: Day 5 -- agents in industry (finance / health / cyber) and responsible AI.")
 except Exception as e:
-    print("No local LLM available -- skipping (pip install langchain langchain-ollama langgraph +")
-    print("`ollama run llama3.2:1b`, or langchain-groq with GROQ_API_KEY):", type(e).__name__)
-    print("The offline multi-agent chatbot above already ran the whole suite -- routed, synthesised,")
-    print("and gated every refund on human approval. Next: Day 5 -- agents in industry & responsible AI.")'''),
+    print("Live routing skipped:", type(e).__name__)'''),
       footer(12, "You built a multi-agent customer-service chatbot end to end -- specialists coordinated by a supervisor, findings synthesised into one reply, refunds gated on a human. That completes Day 4. Next: Day 5 -- agents in the real world, responsibly."),
     ]
 

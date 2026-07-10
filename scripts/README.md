@@ -3,8 +3,9 @@
 Automated environment setup for the **Building Intelligent AI Agents** 5-day
 workshop (120 hands-on Jupyter labs). These scripts do everything in
 [`../SETUP.md`](../SETUP.md) for you: verify Python 3.12, create the `biaa-venv`
-virtual environment, install the Tier 1–2 packages every lab needs (plus
-optional Tier 3), register a Jupyter kernel, and run a smoke test.
+virtual environment, install the Tier 1–2 packages every lab needs (including
+Hugging Face `transformers` + CPU-only `torch`), register a Jupyter kernel, and
+run a smoke test.
 
 > `SETUP.md` remains the human-readable reference (hardware, firewall allowlist,
 > accounts to create). These scripts automate the install steps in it.
@@ -56,18 +57,21 @@ We pin 3.12 because it has mature, well-tested wheels for every workshop package
 | `setup-linux.sh` | Setup for Linux / macOS |
 | `setup-windows.sh` | Setup for Windows (Git Bash) |
 | `smoke-test.sh` | Cross-platform verification (setup runs it automatically; also runnable on its own) |
-| `requirements-core.txt` | Tier 1 + 2 — everything the 120 labs need |
-| `requirements-optional.txt` | Tier 3 — optional Hugging Face `transformers` + `torch` |
+| `requirements-core.txt` | Tier 1 + 2 — everything the 120 labs need (incl. Hugging Face `transformers`; CPU `torch` is installed by the setup scripts) |
+| `requirements-optional.txt` | Back-compat placeholder — now empty (transformers moved to core) |
 
 ## Options
 
-Add the optional Hugging Face demo packages (Day 2 real `bert-tiny` cells — the
-graded labs pass without them):
+Install **Ollama** and pull the Day-1 local model (`llama3.2:1b`) so the agent
+labs (Days 3–5) can run a real local LLM with no API key:
 
 ```bash
-bash scripts/setup-linux.sh   --with-hf     # Linux / macOS
-bash scripts/setup-windows.sh --with-hf     # Windows Git Bash
+bash scripts/setup-linux.sh   --with-ollama     # Linux (curl installer) / macOS (brew)
+bash scripts/setup-windows.sh --with-ollama     # Windows Git Bash (winget)
 ```
+
+> `--with-hf` is still accepted but is now a no-op: Hugging Face `transformers`
+> and CPU-only `torch` are part of the default (core) install.
 
 ## After setup
 

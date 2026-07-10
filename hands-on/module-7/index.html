@@ -68,17 +68,18 @@
       answer key under <a href="solutions/"><code>solutions/</code></a> &mdash; try first, then check.
     </div>
     <div class="callout warn">
-      <strong>Setup (almost none).</strong> Just <strong>Python 3.10+</strong> &mdash; every graded step uses
-      only the <strong>standard library</strong>. You build the <strong>email-drafting agent</strong> (the
-      client&rsquo;s Lab 4.1) piece by piece: the automation pipeline, the three patterns
+      <strong>Setup.</strong> These labs use the <strong>real LangChain</strong> (<code>langchain</code>,
+      <code>langchain-core</code>, <code>langchain-ollama</code> &mdash; all in the course
+      <code>biaa-venv</code>). You build the <strong>email-drafting agent</strong> (the client&rsquo;s
+      Lab 4.1) piece by piece: the automation pipeline, the three patterns
       (<strong>draft &middot; extract &middot; route</strong>), structured output, validation, retries &amp;
-      idempotency, and the <strong>draft-not-send</strong> guardrail. The agent-assembly labs reuse the
-      <strong>LangChain-shaped shim</strong> from Module 6 (same names &amp; shapes), driven by a
-      deterministic scripted model &mdash; so there are <strong>no API keys, no model downloads, no
-      network</strong>. Each Advanced lab ends with an <em>optional</em>, non-graded cell that runs the
-      <strong>real LangChain</strong> (<code>pip install langchain langchain-ollama</code> +
-      <code>ollama run llama3.2:1b</code>, or <code>ChatGroq</code> with a <code>GROQ_API_KEY</code>); it
-      skips cleanly if absent.
+      idempotency, and the <strong>draft-not-send</strong> guardrail. The agent-assembly labs bind real
+      <code>@tool</code> functions with <code>create_agent</code>. The <strong>graded</strong> cells assert
+      only on the deterministic parts you build (tool wiring, prompt formatting, the pipeline, the
+      gather-only guardrail) and <strong>never call an LLM</strong>, so they verify offline with
+      <strong>no API keys and no network</strong>. Cells marked <em>Optional &mdash; run it for real</em>
+      call a live local model (<code>ollama run llama3.2:1b</code>, or <code>ChatGroq</code> with a
+      <code>GROQ_API_KEY</code>) and self-skip if none is reachable.
     </div>
 
     <section>
@@ -232,8 +233,8 @@
           <span class="time">&#9201; 35 min</span>
         </div>
         <h4>Assemble the Email Agent</h4>
-        <p>Wire gather-only tools + a scripted model into an executor that drafts a grounded reply and stops for approval.</p>
-        <div class="chips"><span class="chip">create_react_agent</span><span class="chip">Gather-only</span><span class="chip">needs_approval</span></div>
+        <p>Bind gather-only tools into a real create_agent that can draft a grounded reply but has no way to send.</p>
+        <div class="chips"><span class="chip">create_agent</span><span class="chip">Gather-only</span><span class="chip">needs_approval</span></div>
         <div class="links">
           <a class="open" href="lab-11-assemble-email-agent.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-11-assemble-email-agent.ipynb">Solution</a>

@@ -62,10 +62,17 @@ def grader(body):
 
 def setup(nn, extra=""):
     return code(f'''# Setup -- run me first
-import os
+import os, socket
 WORK = "/tmp/biaa-lab-07-{nn:02d}"
 os.makedirs(WORK, exist_ok=True)
-print("Working dir:", WORK){extra}''')
+def ollama_up(host="127.0.0.1", port=11434):
+    """True if a local Ollama server is listening -- the optional live cells self-skip when it isn't."""
+    try:
+        with socket.create_connection((host, port), timeout=1):
+            return True
+    except OSError:
+        return False
+print("Working dir:", WORK, "| Ollama reachable:", ollama_up()){extra}''')
 
 def header(nn, title, level, mins, goals, concept_slide):
     g = "\n".join(f"- {x}" for x in goals)
@@ -78,7 +85,7 @@ def header(nn, title, level, mins, goals, concept_slide):
 
 > **How this lab works (experiential flow):** read the **Concept**, run the **Demo** to see it work, then complete **Your Turn** by replacing every `___` placeholder. Run the **grader** cell at the end &mdash; it prints `[PASS]` / `[FAIL]` / `[TODO]` and a final `Score`. Aim for a full score.
 
-> **Framework note:** the graded steps are **offline &amp; deterministic** (pure Python stdlib); the agent-assembly labs reuse the **LangChain-shaped shim** from Module 6. Advanced labs end with an **optional** cell that runs the **real** library. You are building the **email-drafting agent** &mdash; the client's Lab 4.1.
+> **Framework note:** these labs use the **real** LangChain (`langchain`, `langchain-core`, `langchain-ollama`). The **graded** cells assert only on the deterministic parts you build &mdash; tool wiring, prompt formatting, agent structure, and the pipeline logic &mdash; and never call an LLM, so the lab always verifies offline. Cells marked **Optional &mdash; run it for real** call a live local model (`ollama run llama3.2:1b`, or Groq) and self-skip if none is reachable. You are building the **email-drafting agent** &mdash; the client's Lab 4.1.
 
 **Reference:** [Module 7 slides &mdash; {concept_slide}]({DECK}) &nbsp;&middot;&nbsp; [Course outline]({OUTLINE}) &nbsp;&middot;&nbsp; [All Module 7 labs](./index.html)''')
 
@@ -91,13 +98,20 @@ def footer(nn, nxt):
 
 <sub>&copy; 2026 Gheware DevOps &amp; Agentic AI &middot; Building Intelligent AI Agents &middot; devops.gheware.com &middot; Trainer: Rajesh Gheware</sub>''')
 
+def live(intro, body):
+    """An OPTIONAL, non-graded cell that runs REAL LangChain against a live local LLM (or self-skips)."""
+    return [md(f'''## Optional &mdash; run it for real (not graded)
+{intro} This calls a **real** local model via `ChatOllama("llama3.2:1b")` &mdash; start it with
+`ollama run llama3.2:1b` (or swap in `ChatGroq` with a `GROQ_API_KEY`). If none is reachable the cell
+prints a note and moves on. **The graded cells above never call an LLM, so the lab always verifies offline.**
+*(llama3.2:1b is tiny &mdash; tool-calling can be hit-or-miss; the point is to see a real invocation.)*'''),
+            code(body)]
+
 def optional_real(intro, body):
-    """An OPTIONAL, non-graded cell that runs the SAME shapes against the REAL LangChain."""
-    return [md(f'''## Optional &mdash; run this against the REAL LangChain (not graded)
-{intro} Safe to skip &mdash; it needs `pip install langchain langchain-ollama` (then
-`ollama run llama3.2:1b`) or `langchain-groq` with a `GROQ_API_KEY`. If a package, model or key is
-missing the cell prints a friendly note and moves on.
-**The graded steps above are offline &amp; deterministic, so the lab always verifies without a model.**'''),
+    """An OPTIONAL, non-graded cell that shows a REAL LangChain interface (no live model call needed)."""
+    return [md(f'''## Optional &mdash; the real LangChain interface (not graded)
+{intro} It needs only `pip install langchain-core` (already in the course env) and makes **no** network
+call. **The graded steps above never call an LLM, so the lab always verifies offline.**'''),
             code(body)]
 
 # ---- shared building blocks (pure stdlib) -------------------------------------------------
@@ -118,78 +132,9 @@ def safe_calc(expr):
         raise ValueError("unsupported expression")
     return ev(ast.parse(expr, mode="eval").body)'''
 
-# A tiny LangChain-SHAPED shim (same as Module 6). Names & shapes mirror real LangChain.
-LC_TOOL = '''# --- LangChain-SHAPED shim: a tool has .name, .description (from the docstring), .args, .invoke() ---
-import inspect
-class Tool:
-    def __init__(self, fn, name=None, description=None):
-        self.fn = fn
-        self.name = name or fn.__name__
-        self.description = (description or inspect.getdoc(fn) or "").strip()
-        self.args = list(inspect.signature(fn).parameters)
-    def invoke(self, value):
-        return self.fn(**value) if isinstance(value, dict) else self.fn(value)
-    def __repr__(self):
-        return "Tool(name=%r)" % self.name
-def tool(fn):
-    """The @tool decorator -- wrap a plain function into a Tool (mirrors langchain_core.tools.tool)."""
-    return Tool(fn)'''
-
-LC_MODEL = '''class AIMessage:
-    def __init__(self, content): self.content = content
-class FakeChatModel:
-    """Deterministic stand-in for ChatOllama / ChatGroq: replays a scripted list of replies.
-    Real code: from langchain_ollama import ChatOllama; model = ChatOllama(model="llama3.2:1b").
-    Like the real thing, .invoke(prompt) returns a message whose text is in .content."""
-    def __init__(self, script): self.script = list(script); self.i = 0
-    def invoke(self, prompt):
-        reply = self.script[min(self.i, len(self.script) - 1)]; self.i += 1
-        return AIMessage(reply)'''
-
-LC_PROMPT = '''class PromptTemplate:
-    """Mirrors LangChain: PromptTemplate.from_template(...).format(input=..., ...)."""
-    def __init__(self, template): self.template = template
-    @classmethod
-    def from_template(cls, template): return cls(template)
-    def format(self, **kw):
-        s = self.template
-        for k, v in kw.items():
-            s = s.replace("{" + k + "}", str(v))
-        return s'''
-
-LC_EXEC = '''def create_react_agent(model, tools, prompt):
-    """Bind model + tools + prompt into a ReAct agent (mirrors langchain.agents.create_react_agent)."""
-    return {"model": model, "tools": {t.name: t for t in tools}, "prompt": prompt}
-def parse_react(text):
-    """Turn the model's ReAct text into ('final', answer) or ('action', name, input)."""
-    action = inp = None
-    for line in text.splitlines():
-        s = line.strip()
-        if s.startswith("Final Answer:"): return ("final", s.split(":", 1)[1].strip())
-        if s.startswith("Action Input:"): inp = s.split(":", 1)[1].strip()
-        elif s.startswith("Action:"):      action = s.split(":", 1)[1].strip()
-    return ("action", action, inp)
-class AgentExecutor:
-    """Runs the loop: ask model -> parse -> run tool -> observe -> repeat, capped by max_iterations
-    (mirrors langchain.agents.AgentExecutor). verbose=True prints the ReAct trace."""
-    def __init__(self, agent, tools=None, verbose=False, max_iterations=6):
-        self.agent = agent
-        self.tools = agent["tools"] if tools is None else {t.name: t for t in tools}
-        self.model = agent["model"]; self.prompt = agent["prompt"]
-        self.verbose = verbose; self.max_iterations = max_iterations
-    def invoke(self, inputs):
-        scratch, steps = "", []
-        for _ in range(self.max_iterations):
-            text = self.model.invoke(self.prompt.format(input=inputs["input"], scratchpad=scratch)).content
-            if self.verbose: print(text)
-            parsed = parse_react(text)
-            if parsed[0] == "final":
-                return {"output": parsed[1], "intermediate_steps": steps}
-            name, arg = parsed[1], parsed[2]
-            obs = self.tools[name].invoke(arg) if name in self.tools else ("unknown tool: %s" % name)
-            if self.verbose: print("Observation:", obs)
-            steps.append((name, arg, obs)); scratch += text + "\\nObservation: " + str(obs) + "\\n"
-        return {"output": None, "intermediate_steps": steps}'''
+# Real-LangChain import snippets (dropped into the cells that need them).
+TOOL_IMPORT = "from langchain_core.tools import tool"
+PROMPT_IMPORT = "from langchain_core.prompts import PromptTemplate"
 
 # The shared email-domain fixtures used across the module (orders + reply templates).
 EMAIL_FIXTURE = '''# The email agent's context sources: a small orders DB and a set of reply templates.
@@ -202,7 +147,8 @@ TEMPLATES = {
     "refund":         "Hi {name}, we've started the refund for order {id}. It will reflect in 5-7 days.",
 }'''
 
-def shimcell(parts, demo):
+def realcell(parts, demo):
+    """A code cell = real-library imports/fixtures + a runnable demo (replaces the old shimcell)."""
     return code("\n\n".join(parts) + "\n\n" + demo)
 
 NB = {}
@@ -293,20 +239,22 @@ must **gather context first, then draft** (deck slide 6). Gathering happens thro
 your systems: an orders DB, a template store, the CRM. An agent that drafts before it gathers
 **hallucinates specifics**; one that grounds every claim in retrieved context is accurate and
 auditable.'''),
-      shimcell([LC_TOOL, EMAIL_FIXTURE],
+      realcell([TOOL_IMPORT, EMAIL_FIXTURE],
         '''print("orders on file :", list(ORDERS))
 print("templates on file:", list(TEMPLATES))'''),
       md('''## Your Turn
 Complete the two gather tools and the `gather` step that pulls both before any drafting.'''),
       code(render([
+        "from langchain_core.tools import tool",
+        "",
         "@tool",
-        "def lookup_order(order_id):",
+        "def lookup_order(order_id: str) -> dict:",
         '    """Look up an order\'s status, ETA and carrier by id."""',
         {"s": '    return ___   # TODO: the order dict for order_id, or {"status": "unknown"} if not found',
          "a": '    return ORDERS.get(order_id, {"status": "unknown"})'},
         "",
         "@tool",
-        "def get_template(kind):",
+        "def get_template(kind: str) -> str:",
         '    """Fetch a reply template by kind, e.g. delivery_delay or refund."""',
         {"s": '    return ___   # TODO: the template string for kind, or "" if none',
          "a": '    return TEMPLATES.get(kind, "")'},
@@ -520,11 +468,13 @@ summary, a proposal. Three keys: **ground it** (feed the real order &amp; templa
 not generic), **give it a voice** (tone, format, limits), and **keep the human** (a draft is a
 suggestion, not a sent message). The failure mode to avoid: a draft that **invents** a date or a
 policy because it wasn't grounded.'''),
-      shimcell([LC_PROMPT, EMAIL_FIXTURE],
+      realcell([PROMPT_IMPORT, EMAIL_FIXTURE],
         '''print("template:", TEMPLATES["delivery_delay"])'''),
       md('''## Your Turn
 Complete `draft_reply`: fill the grounded template from the order &mdash; never invent a field.'''),
       code(render([
+        "from langchain_core.prompts import PromptTemplate",
+        "",
         "def draft_reply(order, kind):",
         '    template = PromptTemplate.from_template(TEMPLATES[kind])',
         '    # ground the draft in the REAL order fields -- do not invent anything',
@@ -816,86 +766,97 @@ print("The RunLog above already traced every stage offline.")'''),
 # ============================================================ LAB 11
 @lab(11, "lab-11-assemble-email-agent", "Advanced",
      "Assemble the Email Agent", 35,
-     "Wire gather-only tools + a scripted model into an executor that drafts a grounded reply and stops for approval.",
-     ["create_react_agent", "Gather-only", "needs_approval"])
+     "Bind gather-only tools into a real create_agent that can draft a grounded reply but has no way to send.",
+     ["create_agent", "Gather-only", "needs_approval"])
 def _l11(sol):
     return [
       header(11, "Assemble the Email Agent", "Advanced", 35,
-        ["Assemble gather tools + model + prompt into an AgentExecutor",
+        ["Bind gather-only tools into an agent with create_agent",
          "Withhold send_email so the agent cannot auto-send",
-         "Return a grounded draft flagged needs_approval, with its trace"],
+         "Wrap the draft as needs_approval, with its tool trace"],
         "The email-drafting agent, end to end"),
       setup(11),
       md('''## Concept
-Now assemble the email agent from Module 6's pieces (deck slides 14&ndash;16): `@tool` gather tools,
-`create_react_agent`, an `AgentExecutor` with a **`max_iterations`** cap. The scripted model gathers
-(`lookup_order`, `get_template`) then drafts a **Final Answer**. The key design choice: the tools
-list is **gather-only** &mdash; `send_email` is **not** given &mdash; and the run's output is wrapped as
-a **`needs_approval`** draft. The agent did the tedious 90%; the human keeps the send.'''),
-      shimcell([LC_TOOL, LC_MODEL, LC_PROMPT, LC_EXEC, EMAIL_FIXTURE],
-        '''@tool
-def lookup_order(order_id):
+Now assemble the email agent from Module 6's pieces (deck slides 14&ndash;16): `@tool` gather tools bound
+with **`create_agent`** (a runnable `CompiledStateGraph`). The agent gathers (`lookup_order`,
+`get_template`) then drafts a reply. The key design choice: the tools list is **gather-only** &mdash;
+`send_email` is **not** bound &mdash; and the run's output is wrapped as a **`needs_approval`** draft.
+The agent did the tedious 90%; the human keeps the send.'''),
+      realcell([TOOL_IMPORT, EMAIL_FIXTURE],
+        '''from langchain_core.tools import tool
+
+@tool
+def lookup_order(order_id: str) -> dict:
     """Look up an order's status, ETA and carrier by id."""
     return ORDERS.get(order_id, {"status": "unknown"})
 @tool
-def get_template(kind):
+def get_template(kind: str) -> str:
     """Fetch a reply template by kind."""
     return TEMPLATES.get(kind, "")
-print("gather tools ready:", lookup_order.name, "&", get_template.name)'''),
+@tool
+def send_email(to: str, body: str) -> str:
+    """Send an email. (Defined to show the capability -- but DELIBERATELY WITHHELD from the agent.)"""
+    return "SENT"
+print("gather tools ready:", lookup_order.name, "&", get_template.name, "| withheld:", send_email.name)'''),
       md('''## Your Turn
-Complete `make_email_agent` (gather-only tools + the step cap) and `handle_email` (wrap the draft as
-needs_approval).'''),
+The guardrail here is what's **missing**: build the agent with **gather-only** tools (no `send_email`),
+and wrap whatever it drafts as a **`needs_approval`** result. The draft text comes from the model at
+run time (the optional cell), so the graded steps check the **wiring and the guardrail**, not the prose.'''),
       code(render([
-        "SCRIPT = [",
-        '    "Thought: get the order status first.\\nAction: lookup_order\\nAction Input: 4471",',
-        '    "Thought: fetch the reply template.\\nAction: get_template\\nAction Input: delivery_delay",',
-        '    "Thought: I can draft the reply now.\\nFinal Answer: Hi Priya, your order 4471 has shipped and is due Friday.",',
-        "]",
+        "from langchain_ollama import ChatOllama",
+        "from langchain.agents import create_agent",
         "",
-        "def make_email_agent(max_iterations=6):",
-        "    model  = FakeChatModel(SCRIPT)",
-        '    prompt = PromptTemplate.from_template("Email: {input}\\n{scratchpad}")',
-        {"s": '    tools  = ___   # TODO: gather-only -- lookup_order & get_template, NO send_email',
-         "a": '    tools  = [lookup_order, get_template]'},
-        "    agent  = create_react_agent(model, tools, prompt)",
-        {"s": '    return AgentExecutor(agent, max_iterations=___)   # TODO: the step cap',
-         "a": '    return AgentExecutor(agent, max_iterations=max_iterations)'},
+        "def gather_tools():",
+        {"s": '    return ___   # TODO: gather-only -- lookup_order & get_template, NEVER send_email',
+         "a": '    return [lookup_order, get_template]'},
         "",
-        "def handle_email(email):",
-        '    result = make_email_agent().invoke({"input": email})',
-        '    # never auto-send: return a DRAFT flagged for human approval',
-        {"s": '    return {"draft": result["output"], "status": ___,   # TODO: the needs-approval flag',
-         "a": '    return {"draft": result["output"], "status": "needs_approval",'},
-        '            "tools_used": [s[0] for s in result["intermediate_steps"]]}',
+        "def make_email_agent():",
+        '    model = ChatOllama(model="llama3.2:1b")',
+        {"s": '    return create_agent(model, ___)   # TODO: bind the gather-only tools',
+         "a": '    return create_agent(model, gather_tools())'},
+        "",
+        "def handle_email(draft, tools_used):",
+        '    # never auto-send: wrap the drafted reply as a result a human must approve',
+        {"s": '    return {"draft": draft, "status": ___, "tools_used": tools_used}   # TODO: the needs-approval flag',
+         "a": '    return {"draft": draft, "status": "needs_approval", "tools_used": tools_used}'},
         "",
         "try:",
-        '    out = handle_email("Where is my order 4471? It\'s late.")',
-        "    print('tools used:', out['tools_used'])",
-        "    print('status    :', out['status'])",
-        "    print('draft     :', out['draft'])",
-        "    print('has send tool?', 'send_email' in [t.name for t in make_email_agent().tools.values()])",
+        "    print('bound tools :', [t.name for t in gather_tools()])",
+        "    print('can it send?:', 'send_email' in [t.name for t in gather_tools()])",
+        "    print('agent type  :', type(make_email_agent()).__name__)",
+        '    demo = handle_email("Hi Priya, your order 4471 is due Friday.", ["lookup_order", "get_template"])',
+        "    print('wrapped     :', demo['status'], '| tools:', demo['tools_used'])",
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''expect_true("the agent gathers order THEN template", lambda: handle_email("x")["tools_used"] == ["lookup_order", "get_template"])
-expect_true("the draft is grounded in the order id", lambda: "4471" in handle_email("x")["draft"])
-expect_true("the draft is grounded in the real ETA", lambda: "Friday" in handle_email("x")["draft"])
-expect_true("the output is a needs_approval draft, never sent", lambda: handle_email("x")["status"] == "needs_approval")
-expect_true("the agent holds NO send tool", lambda: "send_email" not in [t.name for t in make_email_agent().tools.values()])'''),
-      *optional_real(
-        "Swap the scripted model for a REAL LangChain agent (Ollama llama3.2:1b, or Groq) -- gather-only, drafting.",
-        '''try:
-    from langchain_ollama import ChatOllama
-    llm = ChatOllama(model="llama3.2:1b")
-    draft = llm.invoke("Draft a one-line reply: order 4471 shipped, due Friday. Do NOT send it.").content
-    print("REAL draft:", draft)
-    print("In production: bind lookup_order/get_template with create_react_agent + AgentExecutor,")
-    print("and simply DON'T include a send tool -- the agent can gather & draft but cannot send.")
+      grader('''expect_true("the agent is a runnable CompiledStateGraph", lambda: type(make_email_agent()).__name__ == "CompiledStateGraph")
+expect_true("it binds exactly the two gather tools", lambda: [t.name for t in gather_tools()] == ["lookup_order", "get_template"])
+expect_true("the send tool is WITHHELD (the guardrail)", lambda: "send_email" not in [t.name for t in gather_tools()])
+expect_true("send_email still EXISTS as a capability, just unbound", lambda: send_email.name == "send_email")
+expect_true("a draft is wrapped as needs_approval, never sent", lambda: handle_email("d", [])["status"] == "needs_approval")
+expect_true("the wrapper preserves the tool trace", lambda: handle_email("d", ["lookup_order"])["tools_used"] == ["lookup_order"])'''),
+      *live(
+        "Run the gather-only agent for real: it can look up and draft, but it has no way to send.",
+        '''from langchain_core.messages import AIMessage
+def tools_used(messages):
+    return [tc["name"] for m in messages for tc in (getattr(m, "tool_calls", None) or [])]
+try:
+    if ollama_up():
+        agent = make_email_agent()
+        result = agent.invoke({"messages": [{"role": "user",
+                 "content": "Look up order 4471, then draft a one-line status reply. Do not send anything."}]},
+                 config={"recursion_limit": 8})
+        draft = result["messages"][-1].content
+        out = handle_email(draft, tools_used(result["messages"]))
+        print("tools used:", out["tools_used"])
+        print("status    :", out["status"], "(the agent has no send tool, so it cannot auto-send)")
+        print("draft     :", out["draft"])
+    else:
+        print("No Ollama reachable -- skipping the live run. The gather-only wiring above is what matters:")
+        print("send_email is defined but never bound, so the agent gathers & drafts but cannot send.")
 except Exception as e:
-    print("No local LLM available -- skipping (pip install langchain langchain-ollama + `ollama run llama3.2:1b`,")
-    print("or langchain-groq with GROQ_API_KEY):", type(e).__name__)
-    print("The offline agent above already produced a grounded needs_approval draft.")'''),
-      footer(11, "Same executor as Module 6, pointed at a real job -- and the guardrail is what's MISSING from the tools list. The agent gathers and drafts; it cannot send. Next: run it over a whole suite."),
+    print("Live run skipped:", type(e).__name__)'''),
+      footer(11, "The guardrail is what's MISSING from the tools list -- send_email is never bound, so the agent gathers and drafts but cannot send. Next: run the whole pipeline over a suite."),
     ]
 
 # ============================================================ LAB 12
@@ -917,8 +878,9 @@ query's fields, **routes** it to a team, **gathers** the order + template, **dra
 reply, **validates** it, and returns a **`needs_approval`** draft &mdash; it **never auto-sends**. You
 run it over a **suite** of incoming emails and score the outcomes. The helpers below are the ones you
 built through the module; you assemble them into `process` and score with `evaluate`.'''),
-      shimcell([LC_PROMPT, EMAIL_FIXTURE],
-        '''# The pieces you built this module, provided here so you can assemble the whole agent.
+      realcell([PROMPT_IMPORT, EMAIL_FIXTURE],
+        '''from langchain_core.prompts import PromptTemplate
+# The pieces you built this module, provided here so you can assemble the whole agent.
 def extract(email):
     text = email.lower()
     digits = "".join(ch for ch in email if ch.isdigit())
@@ -984,21 +946,22 @@ expect_true("the delivery draft is grounded (ETA present)", lambda: "Friday" in 
 expect_true("NO email is ever auto-sent (always needs_*)", lambda: all(process(t["email"])["status"].startswith("needs_") for t in SUITE))
 expect_true("a frustrated customer is escalated", lambda: process("I am frustrated, order 4471 still late")["escalate"] is True)
 expect_true("evaluate solves the whole suite", lambda: evaluate() == (2, 2))'''),
-      *optional_real(
-        "Swap the scripted pieces for a REAL LangChain email agent (Ollama / Groq) -- the bridge to Module 8.",
+      *live(
+        "Swap the template draft for a REAL model draft (Ollama / Groq) -- the bridge to Module 8.",
         '''try:
-    from langchain_ollama import ChatOllama
-    llm = ChatOllama(model="llama3.2:1b")
-    email = "Where is my order 4471? It's late."
-    reply = llm.invoke("You are a support agent. Draft a short, polite reply (do NOT send): " + email).content
-    print("REAL drafted reply:\\n", reply)
-    print("\\nProduction shape: extract -> route -> gather (tools) -> draft (llm) -> validate -> human approves -> send.")
+    if ollama_up():
+        from langchain_ollama import ChatOllama
+        llm = ChatOllama(model="llama3.2:1b")
+        email = "Where is my order 4471? It's late."
+        reply = llm.invoke("You are a support agent. Draft a short, polite reply (do NOT send): " + email).content
+        print("REAL drafted reply:\\n", reply)
+        print("\\nProduction shape: extract -> route -> gather (tools) -> draft (llm) -> validate -> human approves -> send.")
+    else:
+        print("No Ollama reachable -- skipping the live draft. The offline pipeline above already ran the whole suite")
+        print("(extract -> route -> draft -> validate) and returned needs_approval drafts, never auto-sent.")
     print("Next: Module 8 -- when one agent isn't enough, route to specialist AGENTS (the customer-service chatbot).")
 except Exception as e:
-    print("No local LLM available -- skipping (pip install langchain langchain-ollama + `ollama run llama3.2:1b`,")
-    print("or langchain-groq with GROQ_API_KEY):", type(e).__name__)
-    print("The offline email-drafting agent above already ran the whole suite -- extract, route, draft, validate,")
-    print("and returned needs_approval drafts (never auto-sent). Next: Module 8 -- multi-agent collaboration.")'''),
+    print("Live draft skipped:", type(e).__name__)'''),
       footer(12, "You built the email-drafting agent end to end -- extract, route, gather, draft, validate -- and it never sends on its own. That's an agent that does a job you'd pay for. Next: Module 8 orchestrates a team of them."),
     ]
 

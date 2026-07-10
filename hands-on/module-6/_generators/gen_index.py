@@ -111,18 +111,19 @@ html = f'''<!DOCTYPE html>
       answer key under <a href="solutions/"><code>solutions/</code></a> &mdash; try first, then check.
     </div>
     <div class="callout warn">
-      <strong>Setup (almost none).</strong> Just <strong>Python 3.10+</strong> &mdash; every graded step uses
-      only the <strong>standard library</strong>. You build a real <strong>LangChain workflow</strong>
-      (<code>@tool</code>, <code>PromptTemplate</code>, <code>create_react_agent</code>,
-      <code>AgentExecutor</code> with <code>max_iterations</code>, memory, a LangGraph-style state graph,
-      guardrails and tracing) through a tiny <strong>LangChain-shaped shim</strong> &mdash; same names and
-      shapes as the real library &mdash; driven by a deterministic scripted model, so there are
-      <strong>no API keys, no model downloads, no network</strong>. The calculator/compute tools use a small
-      <strong>AST-based safe evaluator</strong> (never bare <code>eval</code>). Each Advanced lab ends with an
-      <em>optional</em>, non-graded cell that runs the <strong>real LangChain</strong>
-      (<code>pip install langchain langchain-ollama</code> + <code>ollama run llama3.2:1b</code>, or
-      <code>ChatGroq</code> with a <code>GROQ_API_KEY</code>; Google Serper / Wolfram need their own keys);
-      it skips cleanly if absent.
+      <strong>Setup.</strong> These labs use the <strong>real LangChain</strong>
+      (<code>langchain</code>, <code>langchain-core</code>, <code>langchain-ollama</code>, <code>langgraph</code>
+      &mdash; all in the course <code>biaa-venv</code>). You build a genuine <strong>LangChain workflow</strong>
+      (<code>@tool</code>, <code>PromptTemplate</code>, <code>ChatOllama</code>, <code>create_agent</code>
+      with <code>recursion_limit</code>, memory, a real LangGraph <code>StateGraph</code>, guardrails and
+      trace-reading). The <strong>graded</strong> cells assert only on the deterministic parts you build
+      &mdash; tool wiring, prompt formatting, agent structure, routing and guardrails &mdash; and
+      <strong>never call an LLM</strong>, so the labs verify offline with <strong>no API keys and no
+      network</strong>. The calculator/compute tools use a small <strong>AST-based safe evaluator</strong>
+      (never bare <code>eval</code>). Cells marked <em>Optional &mdash; run it for real</em> call a live
+      local model (<code>ollama run llama3.2:1b</code>, or <code>ChatGroq</code> with a
+      <code>GROQ_API_KEY</code>; Google Serper / Wolfram need their own keys) and self-skip if none is
+      reachable.
     </div>
 
 {section("Beginner")}
@@ -136,9 +137,9 @@ html = f'''<!DOCTYPE html>
       <a href="../../presentation/day3-module6-frameworks-for-building-ai-agents.html">Module 6 slides &mdash; Frameworks for Building AI Agents</a>
       &middot; <a href="../../course-outline-building-intelligent-ai-agents.html">Full course outline</a>
       &middot; <a href="../module-5/index.html">Module 5 labs</a>.
-      These labs build a real LangChain agent through a deterministic shim; the <em>optional</em> cells run the
-      genuine library. Next &mdash; <strong>Day 4</strong>: putting agents to work (task automation &amp;
-      multi-agent collaboration).
+      These labs build a real LangChain agent; graded cells assert on deterministic scaffolding, and the
+      <em>optional</em> cells run it live against a local model. Next &mdash; <strong>Day 4</strong>: putting
+      agents to work (task automation &amp; multi-agent collaboration).
     </div>
   </div>
 

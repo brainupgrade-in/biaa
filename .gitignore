@@ -4,6 +4,9 @@ hands-on/**/_generators/_meta.json
 # Secrets - never commit
 .env
 
+# Verification-only course TOC (not for sharing)
+TOC_Building Intelligent AI Agents A Hands-on Journey from Deep Learning to Agentic AI.md
+
 # Python
 __pycache__/
 *.pyc

@@ -7,13 +7,14 @@ FINANCIAL-REPORT INSIGHT AGENT (the client's Lab 5.1) piece by piece, exactly as
 the domain-agent pattern (ground -> reason -> structure+cite -> guardrail -> human), grounding every
 figure with a citation, computing derived metrics, flagging anomalies, the no-advice guardrail,
 withholding the dangerous tool, validating grounding, the audit trail, privacy/redaction, assistive-
-not-autonomous, and the assembled agent. To keep the course's verify discipline (every GRADED cell
-runs offline & deterministically -- no live LLM, no keys, no network), the graded cells are pure
-Python stdlib; the two agent-assembly labs (11-12) reuse the SAME compact LangChain-shaped shim as
-Modules 6-8 (names & shapes mirror real LangChain), driven by a deterministic scripted "FakeChatModel".
-Each Advanced lab (10-12) adds ONE optional, non-graded, guarded cell that runs the SAME shapes
-against the REAL library and degrades gracefully. Financial math uses a small AST-based safe
-evaluator -- never bare eval()."""
+not-autonomous, and the assembled agent. These labs use the REAL LangChain 1.x (no shim):
+langchain_core.tools.@tool, PromptTemplate, langchain_ollama.ChatOllama, langchain.agents.create_agent.
+Verify discipline is kept by the GRADE-SCAFFOLDING pattern -- every GRADED cell asserts only on
+deterministic structure (grounding/citation/compute logic; and in lab 11 the tool wiring + the
+read-only guardrail where place_trade is defined but never bound) and NEVER calls an LLM, so labs
+verify offline against biaa-venv (no keys/network). Each Advanced lab (10-12) adds ONE optional,
+non-graded live() cell that calls a real ChatOllama (self-skips via ollama_up()). Financial math uses
+a small AST-based safe evaluator -- never bare eval()."""
 import json, os, sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -63,10 +64,17 @@ def grader(body):
 
 def setup(nn, extra=""):
     return code(f'''# Setup -- run me first
-import os
+import os, socket
 WORK = "/tmp/biaa-lab-09-{nn:02d}"
 os.makedirs(WORK, exist_ok=True)
-print("Working dir:", WORK){extra}''')
+def ollama_up(host="127.0.0.1", port=11434):
+    """True if a local Ollama server is listening -- the optional live cells self-skip when it isn't."""
+    try:
+        with socket.create_connection((host, port), timeout=1):
+            return True
+    except OSError:
+        return False
+print("Working dir:", WORK, "| Ollama reachable:", ollama_up()){extra}''')
 
 def header(nn, title, level, mins, goals, concept_slide):
     g = "\n".join(f"- {x}" for x in goals)
@@ -79,7 +87,7 @@ def header(nn, title, level, mins, goals, concept_slide):
 
 > **How this lab works (experiential flow):** read the **Concept**, run the **Demo** to see it work, then complete **Your Turn** by replacing every `___` placeholder. Run the **grader** cell at the end &mdash; it prints `[PASS]` / `[FAIL]` / `[TODO]` and a final `Score`. Aim for a full score.
 
-> **Framework note:** the graded steps are **offline &amp; deterministic** (pure Python stdlib); the agent-assembly labs reuse the **LangChain-shaped shim** from Modules 6&ndash;8. Advanced labs end with an **optional** cell that runs the **real** library. You are building the **financial-report insight agent** &mdash; the client's Lab 5.1. It grounds &amp; cites every figure, gives **no advice**, and has **no trade tool** &mdash; a human analyst decides.
+> **Framework note:** these labs use the **real** LangChain (`langchain`, `langchain-core`, `langchain-ollama`). The **graded** cells assert only on the deterministic parts you build &mdash; grounding/citation/compute logic and, in the agent-assembly labs, tool wiring &amp; the read-only guardrail &mdash; and never call an LLM, so the lab always verifies offline. Cells marked **Optional &mdash; run it for real** call a live local model (`ollama run llama3.2:1b`, or Groq) and self-skip if none is reachable. You are building the **financial-report insight agent** &mdash; the client's Lab 5.1. It grounds &amp; cites every figure, gives **no advice**, and has **no trade tool** &mdash; a human analyst decides.
 
 **Reference:** [Module 9 slides &mdash; {concept_slide}]({DECK}) &nbsp;&middot;&nbsp; [Course outline]({OUTLINE}) &nbsp;&middot;&nbsp; [All Module 9 labs](./index.html)''')
 
@@ -92,13 +100,20 @@ def footer(nn, nxt):
 
 <sub>&copy; 2026 Gheware DevOps &amp; Agentic AI &middot; Building Intelligent AI Agents &middot; devops.gheware.com &middot; Trainer: Rajesh Gheware</sub>''')
 
+def live(intro, body):
+    """An OPTIONAL, non-graded cell that runs REAL LangChain against a live local LLM (or self-skips)."""
+    return [md(f'''## Optional &mdash; run it for real (not graded)
+{intro} This calls a **real** local model via `ChatOllama("llama3.2:1b")` &mdash; start it with
+`ollama run llama3.2:1b` (or swap in `ChatGroq` with a `GROQ_API_KEY`). If none is reachable the cell
+prints a note and moves on. **The graded cells above never call an LLM, so the lab always verifies offline.**
+*(llama3.2:1b is tiny &mdash; tool-calling can be hit-or-miss; the point is to see a real invocation.)*'''),
+            code(body)]
+
 def optional_real(intro, body):
-    """An OPTIONAL, non-graded cell that runs the SAME shapes against the REAL LangChain."""
-    return [md(f'''## Optional &mdash; run this against the REAL LangChain (not graded)
-{intro} Safe to skip &mdash; it needs `pip install langchain langchain-ollama` (then
-`ollama run llama3.2:1b`) or `langchain-groq` with a `GROQ_API_KEY`. If a package, model or key is
-missing the cell prints a friendly note and moves on.
-**The graded steps above are offline &amp; deterministic, so the lab always verifies without a model.**'''),
+    """An OPTIONAL, non-graded cell that shows a REAL LangChain interface (no live model call needed)."""
+    return [md(f'''## Optional &mdash; the real LangChain interface (not graded)
+{intro} It needs only `pip install langchain-core` (already in the course env) and makes **no** network
+call. **The graded steps above never call an LLM, so the lab always verifies offline.**'''),
             code(body)]
 
 # ---- shared building blocks (pure stdlib) -------------------------------------------------
@@ -119,78 +134,9 @@ def safe_calc(expr):
         raise ValueError("unsupported expression")
     return ev(ast.parse(expr, mode="eval").body)'''
 
-# A tiny LangChain-SHAPED shim (same as Modules 6-8). Names & shapes mirror real LangChain.
-LC_TOOL = '''# --- LangChain-SHAPED shim: a tool has .name, .description (from the docstring), .args, .invoke() ---
-import inspect
-class Tool:
-    def __init__(self, fn, name=None, description=None):
-        self.fn = fn
-        self.name = name or fn.__name__
-        self.description = (description or inspect.getdoc(fn) or "").strip()
-        self.args = list(inspect.signature(fn).parameters)
-    def invoke(self, value):
-        return self.fn(**value) if isinstance(value, dict) else self.fn(value)
-    def __repr__(self):
-        return "Tool(name=%r)" % self.name
-def tool(fn):
-    """The @tool decorator -- wrap a plain function into a Tool (mirrors langchain_core.tools.tool)."""
-    return Tool(fn)'''
-
-LC_MODEL = '''class AIMessage:
-    def __init__(self, content): self.content = content
-class FakeChatModel:
-    """Deterministic stand-in for ChatOllama / ChatGroq: replays a scripted list of replies.
-    Real code: from langchain_ollama import ChatOllama; model = ChatOllama(model="llama3.2:1b").
-    Like the real thing, .invoke(prompt) returns a message whose text is in .content."""
-    def __init__(self, script): self.script = list(script); self.i = 0
-    def invoke(self, prompt):
-        reply = self.script[min(self.i, len(self.script) - 1)]; self.i += 1
-        return AIMessage(reply)'''
-
-LC_PROMPT = '''class PromptTemplate:
-    """Mirrors LangChain: PromptTemplate.from_template(...).format(input=..., ...)."""
-    def __init__(self, template): self.template = template
-    @classmethod
-    def from_template(cls, template): return cls(template)
-    def format(self, **kw):
-        s = self.template
-        for k, v in kw.items():
-            s = s.replace("{" + k + "}", str(v))
-        return s'''
-
-LC_EXEC = '''def create_react_agent(model, tools, prompt):
-    """Bind model + tools + prompt into a ReAct agent (mirrors langchain.agents.create_react_agent)."""
-    return {"model": model, "tools": {t.name: t for t in tools}, "prompt": prompt}
-def parse_react(text):
-    """Turn the model's ReAct text into ('final', answer) or ('action', name, input)."""
-    action = inp = None
-    for line in text.splitlines():
-        s = line.strip()
-        if s.startswith("Final Answer:"): return ("final", s.split(":", 1)[1].strip())
-        if s.startswith("Action Input:"): inp = s.split(":", 1)[1].strip()
-        elif s.startswith("Action:"):      action = s.split(":", 1)[1].strip()
-    return ("action", action, inp)
-class AgentExecutor:
-    """Runs the loop: ask model -> parse -> run tool -> observe -> repeat, capped by max_iterations
-    (mirrors langchain.agents.AgentExecutor). verbose=True prints the ReAct trace."""
-    def __init__(self, agent, tools=None, verbose=False, max_iterations=8):
-        self.agent = agent
-        self.tools = agent["tools"] if tools is None else {t.name: t for t in tools}
-        self.model = agent["model"]; self.prompt = agent["prompt"]
-        self.verbose = verbose; self.max_iterations = max_iterations
-    def invoke(self, inputs):
-        scratch, steps = "", []
-        for _ in range(self.max_iterations):
-            text = self.model.invoke(self.prompt.format(input=inputs["input"], scratchpad=scratch)).content
-            if self.verbose: print(text)
-            parsed = parse_react(text)
-            if parsed[0] == "final":
-                return {"output": parsed[1], "intermediate_steps": steps}
-            name, arg = parsed[1], parsed[2]
-            obs = self.tools[name].invoke(arg) if name in self.tools else ("unknown tool: %s" % name)
-            if self.verbose: print("Observation:", obs)
-            steps.append((name, arg, obs)); scratch += text + "\\nObservation: " + str(obs) + "\\n"
-        return {"output": None, "intermediate_steps": steps}'''
+# Real-LangChain import snippets (dropped into the cells that need them).
+TOOL_IMPORT = "from langchain_core.tools import tool"
+PROMPT_IMPORT = "from langchain_core.prompts import PromptTemplate"
 
 # The financial report fixture -- every figure carries its SOURCE (for grounding & citation).
 REPORT_FIXTURE = '''# A small financial report -- each figure carries its SOURCE, so every claim can be cited.
@@ -201,7 +147,8 @@ REPORT = {
 }
 PRIOR = {"revenue": 107.1, "net_income": 9.7, "total_debt": 25.0}   # prior period, for YoY'''
 
-def shimcell(parts, demo):
+def realcell(parts, demo):
+    """A code cell = real-library imports/fixtures + a runnable demo (replaces the old shimcell)."""
     return code("\n\n".join(parts) + "\n\n" + demo)
 
 NB = {}
@@ -230,7 +177,7 @@ In a high-stakes domain the model's memory isn't just unreliable &mdash; it's **
 slides 4&ndash;5, 14). Every figure must be **grounded**: pulled from the actual document, carrying its
 **source** so a human can verify it. A number without a citation is a liability dressed up as an
 answer. Here you build the core move &mdash; extract a figure **and** its source.'''),
-      shimcell([REPORT_FIXTURE],
+      realcell([REPORT_FIXTURE],
         '''print("figures on file:", list(REPORT))
 print("revenue entry:", REPORT["revenue"])'''),
       md('''## Your Turn
@@ -282,7 +229,7 @@ Auditability means every conclusion is **traceable** (deck slide 15): a regulato
 able to see **why** the agent said what it did. So each **claim** is a structured record carrying its
 **citation** &mdash; the source it came from. A summary is only auditable if **every** claim is cited;
 one uncited number breaks the chain.'''),
-      shimcell([REPORT_FIXTURE],
+      realcell([REPORT_FIXTURE],
         '''print("we will turn figures into cited claims, e.g.:")
 print({"statement": "revenue", "value": 120.0, "source": "p4, income stmt"})'''),
       md('''## Your Turn
@@ -334,7 +281,7 @@ The insight agent computes the **derived metrics** an analyst cares about (deck 
 **year-over-year growth**, **margins**, notable movements &mdash; all from the **grounded** figures,
 never invented. Financial math must be exact and safe, so compute goes through a small **AST-based
 safe calculator**, never bare `eval` on model output.'''),
-      shimcell([SAFE_CALC, REPORT_FIXTURE],
+      realcell([SAFE_CALC, REPORT_FIXTURE],
         '''print("safe compute:", safe_calc("(120-107.1)/107.1*100"), "(revenue YoY %)")'''),
       md('''## Your Turn
 Complete `yoy_growth` (percent change) and `margin_pct` (net income over revenue).'''),
@@ -384,7 +331,7 @@ Part of the agent's value is directing a human's attention: **flag** the notable
 **margin that fell**, **debt that spiked** &mdash; so the analyst spends judgement where it matters
 (deck slide 7). A flag is a **signal to look**, never a decision. Thresholds keep it deterministic and
 auditable.'''),
-      shimcell([REPORT_FIXTURE],
+      realcell([REPORT_FIXTURE],
         '''print("this quarter debt:", REPORT["total_debt"]["value"], "M  |  prior:", PRIOR["total_debt"], "M")'''),
       md('''## Your Turn
 Complete `analyze_flags`: flag a declining margin and a debt spike (growth over 50%).'''),
@@ -533,7 +480,7 @@ Never ship an ungrounded claim (deck slides 4, 8, 14). Before the summary goes t
 **validates** it: every claim must map to a **real figure** in the report, and it must cite the
 **correct source**. A claim that cites the wrong page, or a figure that isn't in the report, is a
 grounding failure &mdash; don't ship it.'''),
-      shimcell([REPORT_FIXTURE],
+      realcell([REPORT_FIXTURE],
         '''print("a claim must match REPORT[metric] on BOTH value-source and source string")'''),
       md('''## Your Turn
 Complete `validate_summary`: collect an ungrounded claim and a wrong-source claim.'''),
@@ -754,85 +701,97 @@ print("The assistive, needs_review, fully-cited output above already runs offlin
 # ============================================================ LAB 11
 @lab(11, "lab-11-assemble-insight-agent", "Advanced",
      "Assemble the Insight Agent", 35,
-     "Wire read-only extract & compute tools (NO trade tool) into an executor that grounds, cites, and flags for review.",
-     ["create_react_agent", "Read-only tools", "needs_review"])
+     "Bind read-only extract & compute tools (NO trade tool) into a real create_agent that grounds, cites, and flags for review.",
+     ["create_agent", "Read-only tools", "needs_review"])
 def _l11(sol):
     return [
       header(11, "Assemble the Insight Agent", "Advanced", 35,
-        ["Assemble read-only tools + model + prompt into an executor",
+        ["Bind read-only tools into an agent with create_agent",
          "Withhold any trade/advice tool so it cannot act",
-         "Return a grounded, cited insight flagged needs_review"],
+         "Wrap the insight as needs_review, with its tool trace"],
         "The financial-report insight agent, end to end"),
       setup(11),
       md('''## Concept
-Now assemble the insight agent from Modules 6&ndash;8 pieces (deck slides 7&ndash;9): `@tool`
-**read-only** tools (`extract_figure`, `compute`), `create_react_agent`, an `AgentExecutor`. The
-scripted model grounds a figure, computes a metric, and drafts a **cited** Final Answer. The design
-choice: the tools list is **read-only** &mdash; no `place_trade`, no `give_advice` &mdash; and the
-output is flagged **`needs_review`** for a human analyst.'''),
-      shimcell([SAFE_CALC, LC_TOOL, LC_MODEL, LC_PROMPT, LC_EXEC, REPORT_FIXTURE],
-        '''@tool
-def extract_figure(name):
+Now assemble the insight agent (deck slides 7&ndash;9): `@tool` **read-only** tools
+(`extract_figure`, `compute`) bound with **`create_agent`** (a runnable `CompiledStateGraph`). The
+agent grounds a figure and computes a metric. The design choice: the tools list is **read-only**
+&mdash; `place_trade` is **not** bound &mdash; and the output is wrapped **`needs_review`** for a
+human analyst. The guardrail is what's **missing** from the tools list.'''),
+      realcell([SAFE_CALC, TOOL_IMPORT, REPORT_FIXTURE],
+        '''from langchain_core.tools import tool
+
+@tool
+def extract_figure(name: str) -> dict:
     """Pull a reported figure and its source from the filing."""
     return REPORT.get(name, {})
 @tool
-def compute(expression):
+def compute(expression: str) -> float:
     """Do exact arithmetic on a financial expression."""
     return safe_calc(expression)
-print("read-only tools ready:", extract_figure.name, "&", compute.name)'''),
+@tool
+def place_trade(ticker: str, shares: int) -> str:
+    """Place a trade. (Defined to show the capability -- but DELIBERATELY WITHHELD from the agent.)"""
+    return "TRADED"
+print("read-only tools:", extract_figure.name, "&", compute.name, "| withheld:", place_trade.name)'''),
       md('''## Your Turn
-Complete `make_insight_agent` (read-only tools + step cap) and `analyze_report` (flag needs_review).'''),
+Build the agent with **read-only** tools (no `place_trade`), and wrap whatever it finds as
+**`needs_review`**. The insight text comes from the model at run time (the optional cell), so the
+graded steps check the **wiring and the guardrail**, not the prose.'''),
       code(render([
-        "SCRIPT = [",
-        '    "Thought: get revenue, grounded.\\nAction: extract_figure\\nAction Input: revenue",',
-        '    "Thought: compute YoY vs 107.1.\\nAction: compute\\nAction Input: (120-107.1)/107.1*100",',
-        '    "Thought: draft a cited insight.\\nFinal Answer: Revenue 120.0M [p4, income stmt], +12.0% YoY.",',
-        "]",
+        "from langchain_ollama import ChatOllama",
+        "from langchain.agents import create_agent",
         "",
-        "def make_insight_agent(max_iterations=8):",
-        "    model  = FakeChatModel(SCRIPT)",
-        '    prompt = PromptTemplate.from_template("Report: {input}\\n{scratchpad}")',
-        {"s": '    tools  = ___   # TODO: read-only -- [extract_figure, compute], NO trade/advice tool',
-         "a": '    tools  = [extract_figure, compute]'},
-        "    agent  = create_react_agent(model, tools, prompt)",
-        {"s": '    return AgentExecutor(agent, max_iterations=___)   # TODO: the step cap',
-         "a": '    return AgentExecutor(agent, max_iterations=max_iterations)'},
+        "def readonly_tools():",
+        {"s": '    return ___   # TODO: read-only -- [extract_figure, compute], NEVER place_trade',
+         "a": '    return [extract_figure, compute]'},
         "",
-        "def analyze_report(report_name):",
-        '    result = make_insight_agent().invoke({"input": report_name})',
-        '    # analysis only: flag for a human analyst, never a decision',
-        {"s": '    return {"insight": result["output"], "status": ___,   # TODO: needs_review',
-         "a": '    return {"insight": result["output"], "status": "needs_review",'},
-        '            "tools_used": [s[0] for s in result["intermediate_steps"]]}',
+        "def make_insight_agent():",
+        '    model = ChatOllama(model="llama3.2:1b")',
+        {"s": '    return create_agent(model, ___)   # TODO: bind the read-only tools',
+         "a": '    return create_agent(model, readonly_tools())'},
+        "",
+        "def analyze_report(insight, tools_used):",
+        '    # analysis only: wrap the finding so a human analyst reviews it -- never a decision',
+        {"s": '    return {"insight": insight, "status": ___, "tools_used": tools_used}   # TODO: needs_review',
+         "a": '    return {"insight": insight, "status": "needs_review", "tools_used": tools_used}'},
         "",
         "try:",
-        "    out = analyze_report('ACME Q3')",
-        "    print('tools used:', out['tools_used'])",
-        "    print('status    :', out['status'])",
-        "    print('insight   :', out['insight'])",
-        "    print('has trade tool?', 'place_trade' in [t.name for t in make_insight_agent().tools.values()])",
+        "    print('bound tools :', [t.name for t in readonly_tools()])",
+        "    print('can it trade?:', 'place_trade' in [t.name for t in readonly_tools()])",
+        "    print('agent type  :', type(make_insight_agent()).__name__)",
+        '    demo = analyze_report("Revenue 120.0M [p4, income stmt], +12.0% YoY.", ["extract_figure", "compute"])',
+        "    print('wrapped     :', demo['status'], '| tools:', demo['tools_used'])",
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''expect_true("the agent grounds via extract_figure first", lambda: analyze_report("x")["tools_used"][0] == "extract_figure")
-expect_true("it then computes a metric", lambda: "compute" in analyze_report("x")["tools_used"])
-expect_true("the insight cites its source", lambda: "p4" in analyze_report("x")["insight"])
-expect_true("the output is needs_review, never a decision", lambda: analyze_report("x")["status"] == "needs_review")
-expect_true("the agent holds NO trade tool", lambda: "place_trade" not in [t.name for t in make_insight_agent().tools.values()])'''),
-      *optional_real(
-        "Swap the scripted model for a REAL LangChain agent (Ollama llama3.2:1b, or Groq) -- read-only, grounded.",
-        '''try:
-    from langchain_ollama import ChatOllama
-    llm = ChatOllama(model="llama3.2:1b")
-    out = llm.invoke("Summarize in one line, cite the page: revenue 120M on p4, up 12% YoY. Give NO advice.").content
-    print("REAL insight draft:", out)
-    print("In production: bind extract_figure/compute (read-only) with create_react_agent + AgentExecutor,")
-    print("and simply DON'T include a trade or advice tool -- the agent can analyse but cannot act.")
+      grader('''expect_true("the agent is a runnable CompiledStateGraph", lambda: type(make_insight_agent()).__name__ == "CompiledStateGraph")
+expect_true("it binds exactly the two read-only tools", lambda: [t.name for t in readonly_tools()] == ["extract_figure", "compute"])
+expect_true("the trade tool is WITHHELD (the guardrail)", lambda: "place_trade" not in [t.name for t in readonly_tools()])
+expect_true("place_trade still EXISTS as a capability, just unbound", lambda: place_trade.name == "place_trade")
+expect_true("an insight is wrapped as needs_review, never a decision", lambda: analyze_report("i", [])["status"] == "needs_review")
+expect_true("the wrapper preserves the tool trace", lambda: analyze_report("i", ["extract_figure"])["tools_used"] == ["extract_figure"])'''),
+      *live(
+        "Run the read-only agent for real: it can ground & compute, but it has no way to trade.",
+        '''from langchain_core.messages import AIMessage
+def tools_used(messages):
+    return [tc["name"] for m in messages for tc in (getattr(m, "tool_calls", None) or [])]
+try:
+    if ollama_up():
+        agent = make_insight_agent()
+        result = agent.invoke({"messages": [{"role": "user",
+                 "content": "Use extract_figure to get revenue, then state it with its source. Give NO advice."}]},
+                 config={"recursion_limit": 8})
+        insight = result["messages"][-1].content
+        out = analyze_report(insight, tools_used(result["messages"]))
+        print("tools used:", out["tools_used"])
+        print("status    :", out["status"], "(the agent has no trade tool, so it cannot act)")
+        print("insight   :", out["insight"])
+    else:
+        print("No Ollama reachable -- skipping the live run. The read-only wiring above is what matters:")
+        print("place_trade is defined but never bound, so the agent grounds & computes but cannot trade.")
 except Exception as e:
-    print("No local LLM available -- skipping (pip install langchain langchain-ollama + `ollama run llama3.2:1b`,")
-    print("or langchain-groq with GROQ_API_KEY):", type(e).__name__)
-    print("The offline agent above already produced a grounded, cited, needs_review insight.")'''),
-      footer(11, "Same executor as Module 6, pointed at a filing -- and the guardrail is what's MISSING from the tools list. The agent grounds, computes and cites; it cannot trade or advise. Next: run it over a suite."),
+    print("Live run skipped:", type(e).__name__)'''),
+      footer(11, "The guardrail is what's MISSING from the tools list -- place_trade is never bound, so the agent grounds, computes and cites but cannot trade or advise. Next: run it over a suite."),
     ]
 
 # ============================================================ LAB 12
@@ -854,7 +813,7 @@ it **grounds** the figures, **computes** the metrics, builds a **cited** summary
 every claim is cited and contains **no advice**, and returns it flagged **`needs_review`** for an
 analyst &mdash; never a decision, never a trade. You run it over a **suite** of reports and score the
 outcomes. The helpers below are the ones you built through the module.'''),
-      shimcell([REPORT_FIXTURE],
+      realcell([REPORT_FIXTURE],
         '''# The pieces you built this module, provided so you can assemble the whole agent.
 def margin_pct(ni, rev):
     return round(ni / rev * 100, 1)
@@ -907,21 +866,22 @@ expect_true("the output is needs_review, never a decision or trade", lambda: pro
 expect_true("a report becomes a cited summary", lambda: "p4" in process(SUITE[0])["summary"])
 expect_true("an uncited/advice output would be rejected", lambda: process({"revenue": {"value": 1.0, "source": ""}, "net_income": {"value": 1.0, "source": "p1"}})["status"] == "rejected")
 expect_true("the agent handles the whole suite well", lambda: evaluate() == (2, 2))'''),
-      *optional_real(
-        "Swap the scripted pieces for a REAL LangChain insight agent (Ollama / Groq) -- the bridge to Module 10.",
+      *live(
+        "Swap the offline pieces for a REAL model insight draft (Ollama / Groq) -- the bridge to Module 10.",
         '''try:
-    from langchain_ollama import ChatOllama
-    llm = ChatOllama(model="llama3.2:1b")
-    out = llm.invoke("One-line, cite pages, NO advice: revenue 120M (p4), net income 9M (p4).").content
-    print("REAL cited insight:\\n", out)
-    print("\\nProduction shape: ground (tools/RAG) -> compute -> cite -> validate (grounded, no advice) ->")
-    print("needs_review -> a human analyst decides. No trade tool, ever.")
+    if ollama_up():
+        from langchain_ollama import ChatOllama
+        llm = ChatOllama(model="llama3.2:1b")
+        out = llm.invoke("One-line, cite pages, NO advice: revenue 120M (p4), net income 9M (p4).").content
+        print("REAL cited insight:\\n", out)
+        print("\\nProduction shape: ground (tools/RAG) -> compute -> cite -> validate (grounded, no advice) ->")
+        print("needs_review -> a human analyst decides. No trade tool, ever.")
+    else:
+        print("No Ollama reachable -- skipping the live draft. The offline insight agent above already ran the suite")
+        print("(grounded, cited, advice-free, needs_review); no trade tool, ever.")
     print("Next: Module 10 -- ethics & responsible AI: bias, transparency, safety and accountability.")
 except Exception as e:
-    print("No local LLM available -- skipping (pip install langchain langchain-ollama + `ollama run llama3.2:1b`,")
-    print("or langchain-groq with GROQ_API_KEY):", type(e).__name__)
-    print("The offline insight agent above already ran the suite -- grounded, cited, advice-free, needs_review.")
-    print("Next: Module 10 -- ethics & responsible AI.")'''),
+    print("Live draft skipped:", type(e).__name__)'''),
       footer(12, "You built the financial-report insight agent end to end -- it grounds and cites every figure, gives no advice, has no trade tool, and flags for a human. That's a genuinely useful high-stakes agent. Next: Module 10 -- doing it responsibly."),
     ]
 

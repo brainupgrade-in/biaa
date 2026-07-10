@@ -68,18 +68,19 @@
       answer key under <a href="solutions/"><code>solutions/</code></a> &mdash; try first, then check.
     </div>
     <div class="callout warn">
-      <strong>Setup (almost none).</strong> Just <strong>Python 3.10+</strong> &mdash; every graded step uses
-      only the <strong>standard library</strong>. This is the <strong>course finale</strong> (Lab 5.2): you
-      practice both halves of responsible AI &mdash; <strong>treat input as data</strong> (prompt injection),
+      <strong>Setup.</strong> These labs use the <strong>real LangChain</strong> (<code>langchain</code>,
+      <code>langchain-core</code>, <code>langchain-ollama</code> &mdash; all in the course
+      <code>biaa-venv</code>). This is the <strong>course finale</strong> (Lab 5.2): you practice both halves
+      of responsible AI &mdash; <strong>treat input as data</strong> (prompt injection),
       <strong>least privilege</strong>, fairness across groups, the responsible-agent checklist, and the eval
       loop as a <strong>guardrail regression suite</strong> &mdash; and <strong>debugging agents</strong>:
       read the trace, classify the failure mode, detect loops, and run a full <strong>debug-and-fix</strong>
-      loop. The agent-assembly labs reuse the <strong>LangChain-shaped shim</strong> from Modules 6&ndash;9
-      (same names &amp; shapes), driven by a deterministic scripted model &mdash; so there are <strong>no API
-      keys, no model downloads, no network</strong>. Each Advanced lab ends with an <em>optional</em>,
-      non-graded cell that runs the <strong>real LangChain</strong> (<code>pip install langchain
-      langchain-ollama</code> + <code>ollama run llama3.2:1b</code>, or <code>ChatGroq</code> with a
-      <code>GROQ_API_KEY</code>); it skips cleanly if absent.
+      loop. The agent-assembly labs bind real <code>@tool</code> functions with <code>create_agent</code>.
+      The <strong>graded</strong> cells assert only on the deterministic parts you build (guardrail logic,
+      trace-reading, tool wiring) and <strong>never call an LLM</strong>, so they verify offline with
+      <strong>no API keys and no network</strong>. Cells marked <em>Optional &mdash; run it for real</em> call
+      a live local model (<code>ollama run llama3.2:1b</code>, or <code>ChatGroq</code> with a
+      <code>GROQ_API_KEY</code>) and self-skip if none is reachable.
     </div>
 
     <section>

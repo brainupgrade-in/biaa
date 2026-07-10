@@ -111,17 +111,18 @@ html = f'''<!DOCTYPE html>
       answer key under <a href="solutions/"><code>solutions/</code></a> &mdash; try first, then check.
     </div>
     <div class="callout warn">
-      <strong>Setup (almost none).</strong> Just <strong>Python 3.10+</strong> &mdash; every graded step uses
-      only the <strong>standard library</strong>. You build the <strong>multi-agent customer-service
-      chatbot</strong> (the client&rsquo;s Lab 4.2) piece by piece: specialist roles, the
-      <strong>supervisor/router</strong>, shared state, the orchestration shapes (pipeline, fan-out,
-      handoff), the decision mechanisms (<strong>voting, critique, synthesis</strong>), observability, and
-      the assembled chatbot. The agent-assembly labs reuse the <strong>LangChain-shaped shim</strong> from
-      Modules 6&ndash;7 (same names &amp; shapes), driven by a deterministic scripted model &mdash; so there
-      are <strong>no API keys, no model downloads, no network</strong>. Each Advanced lab ends with an
-      <em>optional</em>, non-graded cell that runs the <strong>real LangChain / LangGraph</strong>
-      (<code>pip install langchain langchain-ollama langgraph</code> + <code>ollama run llama3.2:1b</code>,
-      or <code>ChatGroq</code> with a <code>GROQ_API_KEY</code>); it skips cleanly if absent.
+      <strong>Setup.</strong> These labs use the <strong>real LangChain</strong> (<code>langchain</code>,
+      <code>langchain-core</code>, <code>langchain-ollama</code> &mdash; all in the course
+      <code>biaa-venv</code>). You build the <strong>multi-agent customer-service chatbot</strong> (the
+      client&rsquo;s Lab 4.2) piece by piece: specialist roles, the <strong>supervisor/router</strong>,
+      shared state, the orchestration shapes (pipeline, fan-out, handoff), the decision mechanisms
+      (<strong>voting, critique, synthesis</strong>), observability, and the assembled chatbot &mdash;
+      whose specialists are real <code>create_agent</code> agents. The <strong>graded</strong> cells assert
+      only on the deterministic parts you build (routing, synthesis, the refund gate, agent structure) and
+      <strong>never call an LLM</strong>, so they verify offline with <strong>no API keys and no
+      network</strong>. Cells marked <em>Optional &mdash; run it for real</em> call a live local model
+      (<code>ollama run llama3.2:1b</code>, or <code>ChatGroq</code> with a <code>GROQ_API_KEY</code>) and
+      self-skip if none is reachable.
     </div>
 
 {section("Beginner")}

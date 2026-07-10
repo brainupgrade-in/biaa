@@ -23,18 +23,21 @@ The 12 lab notebooks, their answer keys, and `index.html` are **generated** from
   privilege, fairness across groups, the responsible-agent checklist, the eval loop as a guardrail
   regression suite; and (2) **debugging agents** — read the trace, classify the failure mode, detect
   loops, and run a full debug-and-fix loop.
-- Every GRADED step is **offline & deterministic** (pure Python standard library) — no
-  numpy/sklearn/transformers, no network, no keys. The agent-assembly labs (10–12) reuse the
-  compact **LangChain-shaped shim** from Modules 6–9 (`LC_TOOL`, `LC_MODEL`, `LC_PROMPT`, `LC_EXEC`)
-  driven by a deterministic scripted `FakeChatModel`.
+- **Real LangChain, no shim.** The labs use `langchain_core.tools.@tool`, real message traces
+  (`AIMessage`/`ToolMessage`), and (labs 10–11) `langchain_ollama.ChatOllama` +
+  `langchain.agents.create_agent`. **Grade-scaffolding pattern:** every GRADED cell asserts only on
+  **deterministic** structure (guardrail logic, trace-reading over fixed real message lists, tool wiring,
+  agent is a `CompiledStateGraph`) and **never calls an LLM** — so labs verify offline (no keys/network)
+  against the course **`biaa-venv`**, not stdlib-only. Real-import constant `TOOL_IMPORT`; `shimcell`→`realcell`.
 - Any arithmetic uses a small **AST-based safe evaluator** (`SAFE_CALC`) — never bare `eval()`.
-- Advanced labs (10–12) add an **optional, non-graded** cell (`optional_real(...)`) that runs the
-  SAME shapes against the **real LangChain** (Ollama `llama3.2:1b`, Groq `ChatGroq`) — it degrades
-  gracefully if a package/model/key is absent and never affects verification.
-- Keep every `___` blank inside a function body or a `try/except` so student notebooks still run
-  top-to-bottom (blanks land as `[TODO]`/`[FAIL]`), never a bare module-level `___`.
+- **Live demos** use `live(...)`: an optional, non-graded cell calling a real `ChatOllama("llama3.2:1b")`
+  that **self-skips** via the `ollama_up()` check in each lab's `setup()`. Non-model interface cells use
+  `optional_real(...)` (no network).
+- **Real `@tool` requires a docstring** — never blank a docstring to a bare `___` comment. Keep every
+  `___` blank inside a function body or a `try/except`.
 
 ## Verify
-Generation needs only the stdlib. Confirm graders by executing the **solution** notebooks in a
-venv (`nbconvert nbformat ipykernel`) — each should print a full `Score: n/n`. Also run the
+Graded cells need the real libraries, so verify against **`biaa-venv`** (has `langchain`,
+`langchain-ollama`), not a bare stdlib venv. Execute the **solution** notebooks — each should print a
+full `Score: n/n`. Also run the
 **student** notebooks — they must complete without uncaught errors (blanks → `[TODO]`/`[FAIL]`).

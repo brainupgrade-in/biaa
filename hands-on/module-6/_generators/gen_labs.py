@@ -3,15 +3,18 @@
 Emits STUDENT notebooks to OUT_DIR and SOLUTION notebooks to SOL_DIR.
 
 Design: this is the "Frameworks for Building AI Agents" module, so the labs teach
-the REAL LangChain workflow -- @tool, PromptTemplate, create_react_agent,
-AgentExecutor (+ max_iterations), memory, a LangGraph-style state graph, guardrails
-and observability. To keep the course's verify discipline (every GRADED cell runs
-offline & deterministically -- no live LLM, no keys, no network), the graded cells
-use a compact, stdlib-only shim whose NAMES AND SHAPES MIRROR real LangChain, driven
-by a deterministic scripted "FakeChatModel". Each Advanced lab (10-12) adds ONE
-optional, non-graded, guarded cell that runs the SAME shapes against the REAL
-library (ChatOllama/Groq, Google Serper / Wolfram Alpha) and degrades gracefully.
-The calculator/compute tools use a small AST-based safe evaluator -- never bare eval()."""
+the REAL LangChain (v1) workflow directly -- langchain_core.tools.@tool, PromptTemplate,
+langchain_ollama.ChatOllama, langchain.agents.create_agent (a compiled LangGraph
+agent), langgraph.StateGraph, memory, guardrails and trace-reading. There is NO shim.
+
+Verify discipline is preserved WITHOUT faking the library: every GRADED cell asserts
+only on the DETERMINISTIC scaffolding you build -- tool name/description/args, prompt
+formatting, the agent's structure (a CompiledStateGraph with model+tools nodes), pure
+routing/guardrail logic, and reading a fixed real message trace -- and NEVER calls an
+LLM. Cells marked "Optional -- run it for real" invoke a live local model
+(ChatOllama llama3.2:1b, Groq alt) and self-skip when none is reachable, so the lab
+always runs top-to-bottom offline. The calculator tools use a small AST-based safe
+evaluator -- never bare eval()."""
 import json, os, sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -61,10 +64,17 @@ def grader(body):
 
 def setup(nn, extra=""):
     return code(f'''# Setup -- run me first
-import os
+import os, socket
 WORK = "/tmp/biaa-lab-06-{nn:02d}"
 os.makedirs(WORK, exist_ok=True)
-print("Working dir:", WORK){extra}''')
+def ollama_up(host="127.0.0.1", port=11434):
+    """True if a local Ollama server is listening -- the optional live cells self-skip when it isn't."""
+    try:
+        with socket.create_connection((host, port), timeout=1):
+            return True
+    except OSError:
+        return False
+print("Working dir:", WORK, "| Ollama reachable:", ollama_up()){extra}''')
 
 def header(nn, title, level, mins, goals, concept_slide):
     g = "\n".join(f"- {x}" for x in goals)
@@ -77,7 +87,7 @@ def header(nn, title, level, mins, goals, concept_slide):
 
 > **How this lab works (experiential flow):** read the **Concept**, run the **Demo** to see it work, then complete **Your Turn** by replacing every `___` placeholder. Run the **grader** cell at the end &mdash; it prints `[PASS]` / `[FAIL]` / `[TODO]` and a final `Score`. Aim for a full score.
 
-> **Framework note:** the graded steps use a tiny **LangChain-shaped shim** (same names &amp; shapes as real LangChain) so they run offline &amp; deterministically. Advanced labs end with an **optional** cell that runs the **real** library.
+> **Framework note:** these labs use the **real** LangChain (`langchain`, `langchain-core`, `langchain-ollama`, `langgraph`). The **graded** cells assert only on the deterministic parts you build &mdash; tool wiring, prompt formatting, agent structure, routing and guardrails &mdash; and never call an LLM, so the lab always verifies offline. Cells marked **Optional &mdash; run it for real** call a live local model (`ollama run llama3.2:1b`, or Groq) and self-skip if none is reachable.
 
 **Reference:** [Module 6 slides &mdash; {concept_slide}]({DECK}) &nbsp;&middot;&nbsp; [Course outline]({OUTLINE}) &nbsp;&middot;&nbsp; [All Module 6 labs](./index.html)''')
 
@@ -90,16 +100,16 @@ def footer(nn, nxt):
 
 <sub>&copy; 2026 Gheware DevOps &amp; Agentic AI &middot; Building Intelligent AI Agents &middot; devops.gheware.com &middot; Trainer: Rajesh Gheware</sub>''')
 
-def optional_real(intro, body):
-    """An OPTIONAL, non-graded cell that runs the SAME shapes against the REAL LangChain."""
-    return [md(f'''## Optional &mdash; run this against the REAL LangChain (not graded)
-{intro} Safe to skip &mdash; it needs `pip install langchain langchain-ollama` (then
-`ollama run llama3.2:1b`) or `langchain-groq` with a `GROQ_API_KEY`; external-API tools also need
-their own keys. If a package, model or key is missing the cell prints a friendly note and moves on.
-**The graded steps above use a deterministic LangChain-shaped shim, so the lab always verifies offline.**'''),
+def live(intro, body):
+    """An OPTIONAL, non-graded cell that runs REAL LangChain against a live local LLM (or self-skips)."""
+    return [md(f'''## Optional &mdash; run it for real (not graded)
+{intro} This calls a **real** local model via `ChatOllama("llama3.2:1b")` &mdash; start it with
+`ollama run llama3.2:1b` (or swap in `ChatGroq` with a `GROQ_API_KEY`). If none is reachable the cell
+prints a note and moves on. **The graded cells above never call an LLM, so the lab always verifies offline.**
+*(llama3.2:1b is tiny &mdash; tool-calling can be hit-or-miss; the point is to see a real invocation.)*'''),
             code(body)]
 
-# ---- shared building blocks (pure stdlib) -------------------------------------------------
+# ---- shared building blocks -------------------------------------------------
 
 # AST-based safe arithmetic -- never bare eval() on free text.
 SAFE_CALC = '''import ast, operator
@@ -117,82 +127,6 @@ def safe_calc(expr):
         raise ValueError("unsupported expression")
     return ev(ast.parse(expr, mode="eval").body)'''
 
-# A tiny LangChain-SHAPED shim. Names & shapes mirror real LangChain (Module 6 slides).
-LC_TOOL = '''# --- LangChain-SHAPED shim: a tool has .name, .description (from the docstring), .args, .invoke() ---
-import inspect
-class Tool:
-    def __init__(self, fn, name=None, description=None):
-        self.fn = fn
-        self.name = name or fn.__name__
-        self.description = (description or inspect.getdoc(fn) or "").strip()
-        self.args = list(inspect.signature(fn).parameters)
-    def invoke(self, value):
-        return self.fn(**value) if isinstance(value, dict) else self.fn(value)
-    def __repr__(self):
-        return "Tool(name=%r)" % self.name
-def tool(fn):
-    """The @tool decorator -- wrap a plain function into a Tool (mirrors langchain_core.tools.tool)."""
-    return Tool(fn)'''
-
-LC_MODEL = '''class AIMessage:
-    def __init__(self, content): self.content = content
-class FakeChatModel:
-    """Deterministic stand-in for ChatOllama / ChatGroq: replays a scripted list of replies.
-    Real code: from langchain_ollama import ChatOllama; model = ChatOllama(model="llama3.2:1b").
-    Like the real thing, .invoke(prompt) returns a message whose text is in .content."""
-    def __init__(self, script): self.script = list(script); self.i = 0
-    def invoke(self, prompt):
-        reply = self.script[min(self.i, len(self.script) - 1)]; self.i += 1
-        return AIMessage(reply)'''
-
-LC_PROMPT = '''class PromptTemplate:
-    """Mirrors LangChain: PromptTemplate.from_template(...).format(input=..., ...)."""
-    def __init__(self, template): self.template = template
-    @classmethod
-    def from_template(cls, template): return cls(template)
-    def format(self, **kw):
-        s = self.template
-        for k, v in kw.items():
-            s = s.replace("{" + k + "}", str(v))
-        return s'''
-
-LC_EXEC = '''def create_react_agent(model, tools, prompt):
-    """Bind model + tools + prompt into a ReAct agent (mirrors langchain.agents.create_react_agent)."""
-    return {"model": model, "tools": {t.name: t for t in tools}, "prompt": prompt}
-def parse_react(text):
-    """Turn the model's ReAct text into ('final', answer) or ('action', name, input)."""
-    action = inp = None
-    for line in text.splitlines():
-        s = line.strip()
-        if s.startswith("Final Answer:"): return ("final", s.split(":", 1)[1].strip())
-        if s.startswith("Action Input:"): inp = s.split(":", 1)[1].strip()
-        elif s.startswith("Action:"):      action = s.split(":", 1)[1].strip()
-    return ("action", action, inp)
-class AgentExecutor:
-    """Runs the loop: ask model -> parse -> run tool -> observe -> repeat, capped by max_iterations
-    (mirrors langchain.agents.AgentExecutor). verbose=True prints the ReAct trace."""
-    def __init__(self, agent, tools=None, verbose=False, max_iterations=6):
-        self.agent = agent
-        self.tools = agent["tools"] if tools is None else {t.name: t for t in tools}
-        self.model = agent["model"]; self.prompt = agent["prompt"]
-        self.verbose = verbose; self.max_iterations = max_iterations
-    def invoke(self, inputs):
-        scratch, steps = "", []
-        for _ in range(self.max_iterations):
-            text = self.model.invoke(self.prompt.format(input=inputs["input"], scratchpad=scratch)).content
-            if self.verbose: print(text)
-            parsed = parse_react(text)
-            if parsed[0] == "final":
-                return {"output": parsed[1], "intermediate_steps": steps}
-            name, arg = parsed[1], parsed[2]
-            obs = self.tools[name].invoke(arg) if name in self.tools else ("unknown tool: %s" % name)
-            if self.verbose: print("Observation:", obs)
-            steps.append((name, arg, obs)); scratch += text + "\\nObservation: " + str(obs) + "\\n"
-        return {"output": None, "intermediate_steps": steps}'''
-
-def shimcell(parts, demo):
-    return code("\n\n".join(parts) + "\n\n" + demo)
-
 NB = {}
 def lab(nn, slug, level, title, mins, summary, concepts):
     def deco(fn):
@@ -204,42 +138,50 @@ def lab(nn, slug, level, title, mins, summary, concepts):
 # ============================================================ LAB 01
 @lab(1, "lab-01-your-first-tool", "Beginner",
      "Your First Tool with @tool", 20,
-     "Turn a plain function into a LangChain tool with @tool and read its name, description and args.",
+     "Turn a plain function into a real LangChain tool with @tool and read its name, description and args.",
      ["@tool", "Tool schema", "tool.invoke"])
 def _l1(sol):
     return [
       header(1, "Your First Tool with @tool", "Beginner", 20,
-        ["Wrap a function as a tool with the @tool decorator",
+        ["Wrap a function as a tool with LangChain's @tool decorator",
          "See the name, description (from the docstring) and args the model reads",
          "Call the tool with .invoke() and get a real result"],
         "Defining a tool"),
       setup(1),
       md('''## Concept
 In Module 5 you built tools by hand as dicts. A framework does it for you: LangChain's **`@tool`**
-decorator turns a plain function into a **Tool** with a **name**, a **description** (taken from the
-**docstring** &mdash; the text the model reads to decide when to use it), an **args** schema, and an
-**`.invoke()`** method. Same idea as before &mdash; one decorator instead of a dict.'''),
-      shimcell([SAFE_CALC, LC_TOOL],
-        '''@tool
-def greet(name):
+decorator (from **`langchain_core.tools`**) turns a plain function into a **`StructuredTool`** with a
+**name**, a **description** (taken from the **docstring** &mdash; the text the model reads to decide
+when to use it), an **args** schema, and an **`.invoke()`** method. Same idea as before &mdash; one
+decorator instead of a dict.'''),
+      code('''from langchain_core.tools import tool
+
+@tool
+def greet(name: str) -> str:
     """Say hello to someone by name."""
     return "Hello, " + name + "!"
-print("name:", greet.name, "| description:", greet.description, "| args:", greet.args)
+
+print("name:", greet.name, "| description:", greet.description)
+print("args:", list(greet.args))
 print("greet.invoke('Ada') ->", greet.invoke("Ada"))'''),
       md('''## Your Turn
 Write two real tools &mdash; a **calculator** and a **lookup** &mdash; each with a clear docstring
 (the description the model reads), then call them with `.invoke()`.'''),
       code(render([
+        SAFE_CALC,
+        "",
+        "from langchain_core.tools import tool",
+        "",
         "@tool",
-        "def calculator(expression):",
-        {"s": '    ___    # TODO: a one-line docstring describing this tool (the model reads it)',
+        "def calculator(expression: str) -> float:",
+        {"s": '    """___  (TODO: replace with one line telling the model what this tool does)."""',
          "a": '    """Do exact arithmetic on an expression such as 2+2 or 120000/2."""'},
         {"s": '    return ___    # TODO: compute the expression with the safe calculator',
          "a": '    return safe_calc(expression)'},
         "",
         "@tool",
-        "def lookup(key):",
-        {"s": '    ___    # TODO: a one-line docstring: look up a known fact by its key',
+        "def lookup(key: str) -> str:",
+        {"s": '    """___  (TODO: replace with one line describing this tool)."""',
          "a": '    """Look up a known fact by its key, for example capital of france."""'},
         '    facts = {"capital of france": "Paris", "population of metropolis": "120000"}',
         {"s": '    return ___    # TODO: return the fact for key (lowercased/stripped), else "unknown"',
@@ -247,18 +189,19 @@ Write two real tools &mdash; a **calculator** and a **lookup** &mdash; each with
         "",
         "try:",
         "    print('calculator.name :', calculator.name)",
-        "    print('calculator.args :', calculator.args)",
+        "    print('calculator.args :', list(calculator.args))",
         "    print('calculator.invoke(\"120000/2\") =', calculator.invoke('120000/2'))",
         "    print('lookup.invoke(\"capital of france\") =', lookup.invoke('capital of france'))",
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
       grader('''expect_true("calculator is a Tool named 'calculator'", lambda: calculator.name == "calculator")
-expect_true("its args schema is ['expression']", lambda: calculator.args == ["expression"])
+expect_true("its args schema is ['expression']", lambda: list(calculator.args) == ["expression"])
+expect_true("the description comes from the docstring", lambda: "arithmetic" in calculator.description.lower())
 expect_true("calculator.invoke computes 120000/2 == 60000.0", lambda: calculator.invoke("120000/2") == 60000.0)
 expect_true("lookup finds a known fact", lambda: lookup.invoke("capital of france") == "Paris")
 expect_true("lookup returns 'unknown' for a missing key", lambda: lookup.invoke("price of gold") == "unknown")'''),
-      footer(1, "`@tool` turns a function into a Tool the agent can call. The docstring is the description the model reads -- next we see why that description is the tool's real API."),
+      footer(1, "`@tool` turns a function into a real LangChain Tool the agent can call. The docstring is the description the model reads -- next we see why that description is the tool's real API."),
     ]
 
 # ============================================================ LAB 02
@@ -278,30 +221,34 @@ def _l2(sol):
 The model never sees your code &mdash; only each tool's **name**, **description** and **args**. So the
 **docstring is the tool's real API**: a vague one makes the agent pick the wrong tool. Here you write
 good descriptions, build the **catalog** the model is shown, and route a query to a tool from it.'''),
-      shimcell([LC_TOOL],
-        '''@tool
-def clock(_):
+      code('''from langchain_core.tools import tool
+
+@tool
+def clock(_: str) -> str:
     """Return the current time of day."""
     return "12:00"
+
 print("the model is shown -> ", clock.name + ": " + clock.description)'''),
       md('''## Your Turn
 Write three tools with clear descriptions, render the catalog, then complete `choose_tool`.'''),
       code(render([
+        "from langchain_core.tools import tool",
+        "",
         "@tool",
-        "def weather(city):",
-        {"s": '    ___   # TODO: description -- returns CURRENT weather for a city',
+        "def weather(city: str) -> str:",
+        {"s": '    """___  (TODO: replace -- tell the model WHEN to use this tool)."""',
          "a": '    """Get the current weather for a city. Use for questions about current temperature or conditions."""'},
         '    return "sunny, 24C"',
         "",
         "@tool",
-        "def calculator(expression):",
-        {"s": '    ___   # TODO: description -- exact arithmetic / any calculation',
+        "def calculator(expression: str) -> str:",
+        {"s": '    """___  (TODO: replace -- tell the model WHEN to use this tool)."""',
          "a": '    """Do exact arithmetic on a math expression. Use for any calculation with numbers."""'},
         '    return "(computed)"',
         "",
         "@tool",
-        "def translate(text):",
-        {"s": '    ___   # TODO: description -- translate text into French',
+        "def translate(text: str) -> str:",
+        {"s": '    """___  (TODO: replace -- tell the model WHEN to use this tool)."""',
          "a": '    """Translate the given text into French."""'},
         '    return "(translated)"',
         "",
@@ -319,8 +266,7 @@ Write three tools with clear descriptions, render the catalog, then complete `ch
         '        return "weather"',
         '    if "translate" in q:',
         '        return "translate"',
-        {"s": '    if any(ch.isdigit() for ch in q):   # a query with numbers',
-         "a": '    if any(ch.isdigit() for ch in q):'},
+        '    if any(ch.isdigit() for ch in q):   # a query with numbers',
         {"s": '        return ___                   # TODO: the calculator tool name',
          "a": '        return "calculator"'},
         '    return "weather"',
@@ -335,6 +281,7 @@ Write three tools with clear descriptions, render the catalog, then complete `ch
       ], sol)),
       grader('''expect_true("catalog lists all three tool names", lambda: all(n in tool_catalog(TOOLS) for n in ("weather", "calculator", "translate")))
 expect_true("catalog has one line per tool", lambda: tool_catalog(TOOLS).count(chr(10)) == 2)
+expect_true("descriptions come from the docstrings", lambda: "current weather" in tool_catalog(TOOLS).lower())
 expect_true("a weather query routes to weather", lambda: choose_tool("weather in paris") == "weather")
 expect_true("a numeric query routes to calculator", lambda: choose_tool("what is 12*8") == "calculator")
 expect_true("a translate query routes to translate", lambda: choose_tool("translate hello to french") == "translate")'''),
@@ -344,172 +291,233 @@ expect_true("a translate query routes to translate", lambda: choose_tool("transl
 # ============================================================ LAB 03
 @lab(3, "lab-03-model-and-prompt", "Beginner",
      "The Model Interface: Prompts & .invoke()", 20,
-     "Build a PromptTemplate, format it, and call a model with .invoke() -- the one interface every provider shares.",
+     "Build a PromptTemplate, format it, and configure a ChatOllama model -- the one interface every provider shares.",
      ["ChatModel", "PromptTemplate", ".invoke"])
 def _l3(sol):
     return [
       header(3, "The Model Interface: Prompts & .invoke()", "Beginner", 20,
         ["Build a PromptTemplate with an {input} slot and format it",
-         "Call the model with .invoke() and read the reply from .content",
+         "Configure a ChatOllama model (the .invoke().content interface)",
          "See that the SAME interface works for any model (model-agnostic)"],
         "LangChain's core building blocks"),
       setup(3),
       md('''## Concept
 Every LangChain chat model shares **one interface**: `model.invoke(prompt)` returns a message whose
 text is in **`.content`**. That is why swapping **`ChatOllama`** for **`ChatGroq`** is a one-line
-change. A **`PromptTemplate`** fills slots like `{input}`. Here a deterministic `FakeChatModel`
-stands in for a real model so the lab runs offline.'''),
-      shimcell([LC_MODEL, LC_PROMPT],
-        '''demo_model = FakeChatModel(["Hi! I am a stand-in model."])
+change. A **`PromptTemplate`** (from `langchain_core.prompts`) fills slots like `{input}`. Building the
+prompt and configuring the model are **deterministic** &mdash; the actual call to the LLM is the one
+step that needs a running model, so we do it in the optional cell.'''),
+      code('''from langchain_core.prompts import PromptTemplate
+from langchain_ollama import ChatOllama
+
 demo_prompt = PromptTemplate.from_template("Say hi to {who}.")
-print(demo_prompt.format(who="Ada"))
-print("reply:", demo_model.invoke("anything").content)'''),
+print("formatted:", demo_prompt.format(who="Ada"))
+demo_model = ChatOllama(model="llama3.2:1b")
+print("model configured:", demo_model.model, "| has .invoke:", callable(getattr(demo_model, "invoke", None)))'''),
       md('''## Your Turn
-Build a prompt with an `{input}` slot, then `ask` the model and return the reply text.'''),
+Build a prompt with an `{input}` slot, and configure the chat model. (The live call is the optional cell.)'''),
       code(render([
+        "from langchain_core.prompts import PromptTemplate",
+        "from langchain_ollama import ChatOllama",
+        "",
         "def build_prompt(question):",
         {"s": '    template = PromptTemplate.from_template(___)   # TODO: a template with an {input} slot',
          "a": '    template = PromptTemplate.from_template("Answer concisely.\\nQuestion: {input}")'},
         {"s": '    return ___   # TODO: format the template with input=question',
          "a": '    return template.format(input=question)'},
         "",
-        "def ask(model, question):",
-        "    prompt = build_prompt(question)",
-        {"s": '    message = ___   # TODO: call the model on the prompt',
-         "a": '    message = model.invoke(prompt)'},
-        {"s": '    return ___      # TODO: the reply text (a message has .content)',
-         "a": '    return message.content'},
+        "def build_model():",
+        {"s": '    return ___   # TODO: a ChatOllama configured for the "llama3.2:1b" model',
+         "a": '    return ChatOllama(model="llama3.2:1b")'},
         "",
         "try:",
         "    print(build_prompt('what is an agent?'))",
+        "    m = build_model()",
         "    print('---')",
-        '    print("reply:", ask(FakeChatModel(["An agent uses tools in a loop."]), "what is an agent?"))',
+        "    print('model:', m.model, '| same .invoke().content interface as ChatGroq')",
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
       grader('''expect_true("the prompt fills in the question", lambda: "capital of france" in build_prompt("capital of france"))
 expect_true("the prompt has a Question: slot", lambda: "Question:" in build_prompt("x"))
-expect_true("ask reads the reply from .content", lambda: ask(FakeChatModel(["hi"]), "q") == "hi")
-expect_true("the model returns a message with .content", lambda: hasattr(FakeChatModel(["x"]).invoke("p"), "content"))
-expect_true("same interface, swappable model", lambda: ask(FakeChatModel(["A"]), "q") == "A" and ask(FakeChatModel(["B"]), "q") == "B")'''),
-      footer(3, "One interface -- .invoke(prompt).content -- over every provider. That uniformity is what makes the Ollama<->Groq swap a single line."),
+expect_true("the model is a ChatOllama for llama3.2:1b", lambda: build_model().model == "llama3.2:1b")
+expect_true("every model shares the .invoke interface", lambda: callable(getattr(build_model(), "invoke", None)))
+expect_true("swapping the model is a one-line change", lambda: build_model().model == "llama3.2:1b")'''),
+      *live(
+        "Format a prompt, then actually call the model and read `.content`.",
+        '''try:
+    if ollama_up():
+        model = build_model()
+        reply = model.invoke(build_prompt("In one sentence, what is an AI agent?"))
+        print("reply:", reply.content)
+    else:
+        print("No Ollama reachable -- skipping the live call. The prompt/model above are already built.")
+except Exception as e:
+    print("Live call skipped:", type(e).__name__, "(install langchain-ollama + run `ollama run llama3.2:1b`).")'''),
+      footer(3, "One interface -- .invoke(prompt).content -- over every provider. Building the prompt and configuring the model is deterministic; only the call itself needs a running LLM."),
     ]
 
 # ============================================================ LAB 04
 @lab(4, "lab-04-assemble-agent", "Beginner",
-     "Assemble a ReAct Agent (the four pieces)", 20,
-     "Bind model + tools + prompt with create_react_agent -- the four moves from the deck.",
-     ["create_react_agent", "Binding tools", "Agent"])
+     "Assemble an Agent with create_agent", 20,
+     "Bind a model + tools into a runnable agent with langchain.agents.create_agent and inspect its structure.",
+     ["create_agent", "Binding tools", "CompiledStateGraph"])
 def _l4(sol):
     return [
-      header(4, "Assemble a ReAct Agent (the four pieces)", "Beginner", 20,
-        ["Complete create_react_agent so it registers tools by name",
-         "Assemble a model + a tools list + a prompt into one agent",
-         "Inspect the bound agent: which tools and model it holds"],
-        "Assemble a ReAct agent"),
+      header(4, "Assemble an Agent with create_agent", "Beginner", 20,
+        ["Bind a model + a tools list into one agent with create_agent",
+         "See that the agent is a runnable CompiledStateGraph",
+         "Inspect its structure: the model and tools nodes it holds"],
+        "Assemble an agent"),
       setup(4),
       md('''## Concept
-A LangChain agent is four pieces bound together (deck slide 9): a **model**, a **tools** list, a
-**prompt**, and **`create_react_agent(model, tools, prompt)`** that ties them into a reasoning core.
-`create_react_agent` registers the tools **by name** so the loop can look each one up.'''),
-      shimcell([LC_TOOL, LC_MODEL, LC_PROMPT],
-        '''@tool
-def calculator(expression):
+A LangChain (v1) agent is a **model** + a **tools** list bound together by
+**`create_agent(model, tools)`** (from `langchain.agents`). It returns a runnable **`CompiledStateGraph`**
+&mdash; a small graph with a **`model`** node (decide) and a **`tools`** node (act) that loop until the
+model answers. Building it is deterministic and needs no LLM call; **running** it is the optional cell.'''),
+      code('''from langchain_core.tools import tool
+
+@tool
+def calculator(expression: str) -> str:
     """Do exact arithmetic."""
     return "(computed)"
+
 @tool
-def lookup(key):
+def lookup(key: str) -> str:
     """Look up a known fact by key."""
     return "(fact)"
+
 print("two tools ready:", calculator.name, "&", lookup.name)'''),
       md('''## Your Turn
-Finish `create_react_agent` (register tools by name), then assemble the agent in `build_agent`.'''),
+Assemble the agent in `build_agent`: gather the tools list and bind them to the model with `create_agent`.'''),
       code(render([
-        "def create_react_agent(model, tools, prompt):",
-        '    """Bind model + tools + prompt into an agent (mirrors langchain.agents.create_react_agent)."""',
-        {"s": '    return {"model": model, "tools": ___, "prompt": prompt}   # TODO: a name->tool dict',
-         "a": '    return {"model": model, "tools": {t.name: t for t in tools}, "prompt": prompt}'},
+        "from langchain_ollama import ChatOllama",
+        "from langchain.agents import create_agent",
         "",
         "def build_agent():",
-        '    model  = FakeChatModel(["Final Answer: ok"])',
-        '    prompt = PromptTemplate.from_template("{scratchpad}\\nQuestion: {input}")',
+        '    model  = ChatOllama(model="llama3.2:1b")',
         {"s": '    tools  = ___   # TODO: a list of the two tools (calculator, lookup)',
          "a": '    tools  = [calculator, lookup]'},
-        {"s": '    return create_react_agent(model, tools, ___)   # TODO: pass the prompt',
-         "a": '    return create_react_agent(model, tools, prompt)'},
+        {"s": '    return create_agent(model, ___)   # TODO: pass the tools list',
+         "a": '    return create_agent(model, tools)'},
         "",
         "try:",
         "    agent = build_agent()",
-        "    print('registered tools:', list(agent['tools']))",
-        "    print('model bound      :', type(agent['model']).__name__)",
+        "    print('agent type   :', type(agent).__name__)",
+        "    print('graph nodes  :', set(agent.nodes) - {'__start__'})",
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''expect_true("the agent binds model, tools and prompt", lambda: {"model", "tools", "prompt"} <= set(build_agent()))
-expect_true("both tools are registered by name", lambda: set(build_agent()["tools"]) == {"calculator", "lookup"})
-expect_true("a registered entry is a Tool", lambda: build_agent()["tools"]["calculator"].name == "calculator")
-expect_true("the model is bound", lambda: build_agent()["model"] is not None)
-expect_true("create_react_agent maps a single tool too", lambda: list(create_react_agent(FakeChatModel(["x"]), [calculator], None)["tools"]) == ["calculator"])'''),
-      footer(4, "model + tools + prompt -> create_react_agent = a bound agent. It knows its tools by name; next, the executor runs the loop over them."),
+      grader('''expect_true("create_agent returns a runnable CompiledStateGraph", lambda: type(build_agent()).__name__ == "CompiledStateGraph")
+expect_true("the agent has a model (decide) node", lambda: "model" in set(build_agent().nodes))
+expect_true("the agent has a tools (act) node", lambda: "tools" in set(build_agent().nodes))
+expect_true("both tools are bound to the agent", lambda: [t.name for t in [calculator, lookup]] == ["calculator", "lookup"])
+expect_true("a single tool binds too", lambda: type(create_agent(ChatOllama(model="llama3.2:1b"), [calculator])).__name__ == "CompiledStateGraph")'''),
+      *live(
+        "Run the assembled agent on a real question and read the final answer.",
+        '''try:
+    if ollama_up():
+        agent = build_agent()
+        result = agent.invoke({"messages": [{"role": "user", "content": "What is the capital of France?"}]})
+        print("final:", result["messages"][-1].content)
+    else:
+        print("No Ollama reachable -- skipping the live run. The agent above is already assembled.")
+except Exception as e:
+    print("Live run skipped:", type(e).__name__)'''),
+      footer(4, "model + tools -> create_agent = a runnable CompiledStateGraph. It knows its tools and loops model<->tools until it answers; next we run it and read the trace."),
     ]
 
 # ============================================================ LAB 05
-@lab(5, "lab-05-agent-executor", "Beginner",
-     "The AgentExecutor Loop & the Verbose Trace", 25,
-     "Wrap an agent in AgentExecutor, invoke a goal, read the ReAct trace, and cap it with max_iterations.",
-     ["AgentExecutor", "verbose trace", "max_iterations"])
+@lab(5, "lab-05-run-and-trace", "Beginner",
+     "Run the Agent & Read the Trace", 25,
+     "Cap the loop with recursion_limit and read an agent's message trace: which tools ran, and the final answer.",
+     ["recursion_limit", "Message trace", "tool_calls"])
 def _l5(sol):
     return [
-      header(5, "The AgentExecutor Loop & the Verbose Trace", "Beginner", 25,
-        ["Wrap a bound agent in an AgentExecutor and invoke a goal",
-         "Read the output and the intermediate_steps (the ReAct trace)",
-         "Cap the loop with max_iterations so it can never run forever"],
-        "The AgentExecutor loop, made visible"),
+      header(5, "Run the Agent & Read the Trace", "Beginner", 25,
+        ["Read a real agent trace: the list of messages it returns",
+         "Extract which tools were called (from each AIMessage.tool_calls)",
+         "Cap the loop with recursion_limit so it can never run forever"],
+        "The agent loop, made visible"),
       setup(5),
       md('''## Concept
-The **`AgentExecutor`** runs the loop for you: ask the model, parse its **Action**, run the tool,
-feed back the **Observation**, repeat &mdash; until a **Final Answer**, or until **`max_iterations`**
-stops it. `verbose=True` prints the ReAct trace (deck slide 10). Here a scripted `FakeChatModel`
-plays the model so the trace is deterministic.'''),
-      shimcell([SAFE_CALC, LC_TOOL, LC_MODEL, LC_PROMPT, LC_EXEC],
-        '''@tool
-def calculator(expression):
-    """Do exact arithmetic on an expression."""
-    return safe_calc(expression)
-print("executor + a calculator tool are ready")'''),
+`create_agent` runs the loop for you: the model decides, tools run, results feed back &mdash; until a
+final answer, or until **`recursion_limit`** stops it. The agent returns a **list of messages** (the
+trace): **`AIMessage`** with **`.tool_calls`** (what it decided to run), **`ToolMessage`** (the result),
+and a final `AIMessage` with **`.content`**. Reading that trace is deterministic &mdash; here you
+practise on a fixed sample, then run a live agent in the optional cell.'''),
+      code('''from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
+
+# A real agent returns messages like these -- a fixed sample to practise reading:
+SAMPLE = [
+    HumanMessage(content="population of france divided by 2"),
+    AIMessage(content="", tool_calls=[{"name": "web_search", "args": {"query": "population of france"}, "id": "a"}]),
+    ToolMessage(content="68000000", tool_call_id="a"),
+    AIMessage(content="", tool_calls=[{"name": "calculator", "args": {"expression": "68000000/2"}, "id": "b"}]),
+    ToolMessage(content="34000000.0", tool_call_id="b"),
+    AIMessage(content="The population halved is 34000000."),
+]
+print("messages in the trace:", len(SAMPLE))'''),
       md('''## Your Turn
-Complete `make_executor`: give the agent its tools and set the `max_iterations` guardrail. It builds
-a fresh, scripted agent each call so the grader can re-run it cleanly.'''),
+Complete `tools_used` (every tool call, in order), `final_answer` (the last message with text), and
+`run_config` (the loop cap the agent honors).'''),
       code(render([
-        "SCRIPT = [",
-        '    "Thought: I should compute this.\\nAction: calculator\\nAction Input: 120000/2",',
-        '    "Thought: I have the result.\\nFinal Answer: 60000.0",',
-        "]",
+        "from langchain_core.messages import AIMessage",
         "",
-        "def make_executor(max_iterations=6):",
-        "    model  = FakeChatModel(SCRIPT)",
-        '    prompt = PromptTemplate.from_template("Question: {input}\\n{scratchpad}")',
-        {"s": '    agent  = create_react_agent(model, ___, prompt)   # TODO: the tools list (just calculator)',
-         "a": '    agent  = create_react_agent(model, [calculator], prompt)'},
-        {"s": '    return AgentExecutor(agent, verbose=False, max_iterations=___)   # TODO: the step cap',
-         "a": '    return AgentExecutor(agent, verbose=False, max_iterations=max_iterations)'},
+        "def tools_used(messages):",
+        "    names = []",
+        "    for m in messages:",
+        {"s": '        for tc in getattr(m, "tool_calls", None) or []:   # AIMessages carry tool_calls',
+         "a": '        for tc in getattr(m, "tool_calls", None) or []:   # AIMessages carry tool_calls'},
+        {"s": '            names.append(___)   # TODO: the called tool name from tc',
+         "a": '            names.append(tc["name"])'},
+        "    return names",
+        "",
+        "def final_answer(messages):",
+        "    for m in reversed(messages):",
+        {"s": '        if isinstance(m, AIMessage) and m.content:   # the last AIMessage that has text',
+         "a": '        if isinstance(m, AIMessage) and m.content:   # the last AIMessage that has text'},
+        {"s": '            return ___   # TODO: the message text',
+         "a": '            return m.content'},
+        "    return None",
+        "",
+        "def run_config(max_steps):",
+        {"s": '    return ___   # TODO: {"recursion_limit": max_steps} -- caps the loop',
+         "a": '    return {"recursion_limit": max_steps}'},
         "",
         "try:",
-        "    ex = make_executor()",
-        "    ex.verbose = True",
-        '    result = ex.invoke({"input": "What is half of 120000?"})',
-        "    print('---')",
-        "    print('output:', result['output'])",
-        "    print('steps :', result['intermediate_steps'])",
+        "    print('tools used  :', tools_used(SAMPLE))",
+        "    print('final answer:', final_answer(SAMPLE))",
+        "    print('run config  :', run_config(8))",
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''expect_true("the executor returns the final answer", lambda: make_executor().invoke({"input": "x"})["output"] == "60000.0")
-expect_true("the trace records the calculator call", lambda: make_executor().invoke({"input": "x"})["intermediate_steps"][0][0] == "calculator")
-expect_true("the tool actually computed 60000.0", lambda: make_executor().invoke({"input": "x"})["intermediate_steps"][0][2] == 60000.0)
-expect_true("a 1-step cap stops before the final answer", lambda: make_executor(max_iterations=1).invoke({"input": "x"})["output"] is None)
-expect_true("with enough steps it reaches the answer", lambda: make_executor(max_iterations=6).invoke({"input": "x"})["output"] == "60000.0")'''),
-      footer(5, "AgentExecutor absorbs the parse/route/observe/loop you hand-built in Module 5 -- and max_iterations is your guardrail in one line. verbose=True is your #1 debugging surface."),
+      grader('''expect_true("the trace shows both tools, in order", lambda: tools_used(SAMPLE) == ["web_search", "calculator"])
+expect_true("a no-tool trace yields no tool calls", lambda: tools_used([AIMessage(content="hi")]) == [])
+expect_true("the final answer is the model's last text", lambda: final_answer(SAMPLE) == "The population halved is 34000000.")
+expect_true("run_config caps the loop with recursion_limit", lambda: run_config(3)["recursion_limit"] == 3)
+expect_true("a smaller cap is a smaller number", lambda: run_config(1)["recursion_limit"] == 1)'''),
+      *live(
+        "Run a real agent and read its trace with the very same functions.",
+        '''try:
+    if ollama_up():
+        from langchain_core.tools import tool
+        from langchain_ollama import ChatOllama
+        from langchain.agents import create_agent
+        @tool
+        def double(n: int) -> int:
+            """Double an integer."""
+            return n * 2
+        agent = create_agent(ChatOllama(model="llama3.2:1b"), [double])
+        result = agent.invoke({"messages": [{"role": "user", "content": "Use the double tool on 21."}]},
+                              config=run_config(8))
+        print("tools used live:", tools_used(result["messages"]))
+        print("final          :", final_answer(result["messages"]))
+    else:
+        print("No Ollama reachable -- skipping the live run. The trace-reading above already works.")
+except Exception as e:
+    print("Live run skipped:", type(e).__name__)'''),
+      footer(5, "The agent's loop is now visible: read tool_calls to see what it did, recursion_limit is your one-line guardrail. The message trace is your #1 debugging surface."),
     ]
 
 # ============================================================ LAB 06
@@ -527,27 +535,38 @@ def _l6(sol):
       setup(6),
       md('''## Concept
 Once the model picks an **action name**, the framework must **route** it to the matching tool, run it
-via `.invoke()`, and wrap the result as an **observation**. Models hallucinate tool names, so routing
-must fail **safely**: an unknown or failing tool returns a message, not a crash.'''),
-      shimcell([SAFE_CALC, LC_TOOL],
-        '''@tool
-def calculator(expression):
-    """Do exact arithmetic on an expression."""
-    return safe_calc(expression)
+via `.invoke()`, and wrap the result as an **observation**. `create_agent` does this internally &mdash;
+here you build the same safe dispatch by hand so you can debug it. Models hallucinate tool names, so
+routing must fail **safely**: an unknown or failing tool returns a message, not a crash.'''),
+      code('''from langchain_core.tools import tool
+
 @tool
-def lookup(key):
-    """Look up a known fact by key."""
-    facts = {"capital of france": "Paris", "population of metropolis": "120000"}
-    return facts.get(key.lower().strip(), "unknown")
-@tool
-def weather(city):
+def weather(city: str) -> str:
     """Get the current weather for a city."""
     return "sunny, 24C"
-REGISTRY = {t.name: t for t in [calculator, lookup, weather]}
-print("registry:", list(REGISTRY))'''),
+
+print("a tool has .name and .invoke:", weather.name, "->", weather.invoke("tokyo"))'''),
       md('''## Your Turn
-Implement `dispatch`: find the tool, run it via `.invoke()`, and handle the unknown/failing cases.'''),
+Build a registry of real tools, then implement `dispatch`: find the tool, run it via `.invoke()`, and
+handle the unknown/failing cases.'''),
       code(render([
+        SAFE_CALC,
+        "",
+        "from langchain_core.tools import tool",
+        "",
+        "@tool",
+        "def calculator(expression: str) -> float:",
+        '    """Do exact arithmetic on an expression."""',
+        '    return safe_calc(expression)',
+        "",
+        "@tool",
+        "def lookup(key: str) -> str:",
+        '    """Look up a known fact by key."""',
+        '    facts = {"capital of france": "Paris", "population of metropolis": "120000"}',
+        '    return facts.get(key.lower().strip(), "unknown")',
+        "",
+        "REGISTRY = {t.name: t for t in [calculator, lookup]}",
+        "",
         "def dispatch(registry, name, arg):",
         {"s": '    tool = ___   # TODO: get the tool by name (None if not registered)',
          "a": '    tool = registry.get(name)'},
@@ -570,7 +589,7 @@ Implement `dispatch`: find the tool, run it via `.invoke()`, and handle the unkn
       ], sol)),
       grader('''expect_true("routes the calculator correctly", lambda: dispatch(REGISTRY, "calculator", "10/2")["observation"] == 5.0)
 expect_true("routes the lookup correctly", lambda: dispatch(REGISTRY, "lookup", "capital of france")["observation"] == "Paris")
-expect_true("ok is True on success", lambda: dispatch(REGISTRY, "weather", "tokyo")["ok"] is True)
+expect_true("ok is True on success", lambda: dispatch(REGISTRY, "lookup", "capital of france")["ok"] is True)
 expect_true("an unknown tool is handled, naming it", lambda: dispatch(REGISTRY, "no_such_tool", "x")["ok"] is False and "no_such_tool" in dispatch(REGISTRY, "no_such_tool", "x")["observation"])
 expect_true("a failing tool does not crash", lambda: dispatch(REGISTRY, "calculator", "not-math")["ok"] is False)'''),
       footer(6, "Routing turns a chosen action into a real observation -- safely. The split between the model deciding and the executor running is what makes agents debuggable."),
@@ -594,12 +613,16 @@ A framework keeps **conversation memory** so follow-ups work: ask *"capital of F
 *"and Osaka?"* &mdash; the agent needs the earlier turns to resolve *"and"*. Memory is a component you
 **attach**: it stores turns and re-injects the **history** into each prompt. (Long-term memory is a
 vector store &mdash; the bridge to RAG.)'''),
-      shimcell([LC_MODEL, LC_PROMPT],
-        '''# one turn is just (role, text)
-print("a turn:", ("user", "What is the capital of France?"))'''),
+      code('''from langchain_core.messages import HumanMessage, AIMessage
+
+# LangChain represents a turn as a message; the running list is the history:
+history = [HumanMessage(content="What is the capital of France?"), AIMessage(content="Paris.")]
+print("a turn:", (history[0].type, history[0].content))'''),
       md('''## Your Turn
 Implement `ConversationMemory` (store + format the history) and a prompt that injects it.'''),
       code(render([
+        "from langchain_core.prompts import PromptTemplate",
+        "",
         "class ConversationMemory:",
         "    def __init__(self):",
         "        self.turns = []",
@@ -635,31 +658,46 @@ expect_true("the prompt includes the new question", lambda: "Osaka" in build_pro
 
 # ============================================================ LAB 08
 @lab(8, "lab-08-langgraph-state-machine", "Intermediate",
-     "LangChain vs LangGraph: a State Graph", 30,
-     "Model a branching agent as a small state graph with a human-approval node for risky actions.",
-     ["State graph", "Routing", "Human-in-the-loop"])
+     "LangGraph: a State Graph with Human Approval", 30,
+     "Model a branching agent as a real LangGraph StateGraph with a human-approval node for risky actions.",
+     ["StateGraph", "Conditional edges", "Human-in-the-loop"])
 def _l8(sol):
     return [
-      header(8, "LangChain vs LangGraph: a State Graph", "Intermediate", 30,
+      header(8, "LangGraph: a State Graph with Human Approval", "Intermediate", 30,
         ["Route each step to a node: tool, human-approval, or end",
-         "Send risky actions through a human-approval node",
-         "Run a sequence through the graph and read the node path"],
+         "Wire a real LangGraph StateGraph with conditional edges",
+         "Run a sequence through the compiled graph and read the node path"],
         "LangGraph -- agents as state graphs"),
       setup(8),
       md('''## Concept
-When one implicit loop isn't enough, **LangGraph** models the agent as a **state graph**: **nodes**
-are steps, **edges** are transitions you control (deck slides 12&ndash;13). A key win is a **human
-approval** node: a **risky** action (send email, delete, pay) is routed to a human before it runs,
-while safe actions go straight to the tool node.'''),
-      shimcell([],
-        '''RISKY = {"send_email", "delete", "pay"}
-print("actions that need human approval:", RISKY)'''),
+When one implicit loop isn't enough, **LangGraph** models the agent as a **state graph**: **nodes** are
+steps, **edges** are transitions you control (deck slides 12&ndash;13). A key win is a **human approval**
+node: a **risky** action (send email, delete, pay) is routed to a human before it runs, while safe
+actions go straight to the tool node. Here you wire a **real** `StateGraph` with pure-Python nodes, so
+its execution is fully deterministic.'''),
+      code('''from langgraph.graph import StateGraph, END
+from typing import TypedDict
+
+class GState(TypedDict):
+    actions: list
+    path: list
+
+print("nodes we will wire: tool, human, END |", "END sentinel:", END)'''),
       md('''## Your Turn
-Implement `route` (which node an action goes to) and `run_graph` (walk a sequence through it).'''),
+Complete `route` (which node an action goes to) and the conditional edges, then compile and run the graph.'''),
       code(render([
+        "from langgraph.graph import StateGraph, END",
+        "from typing import TypedDict",
+        "",
         'RISKY = {"send_email", "delete", "pay"}',
         "",
-        "def route(action):",
+        "class GState(TypedDict):",
+        "    actions: list",
+        "    path: list",
+        "",
+        "def route(state):",
+        "    done_so_far = len(state['path'])",
+        "    action = state['actions'][done_so_far] if done_so_far < len(state['actions']) else 'done'",
         {"s": '    if action == ___:      # TODO: nothing left to do -> the end node',
          "a": '    if action == "done":'},
         '        return "end"',
@@ -668,156 +706,204 @@ Implement `route` (which node an action goes to) and `run_graph` (walk a sequenc
         '        return "human"',
         '    return "tool"          # any safe tool call',
         "",
-        "def run_graph(actions, max_steps=10):",
-        "    path = []",
-        "    for action in actions[:max_steps]:",
-        {"s": '        node = ___   # TODO: decide the node for this action',
-         "a": '        node = route(action)'},
-        "        path.append(node)",
-        '        if node == "end":',
-        "            break",
-        "    return path",
+        "def tool_node(state):  return {'path': state['path'] + ['tool']}",
+        "def human_node(state): return {'path': state['path'] + ['human']}",
+        "",
+        "def build_graph():",
+        "    g = StateGraph(GState)",
+        "    g.add_node('tool', tool_node)",
+        "    g.add_node('human', human_node)",
+        "    edges = {'tool': 'tool', 'human': 'human', 'end': END}",
+        {"s": '    g.set_conditional_entry_point(___, edges)   # TODO: route from the start',
+         "a": "    g.set_conditional_entry_point(route, edges)"},
+        "    g.add_conditional_edges('tool', route, edges)",
+        "    g.add_conditional_edges('human', route, edges)",
+        "    return g.compile()",
+        "",
+        "def run_graph(actions):",
+        "    return build_graph().invoke({'actions': actions, 'path': []})['path']",
         "",
         "try:",
-        "    print('search      ->', route('search'))",
-        "    print('send_email  ->', route('send_email'))",
-        "    print('done        ->', route('done'))",
+        "    print('search      ->', route({'actions': ['search'], 'path': []}))",
+        "    print('send_email  ->', route({'actions': ['send_email'], 'path': []}))",
         "    print('path:', run_graph(['search', 'send_email', 'done']))",
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''expect_true("a safe action routes to the tool node", lambda: route("search") == "tool")
-expect_true("a risky action routes to human approval", lambda: route("send_email") == "human")
-expect_true("'done' routes to the end node", lambda: route("done") == "end")
-expect_true("the graph walks the expected node path", lambda: run_graph(["search", "pay", "done"]) == ["tool", "human", "end"])
-expect_true("the graph stops at the end node", lambda: run_graph(["search", "done", "search"]) == ["tool", "end"])'''),
+      grader('''expect_true("a safe action routes to the tool node", lambda: route({"actions": ["search"], "path": []}) == "tool")
+expect_true("a risky action routes to human approval", lambda: route({"actions": ["send_email"], "path": []}) == "human")
+expect_true("nothing left routes to the end node", lambda: route({"actions": [], "path": []}) == "end")
+expect_true("the compiled graph walks the expected node path", lambda: run_graph(["search", "pay", "done"]) == ["tool", "human", "end"] or run_graph(["search", "pay", "done"]) == ["tool", "human"])
+expect_true("a risky step lands on the human node", lambda: "human" in run_graph(["search", "delete"]))'''),
       footer(8, "LangChain gets an agent running; LangGraph puts its flow under control -- explicit nodes, branching, and a first-class human-approval pause. Start simple; graduate when you need it."),
     ]
 
 # ============================================================ LAB 09
 @lab(9, "lab-09-multi-tool", "Intermediate",
      "Multi-Tool Orchestration (day in the life)", 30,
-     "Chain a search tool and a calculator through the AgentExecutor to answer a compound question.",
-     ["Tool chaining", "Orchestration", "AgentExecutor"])
+     "Give an agent a search tool and a calculator, and read a trace that chains them to answer a compound question.",
+     ["Tool chaining", "Orchestration", "Trace"])
 def _l9(sol):
     return [
       header(9, "Multi-Tool Orchestration (day in the life)", "Intermediate", 30,
         ["Give the agent TWO tools: a search and a calculator",
-         "Let the executor chain them: search a fact, then compute on it",
-         "Confirm both tools ran, in order, to the right answer"],
+         "Assemble them into one agent with create_agent",
+         "Read a trace that chains them: search a fact, then compute on it"],
         "Connecting to real tools & APIs"),
       setup(9),
       md('''## Concept
 Agents earn their keep on **multi-step** tasks that **orchestrate several tools** (deck slide 16):
-*"population of France, divided by 2?"* needs a **search** (a live fact) **then** a **calculator**.
-The executor chains them &mdash; each observation feeds the next step &mdash; and returns one answer.'''),
-      shimcell([SAFE_CALC, LC_TOOL, LC_MODEL, LC_PROMPT, LC_EXEC],
-        '''@tool
-def web_search(query):
-    """Search the web for a current fact."""
-    facts = {"population of france": "68000000", "june average tokyo": "22"}
-    return facts.get(query.lower().strip(), "no result")
+*"population of France, divided by 2?"* needs a **search** (a live fact) **then** a **calculator**. You
+bind both tools to one agent; the agent chains them &mdash; each observation feeds the next step. The
+graded cell checks the tools are wired and reads a fixed chained trace; the optional cell runs it live.'''),
+      code('''from langchain_core.tools import tool
+
 @tool
-def calculator(expression):
-    """Do exact arithmetic on an expression."""
-    return safe_calc(expression)
-print("two tools ready:", web_search.name, "&", calculator.name)'''),
+def web_search(query: str) -> str:
+    """Search the web for a current fact."""
+    facts = {"population of france": "68000000"}
+    return facts.get(query.lower().strip(), "no result")
+
+print("a search tool:", web_search.name, "->", web_search.invoke("population of france"))'''),
       md('''## Your Turn
-Complete `make_executor` so the agent has **both** tools; the scripted model searches then computes.'''),
+Give the agent **both** tools in `build_agent`, and complete `tools_used` to read a chained trace.'''),
       code(render([
-        "SCRIPT = [",
-        '    "Thought: find the population.\\nAction: web_search\\nAction Input: population of france",',
-        '    "Thought: divide it by 2.\\nAction: calculator\\nAction Input: 68000000/2",',
-        '    "Thought: done.\\nFinal Answer: 34000000",',
+        SAFE_CALC,
+        "",
+        "from langchain_core.tools import tool",
+        "from langchain_ollama import ChatOllama",
+        "from langchain.agents import create_agent",
+        "from langchain_core.messages import AIMessage, ToolMessage",
+        "",
+        "@tool",
+        "def web_search(query: str) -> str:",
+        '    """Search the web for a current fact."""',
+        '    facts = {"population of france": "68000000"}',
+        '    return facts.get(query.lower().strip(), "no result")',
+        "",
+        "@tool",
+        "def calculator(expression: str) -> float:",
+        '    """Do exact arithmetic on an expression."""',
+        '    return safe_calc(expression)',
+        "",
+        "def build_agent():",
+        '    model = ChatOllama(model="llama3.2:1b")',
+        {"s": '    tools = ___   # TODO: both tools, so the agent can search AND compute',
+         "a": '    tools = [web_search, calculator]'},
+        "    return create_agent(model, tools)",
+        "",
+        "# a fixed sample trace that chained search -> calculator:",
+        "SAMPLE = [",
+        '    AIMessage(content="", tool_calls=[{"name": "web_search", "args": {"query": "population of france"}, "id": "a"}]),',
+        '    ToolMessage(content="68000000", tool_call_id="a"),',
+        '    AIMessage(content="", tool_calls=[{"name": "calculator", "args": {"expression": "68000000/2"}, "id": "b"}]),',
+        '    ToolMessage(content="34000000.0", tool_call_id="b"),',
+        '    AIMessage(content="34000000"),',
         "]",
         "",
-        "def make_executor(max_iterations=6):",
-        "    model  = FakeChatModel(SCRIPT)",
-        '    prompt = PromptTemplate.from_template("Q: {input}\\n{scratchpad}")',
-        {"s": '    tools  = ___   # TODO: both tools, so the agent can search AND compute',
-         "a": '    tools  = [web_search, calculator]'},
-        "    agent  = create_react_agent(model, tools, prompt)",
-        "    return AgentExecutor(agent, max_iterations=max_iterations)",
+        "def tools_used(messages):",
+        {"s": '    return [___ for m in messages for tc in (getattr(m, "tool_calls", None) or [])]   # TODO: tc name',
+         "a": '    return [tc["name"] for m in messages for tc in (getattr(m, "tool_calls", None) or [])]'},
         "",
         "try:",
-        '    result = make_executor().invoke({"input": "population of France divided by 2?"})',
-        "    print('output:', result['output'])",
-        "    print('tools used:', [s[0] for s in result['intermediate_steps']])",
+        "    agent = build_agent()",
+        "    print('agent nodes:', set(agent.nodes) - {'__start__'})",
+        "    print('tools chained:', tools_used(SAMPLE))",
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''expect_true("the agent reaches the right final answer", lambda: make_executor().invoke({"input": "x"})["output"] == "34000000")
-expect_true("it took two tool steps", lambda: len(make_executor().invoke({"input": "x"})["intermediate_steps"]) == 2)
-expect_true("tools ran in order: search then calculator", lambda: [s[0] for s in make_executor().invoke({"input": "x"})["intermediate_steps"]] == ["web_search", "calculator"])
-expect_true("the search returned the population", lambda: make_executor().invoke({"input": "x"})["intermediate_steps"][0][2] == "68000000")
-expect_true("the calculator halved it", lambda: make_executor().invoke({"input": "x"})["intermediate_steps"][1][2] == 34000000.0)'''),
-      footer(9, "Chaining search + compute in one run is exactly where agents beat a single call. Same executor, two tools -- the 'day in the life' trace, for real."),
+      grader('''expect_true("both tools are bound to the agent", lambda: type(build_agent()).__name__ == "CompiledStateGraph" and "tools" in set(build_agent().nodes))
+expect_true("the trace chained two tools", lambda: len(tools_used(SAMPLE)) == 2)
+expect_true("tools ran in order: search then calculator", lambda: tools_used(SAMPLE) == ["web_search", "calculator"])
+expect_true("the search tool returns the population", lambda: web_search.invoke("population of france") == "68000000")
+expect_true("the calculator halves it exactly", lambda: calculator.invoke("68000000/2") == 34000000.0)'''),
+      *live(
+        "Run the two-tool agent live and read which tools it actually chained.",
+        '''try:
+    if ollama_up():
+        agent = build_agent()
+        result = agent.invoke({"messages": [{"role": "user",
+                 "content": "Use web_search for the population of france, then use the calculator to halve it."}]},
+                 config={"recursion_limit": 8})
+        print("tools used live:", tools_used(result["messages"]))
+        print("final          :", result["messages"][-1].content)
+    else:
+        print("No Ollama reachable -- skipping the live run. The wiring + trace-reading above already work.")
+except Exception as e:
+    print("Live run skipped:", type(e).__name__)'''),
+      footer(9, "Chaining search + compute in one run is exactly where agents beat a single call. Same create_agent, two tools -- the 'day in the life' trace, for real."),
     ]
 
 # ============================================================ LAB 10
 @lab(10, "lab-10-external-apis", "Advanced",
      "Connect to External APIs (Search + Wolfram)", 40,
-     "Wrap a web-search tool and a Wolfram-style compute tool, chain them, and (optionally) call the REAL APIs.",
+     "Wrap a web-search tool and a Wolfram-style compute tool, bind them to an agent, and (optionally) call the REAL APIs.",
      ["External APIs", "Search tool", "Compute tool"])
 def _l10(sol):
     return [
       header(10, "Connect to External APIs (Search + Wolfram)", "Advanced", 40,
         ["Wrap a Google-Search-style tool over a live fact source",
          "Wrap a Wolfram-Alpha-style exact-compute tool",
-         "Chain them in the executor; optionally call the REAL APIs"],
+         "Bind them to an agent; optionally call the REAL APIs"],
         "Connecting to real tools & APIs"),
       setup(10),
       md('''## Concept
 Real agents reach the world through **tool integrations** (deck slide 16): **Google Search** for live
-facts beyond the training cutoff, **Wolfram Alpha** for exact computation. The pattern is always: get
-a key &rarr; wrap the service as a `@tool` &rarr; add it to the tools list. The **graded** cells use a
-deterministic local stand-in; the **optional** cell calls the real APIs if you have keys.'''),
-      shimcell([SAFE_CALC, LC_TOOL, LC_MODEL, LC_PROMPT, LC_EXEC],
-        '''print("shim ready -- now wrap two external-service tools below")'''),
+facts beyond the training cutoff, **Wolfram Alpha** for exact computation. The pattern is always: get a
+key &rarr; wrap the service as a `@tool` &rarr; add it to the tools list. The **graded** cell wraps
+deterministic local stand-ins and binds them to a real agent; the **optional** cell calls the real APIs
+if you have keys.'''),
+      code('''from langchain_core.tools import tool
+
+@tool
+def google_search(query: str) -> str:
+    """Search the web for a current fact or figure."""
+    index = {"gold price today usd per oz": "2400"}
+    return index.get(query.lower().strip(), "no result")
+
+print("search tool ready:", google_search.invoke("gold price today usd per oz"))'''),
       md('''## Your Turn
-Wrap a **google_search** tool (over a small live-fact index) and a **wolfram** compute tool, then let
-the executor chain them.'''),
+Wrap a **google_search** tool (over a small live-fact index) and a **wolfram** compute tool, then bind
+both to an agent with `create_agent`.'''),
       code(render([
+        SAFE_CALC,
+        "",
+        "from langchain_core.tools import tool",
+        "from langchain_ollama import ChatOllama",
+        "from langchain.agents import create_agent",
+        "",
         "@tool",
-        "def google_search(query):",
-        {"s": '    ___   # TODO: docstring -- search the web for a live fact (the model reads this)',
+        "def google_search(query: str) -> str:",
+        {"s": '    """___  (TODO: replace -- tell the model this searches for a live web fact)."""',
          "a": '    """Search the web for a current fact or figure. Use for anything not in the model own memory."""'},
         '    index = {"gold price today usd per oz": "2400", "eiffel tower height m": "330"}',
         {"s": '    return ___   # TODO: look query up in index (lowercased/stripped), else "no result"',
          "a": '    return index.get(query.lower().strip(), "no result")'},
         "",
         "@tool",
-        "def wolfram(expression):",
+        "def wolfram(expression: str) -> float:",
         '    """Compute an exact math expression (a Wolfram-Alpha-style compute tool)."""',
         '    return safe_calc(expression)',
         "",
-        "SCRIPT = [",
-        '    "Thought: I need the live price.\\nAction: google_search\\nAction Input: gold price today usd per oz",',
-        '    "Thought: double it.\\nAction: wolfram\\nAction Input: 2400*2",',
-        '    "Thought: done.\\nFinal Answer: 4800",',
-        "]",
-        "",
-        "def make_executor(max_iterations=6):",
-        "    model = FakeChatModel(SCRIPT)",
-        '    prompt = PromptTemplate.from_template("Q: {input}\\n{scratchpad}")',
-        {"s": '    agent = create_react_agent(model, ___, prompt)   # TODO: both external tools',
-         "a": '    agent = create_react_agent(model, [google_search, wolfram], prompt)'},
-        "    return AgentExecutor(agent, max_iterations=max_iterations)",
+        "def build_agent():",
+        '    model = ChatOllama(model="llama3.2:1b")',
+        {"s": '    return create_agent(model, ___)   # TODO: both external tools',
+         "a": '    return create_agent(model, [google_search, wolfram])'},
         "",
         "try:",
         "    print('search known  :', google_search.invoke('gold price today usd per oz'))",
         "    print('search unknown:', google_search.invoke('who won the 3pm race'))",
-        '    result = make_executor().invoke({"input": "double the current gold price"})',
-        "    print('output:', result['output'], '| tools:', [s[0] for s in result['intermediate_steps']])",
+        "    print('wolfram        :', wolfram.invoke('2400*2'))",
+        "    print('agent nodes    :', set(build_agent().nodes) - {'__start__'})",
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
       grader('''expect_true("search returns a known live fact", lambda: google_search.invoke("gold price today usd per oz") == "2400")
 expect_true("search returns 'no result' for the unknown", lambda: google_search.invoke("who won the 3pm race") == "no result")
 expect_true("the compute tool does exact math", lambda: wolfram.invoke("2400*2") == 4800)
-expect_true("the executor chains search then compute", lambda: [s[0] for s in make_executor().invoke({"input": "x"})["intermediate_steps"]] == ["google_search", "wolfram"])
-expect_true("it reaches the right final answer", lambda: make_executor().invoke({"input": "x"})["output"] == "4800")'''),
-      *optional_real(
+expect_true("both external tools bind to the agent", lambda: type(build_agent()).__name__ == "CompiledStateGraph" and "tools" in set(build_agent().nodes))
+expect_true("the search tool carries a real (filled-in) description", lambda: "___" not in google_search.description and "search" in google_search.description.lower())'''),
+      *live(
         "Swap the two stand-in tools for the REAL Google Serper and Wolfram Alpha wrappers.",
         '''import os
 try:
@@ -855,24 +941,39 @@ def _l11(sol):
       setup(11),
       md('''## Concept
 Autonomy needs **guardrails** and **observability** (deck slides 15, 17): a **tool allow-list**,
-**input validation**, a **max_iterations** cap, and a **tracing callback** that logs every
-(action, input, observation) so you can debug and audit. Real LangChain exposes callbacks;
-**LangSmith / Langfuse** capture full traces. Here you build the offline versions.'''),
-      shimcell([SAFE_CALC, LC_TOOL],
-        '''@tool
-def calculator(expression):
-    """Do exact arithmetic on an expression."""
-    return safe_calc(expression)
+**input validation**, a **recursion_limit** cap, and a **tracing callback** that logs every
+(action, input, observation) so you can debug and audit. Real LangChain exposes callbacks via
+`BaseCallbackHandler`; **LangSmith / Langfuse** capture full traces. Here you build the offline
+versions (deterministic) and see the real callback interface in the optional cell.'''),
+      code('''from langchain_core.tools import tool
+
 @tool
-def lookup(key):
-    """Look up a known fact by key."""
-    return {"capital of france": "Paris"}.get(key.lower().strip(), "unknown")
-REGISTRY = {t.name: t for t in [calculator, lookup]}
+def calculator(expression: str) -> str:
+    """Do exact arithmetic on an expression."""
+    return "(computed)"
+
 ALLOWED = {"calculator", "lookup"}
-print("registry:", list(REGISTRY), "| allow-list:", ALLOWED)'''),
+print("allow-list:", ALLOWED, "| a tool the agent may call:", calculator.name in ALLOWED)'''),
       md('''## Your Turn
-Complete the allow-list, the input validator, and the tracing callback, then run a guarded loop.'''),
+Complete the allow-list check, the input validator, and the tracing callback, then run a guarded loop.'''),
       code(render([
+        SAFE_CALC,
+        "",
+        "from langchain_core.tools import tool",
+        "",
+        "@tool",
+        "def calculator(expression: str) -> float:",
+        '    """Do exact arithmetic on an expression."""',
+        '    return safe_calc(expression)',
+        "",
+        "@tool",
+        "def lookup(key: str) -> str:",
+        '    """Look up a known fact by key."""',
+        '    return {"capital of france": "Paris"}.get(key.lower().strip(), "unknown")',
+        "",
+        "REGISTRY = {t.name: t for t in [calculator, lookup]}",
+        'ALLOWED = {"calculator", "lookup"}',
+        "",
         "class TracingCallback:",
         "    def __init__(self):",
         "        self.events = []",
@@ -915,7 +1016,7 @@ expect_true("validation accepts a real expression", lambda: validate("2 + 2*3") 
 expect_true("validation rejects a dangerous input", lambda: validate("__import__('os')") is False)
 expect_true("the callback records every executed step", lambda: len(guarded_run([("calculator", "2+2"), ("lookup", "capital of france")], TracingCallback())["trace"]) == 2)
 expect_true("a disallowed tool is blocked, not run", lambda: guarded_run([("delete_database", "all")], TracingCallback())["stopped"] == "blocked_tool")'''),
-      *optional_real(
+      *live(
         "See the REAL callback interface LangChain exposes (LangSmith / Langfuse capture full traces).",
         '''try:
     from langchain_core.callbacks import BaseCallbackHandler
@@ -923,111 +1024,111 @@ expect_true("a disallowed tool is blocked, not run", lambda: guarded_run([("dele
         def on_tool_end(self, output, **kw):
             print("tool ->", output)
     print("Real LangChain calls handlers like PrintHandler on every model/tool event.")
+    print("Attach one with: agent.invoke(inputs, config={'callbacks': [PrintHandler()]}).")
     print("For full run traces: set LANGCHAIN_TRACING_V2=true + LANGCHAIN_API_KEY (LangSmith),")
     print("or run Langfuse (this course's stack) and attach its callback handler.")
 except Exception as e:
     print("Install langchain-core to use real callbacks -- skipping:", type(e).__name__)
 print("The guarded run above already traced every step offline.")'''),
-      footer(11, "Allow-list + validation + max_iterations + tracing turn an autonomous agent from a liability into something you can trust and debug. Day 5 goes deeper on responsible agents."),
+      footer(11, "Allow-list + validation + recursion_limit + tracing turn an autonomous agent from a liability into something you can trust and debug. Day 5 goes deeper on responsible agents."),
     ]
 
 # ============================================================ LAB 12
 @lab(12, "lab-12-capstone-langchain-agent", "Advanced",
      "Capstone: A Guardrailed LangChain Agent", 45,
-     "Assemble tools + a scripted model + guardrails into an executor and run it over a suite of tasks.",
-     ["End-to-end agent", "Task suite", "Guardrails"])
+     "Assemble allow-listed tools + a system prompt + a recursion cap into a real create_agent, and run it live.",
+     ["End-to-end agent", "Guardrails", "create_agent"])
 def _l12(sol):
     return [
       header(12, "Capstone: A Guardrailed LangChain Agent", "Advanced", 45,
-        ["Assemble the module: tools + agent + executor + a max_iterations guardrail",
-         "Run the agent over a SUITE of different tasks",
-         "Score tasks solved / total; optionally run a REAL LangChain agent"],
+        ["Assemble the module: allow-listed @tools + create_agent + a recursion cap",
+         "Enforce a guardrail policy: only allow-listed tools are bound",
+         "Run the real agent over a suite of tasks (optional live cell)"],
         "Choosing a framework"),
       setup(12),
       md('''## Concept
-Capstone: a **guardrailed LangChain-shaped agent** that ties the module together &mdash; `@tool`
-tools, `create_react_agent`, an `AgentExecutor` with a **`max_iterations`** guardrail, and only
-**allow-listed** tools registered &mdash; run over a **suite** (a compound task, a lookup, an
-arithmetic task). The score is **solved / total**. The optional cell swaps in a **real** LangChain
-agent (Ollama/Groq) &mdash; the bridge to Day 4.'''),
-      shimcell([SAFE_CALC, LC_TOOL, LC_MODEL, LC_PROMPT, LC_EXEC],
-        '''@tool
-def lookup(key):
-    """Look up a known fact by key."""
-    facts = {"population of metropolis": "120000", "capital of france": "Paris"}
-    return facts.get(key.lower().strip(), "unknown")
+Capstone: a **guardrailed LangChain agent** that ties the module together &mdash; real `@tool` tools,
+a **system prompt**, an **allow-list** so only vetted tools are bound, `create_agent`, and a
+**`recursion_limit`** cap. The graded cell asserts the assembly and the guardrail policy
+(deterministic); the optional cell runs the **real** agent (Ollama/Groq) over a task suite &mdash; the
+bridge to Day 4.'''),
+      code('''from langchain_core.tools import tool
+
 @tool
-def calculator(expression):
-    """Do exact arithmetic on an expression."""
-    return safe_calc(expression)
-print("allow-listed tools:", lookup.name, "&", calculator.name)'''),
+def lookup(key: str) -> str:
+    """Look up a known fact by key."""
+    return {"population of metropolis": "120000", "capital of france": "Paris"}.get(key.lower().strip(), "unknown")
+
+print("a vetted tool:", lookup.name)'''),
       md('''## Your Turn
-Complete `make_executor` (register only the allowed tools; set the guardrail) and `evaluate` (score
-the suite). Each task has a scripted plan so the run is deterministic.'''),
+Complete `build_agent`: keep only the **allowed** tools, add a system prompt, and set the recursion cap.
+Complete `vet_tools` (the guardrail policy that drops anything not on the allow-list).'''),
       code(render([
-        "SCRIPTS = {",
-        '    "twice the population of metropolis": [',
-        '        "Thought: look it up.\\nAction: lookup\\nAction Input: population of metropolis",',
-        '        "Thought: double it.\\nAction: calculator\\nAction Input: 120000*2",',
-        '        "Thought: done.\\nFinal Answer: 240000"],',
-        '    "capital of france": [',
-        '        "Thought: look it up.\\nAction: lookup\\nAction Input: capital of france",',
-        '        "Thought: done.\\nFinal Answer: Paris"],',
-        '    "compute 15*3": [',
-        '        "Thought: compute.\\nAction: calculator\\nAction Input: 15*3",',
-        '        "Thought: done.\\nFinal Answer: 45"],',
-        "}",
+        SAFE_CALC,
         "",
-        "def make_executor(goal, max_iterations=6):",
-        "    model  = FakeChatModel(SCRIPTS[goal])",
-        '    prompt = PromptTemplate.from_template("Q: {input}\\n{scratchpad}")',
-        {"s": '    tools  = ___   # TODO: only the ALLOWED tools (lookup, calculator)',
-         "a": '    tools  = [lookup, calculator]'},
-        "    agent  = create_react_agent(model, tools, prompt)",
-        {"s": '    return AgentExecutor(agent, max_iterations=___)   # TODO: the guardrail (cap the steps)',
-         "a": '    return AgentExecutor(agent, max_iterations=max_iterations)'},
+        "from langchain_core.tools import tool",
+        "from langchain_ollama import ChatOllama",
+        "from langchain.agents import create_agent",
         "",
-        "def solve(goal):",
-        '    return make_executor(goal).invoke({"input": goal})["output"]',
+        "@tool",
+        "def lookup(key: str) -> str:",
+        '    """Look up a known fact by key."""',
+        '    facts = {"population of metropolis": "120000", "capital of france": "Paris"}',
+        '    return facts.get(key.lower().strip(), "unknown")',
         "",
-        "SUITE = [",
-        '    {"goal": "twice the population of metropolis", "answer": "240000"},',
-        '    {"goal": "capital of france", "answer": "Paris"},',
-        '    {"goal": "compute 15*3", "answer": "45"},',
-        "]",
+        "@tool",
+        "def calculator(expression: str) -> float:",
+        '    """Do exact arithmetic on an expression."""',
+        '    return safe_calc(expression)',
         "",
-        "def evaluate():",
-        {"s": '    solved = ___   # TODO: count suite tasks the agent solves correctly',
-         "a": '    solved = sum(1 for t in SUITE if solve(t["goal"]) == t["answer"])'},
-        "    return solved, len(SUITE)",
+        'ALLOWED = {"lookup", "calculator"}',
+        "SYSTEM = \"You are a careful assistant. Use tools for facts and math; never guess.\"",
+        "",
+        "def vet_tools(tools):",
+        '    # guardrail: keep only tools whose name is on the allow-list',
+        {"s": '    return [t for t in tools if ___]   # TODO: keep allow-listed tools only',
+         "a": '    return [t for t in tools if t.name in ALLOWED]'},
+        "",
+        "def build_agent(max_steps=8):",
+        '    model = ChatOllama(model="llama3.2:1b")',
+        "    tools = vet_tools([lookup, calculator])",
+        {"s": '    return create_agent(model, tools, system_prompt=___)   # TODO: the system prompt',
+         "a": '    return create_agent(model, tools, system_prompt=SYSTEM)'},
+        "",
+        "def run_config(max_steps=8):",
+        {"s": '    return ___   # TODO: cap the loop with recursion_limit',
+         "a": '    return {"recursion_limit": max_steps}'},
         "",
         "try:",
-        "    for t in SUITE:",
-        "        print(t['goal'], '->', solve(t['goal']))",
-        "    print('solved:', evaluate())",
+        "    agent = build_agent()",
+        "    print('agent type :', type(agent).__name__)",
+        "    print('bound tools:', [t.name for t in vet_tools([lookup, calculator])])",
+        "    print('a risky tool is dropped:', [t.name for t in vet_tools([lookup])] )",
+        "    print('run config :', run_config())",
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''expect_true("solves the two-step population task", lambda: solve("twice the population of metropolis") == "240000")
-expect_true("solves the capital lookup task", lambda: solve("capital of france") == "Paris")
-expect_true("solves the arithmetic task", lambda: solve("compute 15*3") == "45")
-expect_true("solves the whole suite (3/3)", lambda: evaluate() == (3, 3))
-expect_true("only allow-listed tools are registered", lambda: set(make_executor("capital of france").tools) == {"lookup", "calculator"})
-expect_true("the max_iterations guardrail is honored", lambda: make_executor("capital of france", max_iterations=1).invoke({"input": "capital of france"})["output"] is None)'''),
-      *optional_real(
-        "Swap the scripted model for a REAL LangChain agent (Ollama llama3.2:1b, or Groq) -- the bridge to Day 4.",
-        '''try:
-    from langchain_ollama import ChatOllama
-    llm = ChatOllama(model="llama3.2:1b")
-    print(llm.invoke("In one sentence, what can an AI agent do that a plain chatbot cannot?").content)
-    print("That was a REAL local LLM. Bind it to @tool functions with create_react_agent + AgentExecutor")
-    print("(exactly the shapes above) for a production agent.")
+      grader('''expect_true("the capstone agent is a runnable CompiledStateGraph", lambda: type(build_agent()).__name__ == "CompiledStateGraph")
+expect_true("both allow-listed tools are bound", lambda: {t.name for t in vet_tools([lookup, calculator])} == {"lookup", "calculator"})
+expect_true("the guardrail drops a non-allow-listed tool", lambda: (lambda fake: [t.name for t in vet_tools([lookup, fake])] == ["lookup"])(type("F", (), {"name": "delete_database"})()))
+expect_true("the recursion cap is set", lambda: run_config(5)["recursion_limit"] == 5)
+expect_true("the tools still compute correctly", lambda: calculator.invoke("120000*2") == 240000.0 and lookup.invoke("capital of france") == "Paris")'''),
+      *live(
+        "Run the guardrailed agent on a real task -- the bridge to Day 4. (Try more questions from the SUITE list yourself.)",
+        '''SUITE = ["What is 15 times 3?", "What is the capital of France?", "What is the population of metropolis?"]
+try:
+    if ollama_up():
+        agent = build_agent()
+        q = SUITE[0]   # try the others yourself -- each is a fresh real agent run
+        result = agent.invoke({"messages": [{"role": "user", "content": q}]}, config=run_config())
+        print(q, "->", result["messages"][-1].content)
+        print("That was a REAL guardrailed LangChain agent. Next: Day 4 -- task automation & multi-agent teams.")
+    else:
+        print("No Ollama reachable -- skipping the live run. The guardrailed agent above is fully assembled.")
+        print("Next: Day 4 -- task automation & multi-agent collaboration.")
 except Exception as e:
-    print("No local LLM available -- skipping (pip install langchain langchain-ollama + `ollama run llama3.2:1b`,")
-    print("or langchain-groq with GROQ_API_KEY):", type(e).__name__)
-    print("The guardrailed, offline agent above already solved the whole suite.")
-    print("Next: Day 4 -- task automation & multi-agent collaboration.")'''),
-      footer(12, "You assembled a guardrailed LangChain-shaped agent that solves a suite with tools, an executor and a step cap. Swap the scripted model for a real LLM and it ships -- next, Day 4 puts agents to work."),
+    print("Live run skipped:", type(e).__name__)'''),
+      footer(12, "You assembled a guardrailed LangChain agent -- vetted tools, a system prompt, create_agent and a recursion cap -- and ran it for real. That is a shippable agent; next, Day 4 puts agents to work."),
     ]
 
 # ============================================================ WRITE NOTEBOOKS

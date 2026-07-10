@@ -20,3 +20,27 @@ langgraph
 
 # --- Tier 2 (3c): external APIs (Day 3, Module 6) ---
 wolframalpha            # langchain-community provides the Serper + Wolfram wrappers
+
+# --- Tier 2 (3d): Hugging Face transformers (Day 2, Modules 3-4) ---
+# The transformer / pre-trained-model labs use a real BERT-family model, so
+# transformers is CORE now (not an optional extra).
+#
+# torch is NOT listed here on purpose: the setup scripts install a CPU-ONLY
+# torch from https://download.pytorch.org/whl/cpu so participants without an
+# NVIDIA GPU don't pull ~2.5 GB of CUDA/nvidia wheels. transformers does not
+# drag torch in automatically, so listing it here would be safe but wasteful.
+#
+# transformers is pinned to <5: the labs load small models like
+# prajjwal1/bert-tiny, which ship no fast `tokenizer.json`. transformers 5.x
+# removed the pure-Python slow-tokenizer path and can't convert bert-tiny's
+# WordPiece tokenizer, raising "Couldn't instantiate the backend tokenizer"
+# (a ValueError) even with sentencepiece/tiktoken installed. 4.x loads it fine.
+transformers>=4.40,<5
+
+# tf-keras: the core install ships tensorflow-cpu, which brings Keras 3.
+# transformers 4.x probes the TensorFlow backend when you call pipeline(),
+# and it does not support Keras 3 -- it raises "Keras 3 ... not yet supported
+# in Transformers. Please install ... tf-keras". tf-keras is a separate
+# namespace (import tf_keras), so it does NOT disturb the Keras 3 used by the
+# Module 2 MNIST/Keras labs; it just gives transformers a Keras 2 API to probe.
+tf-keras

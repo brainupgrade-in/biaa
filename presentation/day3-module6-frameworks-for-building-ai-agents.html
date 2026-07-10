@@ -240,7 +240,7 @@
 
   <!-- ============ SLIDE 2 — AGENDA ============ -->
   <section class="slide" data-title="What we'll cover"
-    data-note="Map the hour. Start with WHY a framework at all -- you just wrote the loop by hand, so what does a framework buy you? Then the landscape: a quick map so no name is scary. Then the deep dive on LangChain -- building blocks, defining a tool, building a ReAct agent, the AgentExecutor, memory -- because that's the framework the labs use. Then when the simple loop isn't enough we graduate to LangGraph, and I'll give you a clean rule for LangChain vs LangGraph. Then the autonomous end of the spectrum (AutoGPT) and the multi-agent frameworks, connecting to real external tools, observability, and a decision guide for choosing. Finish with the bridge to your two Day-3 labs. Tell them: this is the module that turns 'I understand agents' into 'I can build one that ships'.">
+    data-note="Map the hour. Start with WHY a framework at all -- you just wrote the loop by hand, so what does a framework buy you? Then the landscape: a quick map so no name is scary. Then the deep dive on LangChain -- building blocks, defining a tool, building an agent with create_agent, reading its trace, memory -- because that's the framework the labs use. Then when the simple loop isn't enough we graduate to LangGraph, and I'll give you a clean rule for LangChain vs LangGraph. Then the autonomous end of the spectrum (AutoGPT) and the multi-agent frameworks, connecting to real external tools, observability, and a decision guide for choosing. Finish with the bridge to your two Day-3 labs. Tell them: this is the module that turns 'I understand agents' into 'I can build one that ships'.">
     <div class="kicker"><span class="dot"></span> Day 3 &middot; Module 6 <span class="sub">— Frameworks for Building AI Agents</span></div>
     <h2 class="title">What we&rsquo;ll cover</h2>
     <div class="body">
@@ -366,19 +366,19 @@
 
   <!-- ============ SLIDE 7 — LANGCHAIN BUILDING BLOCKS ============ -->
   <section class="slide" data-title="LangChain building blocks"
-    data-note="Give them the five nouns that make LangChain code readable. CHAT MODEL: the wrapped LLM -- ChatOllama, ChatGroq -- you .invoke() with messages. PROMPT TEMPLATE: a reusable prompt with slots, including the special ReAct/agent prompt that tells the model how to format Thought/Action/Observation. TOOL: a function exposed to the model, usually via the @tool decorator. AGENT: the reasoning core that, given the model + tools + prompt, decides the next action. AGENT EXECUTOR: the runtime that actually runs the loop -- calls the agent, executes the chosen tool, feeds back the observation, enforces max_iterations. Map each back to Module 5's anatomy slide: model = brain, tool = hands, executor = orchestrator, prompt = the instructions, memory = the scratchpad. The whole point: once you know these five nouns, any LangChain agent snippet reads like a sentence.">
+    data-note="Give them the five nouns that make LangChain code readable. CHAT MODEL: the wrapped LLM -- ChatOllama, ChatGroq -- you .invoke() with messages. PROMPT TEMPLATE: a reusable prompt with slots, plus an optional system_prompt that steers the agent. TOOL: a function exposed to the model, usually via the @tool decorator. AGENT: the reasoning core that, given the model + tools, decides the next action -- you build it with create_agent. AGENT RUNTIME: create_agent returns a runnable graph that actually runs the loop -- calls the model, executes the chosen tool, feeds back the observation, caps the steps with recursion_limit. (In LangChain 1.x this is the compiled agent itself, not a separate AgentExecutor as in older versions.) Map each back to Module 5's anatomy slide: model = brain, tool = hands, runtime = orchestrator, prompt = the instructions, memory = the scratchpad. The whole point: once you know these five nouns, any LangChain agent snippet reads like a sentence.">
     <div class="kicker"><span class="dot"></span> Five nouns that make the code readable</div>
     <h2 class="title">LangChain&rsquo;s core building blocks</h2>
     <div class="body">
       <div class="grid3">
         <div class="card cyan"><h3>&#129504; Chat model</h3><p>The wrapped LLM &mdash; <span class="mono">ChatOllama</span>, <span class="mono">ChatGroq</span>. You <span class="mono">.invoke()</span> it.</p></div>
-        <div class="card"><h3>&#128221; Prompt template</h3><p>A reusable prompt with slots &mdash; incl. the <b>ReAct</b> format instructions.</p></div>
+        <div class="card"><h3>&#128221; Prompt template</h3><p>A reusable prompt with slots &mdash; incl. an optional <b>system prompt</b> that steers the agent.</p></div>
         <div class="card gold"><h3>&#128295; Tool</h3><p>A function exposed to the model &mdash; usually via the <span class="mono">@tool</span> decorator.</p></div>
-        <div class="card"><h3>&#129302; Agent</h3><p>The reasoning core: given model + tools + prompt, it <b>decides</b> the next action.</p></div>
-        <div class="card cyan"><h3>&#9881;&#65039; Agent executor</h3><p>The <b>runtime</b> that runs the loop, executes tools &amp; caps the steps.</p></div>
+        <div class="card"><h3>&#129302; Agent</h3><p>The reasoning core: given model + tools, it <b>decides</b> the next action &mdash; built with <span class="mono">create_agent</span>.</p></div>
+        <div class="card cyan"><h3>&#9881;&#65039; Agent runtime</h3><p>The compiled graph <span class="mono">create_agent</span> returns &mdash; runs the loop, executes tools &amp; caps the steps.</p></div>
         <div class="card gold"><h3>&#129516; Memory</h3><p>The scratchpad &amp; chat history objects, wired into the loop.</p></div>
       </div>
-      <p class="callout" style="margin-top:16px">&#128073; Map to Module 5&rsquo;s anatomy: model = <b>brain</b>, tool = <b>hands</b>, executor = <b>orchestrator</b>, prompt = <b>instructions</b>, memory = <b>scratchpad</b>. Learn these five nouns and any LangChain snippet reads like a sentence.</p>
+      <p class="callout" style="margin-top:16px">&#128073; Map to Module 5&rsquo;s anatomy: model = <b>brain</b>, tool = <b>hands</b>, runtime = <b>orchestrator</b>, prompt = <b>instructions</b>, memory = <b>scratchpad</b>. Learn these five nouns and any LangChain snippet reads like a sentence.</p>
     </div>
   </section>
 
@@ -407,49 +407,47 @@
   </section>
 
   <!-- ============ SLIDE 9 — BUILD A REACT AGENT ============ -->
-  <section class="slide" data-title="Build a ReAct agent"
-    data-note="Now assemble a whole agent in the shape they'll type tomorrow. Four moves, map each to a building block. ONE: create the model -- ChatGroq or ChatOllama, the model-agnostic swap. TWO: collect your tools into a list -- the agent's hands. THREE: pull a ReAct prompt (from the hub or write one) that tells the model the Thought/Action/Observation format. FOUR: create_react_agent(model, tools, prompt) makes the reasoning core, then wrap it in an AgentExecutor with verbose=True and max_iterations as a guardrail. Then invoke with a goal. Emphasise how little code this is versus the hand-rolled version they wrote -- the framework absorbed all the parsing and looping. Note verbose=True prints the ReAct trace, which is the next slide. This is essentially Lab 6.1.">
+  <section class="slide" data-title="Build an agent"
+    data-note="Now assemble a whole agent in the shape they'll type tomorrow. In LangChain 1.x it's THREE moves. ONE: create the model -- ChatOllama or ChatGroq, the model-agnostic swap. TWO: collect your tools into a list -- the agent's hands. THREE: create_agent(model, tools) binds them into a runnable agent -- a compiled graph that runs the whole loop for you (this replaced the old create_react_agent + AgentExecutor two-step). Then invoke it with a messages list, and pass recursion_limit as the loop-cap guardrail (the 1.x name for max_iterations). Emphasise how little code this is versus the hand-rolled version they wrote -- the framework absorbed all the tool-calling and looping. The returned agent is a LangGraph graph, which is why the next slide reads its message trace. This is essentially Lab 6.1.">
     <div class="kicker"><span class="dot"></span> The shape you&rsquo;ll type tomorrow &middot; &asymp; Lab 6.1</div>
-    <h2 class="title">Assemble a ReAct agent</h2>
+    <h2 class="title">Assemble an agent &mdash; <span class="mono" style="font-size:.8em">create_agent</span></h2>
     <div class="body">
       <div class="terminal">
-<span class="kw">from</span> langchain.agents <span class="kw">import</span> create_react_agent, AgentExecutor
-<span class="kw">from</span> langchain_groq <span class="kw">import</span> ChatGroq
+<span class="kw">from</span> langchain.agents <span class="kw">import</span> create_agent
+<span class="kw">from</span> langchain_ollama <span class="kw">import</span> ChatOllama      <span class="com"># or: from langchain_groq import ChatGroq</span>
 
-model = <span class="fn">ChatGroq</span>(model=<span class="str">"llama-3.1-8b-instant"</span>)   <span class="com"># 1. the brain (swap for ChatOllama)</span>
-tools = [get_weather, calculator]                  <span class="com"># 2. the hands</span>
-prompt = hub.<span class="fn">pull</span>(<span class="str">"hwchase17/react"</span>)              <span class="com"># 3. the ReAct format instructions</span>
+model = <span class="fn">ChatOllama</span>(model=<span class="str">"llama3.2:1b"</span>)     <span class="com"># 1. the brain (swap for ChatGroq)</span>
+tools = [get_weather, calculator]              <span class="com"># 2. the hands</span>
 
-agent    = <span class="fn">create_react_agent</span>(model, tools, prompt)   <span class="com"># 4. the reasoning core</span>
-executor = <span class="fn">AgentExecutor</span>(agent=agent, tools=tools,
-                        verbose=<span class="kw">True</span>, max_iterations=<span class="str">6</span>)   <span class="com"># the loop + a guardrail</span>
+agent = <span class="fn">create_agent</span>(model, tools)           <span class="com"># 3. bind them -> a runnable agent</span>
 
-executor.<span class="fn">invoke</span>({<span class="str">"input"</span>: <span class="str">"Is Tokyo warmer than 20C right now?"</span>})
+agent.<span class="fn">invoke</span>(
+    {<span class="str">"messages"</span>: [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"Is Tokyo warmer than 20C right now?"</span>}]},
+    config={<span class="str">"recursion_limit"</span>: <span class="str">6</span>},          <span class="com"># the loop cap -- a guardrail</span>
+)
       </div>
-      <p class="callout" style="margin-top:14px">&#128073; Four moves &mdash; <b>model &rarr; tools &rarr; prompt &rarr; agent + executor</b> &mdash; and the framework absorbs all the parsing and looping you wrote by hand in Module 5. <span class="mono">verbose=True</span> prints the ReAct trace (next slide); <span class="mono">max_iterations</span> is your guardrail in one line.</p>
+      <p class="callout" style="margin-top:14px">&#128073; Three moves &mdash; <b>model &rarr; tools &rarr; create_agent</b> &mdash; and the framework absorbs all the tool-calling and looping you wrote by hand in Module 5. <span class="mono">create_agent</span> returns a runnable <b>agent</b> (a compiled graph); <span class="mono">recursion_limit</span> is your guardrail in one line.</p>
     </div>
   </section>
 
+  <!-- NOTE: LangChain 1.x -- create_agent replaces the pre-1.x create_react_agent + AgentExecutor;
+       the loop cap is recursion_limit (was max_iterations). Labs use exactly this API. -->
+
   <!-- ============ SLIDE 10 — THE EXECUTOR TRACE ============ -->
-  <section class="slide" data-title="The executor trace"
-    data-note="Show what verbose=True actually prints, so the abstraction becomes visible. This is the SAME ReAct trace they traced by hand in Module 5, now emitted by the framework for free. Walk it: the executor sends the goal to the model; the model returns a Thought and an Action (tool name + input); the executor RUNS the real tool and captures the Observation; it appends everything to the scratchpad and calls the model again; the model reasons over the new observation, decides it's done, and returns the Final Answer. Point at the division of labour: the model only ever emitted text ('Action: get_weather'); the EXECUTOR did the actual calling. That's the reason/execute split from Module 5 -- and it's why this is debuggable: every line here is a log you can inspect. Tell them this scroll is the single most useful debugging surface they'll have.">
-    <div class="kicker"><span class="dot"></span> What <span class="mono" style="font-size:.85em">verbose=True</span> prints &mdash; for free</div>
-    <h2 class="title">The AgentExecutor loop, made visible</h2>
+  <section class="slide" data-title="The agent trace"
+    data-note="Show what the agent RETURNS, so the abstraction becomes visible. agent.invoke(...) gives back result['messages'] -- the trace -- the 1.x equivalent of the ReAct scroll they read by hand in Module 5. Walk it: the HumanMessage is the goal; the model replies with an AIMessage carrying tool_calls (it DECIDED to call get_weather with city='Tokyo') -- note it emitted a structured tool call, not free ReAct text; the tools node RUNS the real tool and appends a ToolMessage with the result; the model is called again, reasons over the observation, and returns a final AIMessage with the answer in .content. Point at the division of labour: the model only ever DECIDED (the tool_calls); the tools node did the actual calling. That's the reason/execute split from Module 5. And it's why this is debuggable: every message is a log you can inspect. Reading tools_used and final_answer off this list is exactly Lab 6.5. Tell them this message list is the single most useful debugging surface they'll have.">
+    <div class="kicker"><span class="dot"></span> What <span class="mono" style="font-size:.85em">agent.invoke()</span> returns &mdash; the trace</div>
+    <h2 class="title">The agent loop, made visible</h2>
     <div class="body">
       <div class="terminal">
-<span class="you">&gt; Entering AgentExecutor chain...</span>
+<span class="you">result = agent.invoke({"messages": [...]})   # result["messages"] is the trace</span>
 
-<span class="kw">Thought:</span> The user wants Tokyo&rsquo;s current temperature. I&rsquo;ll use get_weather.
-<span class="kw">Action:</span> <span class="fn">get_weather</span>
-<span class="kw">Action Input:</span> <span class="str">"Tokyo"</span>
-<span class="out">Observation: 24</span>                        <span class="com"># &lt;- the executor RAN the tool, not the model</span>
-
-<span class="kw">Thought:</span> 24C is greater than 20C. I have my answer.
-<span class="kw">Final Answer:</span> <span class="you">Yes &mdash; it&rsquo;s about 24&deg;C in Tokyo, warmer than 20&deg;C.</span>
-
-<span class="you">&gt; Finished chain.</span>
+<span class="kw">HumanMessage</span>  <span class="you">Is Tokyo warmer than 20C right now?</span>
+<span class="kw">AIMessage</span>     tool_calls=[<span class="fn">get_weather</span>(city=<span class="str">"Tokyo"</span>)]   <span class="com"># &lt;- the model DECIDED to call a tool</span>
+<span class="kw">ToolMessage</span>   <span class="out">24</span>                                 <span class="com"># &lt;- the tools node RAN it</span>
+<span class="kw">AIMessage</span>     <span class="you">Yes &mdash; it&rsquo;s about 24&deg;C in Tokyo, warmer than 20&deg;C.</span>   <span class="com"># final answer</span>
       </div>
-      <p class="callout warn" style="margin-top:14px">&#128073; Identical to the ReAct trace you read by hand in Module 5 &mdash; now the framework emits it. The model only <b>emitted text</b> (&ldquo;Action: get_weather&rdquo;); the <b>executor</b> did the calling. Every line is a log &mdash; this scroll is your #1 <b>debugging surface</b>.</p>
+      <p class="callout warn" style="margin-top:14px">&#128073; The agent returns a <b>list of messages</b> &mdash; the trace. <span class="mono">AIMessage.tool_calls</span> is what the model <b>decided</b>; <span class="mono">ToolMessage</span> is what the tools node <b>ran</b>; the last <span class="mono">AIMessage</span> is the answer. Every message is a log &mdash; this list is your #1 <b>debugging surface</b>.</p>
     </div>
   </section>
 
@@ -481,7 +479,7 @@ executor.<span class="fn">invoke</span>({<span class="str">"input"</span>: <span
 
   <!-- ============ SLIDE 12 — WHEN THE SIMPLE LOOP ISN'T ENOUGH (LANGGRAPH) ============ -->
   <section class="slide" data-title="LangGraph"
-    data-note="Motivate LangGraph by the pain the simple AgentExecutor hits. The basic ReAct executor is a single implicit loop -- great until you need real control: branching ('if the tool failed, try a different path'), cycles you steer, MULTIPLE cooperating steps or agents, a durable pause for human approval, or the ability to resume after a crash. LangGraph (from the LangChain team) models the agent as an explicit STATE GRAPH: nodes are steps (call the model, run a tool, ask a human), edges are transitions you control, and a shared state object flows through. Because the graph is explicit you get things the implicit loop can't easily give: conditional routing, checkpointing/durability, streaming of each node, and clean human-in-the-loop pauses. Show the little graph. The message: LangChain gives you the agent; LangGraph gives you CONTROL over how it flows. Don't oversell -- most first agents don't need it; you graduate to it.">
+    data-note="Motivate LangGraph by the pain the simple create_agent loop hits. The default agent is a single implicit loop -- great until you need real control: branching ('if the tool failed, try a different path'), cycles you steer, MULTIPLE cooperating steps or agents, a durable pause for human approval, or the ability to resume after a crash. LangGraph (from the LangChain team) models the agent as an explicit STATE GRAPH: nodes are steps (call the model, run a tool, ask a human), edges are transitions you control, and a shared state object flows through. Because the graph is explicit you get things the implicit loop can't easily give: conditional routing, checkpointing/durability, streaming of each node, and clean human-in-the-loop pauses. Show the little graph. The message: LangChain gives you the agent; LangGraph gives you CONTROL over how it flows. Don't oversell -- most first agents don't need it; you graduate to it.">
     <div class="kicker"><span class="dot"></span> When one implicit loop isn&rsquo;t enough</div>
     <h2 class="title">LangGraph &mdash; agents as state graphs</h2>
     <div class="body center">
@@ -658,7 +656,7 @@ executor.<span class="fn">invoke</span>({<span class="str">"input"</span>: <span
 
   <!-- ============ SLIDE 19 — CONNECT TO LABS ============ -->
   <section class="slide" data-title="This connects to your labs"
-    data-note="Hand off to the keyboards. Module 6's labs turn everything on these slides into a running agent. Lab 6.1: build a real LangChain agent -- create the model (Ollama or Groq), define a tool with @tool, create_react_agent + AgentExecutor, invoke a goal, and read the verbose ReAct trace you saw on slide 10. That's the framework version of the loop you hand-built in Module 5. Lab 6.2: connect it to the world -- add Google Search for live facts and Wolfram Alpha for computation, so your agent answers questions no static model could, plus wire in memory and a max_iterations guardrail. This is the client's Day-3 lab spec, for real. Encourage them: this is the payoff -- from understanding agents, to building one that reaches the live internet. Then Day 4 makes agents DO real work: task automation and multi-agent collaboration.">
+    data-note="Hand off to the keyboards. Module 6's labs turn everything on these slides into a running agent. Lab 6.1: build a real LangChain agent -- create the model (Ollama or Groq), define a tool with @tool, create_agent(model, tools), invoke a goal, and read the message trace (tool_calls) you saw on slide 10. That's the framework version of the loop you hand-built in Module 5. Lab 6.2: connect it to the world -- add Google Search for live facts and Wolfram Alpha for computation, so your agent answers questions no static model could, plus wire in memory and a recursion_limit guardrail. This is the client's Day-3 lab spec, for real. Encourage them: this is the payoff -- from understanding agents, to building one that reaches the live internet. Then Day 4 makes agents DO real work: task automation and multi-agent collaboration.">
     <div class="kicker"><span class="dot"></span> From slides to keyboards</div>
     <h2 class="title">Now build it &mdash; Module 6 labs</h2>
     <div class="body">
@@ -666,8 +664,8 @@ executor.<span class="fn">invoke</span>({<span class="str">"input"</span>: <span
         <div class="card"><h3>&#9654; Lab 6.1 &middot; A real LangChain agent</h3>
           <ul>
             <li>Create the model (<b>Ollama</b> or <b>Groq</b>), define a tool with <span class="mono">@tool</span></li>
-            <li><span class="mono">create_react_agent</span> + <span class="mono">AgentExecutor</span> &mdash; the loop, for free</li>
-            <li>Read the <b>verbose ReAct trace</b> you saw on slide 10</li>
+            <li><span class="mono">create_agent(model, tools)</span> &mdash; the loop, for free</li>
+            <li>Read the <b>message trace</b> (<span class="mono">tool_calls</span>) you saw on slide 10</li>
             <li>The framework version of the loop you hand-built in Module 5</li>
           </ul>
         </div>
@@ -675,7 +673,7 @@ executor.<span class="fn">invoke</span>({<span class="str">"input"</span>: <span
           <ul>
             <li>Add <b>Google Search</b> &mdash; live facts beyond training data</li>
             <li>Add <b>Wolfram Alpha</b> &mdash; real computation &amp; knowledge</li>
-            <li>Wire in <b>memory</b> &amp; a <span class="mono">max_iterations</span> guardrail</li>
+            <li>Wire in <b>memory</b> &amp; a <span class="mono">recursion_limit</span> guardrail</li>
             <li>Answer questions a static model never could</li>
           </ul>
         </div>
@@ -780,14 +778,14 @@ executor.<span class="fn">invoke</span>({<span class="str">"input"</span>: <span
   </section>
 
   <!-- ============ SLIDE 26 — Q3 ============ -->
-  <section class="slide" data-title="Quiz Q3 — AgentExecutor"
-    data-note="Answer: B. The AgentExecutor runs the loop: calls the model, executes the chosen tool, feeds the observation back, and enforces max_iterations.">
+  <section class="slide" data-title="Quiz Q3 — the agent runtime"
+    data-note="Answer: B. The agent returned by create_agent runs the loop: calls the model, executes the chosen tool, feeds the observation back, and caps the steps with recursion_limit.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q3 / 10</div>
     <div class="body center">
-      <p class="quiz-q">In LangChain, what is the job of the <span class="mono">AgentExecutor</span>?</p>
+      <p class="quiz-q">In LangChain 1.x, what does the agent returned by <span class="mono">create_agent</span> do?</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>To train the language model on your data.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>To run the loop &mdash; call the model, execute the chosen tool, feed back the observation, cap the steps.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Runs the loop &mdash; calls the model, executes the chosen tool, feeds back the observation, caps the steps.</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>To convert text into embeddings.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>To replace the need for tools.</span></div>
       </div>
@@ -796,18 +794,18 @@ executor.<span class="fn">invoke</span>({<span class="str">"input"</span>: <span
 
   <!-- ============ SLIDE 27 — A3 ============ -->
   <section class="slide" data-title="Answer Q3"
-    data-note="The agent DECIDES the next action; the executor EXECUTES it and manages the loop, including the max_iterations guardrail. That's the reason/execute split, in code.">
+    data-note="The model DECIDES the next action; the compiled agent EXECUTES it and manages the loop, including the recursion_limit guardrail. That's the reason/execute split, in code -- and in 1.x create_agent gives you both in one object.">
     <div class="kicker"><span class="dot"></span> Answer &middot; Q3 / 10</div>
-    <h2 class="title">The job of the AgentExecutor</h2>
+    <h2 class="title">What <span class="mono">create_agent</span> returns</h2>
     <div class="body center">
-      <p class="quiz-restate">What actually runs the loop.</p>
+      <p class="quiz-restate">A runnable agent that actually runs the loop.</p>
       <div class="quiz-opts">
         <div class="quiz-opt dim"><span class="ltr">A</span><span>To train the language model on your data.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>To run the loop &mdash; call the model, execute the chosen tool, feed back the observation, cap the steps. &#10003;</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>Runs the loop &mdash; calls the model, executes the chosen tool, feeds back the observation, caps the steps. &#10003;</span></div>
         <div class="quiz-opt dim"><span class="ltr">C</span><span>To convert text into embeddings.</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>To replace the need for tools.</span></div>
       </div>
-      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;The <b>agent decides</b> the next action; the <b>executor executes</b> it and manages the loop &mdash; including the <span class="mono">max_iterations</span> guardrail. That&rsquo;s Module 5&rsquo;s reason/execute split, in code.</p>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;The <b>model decides</b> the next action; the <b>compiled agent executes</b> it and manages the loop &mdash; including the <span class="mono">recursion_limit</span> guardrail. That&rsquo;s Module 5&rsquo;s reason/execute split, in code &mdash; and in 1.x <span class="mono">create_agent</span> gives you both in one object.</p>
     </div>
   </section>
 
@@ -1098,7 +1096,7 @@ executor.<span class="fn">invoke</span>({<span class="str">"input"</span>: <span
 <div class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Day 3 · Module 6 — Frameworks for Building AI Agents</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.0</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.1</span>
 </div>
 
 <script>
