@@ -11,7 +11,7 @@
 #
 # Usage (in Git Bash, from the course folder):
 #   bash scripts/setup-windows.sh                 # full install (all labs, incl. transformers + CPU torch)
-#   bash scripts/setup-windows.sh --with-ollama   # also install Ollama + pull llama3.2:1b (Day-1 local LLM)
+#   bash scripts/setup-windows.sh --with-ollama   # also install Ollama + pull llama3.1:8b (Day-3 local LLM)
 # (--with-hf is accepted but now a no-op: transformers is part of the core install.)
 set -euo pipefail
 
@@ -53,7 +53,7 @@ ollama_cmd() {
   fi
 }
 
-# Install the Ollama runtime (if absent) and pull the Day-1 local model.
+# Install the Ollama runtime (if absent) and pull the Day-3 local model.
 # Best-effort: a failure here never aborts the Python setup (guarded by callers).
 install_ollama() {
   if [ -n "$(ollama_cmd)" ]; then
@@ -70,11 +70,11 @@ install_ollama() {
 
   OLLAMA="$(ollama_cmd)"
   if [ -n "$OLLAMA" ]; then
-    echo "==> Pulling llama3.2:1b (Day-1 local LLM, ~1.3 GB)"
-    "$OLLAMA" pull llama3.2:1b || echo "    (pull failed - open a NEW Git Bash and run 'ollama pull llama3.2:1b')"
+    echo "==> Pulling llama3.1:8b (Day-3 local LLM for Modules 5-6, ~4.9 GB)"
+    "$OLLAMA" pull llama3.1:8b || echo "    (pull failed - open a NEW Git Bash and run 'ollama pull llama3.1:8b')"
   else
     echo "==> Ollama installed, but not on PATH yet."
-    echo "    CLOSE and REOPEN Git Bash, then run:  ollama pull llama3.2:1b"
+    echo "    CLOSE and REOPEN Git Bash, then run:  ollama pull llama3.1:8b"
   fi
 }
 
@@ -139,16 +139,24 @@ venv_install torch --index-url https://download.pytorch.org/whl/cpu
 venv_install -r "$ROOT/scripts/requirements-optional.txt"
 [ "$WITH_HF" -eq 1 ] && echo "==> (--with-hf is now the default; transformers is core)"
 
-# --- 2b. optional: install Ollama + Day-1 model -------------------------
+# --- 2b. optional: install Ollama + Day-3 model -------------------------
 if [ "$WITH_OLLAMA" -eq 1 ]; then
   install_ollama || echo "==> Ollama step failed (non-fatal); see messages above."
 else
-  echo "==> Skipping Ollama. Add --with-ollama to install it + pull llama3.2:1b."
+  echo "==> Skipping Ollama. Add --with-ollama to install it + pull llama3.1:8b (Day 3)."
 fi
 
 # --- 3. register a Jupyter kernel ---------------------------------------
 echo "==> Registering Jupyter kernel 'biaa'"
 python -m ipykernel install --user --name biaa --display-name "Python 3.12 (biaa)" >/dev/null
+
+# --- 3b. point every lab notebook at the 'biaa' kernel ------------------
+# Saves participants from hand-picking a kernel in Jupyter/VS Code (the #1
+# workshop time-sink, worst on Windows). Local-only; committed notebooks stay
+# on the portable 'python3' kernel.
+echo "==> Pointing all lab notebooks at the 'biaa' kernel"
+python "$ROOT/scripts/set-notebook-kernel.py" || \
+  echo "    (skipped - you can run 'python scripts/set-notebook-kernel.py' later)"
 
 # --- 4. smoke test -------------------------------------------------------
 echo
@@ -162,8 +170,8 @@ cat <<EOF
         source biaa-venv/Scripts/activate
    2. (Optional) set your API keys - Groq / Serper / Wolfram:
         export GROQ_API_KEY=...       SERPER_API_KEY=...       WOLFRAM_ALPHA_APPID=...
-      or use Ollama locally (re-run with --with-ollama to auto-install):
-        ollama pull llama3.2:1b
+      or use Ollama locally for Day 3 (re-run with --with-ollama to auto-install):
+        ollama pull llama3.1:8b
    3. Launch the labs:
         jupyter lab
 ==============================================

@@ -10,7 +10,7 @@
 #
 # Usage:
 #   bash scripts/setup-linux.sh                 # full install (all labs, incl. transformers + CPU torch)
-#   bash scripts/setup-linux.sh --with-ollama   # also install Ollama + pull llama3.2:1b (Day-1 local LLM)
+#   bash scripts/setup-linux.sh --with-ollama   # also install Ollama + pull llama3.1:8b (Day-3 local LLM)
 # (--with-hf is accepted but now a no-op: transformers is part of the core install.)
 set -euo pipefail
 
@@ -41,7 +41,7 @@ venv_install() {
   if [ "$USE_UV" -eq 1 ]; then uv pip install "$@"; else python -m pip install "$@"; fi
 }
 
-# Install the Ollama runtime (if absent) and pull the Day-1 local model.
+# Install the Ollama runtime (if absent) and pull the Day-3 local model.
 # Best-effort: a failure here never aborts the Python setup (guarded by callers).
 install_ollama() {
   if command -v ollama >/dev/null 2>&1; then
@@ -74,8 +74,8 @@ install_ollama() {
         sleep 1
       done
     fi
-    echo "==> Pulling llama3.2:1b (Day-1 local LLM, ~1.3 GB)"
-    ollama pull llama3.2:1b || echo "    (pull failed - run 'ollama pull llama3.2:1b' after the server is up)"
+    echo "==> Pulling llama3.1:8b (Day-3 local LLM for Modules 5-6, ~4.9 GB)"
+    ollama pull llama3.1:8b || echo "    (pull failed - run 'ollama pull llama3.1:8b' after the server is up)"
     [ -n "${OLLAMA_PID:-}" ] && kill "$OLLAMA_PID" >/dev/null 2>&1 || true
   fi
 }
@@ -146,12 +146,20 @@ venv_install -r "$ROOT/scripts/requirements-optional.txt"
 if [ "$WITH_OLLAMA" -eq 1 ]; then
   install_ollama || echo "==> Ollama step failed (non-fatal); see messages above."
 else
-  echo "==> Skipping Ollama. Add --with-ollama to install it + pull llama3.2:1b."
+  echo "==> Skipping Ollama. Add --with-ollama to install it + pull llama3.1:8b (Day 3)."
 fi
 
 # --- 3. register a Jupyter kernel ---------------------------------------
 echo "==> Registering Jupyter kernel 'biaa'"
 python -m ipykernel install --user --name biaa --display-name "Python 3.12 (biaa)" >/dev/null
+
+# --- 3b. point every lab notebook at the 'biaa' kernel ------------------
+# Saves participants from hand-picking a kernel in Jupyter/VS Code (the #1
+# workshop time-sink, worst on Windows). Local-only; committed notebooks stay
+# on the portable 'python3' kernel.
+echo "==> Pointing all lab notebooks at the 'biaa' kernel"
+python "$ROOT/scripts/set-notebook-kernel.py" || \
+  echo "    (skipped - you can run 'python scripts/set-notebook-kernel.py' later)"
 
 # --- 4. smoke test -------------------------------------------------------
 echo
@@ -165,8 +173,8 @@ cat <<EOF
         source biaa-venv/bin/activate
    2. (Optional) set your API keys - Groq / Serper / Wolfram:
         export GROQ_API_KEY=...       SERPER_API_KEY=...       WOLFRAM_ALPHA_APPID=...
-      or use Ollama locally (re-run with --with-ollama to auto-install):
-        ollama pull llama3.2:1b
+      or use Ollama locally for Day 3 (re-run with --with-ollama to auto-install):
+        ollama pull llama3.1:8b
    3. Launch the labs:
         jupyter lab
 ==============================================

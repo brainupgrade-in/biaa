@@ -69,7 +69,14 @@ Pick **either** (both free, no paid account):
 - **Option A — Groq free API (simplest):**
   - Create a **free Groq account** → generate an **API key** → set env var **`GROQ_API_KEY`**
 - **Option B — Ollama local model (no key, offline after download):**
-  - Install **Ollama** → `ollama pull llama3.2:1b` (~1.3 GB, CPU-friendly) → serves on `localhost:11434`
+  - Install **Ollama** → `ollama pull llama3.1:8b` (~4.9 GB) → serves on `127.0.0.1:11434`
+
+> **Which day uses what:** **Days 4–5** (Modules 7–10) run on **Groq** — just a
+> key, nothing local. **Day 3** (Modules 5–6) uses the **local Ollama
+> `llama3.1:8b`** by default. Least-hassle path (esp. on Windows): use **Groq for
+> everything** — a Groq key covers Days 2, 4, 5, and you can point the Day-3 labs
+> at Groq too (swap `ChatOllama(...)` → `ChatGroq("openai/gpt-oss-20b")`). Pull
+> the 8 B model **before** the session if you want to run Day 3 locally.
 
 ```bash
 pip install langchain langchain-community langchain-ollama langchain-groq langgraph
@@ -138,7 +145,14 @@ Needed for package install + the Tier-2 services:
 *Set keys as environment variables (or in a `.env` file the trainer will point to).*
 
 ## 8. Pre-workshop 5-minute smoke test
-Run inside the activated environment — all should succeed:
+Fastest check — the setup script runs this for you, and you can re-run it any time
+(add `--day N` for just what a given day needs):
+```bash
+bash scripts/smoke-test.sh          # full check
+bash scripts/smoke-test.sh --day 3  # only what Day 3 needs (packages + Ollama)
+```
+
+Or verify by hand inside the activated environment — all should succeed:
 ```bash
 python --version
 python -c "import numpy, sklearn, matplotlib; print('sci stack OK')"
@@ -148,8 +162,8 @@ python -c "import transformers, torch, tf_keras; print('transformers stack OK')"
 jupyter lab --version
 
 # LLM — run ONE of:
-ollama run llama3.2:1b "say hi"                       # Option B (Ollama)
-python -c "import langchain_groq; print('groq lib OK')"   # Option A (Groq)
+ollama run llama3.1:8b "say hi"                       # Option B (Ollama, Day 3)
+python -c "import langchain_groq; print('groq lib OK')"   # Option A (Groq, Days 4-5)
 
 # Keys present (Day 3 + LLM):
 python -c "import os; [print(k, bool(os.getenv(k))) for k in ('GROQ_API_KEY','SERPER_API_KEY','WOLFRAM_ALPHA_APPID')]"

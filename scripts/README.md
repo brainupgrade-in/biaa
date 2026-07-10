@@ -56,7 +56,9 @@ We pin 3.12 because it has mature, well-tested wheels for every workshop package
 |---|---|
 | `setup-linux.sh` | Setup for Linux / macOS |
 | `setup-windows.sh` | Setup for Windows (Git Bash) |
-| `smoke-test.sh` | Cross-platform verification (setup runs it automatically; also runnable on its own) |
+| `smoke-test.sh` | Cross-platform verification (setup runs it automatically; also runnable on its own). `--day N` runs just what **Day N** needs — see below |
+| `set-notebook-kernel.py` | Points every lab notebook at the **`biaa`** kernel so nobody has to pick a kernel by hand (setup runs it automatically; `--reset` restores the generic `python3`) |
+| `RUNBOOK.md` | **Delivery-day** operations sheet — per-day pre-flight, ports, and an in-room error-recovery table (Windows-first) |
 | `requirements-core.txt` | Tier 1 + 2 — everything the 120 labs need (incl. Hugging Face `transformers`; CPU `torch` is installed by the setup scripts) |
 | `requirements-optional.txt` | Back-compat placeholder — now empty (transformers moved to core) |
 
@@ -85,11 +87,26 @@ source biaa-venv/bin/activate
 source biaa-venv/Scripts/activate
 ```
 
-Then start Jupyter and pick the **"Python 3.12 (biaa)"** kernel:
+Then start Jupyter:
 
 ```bash
 jupyter lab
 ```
+
+Setup already pointed every lab at the **"Python 3.12 (biaa)"** kernel, so the
+notebooks just work — no kernel-picking. (If one ever shows plain "Python 3",
+run `python scripts/set-notebook-kernel.py` and reopen it.)
+
+### Each morning: a 30-second per-day check
+
+Before each day, verify just what that day needs (packages + that day's LLM/API):
+
+```bash
+bash scripts/smoke-test.sh --day 1     # Day 1 (no LLM) ... through --day 5
+```
+
+It ends with **"Day N: ready to go."** or points at the fix. For anything that
+fails, see **[`RUNBOOK.md`](RUNBOOK.md)** — the delivery-day recovery table.
 
 ### (Optional) real LLM + external API keys
 

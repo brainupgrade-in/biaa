@@ -293,6 +293,28 @@ shared course design pattern. Specific to this course:
 - `@media print` / A4 support is in place; keep it working.
 - Footer carries gheware branding; bump the version string on substantive edits.
 
+## Delivery / setup tooling (`scripts/`)
+
+Participants are **Windows-majority (Git Bash)** &mdash; keep setup and in-room
+friction low. `SETUP.md` is the participant install guide; `scripts/RUNBOOK.md`
+is the **delivery-day** ops sheet (per-day pre-flight, ports, Windows-first
+error-recovery table). Key facts:
+
+- **Env:** Python 3.12 &rarr; `biaa-venv` (repo root). `bash scripts/setup-{linux,windows}.sh`
+  (uses `uv` when present; `--with-ollama` pulls the Day-3 model). Verify with
+  `bash scripts/smoke-test.sh` (`--day N` = just that day's needs).
+- **Kernel:** setup registers the `biaa` kernel **and** runs
+  `scripts/set-notebook-kernel.py`, which rewrites every notebook's
+  `metadata.kernelspec` to `biaa` so nobody hand-picks a kernel (worst friction
+  on Windows/VS Code). It's a **local, student-side** action &mdash; committed
+  notebooks stay on the portable `python3` kernel, so `--reset` before any commit
+  and the generators are unaffected.
+- **Provider by day (must match the labs):** Day 1 none · Day 2 Hugging Face ·
+  **Day 3 local Ollama `llama3.1:8b`** on `127.0.0.1:11434` (+ Serper/Wolfram in
+  M6) · Days 4-5 Groq `openai/gpt-oss-20b`. The setup/docs pull **`llama3.1:8b`**
+  (not `1b`) &mdash; the M5-6 labs require it. Day 5 also live-demos the FrontDesk
+  AI production app (separate repo).
+
 ## Preview
 
 ```bash
