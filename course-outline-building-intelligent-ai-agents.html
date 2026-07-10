@@ -180,7 +180,7 @@
   <header>
     <h1>Building Intelligent AI Agents</h1>
     <div class="tagline">From deep-learning foundations &amp; transformers to autonomous, industry-ready AI agents</div>
-    <div class="prepared">Hands-on with Python, Hugging Face, LangChain &amp; AutoGPT</div>
+    <div class="prepared">Hands-on with Python, Hugging Face, LangChain &amp; LangGraph &mdash; real local &amp; hosted LLMs</div>
     <div class="meta">
       <span class="duration">5 Days &middot; Hands-on</span> |
       <span class="level">Beginner &rarr; Practitioner</span> |
@@ -200,7 +200,7 @@
         how <strong>deep neural networks</strong> learn &mdash; then moves to the <strong>transformer architecture</strong> that
         powers today's large language models, including using <strong>pre-trained models</strong> and <strong>fine-tuning</strong>
         them for real tasks. From there the course pivots to the heart of the program: <strong>agentic AI</strong> &mdash;
-        designing autonomous agents with frameworks such as <strong>LangChain</strong> and <strong>AutoGPT</strong>, wiring them to
+        designing autonomous agents with frameworks such as <strong>LangChain</strong> and <strong>LangGraph</strong> (and the <strong>AutoGPT</strong> autonomous-agent pattern), wiring them to
         <strong>external tools, APIs and databases</strong>, automating real work, and coordinating <strong>multiple agents</strong>
         for decision-making. The final day applies everything to <strong>industry-specific agents</strong> for finance, healthcare,
         customer service and cybersecurity, and closes with <strong>ethics and responsible AI</strong>. Roughly 50% concept, 50%
@@ -235,15 +235,15 @@
           <ul>
             <li>Why transformers &amp; attention</li>
             <li>Pre-trained models &amp; fine-tuning</li>
-            <li>GPT API for text generation</li>
-            <li>Fine-tune BERT for sentiment</li>
+            <li>Text generation with pretrained models</li>
+            <li>Fine-tune a BERT model for sentiment</li>
           </ul>
         </div>
         <div class="overview-box">
           <h4>Day 3 &middot; Agentic AI Foundations</h4>
           <ul>
             <li>What is agentic AI?</li>
-            <li>Agent frameworks (LangChain, AutoGPT)</li>
+            <li>Agent frameworks (LangChain, LangGraph, AutoGPT)</li>
             <li>Build your first LangChain agent</li>
             <li>Connect agents to external APIs</li>
           </ul>
@@ -287,7 +287,7 @@
       </p>
       <ul class="two-col-list" style="font-size: 0.9em;">
         <li>Build AI models using deep learning and transformer-based architectures</li>
-        <li>Implement agentic AI pipelines using frameworks like LangChain and AutoGPT</li>
+        <li>Implement agentic AI pipelines using frameworks like LangChain and LangGraph</li>
         <li>Design AI-driven task automation and decision-making systems</li>
         <li>Develop industry-specific AI agents for finance, healthcare &amp; customer service</li>
         <li>Integrate AI agents with external tools, APIs and databases</li>
@@ -387,14 +387,9 @@
       <div class="module full labs">
         <h4>Day 2 Labs <a class="badge build-badge" style="text-decoration:none;font-weight:600" href="hands-on/module-3/index.html">&#9654; Module 3 &middot; 12 labs</a> <a class="badge core-badge" style="text-decoration:none;font-weight:600" href="hands-on/module-4/index.html">&#9654; Module 4 &middot; 12 labs</a></h4>
         <ul class="two-col-list">
-          <li class="lab"><strong>Module 3</strong> (Why Transformers): 12 experiential labs &mdash; 6 beginner, 3 intermediate, 3 advanced (~6h)</li>
-          <li class="lab"><strong>3.1&ndash;3.6</strong> Tokenization &middot; embeddings &amp; cosine &middot; attention by hand &middot; positional encoding &middot; fill-mask &middot; subword tokenizer</li>
-          <li class="lab"><strong>3.7&ndash;3.9</strong> Semantic search &middot; self-attention over a sequence &middot; attention heatmap</li>
-          <li class="lab"><strong>3.10&ndash;3.12</strong> Text generation &middot; feature-extraction + head &middot; mini-transformer-pipeline capstone</li>
-          <li class="lab"><strong>Module 4</strong> (Pre-trained &amp; Fine-tuning): 12 labs &mdash; incl. <strong>using GPT-style generation</strong> &amp; <strong>fine-tuning a sentiment model</strong> (the client's Day-2 hands-on)</li>
-          <li class="lab"><strong>4.1&ndash;4.6</strong> Pretrained pipelines &middot; softmax confidence &middot; prompt/fine-tune/RAG &middot; model inputs &middot; dataset prep &middot; train/val split</li>
-          <li class="lab"><strong>4.7&ndash;4.9</strong> Frozen features + trainable head &middot; precision/recall/confusion &middot; data efficiency</li>
-          <li class="lab"><strong>4.10&ndash;4.12</strong> Fine-tune sentiment (before vs after) &middot; tune &amp; evaluate &middot; adapt a model to a new task (capstone)</li>
+          <li class="lab"><strong>Module 3</strong> (Why Transformers): tokenization, embeddings &amp; cosine, attention by hand, positional encoding, fill-mask, semantic search, self-attention &amp; heatmaps, real text generation, and a mini-transformer-pipeline capstone</li>
+          <li class="lab"><strong>Module 4</strong> (Pre-trained &amp; Fine-tuning): pretrained pipelines, softmax confidence, dataset prep, frozen features + trainable head, metrics &amp; confusion, and a real <strong>fine-tune of a BERT model for sentiment</strong> (before vs after) &rarr; adapt to a new task</li>
+          <li class="lab" style="grid-column:1/-1">24 labs (6 beginner / 3 intermediate / 3 advanced per module, ~6h) driven by <strong>real Hugging Face models</strong> &mdash; run them for real, read the output, full solution keys.</li>
         </ul>
       </div>
     </div>
@@ -426,8 +421,9 @@
       <div class="module full labs">
         <h4>Day 3 Labs <a class="badge core-badge" style="text-decoration:none;font-weight:600" href="hands-on/module-5/index.html">&#9654; Module 5 &middot; 12 labs</a> <a class="badge core-badge" style="text-decoration:none;font-weight:600" href="hands-on/module-6/index.html">&#9654; Module 6 &middot; 12 labs</a></h4>
         <ul class="two-col-list">
-          <li class="lab"><strong>3.1</strong> Build a simple AI agent using LangChain</li>
-          <li class="lab"><strong>3.2</strong> Connect AI agents to external APIs (Google Search, Wolfram Alpha)</li>
+          <li class="lab"><strong>Module 5</strong> (What is Agentic AI): build the reason &rarr; act &rarr; observe <strong>ReAct agent loop from scratch</strong> &mdash; tools, routing, memory, guardrails, plan-and-execute, reflection, and a mini-autonomous-agent capstone</li>
+          <li class="lab"><strong>Module 6</strong> (Frameworks): build a <strong>real LangChain agent</strong> (<code>@tool</code>, <code>create_agent</code>, a LangGraph <code>StateGraph</code>) and <strong>connect it to live APIs</strong> &mdash; Google Search &amp; Wolfram Alpha</li>
+          <li class="lab" style="grid-column:1/-1">24 labs driven by a <strong>real local LLM</strong> (Ollama) &mdash; build it, run the agent for real, read the message trace, full solution keys.</li>
         </ul>
       </div>
     </div>
@@ -459,8 +455,9 @@
       <div class="module full labs">
         <h4>Day 4 Labs <a class="badge core-badge" style="text-decoration:none;font-weight:600" href="hands-on/module-7/index.html">&#9654; Module 7 &middot; 12 labs</a> <a class="badge core-badge" style="text-decoration:none;font-weight:600" href="hands-on/module-8/index.html">&#9654; Module 8 &middot; 12 labs</a></h4>
         <ul class="two-col-list">
-          <li class="lab"><strong>4.1</strong> Create an AI agent that automates email drafting based on client queries</li>
-          <li class="lab"><strong>4.2</strong> Design a multi-agent system for customer-service chatbots</li>
+          <li class="lab"><strong>Module 7</strong> (Task Automation): build an <strong>email-drafting agent</strong> piece by piece &mdash; gather-with-tools, structured output, extract/route, validation &amp; retry, and a <strong>draft-not-send human-in-the-loop gate</strong></li>
+          <li class="lab"><strong>Module 8</strong> (Multi-Agent): build a <strong>customer-service chatbot team</strong> &mdash; specialist agents, a supervisor/router, shared state, voting &amp; critique, synthesis, and a capped human-gated handoff</li>
+          <li class="lab" style="grid-column:1/-1">24 labs driven by a <strong>real hosted LLM</strong> (Groq) &mdash; run the agents for real, read the trace, full solution keys.</li>
         </ul>
       </div>
     </div>
@@ -492,8 +489,9 @@
       <div class="module full labs">
         <h4>Day 5 Labs <a class="badge core-badge" style="text-decoration:none;font-weight:600" href="hands-on/module-9/index.html">&#9654; Module 9 &middot; 12 labs</a> <a class="badge core-badge" style="text-decoration:none;font-weight:600" href="hands-on/module-10/index.html">&#9654; Module 10 &middot; 12 labs</a></h4>
         <ul class="two-col-list">
-          <li class="lab"><strong>5.1</strong> Deploy an AI agent that extracts insights from financial reports</li>
-          <li class="lab"><strong>5.2</strong> Explore responsible-AI frameworks &amp; debug AI agent errors</li>
+          <li class="lab"><strong>Module 9</strong> (Industry Agents): build a <strong>financial-report insight agent</strong> &mdash; ground every figure to its source, cite each claim, compute safely, flag anomalies, a no-advice guardrail, and a withheld trade tool (assistive, not autonomous)</li>
+          <li class="lab"><strong>Module 10</strong> (Ethics &amp; Responsible AI): prompt-injection defence, least privilege, trace-reading, fairness, an eval set &amp; guardrail regression suite, and a full <strong>debug-and-fix loop</strong></li>
+          <li class="lab" style="grid-column:1/-1">24 labs (Groq) + a live demo of a <strong>production multi-agent app</strong>. Then each participant presents their own capstone agent.</li>
         </ul>
       </div>
     </div>
@@ -504,7 +502,7 @@
       <div class="capstone">
         By the end of the week, each participant (or small team) builds and demos an <strong>intelligent, autonomous AI agent</strong>
         for a domain they care about &mdash; finance, healthcare, customer service or beyond. The agent is built on the frameworks
-        covered in the course (<strong>LangChain / AutoGPT</strong>), <strong>automates a real task and makes decisions</strong>,
+        covered in the course (<strong>LangChain / LangGraph</strong>), <strong>automates a real task and makes decisions</strong>,
         <strong>integrates external tools, APIs and databases</strong>, and where useful coordinates <strong>multiple specialist
         agents</strong>. It is wrapped in <strong>responsible-AI guardrails</strong> &mdash; handling for bias, privacy and
         hallucination &mdash; and is <strong>debuggable</strong>, with tracing and basic evaluation in place. Each participant presents
@@ -519,26 +517,26 @@
           <h3>Tools &amp; Technologies</h3>
           <ul>
             <li><strong>Python</strong> &mdash; the language for every lab</li>
-            <li><strong>PyTorch / Keras</strong> &mdash; build &amp; train neural networks</li>
-            <li><strong>Hugging Face Transformers</strong> &mdash; pre-trained models &amp; fine-tuning (BERT)</li>
-            <li><strong>OpenAI GPT API</strong> &mdash; text generation &amp; reasoning</li>
-            <li><strong>LangChain &amp; AutoGPT</strong> &mdash; build agentic pipelines</li>
-            <li>External APIs &mdash; Google Search, Wolfram Alpha &amp; more</li>
-            <li>Databases &amp; tool integrations for agent actions</li>
+            <li><strong>TensorFlow / Keras</strong> &mdash; build &amp; train neural networks (MNIST)</li>
+            <li><strong>Hugging Face Transformers</strong> + PyTorch &mdash; pre-trained models &amp; fine-tuning (BERT)</li>
+            <li><strong>LangChain &amp; LangGraph</strong> &mdash; build real agentic pipelines (AutoGPT pattern discussed)</li>
+            <li><strong>Ollama &amp; Groq</strong> &mdash; real local &amp; hosted LLMs; OpenAI optional (BYOK)</li>
+            <li>External APIs &mdash; Google Search (Serper), Wolfram Alpha</li>
+            <li>Tools &amp; databases as the agent's hands</li>
             <li>Jupyter notebooks for hands-on, scaffolded labs</li>
           </ul>
         </div>
         <div class="info-box">
           <h3>Lab Environment</h3>
           <ul>
-            <li>Personal browser-based Jupyter sandbox &mdash; nothing to install</li>
-            <li>Python, PyTorch &amp; Hugging Face pre-installed and ready</li>
-            <li>LangChain &amp; AutoGPT pre-wired with example agents</li>
-            <li>Scaffolded, fill-in-the-blank notebooks for every lab</li>
-            <li>Sample datasets (MNIST, sentiment, financial reports) pre-loaded</li>
-            <li>API keys &amp; connectors provisioned for the labs</li>
-            <li>Isolated &amp; persistent across all 5 days; access from Day 1</li>
-            <li>Any modern browser (Chrome, Firefox, Edge)</li>
+            <li>Runs on your own laptop &mdash; Windows (Git Bash), macOS or Linux</li>
+            <li><strong>One-command setup</strong> (uv-powered): Python 3.12 env + all packages</li>
+            <li>Jupyter kernel auto-configured &mdash; no kernel-picking</li>
+            <li>Real LLMs: local <strong>Ollama</strong> (Day 3) + free <strong>Groq</strong> API (Days 4&ndash;5)</li>
+            <li>Scaffolded, fill-in-the-blank notebooks + full solution keys</li>
+            <li>Datasets (MNIST, sentiment, financial reports) included / auto-fetched</li>
+            <li>Bring free keys (Groq / Serper / Wolfram); built-in fallbacks if offline</li>
+            <li>No GPU, no cloud VM &mdash; a per-day smoke test confirms you're ready</li>
           </ul>
         </div>
         <div class="info-box">
@@ -561,7 +559,7 @@
     &copy; 2026 Gheware DevOps &amp; Agentic AI |
     <a href="https://devops.gheware.com">devops.gheware.com</a> |
     Trainer: Rajesh Gheware |
-    Building Intelligent AI Agents v1.1
+    Building Intelligent AI Agents v1.2
   </footer>
 </body>
 </html>
