@@ -86,8 +86,8 @@
           <span class="time">&#9201; 20 min</span>
         </div>
         <h4>Using a Pre-trained Model: Sentiment Out of the Box</h4>
-        <p>Use a ready-made sentiment model to label text without any training -- the power of pre-training.</p>
-        <div class="chips"><span class="chip">Pre-trained models</span><span class="chip">Inference</span><span class="chip">Sentiment</span></div>
+        <p>Run a REAL pretrained sentiment model (distilbert SST-2) out of the box on new text and measure its accuracy -- the power of pre-training, zero training required.</p>
+        <div class="chips"><span class="chip">Real pretrained model</span><span class="chip">Inference</span><span class="chip">sentiment-analysis pipeline</span></div>
         <div class="links">
           <a class="open" href="lab-01-using-a-pretrained-model.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-01-using-a-pretrained-model.ipynb">Solution</a>
@@ -98,9 +98,9 @@
           <span class="num">Lab 4.2</span>
           <span class="time">&#9201; 20 min</span>
         </div>
-        <h4>Reading a Model's Confidence (softmax)</h4>
-        <p>Turn raw model scores into probabilities with softmax and read off the predicted label and its confidence.</p>
-        <div class="chips"><span class="chip">Softmax</span><span class="chip">Probabilities</span><span class="chip">Confidence</span></div>
+        <h4>Reading a Model's Confidence (softmax over real logits)</h4>
+        <p>Pull the RAW logits out of the real SST-2 model and turn them into a probability and confidence with softmax computed by hand -- exactly what the pipeline does internally.</p>
+        <div class="chips"><span class="chip">Real logits</span><span class="chip">Softmax by hand</span><span class="chip">Confidence</span></div>
         <div class="links">
           <a class="open" href="lab-02-confidence-scores.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-02-confidence-scores.ipynb">Solution</a>
@@ -111,8 +111,8 @@
           <span class="num">Lab 4.3</span>
           <span class="time">&#9201; 15 min</span>
         </div>
-        <h4>Prompt, Fine-tune, or RAG? Choosing the Approach</h4>
-        <p>Match real scenarios to the right strategy -- prompting, fine-tuning, or retrieval (RAG).</p>
+        <h4>Prompt, Fine-tune, or RAG? See Why Fine-tuning Wins Here</h4>
+        <p>See the real difference: a model fine-tuned for sentiment nails it while a general (un-fine-tuned) model cannot -- then reason about when to prompt, fine-tune, or use RAG.</p>
         <div class="chips"><span class="chip">Prompting</span><span class="chip">Fine-tuning</span><span class="chip">RAG</span></div>
         <div class="links">
           <a class="open" href="lab-03-prompt-finetune-or-rag.ipynb">&#9654; Open lab</a>
@@ -124,9 +124,9 @@
           <span class="num">Lab 4.4</span>
           <span class="time">&#9201; 25 min</span>
         </div>
-        <h4>Model Inputs: IDs, Padding & Attention Masks</h4>
-        <p>Turn text into the padded input_ids and attention_mask a transformer actually consumes.</p>
-        <div class="chips"><span class="chip">input_ids</span><span class="chip">Padding</span><span class="chip">Attention mask</span></div>
+        <h4>Model Inputs: IDs, Padding & Attention Masks (real tokenizer)</h4>
+        <p>Use a REAL transformer tokenizer to turn a batch of text into the padded input_ids and attention_mask a model actually consumes.</p>
+        <div class="chips"><span class="chip">Real tokenizer</span><span class="chip">input_ids / mask</span><span class="chip">Padding a batch</span></div>
         <div class="links">
           <a class="open" href="lab-04-tokenization-for-a-model.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-04-tokenization-for-a-model.ipynb">Solution</a>
@@ -137,9 +137,9 @@
           <span class="num">Lab 4.5</span>
           <span class="time">&#9201; 20 min</span>
         </div>
-        <h4>Preparing a Dataset for Fine-tuning</h4>
-        <p>Turn raw labelled examples into the clean texts and integer labels a training run needs.</p>
-        <div class="chips"><span class="chip">Dataset prep</span><span class="chip">Label encoding</span><span class="chip">Class balance</span></div>
+        <h4>Preparing a Dataset for Fine-tuning (tokenized & ready)</h4>
+        <p>Turn raw labelled examples into cleaned texts, integer labels, and a REAL tokenized batch with a label tensor -- the exact inputs a fine-tune loop consumes.</p>
+        <div class="chips"><span class="chip">Dataset prep</span><span class="chip">Label encoding</span><span class="chip">Tokenized tensors</span></div>
         <div class="links">
           <a class="open" href="lab-05-dataset-prep.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-05-dataset-prep.ipynb">Solution</a>
@@ -151,7 +151,7 @@
           <span class="time">&#9201; 20 min</span>
         </div>
         <h4>Train / Validation Split: Judge on Unseen Data</h4>
-        <p>Hold out a validation set so you measure real generalisation, not memorisation.</p>
+        <p>Hold out a stratified validation set so you measure real generalisation of your fine-tune, not memorisation.</p>
         <div class="chips"><span class="chip">Train/val split</span><span class="chip">Stratification</span><span class="chip">Held-out evaluation</span></div>
         <div class="links">
           <a class="open" href="lab-06-train-val-split.ipynb">&#9654; Open lab</a>
@@ -169,9 +169,9 @@
           <span class="num">Lab 4.7</span>
           <span class="time">&#9201; 30 min</span>
         </div>
-        <h4>Transfer Learning: Frozen Features + a Trainable Head</h4>
-        <p>Freeze a feature extractor (TF-IDF) and train only a small classifier head -- the essence of fine-tuning.</p>
-        <div class="chips"><span class="chip">Transfer learning</span><span class="chip">Feature extraction</span><span class="chip">Classifier head</span></div>
+        <h4>Transfer Learning: Frozen Real Features + a Trainable Head</h4>
+        <p>Use a REAL bert-tiny as a FROZEN feature extractor and train only a small classifier head on top -- the cheapest, fastest form of transfer learning.</p>
+        <div class="chips"><span class="chip">Frozen backbone</span><span class="chip">Real features</span><span class="chip">Trainable head</span></div>
         <div class="links">
           <a class="open" href="lab-07-feature-extraction-head.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-07-feature-extraction-head.ipynb">Solution</a>
@@ -182,9 +182,9 @@
           <span class="num">Lab 4.8</span>
           <span class="time">&#9201; 30 min</span>
         </div>
-        <h4>Beyond Accuracy: Precision, Recall & Confusion</h4>
-        <p>Compute precision, recall and a confusion matrix -- the metrics that reveal what accuracy hides.</p>
-        <div class="chips"><span class="chip">Precision/recall</span><span class="chip">Confusion matrix</span><span class="chip">Evaluation</span></div>
+        <h4>Beyond Accuracy: Precision, Recall & Confusion on REAL predictions</h4>
+        <p>Run the real sentiment model on a labelled set, then compute precision, recall and a confusion matrix from its actual predictions -- the metrics accuracy hides.</p>
+        <div class="chips"><span class="chip">Precision/recall</span><span class="chip">Confusion matrix</span><span class="chip">Real predictions</span></div>
         <div class="links">
           <a class="open" href="lab-08-evaluation-metrics.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-08-evaluation-metrics.ipynb">Solution</a>
@@ -196,8 +196,8 @@
           <span class="time">&#9201; 30 min</span>
         </div>
         <h4>Data Efficiency: How Much Training Data Do You Need?</h4>
-        <p>Train the head on growing slices of data and watch accuracy climb -- the case for transfer learning.</p>
-        <div class="chips"><span class="chip">Data efficiency</span><span class="chip">Learning curve</span><span class="chip">Transfer learning</span></div>
+        <p>Train the head on growing slices of REAL frozen features and watch validation accuracy climb -- the data-efficiency case for transfer learning.</p>
+        <div class="chips"><span class="chip">Data efficiency</span><span class="chip">Learning curve</span><span class="chip">Real features</span></div>
         <div class="links">
           <a class="open" href="lab-09-frozen-vs-finetune.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-09-frozen-vs-finetune.ipynb">Solution</a>
@@ -214,9 +214,9 @@
           <span class="num">Lab 4.10</span>
           <span class="time">&#9201; 40 min</span>
         </div>
-        <h4>Fine-tune a Sentiment Classifier (before vs after)</h4>
-        <p>Fine-tune a task head on a pre-trained representation and prove it beats the untrained baseline.</p>
-        <div class="chips"><span class="chip">Fine-tuning</span><span class="chip">Baseline vs trained</span><span class="chip">Prediction</span></div>
+        <h4>Fine-tune a REAL Sentiment Model (before vs after)</h4>
+        <p>Actually FINE-TUNE prajjwal1/bert-tiny on labelled sentiment with a real torch training loop, and prove it beats its untrained self on held-out data (before vs after).</p>
+        <div class="chips"><span class="chip">Real fine-tuning</span><span class="chip">Training loop</span><span class="chip">Before vs after</span></div>
         <div class="links">
           <a class="open" href="lab-10-finetune-sentiment.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-10-finetune-sentiment.ipynb">Solution</a>
@@ -228,8 +228,8 @@
           <span class="time">&#9201; 40 min</span>
         </div>
         <h4>Improve & Evaluate Your Fine-tuned Model</h4>
-        <p>Tune the model's regularisation and evaluate it honestly with a confusion matrix.</p>
-        <div class="chips"><span class="chip">Regularisation (C)</span><span class="chip">Hyperparameters</span><span class="chip">Confusion matrix</span></div>
+        <p>Train the fine-tune longer, then evaluate it honestly with a confusion matrix built from real predictions -- the real iterate-and-measure loop.</p>
+        <div class="chips"><span class="chip">Training budget</span><span class="chip">Confusion matrix</span><span class="chip">Iterate & evaluate</span></div>
         <div class="links">
           <a class="open" href="lab-11-improve-and-evaluate.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-11-improve-and-evaluate.ipynb">Solution</a>
@@ -240,9 +240,9 @@
           <span class="num">Lab 4.12</span>
           <span class="time">&#9201; 45 min</span>
         </div>
-        <h4>Capstone: Adapt a Pre-trained Model to a New Task</h4>
-        <p>Take a fresh labelled task end-to-end -- pick features, train a head, evaluate, and predict.</p>
-        <div class="chips"><span class="chip">End-to-end</span><span class="chip">Transfer learning</span><span class="chip">Capstone</span></div>
+        <h4>Capstone: Fine-tune a Real Model to a NEW Task</h4>
+        <p>Take a brand-new task (sports vs tech) end-to-end -- tokenize, split, really fine-tune bert-tiny, and prove a before -> after improvement on held-out text.</p>
+        <div class="chips"><span class="chip">End-to-end fine-tune</span><span class="chip">New task</span><span class="chip">Capstone</span></div>
         <div class="links">
           <a class="open" href="lab-12-capstone-adapt-a-model.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-12-capstone-adapt-a-model.ipynb">Solution</a>
