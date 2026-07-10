@@ -176,6 +176,22 @@ autonomous, industry-ready AI agents.*
   fix &mdash; deterministic, no LLM call. GRADED cells never call an LLM (verify **offline against
   `biaa-venv`**); `live()` cells (ollama_up-guarded) run a real model. Verified (2026-07-10): 12 solutions
   full, 12 students clean, idempotent, no shim refs.
+- **Engagement revision (Modules 5&ndash;10, 2026-07-10):** after a duplication/triviality/flow audit,
+  all six back-half modules got an **in-place** engagement pass &mdash; **no lab count, slug or file
+  renames** (still 12/module); only lab CONTENT changed, verified byte-identical file scope. Fixed **5
+  grading defects** where a blank wasn't actually blank: **M9** lab09 `minimize` (student==answer),
+  lab10 `owns_decision` (constant `"human"` spelled in the TODO), lab06 `agent_tools` (hardcoded list);
+  **M10** lab03 `find_ungrounded` &amp; lab10 `diagnose` (`# TODO: keep` pre-filled). Engagement wins:
+  deepened Advanced labs so the graded surface actually rises (M5 lab05 grades the tool-error path, lab09
+  adds an adversarial non-arithmetic digit, lab11 critic is a DERIVED rule; M6 lab10 wraps a flaky source;
+  M7 lab03 is now a real schema/coerce); **real-assembly capstones** that compose prior-lab assets and run
+  bigger/partial-score suites with a guardrail actually firing (M5 refuses a `delete` request; M6 composes
+  memory+tracing+recursion_limit; M7 suite 2&rarr;4 partial (3,4); M8 wires the vote in + reuses lab11's real
+  specialists, suite&rarr;6; M9 mixed clean/advice/uncited suite + redaction wired in; M10 finale runs lab11's
+  agent + folds in fairness); re-domained off-throughline labs (M8 lab04/05 &rarr; the CS chatbot). The
+  `order_id` int/str throughline bug in M7 (lab04 vs lab12) was reconciled to strings. Re-verified vs
+  `biaa-venv`: every changed solution reaches a full `Score`, all students run clean, each `regenerate.sh`
+  idempotent. **Decks &amp; quizzes were NOT touched by this pass** (labs only).
 - **Every notebook follows:** Concept &rarr; Demo (runnable) &rarr; Your Turn (`___` blanks) &rarr;
   auto-grader cell printing `[PASS]`/`[FAIL]`/`[TODO]` + `Score: n/total`. Grader helpers are
   `expect(label, got, want)` and `expect_true(label, fn)`; blanks/exceptions register as `[TODO]`.
