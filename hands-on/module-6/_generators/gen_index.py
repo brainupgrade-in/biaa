@@ -130,6 +130,14 @@ html = f'''<!DOCTYPE html>
 
 {section("Advanced")}
 
+    <div class="callout warn" style="margin-top:22px">
+      &#127891; <strong>Bonus demo &mdash; AutoGPT vs LangGraph</strong> <em>(uncounted &mdash; not one of the 12)</em>.
+      The runnable hands-on for the deck's <em>AutoGPT architecture</em> &amp; <em>AutoGPT vs LangGraph</em> slides:
+      run a from-scratch <strong>AutoGPT self-prompting loop</strong> (local <code>llama3.1:8b</code>) and the same
+      goal through a <strong>bounded LangGraph agent</strong> (Groq <code>gpt-oss-20b</code>), then compare the two
+      real traces. <a href="lab-13-bonus-autogpt-vs-langgraph.ipynb">&#9654; Open the bonus demo</a>
+    </div>
+
     <div class="callout" style="margin-top:22px">
       &#128218; <strong>Reference material:</strong>
       <a href="../../presentation/day3-module6-frameworks-for-building-ai-agents.html">Module 6 slides &mdash; Frameworks for Building AI Agents</a>
