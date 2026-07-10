@@ -97,33 +97,36 @@ html = f'''<!DOCTYPE html>
       <span class="k">{len(order)} labs</span> |
       <span>{len(by["Beginner"])} Beginner &middot; {len(by["Intermediate"])} Intermediate &middot; {len(by["Advanced"])} Advanced</span> |
       <span class="k">~{total_min//60}h {total_min%60}m total</span> |
-      <span>Experiential: concept &rarr; demo &rarr; practice</span>
+      <span>Near-real: build &rarr; run for real &rarr; read the trace</span>
     </div>
   </header>
 
   <div class="container">
     <div class="callout">
-      <strong>How these labs work.</strong> Each notebook follows the same rhythm &mdash; read the
-      <strong>Concept</strong>, run the <strong>Demo</strong>, then complete <strong>Your Turn</strong> by
-      replacing every <code>___</code> placeholder. Run the <strong>grader</strong> cell at the bottom: it
-      prints <code>[PASS]</code> / <code>[FAIL]</code> / <code>[TODO]</code> and a final <code>Score</code>.
-      Each lab writes to its own <code>/tmp/biaa-lab-10-NN/</code> working dir. Stuck? Every lab has a full
-      answer key under <a href="solutions/"><code>solutions/</code></a> &mdash; try first, then check.
+      <strong>How these labs work (near-real).</strong> Each notebook follows the same rhythm &mdash; read the
+      <strong>Concept</strong>, fill the real <code>___</code> blanks in <strong>Build it</strong>, then
+      <strong>run it &amp; observe</strong>. The responsible-AI logic &mdash; injection defence, least
+      privilege, trace-reading, fairness, the eval loop, the guardrails &mdash; is <strong>real,
+      deterministic Python</strong>. The Advanced agent labs (10&ndash;12) additionally <strong>run it for
+      real</strong> against a live model and you <strong>read the trace</strong>. There is
+      <strong>no auto-grader</strong>; each lab ends with an open <strong>Your turn</strong>. Each lab writes
+      to its own <code>/tmp/biaa-lab-10-NN/</code> working dir. Stuck? Every lab has a full answer key under
+      <a href="solutions/"><code>solutions/</code></a> &mdash; try first, then check.
     </div>
     <div class="callout warn">
-      <strong>Setup.</strong> These labs use the <strong>real LangChain</strong> (<code>langchain</code>,
-      <code>langchain-core</code>, <code>langchain-ollama</code> &mdash; all in the course
+      <strong>Setup.</strong> These labs use the <strong>real LangChain 1.x</strong> (<code>langchain</code>,
+      <code>langchain-core</code>, <code>langchain-groq</code> &mdash; all in the course
       <code>biaa-venv</code>). This is the <strong>course finale</strong> (Lab 5.2): you practice both halves
       of responsible AI &mdash; <strong>treat input as data</strong> (prompt injection),
       <strong>least privilege</strong>, fairness across groups, the responsible-agent checklist, and the eval
       loop as a <strong>guardrail regression suite</strong> &mdash; and <strong>debugging agents</strong>:
       read the trace, classify the failure mode, detect loops, and run a full <strong>debug-and-fix</strong>
-      loop. The agent-assembly labs bind real <code>@tool</code> functions with <code>create_agent</code>.
-      The <strong>graded</strong> cells assert only on the deterministic parts you build (guardrail logic,
-      trace-reading, tool wiring) and <strong>never call an LLM</strong>, so they verify offline with
-      <strong>no API keys and no network</strong>. Cells marked <em>Optional &mdash; run it for real</em> call
-      a live local model (<code>ollama run llama3.2:1b</code>, or <code>ChatGroq</code> with a
-      <code>GROQ_API_KEY</code>) and self-skip if none is reachable.
+      loop. The <strong>agent labs (10&ndash;12)</strong> drive a <strong>real hosted model</strong>
+      (<code>ChatGroq("openai/gpt-oss-20b")</code>) through <code>create_agent</code> over real, read-only
+      <code>@tool</code> functions &mdash; the injection / advice / output guardrails wrap the agent's
+      <strong>real</strong> output. Add a free <code>GROQ_API_KEY</code> to the repo <code>.env</code>
+      (<a href="https://console.groq.com">console.groq.com</a>); if it's unset the run cells print how to set
+      it instead of crashing. The rule-based responsibility logic runs offline with no key.
     </div>
 
 {section("Beginner")}
@@ -137,9 +140,10 @@ html = f'''<!DOCTYPE html>
       Reference: <a href="../../presentation/day5-module10-ethics-responsible-ai.html">Module 10 slides &mdash; Ethics &amp; Responsible AI</a>
       &middot; <a href="../../course-outline-building-intelligent-ai-agents.html">Full course outline</a>
       &middot; <a href="../module-9/index.html">Module 9 labs</a>.
-      These labs build a responsible, debuggable agent offline &amp; deterministically; the <em>optional</em>
-      cells run the genuine library. Next &mdash; your <strong>capstone</strong>: build an industry-specific
-      autonomous agent that&rsquo;s useful, guardrailed, and responsible.
+      The responsibility logic runs offline &amp; deterministically; the agent labs (10&ndash;12) run a
+      <strong>real Groq model</strong> through <code>create_agent</code> and you read the trace. Next &mdash;
+      your <strong>capstone</strong>: build an industry-specific autonomous agent that&rsquo;s useful,
+      guardrailed, and responsible.
     </div>
   </div>
 
@@ -147,7 +151,7 @@ html = f'''<!DOCTYPE html>
     &copy; 2026 Gheware DevOps &amp; Agentic AI |
     <a href="https://devops.gheware.com">devops.gheware.com</a> |
     Trainer: Rajesh Gheware |
-    Building Intelligent AI Agents &middot; Day 5 Module 10 Labs v1.0
+    Building Intelligent AI Agents &middot; Day 5 Module 10 Labs v1.1
   </footer>
 </body>
 </html>'''
