@@ -33,6 +33,28 @@ autonomous, industry-ready AI agents.*
 
 ## Hands-on labs (the convention that's now established)
 
+> **NEAR-REAL CONVERSION (Modules 3&ndash;10, 2026-07-10) &mdash; READ THIS FIRST; it SUPERSEDES the
+> design details in the per-module bullets below.** On the instruction that participants have live
+> keys/services (Ollama local; `GROQ_API_KEY`, `OPENAI_API_KEY`, `SERPER_API_KEY`,
+> `WOLFRAM_ALPHA_APPID` in the repo `.env`), Modules 3&ndash;10 were converted from the
+> deterministic **grade-scaffolding** design to **near-real** labs: a **real LLM / real HF model
+> drives every lab**, and **the auto-grader was removed** (`expect`/`expect_true`/`Score` are gone).
+> The mock-LLM policies, recorded/faked traces, and "graded cells never call an LLM / verify offline"
+> language in the bullets below are now **HISTORICAL** &mdash; ignore them for Modules 3&ndash;10.
+> Current design: each lab is **Concept &rarr; Setup (`load_dotenv(.env)` + real model) &rarr; Build it
+> (real `___` blanks) &rarr; Run it for real &rarr; Read the trace/output &rarr; open "Your turn"** &mdash;
+> **no Score cell**; unfilled `___` blanks print a note (via `guard()`/`runguard()`), never crash Run All.
+> **Providers by day:** M5&ndash;M6 (Day 3) = local `ChatOllama("llama3.1:8b", base_url="http://127.0.0.1:11434")`;
+> **M7&ndash;M10 (Day 4&ndash;5) = `ChatGroq("openai/gpt-oss-20b")`** (verified tool-calling via `create_agent`
+> &mdash; do NOT use `llama-3.3-70b-versatile`, it 400s `tool_use_failed`); **M3&ndash;M4 (Day 2) = real
+> Hugging Face** (`AutoTokenizer`/`AutoModel`, `pipeline`, real fine-tune of `prajjwal1/bert-tiny`; hosted
+> text-gen via `ChatGroq`). Real `@tool`s **catch errors and return a string** (a raising tool aborts the
+> agent run). `sentence-transformers` is NOT installed &mdash; use `AutoModel` + mean-pooling. **VERIFY BY
+> RUNNING, not by a Score:** execute notebooks with the sandbox disabled (live LLM/model calls need network)
+> against `biaa-venv` and confirm REAL output/traces appear; per-module `regenerate.sh` stays idempotent.
+> Modules 1&ndash;2 were left as-is (already real DL training). Decks &amp; quizzes were NOT touched by this
+> pass. Reference implementation: `hands-on/module-6/_generators/gen_labs.py`.
+
 - **Course prefix:** `biaa`. Each lab writes to its own `/tmp/biaa-lab-MM-NN/` working dir
   (module MM, lab NN) &mdash; e.g. `/tmp/biaa-lab-01-07/`, `/tmp/biaa-lab-02-11/`.
 - **Module 1 has 12 labs** (`hands-on/module-1/lab-01..12-*.ipynb`): 6 Beginner, 3 Intermediate,
