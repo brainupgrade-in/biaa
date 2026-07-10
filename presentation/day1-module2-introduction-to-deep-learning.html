@@ -120,6 +120,21 @@
   ul.refs li .d{display:block;color:var(--muted);font-size:.82em;margin-top:2px;}
   @media(max-width:760px){ul.refs{grid-template-columns:1fr;} .grid2,.grid3,.grid4{grid-template-columns:1fr;}}
 
+  /* ---------- Quiz ---------- */
+  .quiz-q{font-size:clamp(1.1rem,2vw,1.5rem);color:var(--ink-800);font-weight:700;line-height:1.3;margin:0 0 16px;}
+  .quiz-restate{font-size:clamp(.92rem,1.4vw,1.12rem);color:var(--muted);font-weight:600;line-height:1.35;margin:0 0 14px;}
+  .quiz-opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .quiz-opt{display:flex;align-items:flex-start;gap:12px;background:#fff;border:1px solid var(--line);
+    border-left:4px solid var(--ind-300);border-radius:8px;padding:12px 16px;font-size:clamp(.9rem,1.4vw,1.1rem);line-height:1.4;}
+  .quiz-opt .ltr{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--ind-50);color:var(--ind-600);
+    font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .quiz-opt.correct{border-left-color:var(--ok);background:#ecfdf5;}
+  .quiz-opt.correct .ltr{background:var(--ok);color:#fff;}
+  .quiz-opt.dim{opacity:.5;}
+  .quiz-why{margin-top:16px;}
+  .quiz-badge{display:inline-block;background:var(--amber);color:var(--ink-900);font-weight:700;font-size:.72em;padding:2px 10px;border-radius:12px;}
+  @media(max-width:760px){.quiz-opts{grid-template-columns:1fr;}}
+
   /* ---------- Title slide ---------- */
   .title-slide{background:linear-gradient(135deg,#312e81 0%,#1e1b4b 100%);color:#fff;
     border-bottom:none;align-items:flex-start;justify-content:center;}
@@ -735,6 +750,341 @@ opt = torch.optim.<span class="fn">Adam</span>(model.<span class="fn">parameters
     </div>
   </section>
 
+  <!-- ============ QUIZ INTRO ============ -->
+  <section class="slide dark" data-title="Quiz &mdash; intro"
+    data-note="Quick formative check -- 10 questions, mixed easy/medium, all on Module 2. Format: each question slide, then its answer slide with the explanation. Run it interactively -- read the question, let them call A/B/C/D, then advance to reveal. The goal is to surface and fix misconceptions.">
+    <div class="body center">
+      <div class="kicker"><span class="dot"></span> Lock it in</div>
+      <h2 class="title" style="border-bottom-color:var(--cyan)">Quick check &mdash; 10 questions</h2>
+      <p class="lead" style="color:#e7e9fb">Each <b>question</b> appears first; the <b>answer</b> &amp; a one-line why are on the next slide. Call out A / B / C / D before you advance.</p>
+      <div class="title-meta" style="margin-top:14px">
+        <span class="pill cyan">10 questions</span>
+        <span class="pill gold">mixed: easy &amp; medium</span>
+        <span class="pill ghost" style="color:#c7cbf0;border-color:rgba(255,255,255,.3)">all on Module 2</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Q1 ============ -->
+  <section class="slide" data-title="Quiz Q1 &mdash; the neuron"
+    data-note="Answer: C. A neuron = weighted sum of inputs + bias, then a non-linear activation.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q1 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">An artificial neuron produces its output by&hellip;</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Picking a random number</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Sorting its inputs</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>A <b>weighted sum</b> of its inputs + a bias, passed through an activation function</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Storing the inputs unchanged</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A1 ============ -->
+  <section class="slide" data-title="Answer Q1"
+    data-note="Each neuron takes a weighted sum of its inputs plus a bias, then applies an activation function.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q1 / 10</div>
+    <h2 class="title">Weighted sum &rarr; activation</h2>
+    <div class="body center">
+      <p class="quiz-restate">What one neuron actually computes.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Picking a random number</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Sorting its inputs</span></div>
+        <div class="quiz-opt correct"><span class="ltr">C</span><span>A <b>weighted sum</b> of its inputs + a bias, passed through an activation function &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Storing the inputs unchanged</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;A neuron computes <b>w&middot;x + b</b> then applies an <b>activation</b>. Stack many and you get a network that learns rich functions.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q2 ============ -->
+  <section class="slide" data-title="Quiz Q2 &mdash; activations"
+    data-note="Answer: A. Without non-linear activations, stacked layers collapse into one linear map.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q2 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">What is the role of an activation function such as <b>ReLU</b>?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>It introduces <b>non-linearity</b> so the network can model complex patterns</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>It speeds up file I/O</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>It labels the training data</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>It removes the need for weights</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A2 ============ -->
+  <section class="slide" data-title="Answer Q2"
+    data-note="Activations add non-linearity; without them a deep network is just one linear layer.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q2 / 10</div>
+    <h2 class="title">Non-linearity</h2>
+    <div class="body center">
+      <p class="quiz-restate">Why a network needs activations at all.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt correct"><span class="ltr">A</span><span>It introduces <b>non-linearity</b> so the network can model complex patterns &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>It speeds up file I/O</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>It labels the training data</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>It removes the need for weights</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Without a <b>non-linear</b> activation, any stack of layers collapses to a single linear function. ReLU/sigmoid/tanh let the network bend to fit complex data.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q3 ============ -->
+  <section class="slide" data-title="Quiz Q3 &mdash; loss"
+    data-note="Answer: B. Loss quantifies prediction error; training minimises it.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q3 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">In supervised training, the <b>loss function</b> measures&hellip;</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>How fast the GPU runs</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>How far the model&rsquo;s predictions are from the true targets</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>The number of layers</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>The batch size</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A3 ============ -->
+  <section class="slide" data-title="Answer Q3"
+    data-note="Loss measures how wrong the predictions are; the whole point of training is to reduce it.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q3 / 10</div>
+    <h2 class="title">Prediction error</h2>
+    <div class="body center">
+      <p class="quiz-restate">The single number training tries to shrink.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>How fast the GPU runs</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>How far the model&rsquo;s predictions are from the true targets &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>The number of layers</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>The batch size</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;<b>Loss</b> is the gap between prediction and truth (e.g. cross-entropy, MSE). Training exists to <b>drive the loss down</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q4 ============ -->
+  <section class="slide" data-title="Quiz Q4 &mdash; gradient descent"
+    data-note="Answer: D. Move each weight a small step opposite its gradient to lower the loss.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q4 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Gradient descent updates the weights by&hellip;</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Increasing the loss on purpose</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Randomly reshuffling them</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Deleting layers</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Stepping them in the direction that <b>reduces the loss</b> (opposite the gradient)</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A4 ============ -->
+  <section class="slide" data-title="Answer Q4"
+    data-note="Gradient descent nudges weights opposite the gradient, walking downhill on the loss surface.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q4 / 10</div>
+    <h2 class="title">Downhill on the loss</h2>
+    <div class="body center">
+      <p class="quiz-restate">How the weights actually change.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Increasing the loss on purpose</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Randomly reshuffling them</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Deleting layers</span></div>
+        <div class="quiz-opt correct"><span class="ltr">D</span><span>Stepping them in the direction that <b>reduces the loss</b> (opposite the gradient) &#10003;</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;The gradient points <b>uphill</b> on the loss; we step the other way &mdash; downhill &mdash; by a small amount, repeatedly, to minimise error.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q5 ============ -->
+  <section class="slide" data-title="Quiz Q5 &mdash; learning rate"
+    data-note="Answer: C. Too high overshoots/diverges; too low trains painfully slowly.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q5 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">The <b>learning rate</b> controls&hellip;</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>The number of training examples</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>The model&rsquo;s accuracy directly</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span><b>How big</b> each weight-update step is</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>The number of layers</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A5 ============ -->
+  <section class="slide" data-title="Answer Q5"
+    data-note="The learning rate sets the step size: too big diverges, too small crawls.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q5 / 10</div>
+    <h2 class="title">Step size</h2>
+    <div class="body center">
+      <p class="quiz-restate">The most-tuned knob in training.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>The number of training examples</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>The model&rsquo;s accuracy directly</span></div>
+        <div class="quiz-opt correct"><span class="ltr">C</span><span><b>How big</b> each weight-update step is &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>The number of layers</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;The <b>learning rate</b> is the step size. Too <b>high</b> and training overshoots or diverges; too <b>low</b> and it crawls. It's the knob you tune first.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q6 ============ -->
+  <section class="slide" data-title="Quiz Q6 &mdash; backprop"
+    data-note="Answer: A. Backprop uses the chain rule to get every weight's gradient in one backward pass.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q6 / 10</div>
+    <div class="body center">
+      <p class="quiz-q"><b>Backpropagation</b> is the algorithm that&hellip;</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Computes how much each weight contributed to the loss (the <b>gradients</b>)</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Generates new training data</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Deploys the model to production</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Chooses the activation function</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A6 ============ -->
+  <section class="slide" data-title="Answer Q6"
+    data-note="Backprop applies the chain rule to compute each weight's gradient efficiently.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q6 / 10</div>
+    <h2 class="title">Gradients, efficiently</h2>
+    <div class="body center">
+      <p class="quiz-restate">How the network knows which way to move.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt correct"><span class="ltr">A</span><span>Computes how much each weight contributed to the loss (the <b>gradients</b>) &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Generates new training data</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Deploys the model to production</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Chooses the activation function</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;<b>Backprop</b> applies the chain rule to compute the gradient of the loss w.r.t. <b>every</b> weight in one backward pass &mdash; then gradient descent uses those gradients.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q7 ============ -->
+  <section class="slide" data-title="Quiz Q7 &mdash; overfitting"
+    data-note="Answer: D. Overfitting = memorised the training set, fails to generalise.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q7 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">A model that scores <b>high on training data but poorly on new data</b> is&hellip;</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Underfitting</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Generalising perfectly</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Too small to learn</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span><b>Overfitting</b></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A7 ============ -->
+  <section class="slide" data-title="Answer Q7"
+    data-note="Overfitting means the model memorised the training data and fails on unseen data.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q7 / 10</div>
+    <h2 class="title">Overfitting</h2>
+    <div class="body center">
+      <p class="quiz-restate">Memorising instead of learning.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Underfitting</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Generalising perfectly</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Too small to learn</span></div>
+        <div class="quiz-opt correct"><span class="ltr">D</span><span><b>Overfitting</b> &#10003;</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;<b>Overfitting</b> = the model memorised the training set instead of learning the pattern. You spot it when training loss keeps falling but validation loss rises.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q8 ============ -->
+  <section class="slide" data-title="Quiz Q8 &mdash; regularisation"
+    data-note="Answer: C. More data, dropout, weight decay/L2, and early stopping all curb overfitting.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q8 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Which is a common way to <b>fight overfitting</b>?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Train forever with no stopping</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Throw away the validation set</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span><b>Regularisation, dropout, early stopping</b> (and more data)</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Raise the learning rate to the maximum</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A8 ============ -->
+  <section class="slide" data-title="Answer Q8"
+    data-note="Dropout, weight decay, early stopping and more data are standard anti-overfitting tools.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q8 / 10</div>
+    <h2 class="title">Regularise / dropout / early-stop</h2>
+    <div class="body center">
+      <p class="quiz-restate">Tools that improve generalisation.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Train forever with no stopping</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Throw away the validation set</span></div>
+        <div class="quiz-opt correct"><span class="ltr">C</span><span><b>Regularisation, dropout, early stopping</b> (and more data) &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Raise the learning rate to the maximum</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Give it <b>more data</b>, add <b>dropout</b>/<b>weight decay</b>, and use <b>early stopping</b> (stop when validation loss turns up). All push the model to generalise.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q9 ============ -->
+  <section class="slide" data-title="Quiz Q9 &mdash; the training loop"
+    data-note="Answer: B. Predict, measure loss, backprop, update &mdash; repeat over many batches/epochs.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q9 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Each step of the <b>training loop</b> does (roughly)&hellip;</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Deletes the data</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span><b>Forward pass &rarr; compute loss &rarr; backprop gradients &rarr; update weights</b></span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Deploys the model</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Picks the hyperparameters</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A9 ============ -->
+  <section class="slide" data-title="Answer Q9"
+    data-note="The loop repeats: forward pass, loss, backward pass (gradients), weight update.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q9 / 10</div>
+    <h2 class="title">The four-step loop</h2>
+    <div class="body center">
+      <p class="quiz-restate">One iteration of learning.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Deletes the data</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span><b>Forward pass &rarr; compute loss &rarr; backprop gradients &rarr; update weights</b> &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Deploys the model</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Picks the hyperparameters</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Every step: <b>forward</b> (predict) &rarr; <b>loss</b> (measure) &rarr; <b>backward</b> (gradients) &rarr; <b>update</b> (gradient descent). Repeat over batches and epochs.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q10 ============ -->
+  <section class="slide" data-title="Quiz Q10 &mdash; frameworks"
+    data-note="Answer: A. Both build/train neural nets; the concepts transfer between them.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q10 / 10</div>
+    <div class="body center">
+      <p class="quiz-q"><b>Keras</b> and <b>PyTorch</b> are&hellip;</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Two popular <b>frameworks</b> for building &amp; training the same kind of neural network</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Two datasets</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Two programming languages</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Two models of GPU</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A10 ============ -->
+  <section class="slide" data-title="Answer Q10"
+    data-note="Keras and PyTorch are competing frameworks for the same neural-network concepts.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q10 / 10</div>
+    <h2 class="title">Two DL frameworks</h2>
+    <div class="body center">
+      <p class="quiz-restate">Different tools, same idea.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt correct"><span class="ltr">A</span><span>Two popular <b>frameworks</b> for building &amp; training the same kind of neural network &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Two datasets</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Two programming languages</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Two models of GPU</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;<b>Keras</b> (high-level) and <b>PyTorch</b> (flexible) are both <b>frameworks</b> for the same neural nets. Learn the concepts and the framework is a detail &mdash; your labs use both.</p>
+    </div>
+  </section>
+
   <!-- ============ SLIDE 19 — REFERENCES ============ -->
   <section class="slide" data-title="References &amp; further study"
     data-note="Point to the best free resources. Two standouts: 3Blue1Brown's neural-network series for visual intuition on gradient descent and backprop -- perfect after today; and Karpathy's 'Neural Networks: Zero to Hero' / micrograd if anyone wants to build backprop from scratch and truly get it. The Keras and PyTorch quickstarts are the doorways to the code. All links are live in the HTML.">
@@ -797,7 +1147,7 @@ opt = torch.optim.<span class="fn">Adam</span>(model.<span class="fn">parameters
 <div class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Day 1 · Module 2 — Introduction to Deep Learning</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.1</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.2</span>
 </div>
 
 <script>

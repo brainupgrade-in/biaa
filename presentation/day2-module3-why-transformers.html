@@ -120,6 +120,21 @@
   ul.refs li .d{display:block;color:var(--muted);font-size:.82em;margin-top:2px;}
   @media(max-width:760px){ul.refs{grid-template-columns:1fr;} .grid2,.grid3,.grid4{grid-template-columns:1fr;}}
 
+  /* ---------- Quiz ---------- */
+  .quiz-q{font-size:clamp(1.1rem,2vw,1.5rem);color:var(--ink-800);font-weight:700;line-height:1.3;margin:0 0 16px;}
+  .quiz-restate{font-size:clamp(.92rem,1.4vw,1.12rem);color:var(--muted);font-weight:600;line-height:1.35;margin:0 0 14px;}
+  .quiz-opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .quiz-opt{display:flex;align-items:flex-start;gap:12px;background:#fff;border:1px solid var(--line);
+    border-left:4px solid var(--ind-300);border-radius:8px;padding:12px 16px;font-size:clamp(.9rem,1.4vw,1.1rem);line-height:1.4;}
+  .quiz-opt .ltr{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--ind-50);color:var(--ind-600);
+    font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .quiz-opt.correct{border-left-color:var(--ok);background:#ecfdf5;}
+  .quiz-opt.correct .ltr{background:var(--ok);color:#fff;}
+  .quiz-opt.dim{opacity:.5;}
+  .quiz-why{margin-top:16px;}
+  .quiz-badge{display:inline-block;background:var(--amber);color:var(--ink-900);font-weight:700;font-size:.72em;padding:2px 10px;border-radius:12px;}
+  @media(max-width:760px){.quiz-opts{grid-template-columns:1fr;}}
+
   /* ---------- Title slide ---------- */
   .title-slide{background:linear-gradient(135deg,#312e81 0%,#1e1b4b 100%);color:#fff;
     border-bottom:none;align-items:flex-start;justify-content:center;}
@@ -701,6 +716,341 @@ clf(<span class="str">"This workshop is fantastic!"</span>)
     </div>
   </section>
 
+  <!-- ============ QUIZ INTRO ============ -->
+  <section class="slide dark" data-title="Quiz &mdash; intro"
+    data-note="Quick formative check -- 10 questions, mixed easy/medium, all on Module 3. Format: each question slide, then its answer slide with the explanation. Run it interactively -- read the question, let them call A/B/C/D, then advance to reveal. The goal is to surface and fix misconceptions.">
+    <div class="body center">
+      <div class="kicker"><span class="dot"></span> Lock it in</div>
+      <h2 class="title" style="border-bottom-color:var(--cyan)">Quick check &mdash; 10 questions</h2>
+      <p class="lead" style="color:#e7e9fb">Each <b>question</b> appears first; the <b>answer</b> &amp; a one-line why are on the next slide. Call out A / B / C / D before you advance.</p>
+      <div class="title-meta" style="margin-top:14px">
+        <span class="pill cyan">10 questions</span>
+        <span class="pill gold">mixed: easy &amp; medium</span>
+        <span class="pill ghost" style="color:#c7cbf0;border-color:rgba(255,255,255,.3)">all on Module 3</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Q1 ============ -->
+  <section class="slide" data-title="Quiz Q1 &mdash; why RNNs struggled"
+    data-note="Answer: D. RNNs are sequential and lose long-range context to vanishing gradients.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q1 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Why did <b>RNNs</b> struggle with long sequences?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>They used too little memory</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>They had no trainable weights</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>They were too parallel</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>They process tokens <b>one at a time</b> and &lsquo;forget&rsquo; distant context (vanishing gradients)</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A1 ============ -->
+  <section class="slide" data-title="Answer Q1"
+    data-note="RNNs read left-to-right and struggle to carry information across long distances.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q1 / 10</div>
+    <h2 class="title">Sequential &amp; forgetful</h2>
+    <div class="body center">
+      <p class="quiz-restate">The bottleneck transformers removed.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>They used too little memory</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>They had no trainable weights</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>They were too parallel</span></div>
+        <div class="quiz-opt correct"><span class="ltr">D</span><span>They process tokens <b>one at a time</b> and &lsquo;forget&rsquo; distant context (vanishing gradients) &#10003;</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;RNNs read <b>sequentially</b> and their signal decays over distance (<b>vanishing gradients</b>), so early context is lost and they can't be parallelised.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q2 ============ -->
+  <section class="slide" data-title="Quiz Q2 &mdash; the big idea"
+    data-note="Answer: C. Attention lets each token attend directly to all others, in parallel.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q2 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">The core innovation of the <b>transformer</b> is&hellip;</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Convolution over pixels</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Deeper recurrence</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span><b>Attention</b> &mdash; every token can look at every other token</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Bigger images</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A2 ============ -->
+  <section class="slide" data-title="Answer Q2"
+    data-note="The transformer replaces recurrence with attention: direct, parallel token-to-token links.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q2 / 10</div>
+    <h2 class="title">Attention</h2>
+    <div class="body center">
+      <p class="quiz-restate">&lsquo;Attention is all you need.&rsquo;</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Convolution over pixels</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Deeper recurrence</span></div>
+        <div class="quiz-opt correct"><span class="ltr">C</span><span><b>Attention</b> &mdash; every token can look at every other token &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Bigger images</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;<b>Attention</b> lets every token directly weigh every other token &mdash; no recurrence, fully parallel. That single idea (2017) underpins all modern LLMs.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q3 ============ -->
+  <section class="slide" data-title="Quiz Q3 &mdash; Q, K, V"
+    data-note="Answer: A. Q matches against K to score relevance; the scores weight the V vectors.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q3 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Self-attention works with three vectors per token, called&hellip;</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span><b>Query, Key, Value</b> (Q, K, V)</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Red, Green, Blue</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Input, Output, Hidden</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Train, Test, Validate</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A3 ============ -->
+  <section class="slide" data-title="Answer Q3"
+    data-note="Each token emits a Query, a Key and a Value; Q&middot;K gives attention weights over the Values.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q3 / 10</div>
+    <h2 class="title">Query, Key, Value</h2>
+    <div class="body center">
+      <p class="quiz-restate">The three roles each token plays.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt correct"><span class="ltr">A</span><span><b>Query, Key, Value</b> (Q, K, V) &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Red, Green, Blue</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Input, Output, Hidden</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Train, Test, Validate</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Each token has a <b>Query</b>, a <b>Key</b> and a <b>Value</b>. A token's Query is compared to every Key to get weights, which blend the <b>Values</b> into its new representation.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q4 ============ -->
+  <section class="slide" data-title="Quiz Q4 &mdash; scaling"
+    data-note="Answer: B. No recurrence means the whole sequence is processed in parallel on GPUs.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q4 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">A big reason transformers beat RNNs <b>at scale</b> is that attention is&hellip;</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Slower but simpler</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span><b>Parallelisable</b> &mdash; all positions computed at once, not step-by-step</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Purely rule-based</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Unable to run on GPUs</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A4 ============ -->
+  <section class="slide" data-title="Answer Q4"
+    data-note="Attention has no sequential dependency, so training parallelises across the sequence.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q4 / 10</div>
+    <h2 class="title">Parallel training</h2>
+    <div class="body center">
+      <p class="quiz-restate">Why they train on huge data.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Slower but simpler</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span><b>Parallelisable</b> &mdash; all positions computed at once, not step-by-step &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Purely rule-based</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Unable to run on GPUs</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;With no recurrence, a transformer processes the <b>whole sequence at once</b> &mdash; perfect for GPUs. That parallelism is what let models scale to billions of parameters.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q5 ============ -->
+  <section class="slide" data-title="Quiz Q5 &mdash; tokens &amp; embeddings"
+    data-note="Answer: C. Text is split into tokens, each mapped to a learned embedding vector.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q5 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Before a transformer processes text, words are turned into&hellip;</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Images</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Audio clips</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span><b>Tokens</b>, then <b>embeddings</b> (vectors that capture meaning)</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>SQL rows</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A5 ============ -->
+  <section class="slide" data-title="Answer Q5"
+    data-note="Text is tokenised, then each token becomes an embedding vector the model can compute on.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q5 / 10</div>
+    <h2 class="title">Tokens &rarr; embeddings</h2>
+    <div class="body center">
+      <p class="quiz-restate">How text becomes numbers.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Images</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Audio clips</span></div>
+        <div class="quiz-opt correct"><span class="ltr">C</span><span><b>Tokens</b>, then <b>embeddings</b> (vectors that capture meaning) &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>SQL rows</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Text is split into <b>tokens</b> (word pieces), each mapped to an <b>embedding</b> &mdash; a vector where similar meanings sit close together. That's the model's input.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q6 ============ -->
+  <section class="slide" data-title="Quiz Q6 &mdash; positional encoding"
+    data-note="Answer: A. Attention treats input as a set; positional encodings inject sequence order.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q6 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Why do transformers need <b>positional encoding</b>?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Attention itself is <b>order-agnostic</b>, so position must be added back in</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>To compress the model</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>To label the data</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>To choose the learning rate</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A6 ============ -->
+  <section class="slide" data-title="Answer Q6"
+    data-note="Pure attention has no notion of order, so position information is added to the embeddings.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q6 / 10</div>
+    <h2 class="title">Attention ignores order</h2>
+    <div class="body center">
+      <p class="quiz-restate">Putting word order back.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt correct"><span class="ltr">A</span><span>Attention itself is <b>order-agnostic</b>, so position must be added back in &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>To compress the model</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>To label the data</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>To choose the learning rate</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Attention sees a <b>set</b>, not a sequence &mdash; &lsquo;dog bites man&rsquo; = &lsquo;man bites dog&rsquo; without help. <b>Positional encoding</b> adds order back into the embeddings.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q7 ============ -->
+  <section class="slide" data-title="Quiz Q7 &mdash; what attention does"
+    data-note="Answer: D. Each token pulls in a relevance-weighted mix of the others.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q7 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Roughly, attention makes a token&rsquo;s new representation&hellip;</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>A copy of the first token</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>A random vector</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Unchanged from its input</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>A <b>weighted blend</b> of the other tokens&rsquo; values, weighted by relevance</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A7 ============ -->
+  <section class="slide" data-title="Answer Q7"
+    data-note="A token's output is a weighted average of all tokens' Values, weighted by attention.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q7 / 10</div>
+    <h2 class="title">A weighted blend</h2>
+    <div class="body center">
+      <p class="quiz-restate">Context, mixed in by relevance.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>A copy of the first token</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>A random vector</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Unchanged from its input</span></div>
+        <div class="quiz-opt correct"><span class="ltr">D</span><span>A <b>weighted blend</b> of the other tokens&rsquo; values, weighted by relevance &#10003;</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;A token becomes a <b>relevance-weighted mix</b> of the others &mdash; so &lsquo;bank&rsquo; near &lsquo;river&rsquo; ends up different from &lsquo;bank&rsquo; near &lsquo;money&rsquo;. That's contextual meaning.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q8 ============ -->
+  <section class="slide" data-title="Quiz Q8 &mdash; decoder-only"
+    data-note="Answer: C. Decoder-only models predict the next token autoregressively.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q8 / 10</div>
+    <div class="body center">
+      <p class="quiz-q"><b>GPT-style</b> (decoder-only) models generate text by&hellip;</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Reading the whole future at once</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Sorting words alphabetically</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Predicting the <b>next token</b>, one at a time, from the tokens so far</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Translating text into images</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A8 ============ -->
+  <section class="slide" data-title="Answer Q8"
+    data-note="GPT predicts the next token given the previous ones, then feeds it back, repeatedly.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q8 / 10</div>
+    <h2 class="title">Next-token prediction</h2>
+    <div class="body center">
+      <p class="quiz-restate">How a generative LLM writes.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Reading the whole future at once</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Sorting words alphabetically</span></div>
+        <div class="quiz-opt correct"><span class="ltr">C</span><span>Predicting the <b>next token</b>, one at a time, from the tokens so far &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Translating text into images</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;A decoder-only model is a <b>next-token predictor</b>: given the tokens so far, output the most likely next one, append it, repeat. That loop is text generation.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q9 ============ -->
+  <section class="slide" data-title="Quiz Q9 &mdash; encoder-only"
+    data-note="Answer: A. BERT is encoder-only, bidirectional &mdash; ideal for understanding/classification.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q9 / 10</div>
+    <div class="body center">
+      <p class="quiz-q"><b>BERT</b> is an example of which architecture family?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span><b>Encoder-only</b> &mdash; great for understanding tasks like classification</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Decoder-only</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>A recurrent net (RNN)</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>A convolutional net (CNN)</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A9 ============ -->
+  <section class="slide" data-title="Answer Q9"
+    data-note="BERT is an encoder-only, bidirectional model used for understanding tasks.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q9 / 10</div>
+    <h2 class="title">Encoder-only</h2>
+    <div class="body center">
+      <p class="quiz-restate">Built to understand, not generate.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt correct"><span class="ltr">A</span><span><b>Encoder-only</b> &mdash; great for understanding tasks like classification &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Decoder-only</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>A recurrent net (RNN)</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>A convolutional net (CNN)</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;<b>BERT</b> is <b>encoder-only</b> and bidirectional &mdash; it reads the whole input to build understanding, ideal for <b>classification/sentiment</b>. GPT is decoder-only for generation.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q10 ============ -->
+  <section class="slide" data-title="Quiz Q10 &mdash; why they dominate"
+    data-note="Answer: B. Parallel attention scales with data and compute into general-purpose language models.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q10 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Why are transformers the <b>foundation</b> of modern LLMs?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>They are the smallest possible models</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span><b>Attention + parallel training scale</b> to huge data/models, giving strong general language ability</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>They need no training data</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>They only work on images</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A10 ============ -->
+  <section class="slide" data-title="Answer Q10"
+    data-note="Transformers scale gracefully with data and compute, which yields general language ability.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q10 / 10</div>
+    <h2 class="title">They scale</h2>
+    <div class="body center">
+      <p class="quiz-restate">The reason they took over.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>They are the smallest possible models</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span><b>Attention + parallel training scale</b> to huge data/models, giving strong general language ability &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>They need no training data</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>They only work on images</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Because attention <b>parallelises</b> and <b>scales</b>: pour in more data and compute and capability keeps rising. That scaling is what turned transformers into today's LLMs.</p>
+    </div>
+  </section>
+
   <!-- ============ SLIDE 18 — REFERENCES ============ -->
   <section class="slide" data-title="References &amp; further study"
     data-note="Point to the best resources. Two standouts: Jay Alammar's 'Illustrated Transformer' is the single best visual explainer of attention -- send everyone there. And the original 'Attention Is All You Need' paper if anyone wants the source. The 3Blue1Brown attention video is excellent for intuition. The Hugging Face course is the doorway to the labs. All links live in the HTML.">
@@ -763,7 +1113,7 @@ clf(<span class="str">"This workshop is fantastic!"</span>)
 <div class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Day 2 · Module 3 — Why Transformers?</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.1</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.2</span>
 </div>
 
 <script>

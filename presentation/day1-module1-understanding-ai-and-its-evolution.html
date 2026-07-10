@@ -120,6 +120,21 @@
   ul.refs li .d{display:block;color:var(--muted);font-size:.82em;margin-top:2px;}
   @media(max-width:760px){ul.refs{grid-template-columns:1fr;} .grid2,.grid3,.grid4{grid-template-columns:1fr;}}
 
+  /* ---------- Quiz ---------- */
+  .quiz-q{font-size:clamp(1.1rem,2vw,1.5rem);color:var(--ink-800);font-weight:700;line-height:1.3;margin:0 0 16px;}
+  .quiz-restate{font-size:clamp(.92rem,1.4vw,1.12rem);color:var(--muted);font-weight:600;line-height:1.35;margin:0 0 14px;}
+  .quiz-opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .quiz-opt{display:flex;align-items:flex-start;gap:12px;background:#fff;border:1px solid var(--line);
+    border-left:4px solid var(--ind-300);border-radius:8px;padding:12px 16px;font-size:clamp(.9rem,1.4vw,1.1rem);line-height:1.4;}
+  .quiz-opt .ltr{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--ind-50);color:var(--ind-600);
+    font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .quiz-opt.correct{border-left-color:var(--ok);background:#ecfdf5;}
+  .quiz-opt.correct .ltr{background:var(--ok);color:#fff;}
+  .quiz-opt.dim{opacity:.5;}
+  .quiz-why{margin-top:16px;}
+  .quiz-badge{display:inline-block;background:var(--amber);color:var(--ink-900);font-weight:700;font-size:.72em;padding:2px 10px;border-radius:12px;}
+  @media(max-width:760px){.quiz-opts{grid-template-columns:1fr;}}
+
   /* ---------- Title slide ---------- */
   .title-slide{background:linear-gradient(135deg,#312e81 0%,#1e1b4b 100%);color:#fff;
     border-bottom:none;align-items:flex-start;justify-content:center;}
@@ -833,6 +848,341 @@ model.<span class="fn">fit</span>(images, labels, epochs=<span class="str">5</sp
     </div>
   </section>
 
+  <!-- ============ QUIZ INTRO ============ -->
+  <section class="slide dark" data-title="Quiz &mdash; intro"
+    data-note="Quick formative check -- 10 questions, mixed easy/medium, all on Module 1. Format: each question slide, then its answer slide with the explanation. Run it interactively -- read the question, let them call A/B/C/D, then advance to reveal. The goal is to surface and fix misconceptions.">
+    <div class="body center">
+      <div class="kicker"><span class="dot"></span> Lock it in</div>
+      <h2 class="title" style="border-bottom-color:var(--cyan)">Quick check &mdash; 10 questions</h2>
+      <p class="lead" style="color:#e7e9fb">Each <b>question</b> appears first; the <b>answer</b> &amp; a one-line why are on the next slide. Call out A / B / C / D before you advance.</p>
+      <div class="title-meta" style="margin-top:14px">
+        <span class="pill cyan">10 questions</span>
+        <span class="pill gold">mixed: easy &amp; medium</span>
+        <span class="pill ghost" style="color:#c7cbf0;border-color:rgba(255,255,255,.3)">all on Module 1</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Q1 ============ -->
+  <section class="slide" data-title="Quiz Q1 &mdash; the nesting"
+    data-note="Answer: A. AI is the outermost set; ML is a subset of AI, DL a subset of ML, GenAI a subset of DL.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q1 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">In the nesting AI &sup; ML &sup; DL &sup; GenAI, which is the <b>broadest</b> field?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Artificial Intelligence</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Machine Learning</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Deep Learning</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Generative AI</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A1 ============ -->
+  <section class="slide" data-title="Answer Q1"
+    data-note="AI is the umbrella; ML sits inside it, deep learning inside ML, and generative AI inside deep learning.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q1 / 10</div>
+    <h2 class="title">AI is the umbrella</h2>
+    <div class="body center">
+      <p class="quiz-restate">Which term contains all the others.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt correct"><span class="ltr">A</span><span>Artificial Intelligence &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Machine Learning</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Deep Learning</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Generative AI</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;<b>AI</b> is the umbrella. <b>ML</b> is AI that learns from data; <b>DL</b> is ML with deep neural nets; <b>GenAI</b> is DL that creates new content.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q2 ============ -->
+  <section class="slide" data-title="Quiz Q2 &mdash; learning paradigms"
+    data-note="Answer: C. Supervised = labelled data; unsupervised finds structure in unlabelled data; RL learns from reward.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q2 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Which learning paradigm learns from <b>labelled</b> examples (input &rarr; known correct output)?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Unsupervised learning</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Reinforcement learning</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Supervised learning</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Generative modelling</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A2 ============ -->
+  <section class="slide" data-title="Answer Q2"
+    data-note="Supervised learning trains on labelled pairs; unsupervised finds structure without labels; RL learns from rewards.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q2 / 10</div>
+    <h2 class="title">Supervised learning</h2>
+    <div class="body center">
+      <p class="quiz-restate">Learning from labelled input&rarr;output pairs.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Unsupervised learning</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Reinforcement learning</span></div>
+        <div class="quiz-opt correct"><span class="ltr">C</span><span>Supervised learning &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Generative modelling</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;<b>Supervised</b> learning uses labelled pairs. Unsupervised finds structure in unlabelled data; reinforcement learns from trial-and-error rewards.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q3 ============ -->
+  <section class="slide" data-title="Quiz Q3 &mdash; ML vs rules"
+    data-note="Answer: D. Traditional code = you write the rules; ML = the model learns the rules from data.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q3 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">What fundamentally distinguishes <b>machine learning</b> from traditional rule-based programming?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>It always runs faster</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>It needs no data at all</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>It can never make a mistake</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>It learns patterns from data instead of following hand-written rules</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A3 ============ -->
+  <section class="slide" data-title="Answer Q3"
+    data-note="In rule-based code a human writes the logic; in ML the model infers the logic from examples.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q3 / 10</div>
+    <h2 class="title">Learn the rules from data</h2>
+    <div class="body center">
+      <p class="quiz-restate">Rules written by hand vs. rules learned from examples.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>It always runs faster</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>It needs no data at all</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>It can never make a mistake</span></div>
+        <div class="quiz-opt correct"><span class="ltr">D</span><span>It learns patterns from data instead of following hand-written rules &#10003;</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Traditional programming: <b>you write the rules</b>. Machine learning: the model <b>learns the rules from data</b> &mdash; the shift that makes modern AI possible.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q4 ============ -->
+  <section class="slide" data-title="Quiz Q4 &mdash; narrow AI"
+    data-note="Answer: B. Narrow (weak) AI does one task well; general and super AI remain hypothetical.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q4 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">What is <b>narrow AI</b>?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>AI that is smarter than humans at everything</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>AI built for one specific task &mdash; the only kind that exists today</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Human-level general intelligence across any task</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>AI that rewrites its own source code</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A4 ============ -->
+  <section class="slide" data-title="Answer Q4"
+    data-note="Today's AI is all narrow: excellent at a single task. General and super AI are still hypothetical.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q4 / 10</div>
+    <h2 class="title">Narrow AI = one task</h2>
+    <div class="body center">
+      <p class="quiz-restate">The only kind of AI we actually have today.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>AI that is smarter than humans at everything</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>AI built for one specific task &mdash; the only kind that exists today &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Human-level general intelligence across any task</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>AI that rewrites its own source code</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;<b>Narrow AI</b> excels at a single task (translation, recommendation). <b>General</b> and <b>super</b> AI &mdash; human-level or beyond across any task &mdash; do not yet exist.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q5 ============ -->
+  <section class="slide" data-title="Quiz Q5 &mdash; reinforcement learning"
+    data-note="Answer: A. RL: an agent acts, gets rewards/penalties, and learns a policy that maximises reward.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q5 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Reinforcement learning primarily learns from&hellip;</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Trial and error &mdash; rewards and penalties from acting in an environment</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Labelled input&rarr;output pairs</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Clusters found in unlabelled data</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>A fixed rulebook written by an expert</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A5 ============ -->
+  <section class="slide" data-title="Answer Q5"
+    data-note="Reinforcement learning learns a policy by acting and receiving rewards or penalties over time.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q5 / 10</div>
+    <h2 class="title">RL learns from reward</h2>
+    <div class="body center">
+      <p class="quiz-restate">How an agent learns by acting.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt correct"><span class="ltr">A</span><span>Trial and error &mdash; rewards and penalties from acting in an environment &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Labelled input&rarr;output pairs</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Clusters found in unlabelled data</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>A fixed rulebook written by an expert</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;<b>Reinforcement learning</b> learns by <b>acting and getting feedback</b> (reward/penalty) &mdash; the paradigm behind game-playing and robotics, and a cousin of agentic AI.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q6 ============ -->
+  <section class="slide" data-title="Quiz Q6 &mdash; generative AI"
+    data-note="Answer: C. Generative models produce new content; discriminative models just classify.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q6 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">&lsquo;Generative AI&rsquo; refers to models that&hellip;</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Only sort inputs into fixed categories</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Remove the need for training data</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span><b>Create</b> new content &mdash; text, images, code</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Guarantee a correct answer every time</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A6 ============ -->
+  <section class="slide" data-title="Answer Q6"
+    data-note="Generative AI produces new content (text, images, code); discriminative models only classify existing input.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q6 / 10</div>
+    <h2 class="title">GenAI creates content</h2>
+    <div class="body center">
+      <p class="quiz-restate">What makes it &lsquo;generative&rsquo;.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Only sort inputs into fixed categories</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Remove the need for training data</span></div>
+        <div class="quiz-opt correct"><span class="ltr">C</span><span><b>Create</b> new content &mdash; text, images, code &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Guarantee a correct answer every time</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;<b>Generative</b> models <b>produce</b> new content; discriminative models only <b>classify</b>. LLMs like GPT are generative &mdash; they generate the next token.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q7 ============ -->
+  <section class="slide" data-title="Quiz Q7 &mdash; AI winters"
+    data-note="Answer: D. The thaw came from abundant data, GPU compute, and improved algorithms (esp. deep learning).">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q7 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">Roughly, what ended the &lsquo;AI winters&rsquo; and enabled today&rsquo;s progress?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Simpler algorithms and less maths</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Fewer researchers in the field</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Deliberately smaller datasets</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Big <b>data</b>, more <b>compute</b> (GPUs), and better <b>algorithms</b></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A7 ============ -->
+  <section class="slide" data-title="Answer Q7"
+    data-note="Cheap compute (GPUs), massive datasets, and better algorithms together ended the AI winters.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q7 / 10</div>
+    <h2 class="title">Data + compute + algorithms</h2>
+    <div class="body center">
+      <p class="quiz-restate">The three forces behind the modern boom.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Simpler algorithms and less maths</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Fewer researchers in the field</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Deliberately smaller datasets</span></div>
+        <div class="quiz-opt correct"><span class="ltr">D</span><span>Big <b>data</b>, more <b>compute</b> (GPUs), and better <b>algorithms</b> &#10003;</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;The modern boom rests on three legs: <b>data</b> (the internet), <b>compute</b> (GPUs), and <b>algorithms</b> (deep learning). Remove one and progress stalls.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q8 ============ -->
+  <section class="slide" data-title="Quiz Q8 &mdash; the ML pipeline"
+    data-note="Answer: A. Data collection & prep is step one &mdash; and usually the biggest share of the work.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q8 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">In the standard ML pipeline, what typically comes <b>first</b>?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Collect and prepare the data</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Deploy the model to production</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Tune the hyperparameters</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Write the final report</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A8 ============ -->
+  <section class="slide" data-title="Answer Q8"
+    data-note="The pipeline starts with collecting and preparing data, then train, evaluate, tune, and deploy.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q8 / 10</div>
+    <h2 class="title">Data comes first</h2>
+    <div class="body center">
+      <p class="quiz-restate">Where every ML project begins.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt correct"><span class="ltr">A</span><span>Collect and prepare the data &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Deploy the model to production</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Tune the hyperparameters</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Write the final report</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;It starts with <b>data</b>: collect, clean, label, split. Garbage in, garbage out &mdash; data prep is usually the largest part of a real ML project.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q9 ============ -->
+  <section class="slide" data-title="Quiz Q9 &mdash; limits of AI"
+    data-note="Answer: C. AI can hallucinate, is confidently wrong, and inherits biases from its data &mdash; oversight matters.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q9 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">A key <b>limitation</b> of today&rsquo;s AI to keep in mind is that it&hellip;</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>Truly understands meaning like a human</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Is always objective and unbiased</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Can be <b>confidently wrong</b> and mirrors biases in its training data</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Never needs human oversight</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A9 ============ -->
+  <section class="slide" data-title="Answer Q9"
+    data-note="Current AI has no real understanding, can be confidently wrong, and reflects biases in its training data.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q9 / 10</div>
+    <h2 class="title">Confidently wrong</h2>
+    <div class="body center">
+      <p class="quiz-restate">Why a human stays in the loop.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>Truly understands meaning like a human</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Is always objective and unbiased</span></div>
+        <div class="quiz-opt correct"><span class="ltr">C</span><span>Can be <b>confidently wrong</b> and mirrors biases in its training data &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>Never needs human oversight</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;AI pattern-matches without real understanding: it can be <b>confidently wrong</b> (hallucinate) and <b>inherits bias</b> from its data. That is why humans stay in the loop &mdash; the theme of Day 5.</p>
+    </div>
+  </section>
+
+  <!-- ============ Q10 ============ -->
+  <section class="slide" data-title="Quiz Q10 &mdash; models vs agents"
+    data-note="Answer: B. An agent wraps a model in a loop that plans, calls tools, observes, and acts toward a goal.">
+    <div class="kicker"><span class="dot"></span> Quick check &middot; Q10 / 10</div>
+    <div class="body center">
+      <p class="quiz-q">How does an AI <b>agent</b> differ from a plain model?</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt"><span class="ltr">A</span><span>It is simply a larger neural network</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>It can <b>plan, use tools, and take actions</b> toward a goal &mdash; not just return one output</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>It removes the need for a model underneath</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>It can only classify images</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A10 ============ -->
+  <section class="slide" data-title="Answer Q10"
+    data-note="A model returns one output; an agent plans, uses tools, and acts in a loop toward a goal.">
+    <div class="kicker"><span class="dot"></span> Answer &middot; Q10 / 10</div>
+    <h2 class="title">An agent acts</h2>
+    <div class="body center">
+      <p class="quiz-restate">Model = answer; agent = pursue a goal.</p>
+      <div class="quiz-opts">
+        <div class="quiz-opt dim"><span class="ltr">A</span><span>It is simply a larger neural network</span></div>
+        <div class="quiz-opt correct"><span class="ltr">B</span><span>It can <b>plan, use tools, and take actions</b> toward a goal &mdash; not just return one output &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>It removes the need for a model underneath</span></div>
+        <div class="quiz-opt dim"><span class="ltr">D</span><span>It can only classify images</span></div>
+      </div>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;A <b>model</b> maps input to output once. An <b>agent</b> wraps a model in a loop &mdash; it <b>plans, calls tools, observes, and acts</b> toward a goal. That is the rest of this course.</p>
+    </div>
+  </section>
+
   <!-- ============ SLIDE 21 — REFERENCES ============ -->
   <section class="slide" data-title="References & further study"
     data-note="Point them to the best free resources to go deeper — emphasise these are optional but excellent. Call out two: 3Blue1Brown for visual neural-net intuition (perfect after today), and 'Attention Is All You Need' as the paper that started the transformer era they'll use Day 2. Tell them links are live in the HTML — they can click straight through. Encourage the curious to watch one video before Day 2.">
@@ -897,7 +1247,7 @@ model.<span class="fn">fit</span>(images, labels, epochs=<span class="str">5</sp
 <div class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Day 1 · Module 1 — Understanding AI &amp; its Evolution</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.1</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.2</span>
 </div>
 
 <script>
