@@ -60,23 +60,21 @@
 
   <div class="container">
     <div class="callout">
-      <strong>How these labs work.</strong> Each notebook follows the same rhythm &mdash; read the
-      <strong>Concept</strong>, run the <strong>Demo</strong>, then complete <strong>Your Turn</strong> by
-      replacing every <code>___</code> placeholder. Run the <strong>grader</strong> cell at the bottom: it
-      prints <code>[PASS]</code> / <code>[FAIL]</code> / <code>[TODO]</code> and a final <code>Score</code>.
-      Each lab writes to its own <code>/tmp/biaa-lab-05-NN/</code> working dir. Stuck? Every lab has a full
-      answer key under <a href="solutions/"><code>solutions/</code></a> &mdash; try first, then check.
+      <strong>How these labs work (near-real).</strong> Each notebook follows the same rhythm &mdash; read the
+      <strong>Concept</strong>, fill the real <code>___</code> blanks in <strong>Build it</strong>, then
+      <strong>run it for real</strong> and <strong>read the trace</strong> the agent produced. Finish with an
+      open <strong>Your turn</strong>. There is <strong>no auto-grader</strong> &mdash; the goal is a working
+      agent and a trace you can read. Each lab writes to its own <code>/tmp/biaa-lab-05-NN/</code> working dir.
+      Stuck? Every lab has a full answer key under <a href="solutions/"><code>solutions/</code></a>.
     </div>
     <div class="callout warn">
-      <strong>Setup (almost none).</strong> Just <strong>Python 3.10+</strong> &mdash; every graded step uses
-      only the <strong>standard library</strong>. You build a working <strong>ReAct-style agent</strong> from
-      scratch (tools, the reason &rarr; act &rarr; observe loop, ReAct parsing, tool routing, memory and
-      guardrails), driven by a deterministic rule-based &ldquo;mock LLM&rdquo; policy &mdash; <strong>no API
-      keys, no model downloads, no network</strong>. The calculator tool uses a small <strong>AST-based safe
-      evaluator</strong> (never bare <code>eval</code>). Each Advanced lab ends with an <em>optional</em>,
-      non-graded cell that swaps the rule-based policy for a <strong>real LLM via LangChain</strong>
-      (<code>pip install langchain-ollama</code> + <code>ollama run llama3.2:1b</code>, or
-      <code>ChatGroq</code> with a <code>GROQ_API_KEY</code>); it skips cleanly if absent.
+      <strong>Setup.</strong> A <strong>real local model</strong> drives these agents &mdash; you build the
+      <strong>ReAct loop</strong> from scratch (tools, the reason &rarr; act &rarr; observe loop, ReAct parsing,
+      tool routing, memory and guardrails) as real Python, and a <strong>real <code>llama3.1:8b</code> via
+      Ollama</strong> emits the reasoning and picks the tools. Start it with <code>ollama run llama3.1:8b</code>
+      (served on <code>:11434</code>); keys load from <code>.env</code>. The calculator tool uses a small
+      <strong>AST-based safe evaluator</strong> (never bare <code>eval</code>). Small local models fumble
+      multi-step tasks sometimes &mdash; that is real, and the labs teach it.
     </div>
 
     <section>

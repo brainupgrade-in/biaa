@@ -103,27 +103,25 @@ html = f'''<!DOCTYPE html>
 
   <div class="container">
     <div class="callout">
-      <strong>How these labs work.</strong> Each notebook follows the same rhythm &mdash; read the
-      <strong>Concept</strong>, run the <strong>Demo</strong>, then complete <strong>Your Turn</strong> by
-      replacing every <code>___</code> placeholder. Run the <strong>grader</strong> cell at the bottom: it
-      prints <code>[PASS]</code> / <code>[FAIL]</code> / <code>[TODO]</code> and a final <code>Score</code>.
-      Each lab writes to its own <code>/tmp/biaa-lab-06-NN/</code> working dir. Stuck? Every lab has a full
-      answer key under <a href="solutions/"><code>solutions/</code></a> &mdash; try first, then check.
+      <strong>How these labs work (near-real).</strong> Each notebook follows the same rhythm &mdash; read the
+      <strong>Concept</strong>, fill the real <code>___</code> blanks in <strong>Build it</strong>, then
+      <strong>run it for real</strong> and <strong>read the message trace</strong> the agent produced. Finish
+      with an open <strong>Your turn</strong>. There is <strong>no auto-grader</strong> &mdash; the goal is a
+      working agent and a trace you can read. Each lab writes to its own <code>/tmp/biaa-lab-06-NN/</code>
+      working dir. Stuck? Every lab has a full answer key under <a href="solutions/"><code>solutions/</code></a>.
     </div>
     <div class="callout warn">
       <strong>Setup.</strong> These labs use the <strong>real LangChain</strong>
       (<code>langchain</code>, <code>langchain-core</code>, <code>langchain-ollama</code>, <code>langgraph</code>
-      &mdash; all in the course <code>biaa-venv</code>). You build a genuine <strong>LangChain workflow</strong>
-      (<code>@tool</code>, <code>PromptTemplate</code>, <code>ChatOllama</code>, <code>create_agent</code>
-      with <code>recursion_limit</code>, memory, a real LangGraph <code>StateGraph</code>, guardrails and
-      trace-reading). The <strong>graded</strong> cells assert only on the deterministic parts you build
-      &mdash; tool wiring, prompt formatting, agent structure, routing and guardrails &mdash; and
-      <strong>never call an LLM</strong>, so the labs verify offline with <strong>no API keys and no
-      network</strong>. The calculator/compute tools use a small <strong>AST-based safe evaluator</strong>
-      (never bare <code>eval</code>). Cells marked <em>Optional &mdash; run it for real</em> call a live
-      local model (<code>ollama run llama3.2:1b</code>, or <code>ChatGroq</code> with a
-      <code>GROQ_API_KEY</code>; Google Serper / Wolfram need their own keys) and self-skip if none is
-      reachable.
+      &mdash; all in the course <code>biaa-venv</code>) and a <strong>real model</strong>. You build a genuine
+      <strong>LangChain workflow</strong> (<code>@tool</code>, <code>PromptTemplate</code>,
+      <code>ChatOllama</code>, <code>create_agent</code> with <code>recursion_limit</code>, memory, a real
+      LangGraph <code>StateGraph</code>, guardrails and trace-reading) and <strong>actually run it</strong>:
+      a real <code>llama3.1:8b</code> via Ollama drives the agent and you read the real message trace. Start it
+      with <code>ollama run llama3.1:8b</code> (served on <code>:11434</code>); keys (Groq / Serper / Wolfram)
+      load from <code>.env</code> for the labs that use them, and cells self-skip with a note if a service is
+      unavailable. The calculator/compute tools use a small <strong>AST-based safe evaluator</strong> (never
+      bare <code>eval</code>) and return errors as strings &mdash; a tool that raises can abort an agent run.
     </div>
 
 {section("Beginner")}
@@ -137,9 +135,9 @@ html = f'''<!DOCTYPE html>
       <a href="../../presentation/day3-module6-frameworks-for-building-ai-agents.html">Module 6 slides &mdash; Frameworks for Building AI Agents</a>
       &middot; <a href="../../course-outline-building-intelligent-ai-agents.html">Full course outline</a>
       &middot; <a href="../module-5/index.html">Module 5 labs</a>.
-      These labs build a real LangChain agent; graded cells assert on deterministic scaffolding, and the
-      <em>optional</em> cells run it live against a local model. Next &mdash; <strong>Day 4</strong>: putting
-      agents to work (task automation &amp; multi-agent collaboration).
+      These labs build a real LangChain agent and run it live against a real local model, reading the real
+      message trace &mdash; no grader. Next &mdash; <strong>Day 4</strong>: putting agents to work (task
+      automation &amp; multi-agent collaboration).
     </div>
   </div>
 
