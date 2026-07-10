@@ -88,8 +88,8 @@
           <span class="time">&#9201; 20 min</span>
         </div>
         <h4>A Model that Answers vs an Agent that Acts</h4>
-        <p>Feel the core shift: a stateless model answers once; an agent takes an action toward a goal and can loop.</p>
-        <div class="chips"><span class="chip">Stateless model</span><span class="chip">Goal</span><span class="chip">Action</span></div>
+        <p>Call the REAL llama3.1:8b twice to feel it is stateless, then build a tiny goal-seeking agent loop that carries state.</p>
+        <div class="chips"><span class="chip">Stateless model</span><span class="chip">Goal loop</span><span class="chip">Real model</span></div>
         <div class="links">
           <a class="open" href="lab-01-agent-vs-model.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-01-agent-vs-model.ipynb">Solution</a>
@@ -101,8 +101,8 @@
           <span class="time">&#9201; 20 min</span>
         </div>
         <h4>Build a Tool: Give the Agent Hands</h4>
-        <p>Define tools as {name, description, fn}, register them, and wire up a SAFE calculator and a lookup tool.</p>
-        <div class="chips"><span class="chip">Tool schema</span><span class="chip">Registry</span><span class="chip">Safe calculator</span></div>
+        <p>Build real from-scratch tools (name/description/fn) + a SAFE calculator, then let the REAL model pick a tool by reading your descriptions.</p>
+        <div class="chips"><span class="chip">Tool schema</span><span class="chip">Registry</span><span class="chip">Model picks tool</span></div>
         <div class="links">
           <a class="open" href="lab-02-build-a-tool.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-02-build-a-tool.ipynb">Solution</a>
@@ -114,8 +114,8 @@
           <span class="time">&#9201; 20 min</span>
         </div>
         <h4>The Agent Loop: Reason, Act, Observe</h4>
-        <p>Implement the reason -> act -> observe loop with a stop condition and a max_steps cap.</p>
-        <div class="chips"><span class="chip">Agent loop</span><span class="chip">Stop condition</span><span class="chip">max_steps</span></div>
+        <p>Build the reason -> act -> observe loop from scratch and let a REAL model be the reasoner that drives your tools.</p>
+        <div class="chips"><span class="chip">Agent loop</span><span class="chip">Real reasoner</span><span class="chip">max_steps</span></div>
         <div class="links">
           <a class="open" href="lab-03-the-agent-loop.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-03-the-agent-loop.ipynb">Solution</a>
@@ -127,8 +127,8 @@
           <span class="time">&#9201; 20 min</span>
         </div>
         <h4>Parsing a ReAct Step</h4>
-        <p>Parse a ReAct-formatted string into Thought / Action / Action Input / Final Answer.</p>
-        <div class="chips"><span class="chip">ReAct format</span><span class="chip">Parsing</span><span class="chip">Final Answer</span></div>
+        <p>Get REAL ReAct text from llama3.1:8b and parse Thought / Action / Action Input / Final Answer with your own parser.</p>
+        <div class="chips"><span class="chip">ReAct format</span><span class="chip">Parsing</span><span class="chip">Real output</span></div>
         <div class="links">
           <a class="open" href="lab-04-react-step-parsing.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-04-react-step-parsing.ipynb">Solution</a>
@@ -140,8 +140,8 @@
           <span class="time">&#9201; 20 min</span>
         </div>
         <h4>Tool Routing: Dispatch an Action to a Tool</h4>
-        <p>Route an action name to the right tool, run it, capture the observation, and handle unknown tools safely.</p>
-        <div class="chips"><span class="chip">Routing</span><span class="chip">Observation</span><span class="chip">Error handling</span></div>
+        <p>Build a safe router, then feed it a real action the model chose -- surviving unknown and failing tools without crashing.</p>
+        <div class="chips"><span class="chip">Routing</span><span class="chip">Safe dispatch</span><span class="chip">Real action</span></div>
         <div class="links">
           <a class="open" href="lab-05-tool-routing.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-05-tool-routing.ipynb">Solution</a>
@@ -153,8 +153,8 @@
           <span class="time">&#9201; 20 min</span>
         </div>
         <h4>Memory: the Agent's Scratchpad</h4>
-        <p>Append (thought, action, observation) steps to memory, format a running scratchpad, and detect when to stop.</p>
-        <div class="chips"><span class="chip">Short-term memory</span><span class="chip">Scratchpad</span><span class="chip">Stop detection</span></div>
+        <p>Build the scratchpad of Thought/Action/Observation steps, then feed it to the REAL model so it can decide the next step.</p>
+        <div class="chips"><span class="chip">Scratchpad</span><span class="chip">Short-term memory</span><span class="chip">Real follow-up</span></div>
         <div class="links">
           <a class="open" href="lab-06-memory-scratchpad.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-06-memory-scratchpad.ipynb">Solution</a>
@@ -171,9 +171,9 @@
           <span class="num">Lab 5.7</span>
           <span class="time">&#9201; 30 min</span>
         </div>
-        <h4>A Rule-Based ReAct Agent (two-step task)</h4>
-        <p>Combine tools + loop + memory + a policy to solve a two-step task: look up a fact, then compute on it.</p>
-        <div class="chips"><span class="chip">ReAct agent</span><span class="chip">Tool chaining</span><span class="chip">Two-step task</span></div>
+        <h4>A ReAct Agent (two-step task)</h4>
+        <p>Assemble tools + loop + memory into a from-scratch ReAct agent and let the REAL model chain two tools: look up a fact, then compute on it.</p>
+        <div class="chips"><span class="chip">ReAct agent</span><span class="chip">Tool chaining</span><span class="chip">Real model</span></div>
         <div class="links">
           <a class="open" href="lab-07-rule-based-react-agent.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-07-rule-based-react-agent.ipynb">Solution</a>
@@ -185,7 +185,7 @@
           <span class="time">&#9201; 30 min</span>
         </div>
         <h4>Guardrails: Keep the Agent Safe</h4>
-        <p>Add a max_steps cap, a tool allow-list, repeated-action loop detection, and input validation.</p>
+        <p>Wrap a REAL model-driven agent in deterministic guardrails -- allow-list, loop detection, input validation -- and watch the allow-list refuse a tool the model asks for.</p>
         <div class="chips"><span class="chip">Allow-list</span><span class="chip">Loop detection</span><span class="chip">Input validation</span></div>
         <div class="links">
           <a class="open" href="lab-08-guardrails.ipynb">&#9654; Open lab</a>
@@ -198,8 +198,8 @@
           <span class="time">&#9201; 30 min</span>
         </div>
         <h4>Tool Selection: Pick the Right Tool</h4>
-        <p>With a larger tool set, select the right tool per sub-goal across several tasks and measure accuracy.</p>
-        <div class="chips"><span class="chip">Tool selection</span><span class="chip">Routing rules</span><span class="chip">Accuracy</span></div>
+        <p>Let the REAL model select the right tool from descriptions across a suite, and measure how often it is right (no grader -- you inspect and tune).</p>
+        <div class="chips"><span class="chip">Tool selection</span><span class="chip">Descriptions</span><span class="chip">Accuracy</span></div>
         <div class="links">
           <a class="open" href="lab-09-tool-selection.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-09-tool-selection.ipynb">Solution</a>
@@ -217,8 +217,8 @@
           <span class="time">&#9201; 40 min</span>
         </div>
         <h4>Plan-and-Execute (vs ReAct)</h4>
-        <p>Draft a full plan up front, then execute each step's tool -- contrasting with step-by-step ReAct.</p>
-        <div class="chips"><span class="chip">Planning</span><span class="chip">Executor</span><span class="chip">Plan vs ReAct</span></div>
+        <p>Let the REAL model WRITE the whole plan up front, then run each step with your deterministic executor -- contrasting with step-by-step ReAct.</p>
+        <div class="chips"><span class="chip">Planning</span><span class="chip">Executor</span><span class="chip">Real plan</span></div>
         <div class="links">
           <a class="open" href="lab-10-plan-and-execute.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-10-plan-and-execute.ipynb">Solution</a>
@@ -230,8 +230,8 @@
           <span class="time">&#9201; 35 min</span>
         </div>
         <h4>Reflection: Self-Critique and Revise</h4>
-        <p>Produce an answer, critique it against a rule, and revise -- seeded so reflection demonstrably fixes a wrong first try.</p>
-        <div class="chips"><span class="chip">Reflection</span><span class="chip">Critic</span><span class="chip">Self-revision</span></div>
+        <p>The REAL model drafts a numeric answer, a grounded critic checks it against a derived truth, and the model revises -- reflection that fixes a wrong first try.</p>
+        <div class="chips"><span class="chip">Reflection</span><span class="chip">Grounded critic</span><span class="chip">Self-revision</span></div>
         <div class="links">
           <a class="open" href="lab-11-reflection-self-critique.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-11-reflection-self-critique.ipynb">Solution</a>
@@ -243,8 +243,8 @@
           <span class="time">&#9201; 45 min</span>
         </div>
         <h4>Capstone: A Mini Autonomous Agent</h4>
-        <p>Assemble tools + memory + guardrails + a reason/act/observe loop and run it over a small suite of tasks.</p>
-        <div class="chips"><span class="chip">End-to-end agent</span><span class="chip">Task suite</span><span class="chip">Guardrails</span></div>
+        <p>Assemble the from-scratch ReAct loop + tools + memory + a guardrail, driven by the REAL model, and run it over a task suite (including a refusal).</p>
+        <div class="chips"><span class="chip">End-to-end agent</span><span class="chip">Task suite</span><span class="chip">Guardrail</span></div>
         <div class="links">
           <a class="open" href="lab-12-capstone-mini-agent.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-12-capstone-mini-agent.ipynb">Solution</a>
