@@ -715,13 +715,13 @@ agent.<span class="fn">invoke</span>(
 
   <!-- ============ SLIDE 22 — Q1 ============ -->
   <section class="slide" data-title="Quiz Q1 — why a framework"
-    data-note="Answer: B. A framework provides the loop, tools, memory and tracing as battle-tested parts -- it doesn't make the model smarter.">
+    data-note="Answer: A. A framework provides the loop, tools, memory and tracing as battle-tested parts -- it doesn't make the model smarter.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q1 / 10</div>
     <div class="body center">
       <p class="quiz-q">What is the main value of an agent framework like LangChain?</p>
       <div class="quiz-opts">
-        <div class="quiz-opt"><span class="ltr">A</span><span>It makes the underlying language model more intelligent.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>It provides the loop, tools, memory &amp; tracing as ready parts &mdash; you write intent, not plumbing.</span></div>
+        <div class="quiz-opt"><span class="ltr">A</span><span>It provides the loop, tools, memory &amp; tracing as ready parts &mdash; you write intent, not plumbing.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>It makes the underlying language model more intelligent.</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>It removes the need for a language model entirely.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>It guarantees the agent can never make a mistake.</span></div>
       </div>
@@ -736,8 +736,8 @@ agent.<span class="fn">invoke</span>(
     <div class="body center">
       <p class="quiz-restate">What a framework actually buys you.</p>
       <div class="quiz-opts">
-        <div class="quiz-opt dim"><span class="ltr">A</span><span>It makes the underlying language model more intelligent.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>It provides the loop, tools, memory &amp; tracing as ready parts &mdash; you write intent, not plumbing. &#10003;</span></div>
+        <div class="quiz-opt correct"><span class="ltr">A</span><span>It provides the loop, tools, memory &amp; tracing as ready parts &mdash; you write intent, not plumbing. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>It makes the underlying language model more intelligent.</span></div>
         <div class="quiz-opt dim"><span class="ltr">C</span><span>It removes the need for a language model entirely.</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>It guarantees the agent can never make a mistake.</span></div>
       </div>
@@ -747,14 +747,14 @@ agent.<span class="fn">invoke</span>(
 
   <!-- ============ SLIDE 24 — Q2 ============ -->
   <section class="slide" data-title="Quiz Q2 — the @tool docstring"
-    data-note="Answer: B. The docstring becomes the tool's description -- the text the model reads to decide when to call the tool.">
+    data-note="Answer: C. The docstring becomes the tool's description -- the text the model reads to decide when to call the tool.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q2 / 10</div>
     <div class="body center">
       <p class="quiz-q">When you define a tool with <span class="mono">@tool</span>, why does the docstring matter?</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>It&rsquo;s only a comment for other developers.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>It becomes the tool&rsquo;s description &mdash; the model reads it to decide when to use the tool.</span></div>
-        <div class="quiz-opt"><span class="ltr">C</span><span>It sets the model&rsquo;s temperature.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>It sets the model&rsquo;s temperature.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>It becomes the tool&rsquo;s description &mdash; the model reads it to decide when to use the tool.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>It has no effect at run time.</span></div>
       </div>
     </div>
@@ -769,8 +769,8 @@ agent.<span class="fn">invoke</span>(
       <p class="quiz-restate">What the <span class="mono">@tool</span> docstring is really for.</p>
       <div class="quiz-opts">
         <div class="quiz-opt dim"><span class="ltr">A</span><span>It&rsquo;s only a comment for other developers.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>It becomes the tool&rsquo;s description &mdash; the model reads it to decide when to use the tool. &#10003;</span></div>
-        <div class="quiz-opt dim"><span class="ltr">C</span><span>It sets the model&rsquo;s temperature.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>It sets the model&rsquo;s temperature.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">C</span><span>It becomes the tool&rsquo;s description &mdash; the model reads it to decide when to use the tool. &#10003;</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>It has no effect at run time.</span></div>
       </div>
       <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;The model never sees your code &mdash; only the tool&rsquo;s <b>name, description (the docstring) and input schema</b>. A vague docstring is the #1 reason an agent picks the wrong tool.</p>
@@ -779,15 +779,15 @@ agent.<span class="fn">invoke</span>(
 
   <!-- ============ SLIDE 26 — Q3 ============ -->
   <section class="slide" data-title="Quiz Q3 — the agent runtime"
-    data-note="Answer: B. The agent returned by create_agent runs the loop: calls the model, executes the chosen tool, feeds the observation back, and caps the steps with recursion_limit.">
+    data-note="Answer: D. The agent returned by create_agent runs the loop: calls the model, executes the chosen tool, feeds the observation back, and caps the steps with recursion_limit.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q3 / 10</div>
     <div class="body center">
       <p class="quiz-q">In LangChain 1.x, what does the agent returned by <span class="mono">create_agent</span> do?</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>To train the language model on your data.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>Runs the loop &mdash; calls the model, executes the chosen tool, feeds back the observation, caps the steps.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>To replace the need for tools.</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>To convert text into embeddings.</span></div>
-        <div class="quiz-opt"><span class="ltr">D</span><span>To replace the need for tools.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Runs the loop &mdash; calls the model, executes the chosen tool, feeds back the observation, caps the steps.</span></div>
       </div>
     </div>
   </section>
@@ -801,9 +801,9 @@ agent.<span class="fn">invoke</span>(
       <p class="quiz-restate">A runnable agent that actually runs the loop.</p>
       <div class="quiz-opts">
         <div class="quiz-opt dim"><span class="ltr">A</span><span>To train the language model on your data.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>Runs the loop &mdash; calls the model, executes the chosen tool, feeds back the observation, caps the steps. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>To replace the need for tools.</span></div>
         <div class="quiz-opt dim"><span class="ltr">C</span><span>To convert text into embeddings.</span></div>
-        <div class="quiz-opt dim"><span class="ltr">D</span><span>To replace the need for tools.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">D</span><span>Runs the loop &mdash; calls the model, executes the chosen tool, feeds back the observation, caps the steps. &#10003;</span></div>
       </div>
       <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;The <b>model decides</b> the next action; the <b>compiled agent executes</b> it and manages the loop &mdash; including the <span class="mono">recursion_limit</span> guardrail. That&rsquo;s Module 5&rsquo;s reason/execute split, in code &mdash; and in 1.x <span class="mono">create_agent</span> gives you both in one object.</p>
     </div>
@@ -843,13 +843,13 @@ agent.<span class="fn">invoke</span>(
 
   <!-- ============ SLIDE 30 — Q5 ============ -->
   <section class="slide" data-title="Quiz Q5 — LangGraph"
-    data-note="Answer: B. LangGraph models the agent as an explicit state graph -- nodes, edges and shared state -- for branching, cycles, durability and human-in-the-loop.">
+    data-note="Answer: A. LangGraph models the agent as an explicit state graph -- nodes, edges and shared state -- for branching, cycles, durability and human-in-the-loop.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q5 / 10</div>
     <div class="body center">
       <p class="quiz-q">What does LangGraph add over a basic LangChain agent?</p>
       <div class="quiz-opts">
-        <div class="quiz-opt"><span class="ltr">A</span><span>A bigger language model.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>An explicit state graph &mdash; nodes, edges &amp; shared state &mdash; for branching, cycles, durability &amp; human-in-the-loop.</span></div>
+        <div class="quiz-opt"><span class="ltr">A</span><span>An explicit state graph &mdash; nodes, edges &amp; shared state &mdash; for branching, cycles, durability &amp; human-in-the-loop.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>A bigger language model.</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>It removes the ability to use tools.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>It only works without any LLM.</span></div>
       </div>
@@ -864,8 +864,8 @@ agent.<span class="fn">invoke</span>(
     <div class="body center">
       <p class="quiz-restate">Beyond the simple reason&ndash;act loop.</p>
       <div class="quiz-opts">
-        <div class="quiz-opt dim"><span class="ltr">A</span><span>A bigger language model.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>An explicit state graph &mdash; nodes, edges &amp; shared state &mdash; for branching, cycles, durability &amp; human-in-the-loop. &#10003;</span></div>
+        <div class="quiz-opt correct"><span class="ltr">A</span><span>An explicit state graph &mdash; nodes, edges &amp; shared state &mdash; for branching, cycles, durability &amp; human-in-the-loop. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>A bigger language model.</span></div>
         <div class="quiz-opt dim"><span class="ltr">C</span><span>It removes the ability to use tools.</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>It only works without any LLM.</span></div>
       </div>
@@ -875,14 +875,14 @@ agent.<span class="fn">invoke</span>(
 
   <!-- ============ SLIDE 32 — Q6 ============ -->
   <section class="slide" data-title="Quiz Q6 — LangChain vs LangGraph"
-    data-note="Answer: B. Start with LangChain for a single-agent loop; reach for LangGraph when you need explicit control the simple loop can't express.">
+    data-note="Answer: C. Start with LangChain for a single-agent loop; reach for LangGraph when you need explicit control the simple loop can't express.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q6 / 10</div>
     <div class="body center">
       <p class="quiz-q">When should you reach for LangGraph instead of a basic LangChain agent?</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>Always &mdash; never use a plain LangChain agent.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>When you need explicit control &mdash; branching, cycles, durable state or human approval &mdash; the simple loop can&rsquo;t express.</span></div>
-        <div class="quiz-opt"><span class="ltr">C</span><span>Only when you have no tools at all.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Only when you have no tools at all.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>When you need explicit control &mdash; branching, cycles, durable state or human approval &mdash; the simple loop can&rsquo;t express.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>Never &mdash; they do exactly the same thing.</span></div>
       </div>
     </div>
@@ -897,8 +897,8 @@ agent.<span class="fn">invoke</span>(
       <p class="quiz-restate">Choosing between the two.</p>
       <div class="quiz-opts">
         <div class="quiz-opt dim"><span class="ltr">A</span><span>Always &mdash; never use a plain LangChain agent.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>When you need explicit control &mdash; branching, cycles, durable state or human approval &mdash; the simple loop can&rsquo;t express. &#10003;</span></div>
-        <div class="quiz-opt dim"><span class="ltr">C</span><span>Only when you have no tools at all.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Only when you have no tools at all.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">C</span><span>When you need explicit control &mdash; branching, cycles, durable state or human approval &mdash; the simple loop can&rsquo;t express. &#10003;</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>Never &mdash; they do exactly the same thing.</span></div>
       </div>
       <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;<b>LangChain to get an agent running; LangGraph to get its flow under control.</b> Start simple; graduate only when a concrete need forces you up &mdash; same discipline as agent-vs-workflow.</p>
@@ -907,15 +907,15 @@ agent.<span class="fn">invoke</span>(
 
   <!-- ============ SLIDE 34 — Q7 ============ -->
   <section class="slide" data-title="Quiz Q7 — AutoGPT"
-    data-note="Answer: B. AutoGPT-style agents take a high-level goal and self-prompt with minimal human input -- ambitious, but prone to looping, drifting and cost.">
+    data-note="Answer: D. AutoGPT-style agents take a high-level goal and self-prompt with minimal human input -- ambitious, but prone to looping, drifting and cost.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q7 / 10</div>
     <div class="body center">
       <p class="quiz-q">What characterises an AutoGPT-style autonomous agent?</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>It requires a human to approve every single step.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>It takes a high-level goal and self-prompts with minimal human input &mdash; ambitious, but prone to looping &amp; drift.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>It is always cheaper and more reliable than a simple agent.</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>It cannot use any tools.</span></div>
-        <div class="quiz-opt"><span class="ltr">D</span><span>It is always cheaper and more reliable than a simple agent.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>It takes a high-level goal and self-prompts with minimal human input &mdash; ambitious, but prone to looping &amp; drift.</span></div>
       </div>
     </div>
   </section>
@@ -929,9 +929,9 @@ agent.<span class="fn">invoke</span>(
       <p class="quiz-restate">The fully-autonomous end of the spectrum.</p>
       <div class="quiz-opts">
         <div class="quiz-opt dim"><span class="ltr">A</span><span>It requires a human to approve every single step.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>It takes a high-level goal and self-prompts with minimal human input &mdash; ambitious, but prone to looping &amp; drift. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>It is always cheaper and more reliable than a simple agent.</span></div>
         <div class="quiz-opt dim"><span class="ltr">C</span><span>It cannot use any tools.</span></div>
-        <div class="quiz-opt dim"><span class="ltr">D</span><span>It is always cheaper and more reliable than a simple agent.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">D</span><span>It takes a high-level goal and self-prompts with minimal human input &mdash; ambitious, but prone to looping &amp; drift. &#10003;</span></div>
       </div>
       <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;AutoGPT was 2023&rsquo;s viral autonomous demo. Its lesson: open-ended autonomy <b>loops, drifts and burns cost</b> &mdash; so the field moved to <b>bounded, structured, guardrailed</b> designs.</p>
     </div>
@@ -939,13 +939,13 @@ agent.<span class="fn">invoke</span>(
 
   <!-- ============ SLIDE 36 — Q8 ============ -->
   <section class="slide" data-title="Quiz Q8 — multi-agent"
-    data-note="Answer: B. Multi-agent frameworks (CrewAI, AutoGen) coordinate several specialised agents -- roles like researcher, writer, reviewer -- that collaborate on a task.">
+    data-note="Answer: A. Multi-agent frameworks (CrewAI, AutoGen) coordinate several specialised agents -- roles like researcher, writer, reviewer -- that collaborate on a task.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q8 / 10</div>
     <div class="body center">
       <p class="quiz-q">What do multi-agent frameworks like CrewAI and AutoGen do?</p>
       <div class="quiz-opts">
-        <div class="quiz-opt"><span class="ltr">A</span><span>Run a single agent faster on a GPU.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>Coordinate several specialised agents &mdash; e.g. researcher, writer, reviewer &mdash; that collaborate on a task.</span></div>
+        <div class="quiz-opt"><span class="ltr">A</span><span>Coordinate several specialised agents &mdash; e.g. researcher, writer, reviewer &mdash; that collaborate on a task.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Run a single agent faster on a GPU.</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>Compress a model to run on a phone.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>Remove the need for any language model.</span></div>
       </div>
@@ -960,8 +960,8 @@ agent.<span class="fn">invoke</span>(
     <div class="body center">
       <p class="quiz-restate">CrewAI &amp; AutoGen in one line.</p>
       <div class="quiz-opts">
-        <div class="quiz-opt dim"><span class="ltr">A</span><span>Run a single agent faster on a GPU.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>Coordinate several specialised agents &mdash; e.g. researcher, writer, reviewer &mdash; that collaborate on a task. &#10003;</span></div>
+        <div class="quiz-opt correct"><span class="ltr">A</span><span>Coordinate several specialised agents &mdash; e.g. researcher, writer, reviewer &mdash; that collaborate on a task. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Run a single agent faster on a GPU.</span></div>
         <div class="quiz-opt dim"><span class="ltr">C</span><span>Compress a model to run on a phone.</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>Remove the need for any language model.</span></div>
       </div>
@@ -971,14 +971,14 @@ agent.<span class="fn">invoke</span>(
 
   <!-- ============ SLIDE 38 — Q9 ============ -->
   <section class="slide" data-title="Quiz Q9 — external APIs"
-    data-note="Answer: B. You give an agent live capabilities by wrapping a service (Google Search, Wolfram Alpha) as a tool and adding it to the tools list -- usually a prebuilt integration.">
+    data-note="Answer: C. You give an agent live capabilities by wrapping a service (Google Search, Wolfram Alpha) as a tool and adding it to the tools list -- usually a prebuilt integration.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q9 / 10</div>
     <div class="body center">
       <p class="quiz-q">How do you give a LangChain agent access to Google Search or Wolfram Alpha?</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>Retrain the model on the whole internet first.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>Wrap the service as a tool (often a prebuilt integration) and add it to the agent&rsquo;s tools list.</span></div>
-        <div class="quiz-opt"><span class="ltr">C</span><span>You can&rsquo;t &mdash; agents only use their training data.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>You can&rsquo;t &mdash; agents only use their training data.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Wrap the service as a tool (often a prebuilt integration) and add it to the agent&rsquo;s tools list.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>Paste the API key into the user&rsquo;s question.</span></div>
       </div>
     </div>
@@ -993,8 +993,8 @@ agent.<span class="fn">invoke</span>(
       <p class="quiz-restate">Giving the agent real capabilities.</p>
       <div class="quiz-opts">
         <div class="quiz-opt dim"><span class="ltr">A</span><span>Retrain the model on the whole internet first.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>Wrap the service as a tool (often a prebuilt integration) and add it to the agent&rsquo;s tools list. &#10003;</span></div>
-        <div class="quiz-opt dim"><span class="ltr">C</span><span>You can&rsquo;t &mdash; agents only use their training data.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>You can&rsquo;t &mdash; agents only use their training data.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">C</span><span>Wrap the service as a tool (often a prebuilt integration) and add it to the agent&rsquo;s tools list. &#10003;</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>Paste the API key into the user&rsquo;s question.</span></div>
       </div>
       <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Always the same pattern: get an <b>API key</b> (in <span class="mono">.env</span>) &rarr; <b>wrap</b> the service as a tool &rarr; <b>add</b> it to the tools list. The same agent then reaches live facts &amp; real computation &mdash; that&rsquo;s Lab 6.2.</p>
@@ -1096,7 +1096,7 @@ agent.<span class="fn">invoke</span>(
 <div class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Day 3 · Module 6 — Frameworks for Building AI Agents</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.1</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.2</span>
 </div>
 
 <script>
