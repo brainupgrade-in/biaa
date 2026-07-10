@@ -390,10 +390,14 @@ KNOWLEDGE = {"capital of france": "Paris", "population of metropolis": "120000"}
 REGISTRY = {
     "calculator": {"name": "calculator", "fn": safe_calc},
     "lookup":     {"name": "lookup", "fn": lambda k: KNOWLEDGE.get(k.lower().strip(), "unknown")},
+    "weather":    {"name": "weather", "fn": lambda city: "sunny 24C in " + city.strip()},
 }
-print("registry:", list(REGISTRY))'''),
+print("registry:", list(REGISTRY))
+# Note: a real tool can also FAIL -- e.g. calculator on non-math input raises. Routing must survive that.'''),
       md('''## Your Turn
-Implement `route`: find the tool, run it, return a dict; handle unknown tools and tool errors.'''),
+Implement `route`: find the tool, run it, return a dict. Route must survive **three** hazards a real
+agent hits &mdash; an **unknown** tool name, a tool that **raises** (bad input), and still pass a good
+call through. The `try/except` is what turns a crash into a recoverable observation.'''),
       code(render([
         "def route(registry, action, arg):",
         {"s": '    tool = ___    # TODO: get the tool by name (None if it is not registered)',
@@ -410,16 +414,20 @@ Implement `route`: find the tool, run it, return a dict; handle unknown tools an
         "",
         "try:",
         "    print(route(REGISTRY, 'calculator', '10/2'))",
-        "    print(route(REGISTRY, 'lookup', 'capital of france'))",
-        "    print(route(REGISTRY, 'no_such_tool', 'x'))",
+        "    print(route(REGISTRY, 'weather', 'tokyo'))",
+        "    print(route(REGISTRY, 'no_such_tool', 'x'))    # unknown tool",
+        "    print(route(REGISTRY, 'calculator', 'not math'))  # a tool that RAISES",
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
       grader('''expect_true("routes the calculator correctly", lambda: route(REGISTRY, "calculator", "10/2")["observation"] == 5.0)
 expect_true("routes the lookup correctly", lambda: route(REGISTRY, "lookup", "capital of france")["observation"] == "Paris")
+expect_true("routes the third tool (weather) correctly", lambda: "tokyo" in route(REGISTRY, "weather", "tokyo")["observation"])
 expect_true("ok flag is True on success", lambda: route(REGISTRY, "calculator", "2+2")["ok"] is True)
 expect_true("unknown tool handled without crashing", lambda: route(REGISTRY, "no_such_tool", "x")["ok"] is False)
-expect_true("unknown tool message names the tool", lambda: "no_such_tool" in route(REGISTRY, "no_such_tool", "x")["observation"])'''),
+expect_true("unknown tool message names the tool", lambda: "no_such_tool" in route(REGISTRY, "no_such_tool", "x")["observation"])
+expect_true("a tool that RAISES is caught, not crashed", lambda: route(REGISTRY, "calculator", "not math")["ok"] is False)
+expect_true("the caught error is reported as an observation", lambda: "error" in route(REGISTRY, "calculator", "not math")["observation"].lower())'''),
       footer(5, "Routing turns a chosen action into a real observation &mdash; safely. The split between deciding (the policy) and executing (the router) is what makes agents debuggable."),
     ]
 
@@ -638,7 +646,7 @@ With more than two tools, the agent must **select** the right one for each sub-g
 hardest part of tool use. A real agent reads each tool's **description**; here we use simple keyword
 rules and **measure** how often the choice is right. Good selection is the difference between a
 useful agent and a confused one.'''),
-      code('''# DEMO -- four tools, several tagged tasks
+      code('''# DEMO -- four tools, several tagged tasks (including one that trips a naive rule)
 TOOLSET = {"calculator", "weather", "translate", "lookup"}
 TASKS = [
     {"text": "what is 12 * 8", "tool": "calculator"},
@@ -647,10 +655,15 @@ TASKS = [
     {"text": "capital of france", "tool": "lookup"},
     {"text": "what is 100 / 4", "tool": "calculator"},
     {"text": "weather in paris", "tool": "weather"},
+    {"text": "who was the 16th president", "tool": "lookup"},   # has a digit but is NOT arithmetic!
 ]
-print("tools:", TOOLSET, "| tasks:", len(TASKS))'''),
+print("tools:", TOOLSET, "| tasks:", len(TASKS))
+print("Trap: 'the 16th president' contains a digit -- a naive 'any digit -> calculator' rule routes it WRONG.")'''),
       md('''## Your Turn
-Write `select_tool` so it picks the right tool for each task, then compute selection accuracy.'''),
+A naive rule "*any digit means calculator*" scores only 6/7 &mdash; it misroutes *"the 16th
+president"* (a lookup) to the calculator. Fix `select_tool` so arithmetic needs a digit **and** an
+operator (`+ - * /`), then drive accuracy to **100%**. This is the goal-driven loop: refine the rule
+until the suite passes.'''),
       code(render([
         'TOOLSET = {"calculator", "weather", "translate", "lookup"}',
         "TASKS = [",
@@ -660,6 +673,7 @@ Write `select_tool` so it picks the right tool for each task, then compute selec
         '    {"text": "capital of france", "tool": "lookup"},',
         '    {"text": "what is 100 / 4", "tool": "calculator"},',
         '    {"text": "weather in paris", "tool": "weather"},',
+        '    {"text": "who was the 16th president", "tool": "lookup"},',
         "]",
         "",
         "def select_tool(text):",
@@ -669,8 +683,8 @@ Write `select_tool` so it picks the right tool for each task, then compute selec
         '        return "weather"',
         '    if "translate" in t:',
         '        return "translate"',
-        {"s": '    if ___:               # TODO: any digit means an arithmetic task',
-         "a": '    if any(ch.isdigit() for ch in t):'},
+        {"s": '    if ___:               # TODO: arithmetic needs a digit AND an operator (+ - * /), not just any digit',
+         "a": '    if any(ch.isdigit() for ch in t) and any(op in t for op in "+-*/"):'},
         {"s": '        return ___        # TODO: the calculator tool name',
          "a": '        return "calculator"'},
         '    return "lookup"',
@@ -691,8 +705,9 @@ Write `select_tool` so it picks the right tool for each task, then compute selec
 expect_true("a weather request routes to weather", lambda: select_tool("weather in paris") == "weather")
 expect_true("'translate ...' routes to translate", lambda: select_tool("translate hello to french") == "translate")
 expect_true("a plain fact routes to lookup", lambda: select_tool("capital of france") == "lookup")
+expect_true("'the 16th president' (digit, no operator) routes to lookup, NOT calculator", lambda: select_tool("who was the 16th president") == "lookup")
 expect_true("selection accuracy is 100% on the suite", lambda: selection_accuracy() == 1.0)'''),
-      footer(9, "Selecting the right tool per sub-goal is the core skill of tool use. A real LLM does it from tool descriptions &mdash; the rule here makes the mechanism visible."),
+      footer(9, "Selecting the right tool per sub-goal is the core skill of tool use &mdash; and a naive keyword rule quietly misfires (a digit is not always math). A real LLM selects from tool descriptions; refining the rule until the suite passes is exactly how you'd tune it."),
     ]
 
 # ============================================================ LAB 10
@@ -790,25 +805,35 @@ def _l11(sol):
 **wrong first attempt** (it forgets to double the population), run a **critic** that catches the
 mistake, and **revise**. Reflection trades extra work for higher quality &mdash; here it turns a
 wrong answer into a right one.'''),
-      code('''# DEMO -- the task: report TWICE the population of Metropolis (120000) => 240000
-EXPECTED = 240000
+      code('''# DEMO -- task: report TWICE the population of Metropolis. The CORRECT answer is DERIVED
+# from the looked-up base (not memorised) -- so a good critic reasons about a rule, it does not
+# just match one constant. Change the base below and a rule-based critic still works; a hardcoded
+# "== 240000" would silently break.
+KB = {"population of metropolis": 120000}
+def base_population():
+    return KB["population of metropolis"]
 def first_attempt(goal):
-    # a naive agent that forgets to double -- deliberately wrong
-    return 120000
-print("naive first answer:", first_attempt("twice the population"), "(should be", EXPECTED, ")")'''),
+    # a naive agent that returns the base but forgets to double -- deliberately wrong
+    return base_population()
+print("naive first answer:", first_attempt("twice the population"), "(the base, not doubled)")'''),
       md('''## Your Turn
-Implement the critic, the revision, and the reflect loop that revises only when the critic objects.'''),
+Implement the critic, the revision, and the reflect loop. The critic must check a **derived rule**
+&mdash; *the answer equals twice the looked-up base* &mdash; **not** a hardcoded `240000`. Derive the
+expected value so the critic would still be right if the base population changed.'''),
       code(render([
-        "EXPECTED = 240000",
+        'KB = {"population of metropolis": 120000}',
+        "def base_population():",
+        '    return KB["population of metropolis"]',
         "def first_attempt(goal):",
-        "    return 120000   # deliberately wrong (forgot to double)",
+        "    return base_population()   # deliberately wrong (forgot to double)",
         "",
         "def critic(answer):",
-        "    # return (ok, feedback)",
-        {"s": '    if answer == ___:    # TODO: the expected (correct) value',
-         "a": '    if answer == EXPECTED:'},
+        "    # return (ok, feedback). Derive the target from the base -- do not hardcode 240000.",
+        {"s": '    want = ___    # TODO: twice the looked-up base population (a derived value)',
+         "a": '    want = 2 * base_population()'},
+        '    if answer == want:',
         '        return (True, "looks correct")',
-        '    return (False, "you forgot to double the population")',
+        '    return (False, "expected twice the base population")',
         "",
         "def revise(answer, feedback):",
         {"s": '    return ___    # TODO: double the answer to fix the mistake',
@@ -828,10 +853,11 @@ Implement the critic, the revision, and the reflect loop that revises only when 
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''expect_true("reflection corrects the final answer", lambda: reflective_answer("x")["final"] == 240000)
+      grader('''expect_true("reflection corrects the final answer", lambda: reflective_answer("x")["final"] == 2 * base_population())
 expect_true("the critic fired on the wrong first answer", lambda: reflective_answer("x")["critic_fired"] is True)
-expect_true("critic accepts a correct answer", lambda: critic(240000)[0] is True)
-expect_true("critic rejects a wrong answer", lambda: critic(120000)[0] is False)
+expect_true("critic accepts the derived-correct answer", lambda: critic(2 * base_population())[0] is True)
+expect_true("critic rejects the un-doubled base", lambda: critic(base_population())[0] is False)
+expect_true("the critic is DERIVED, not hardcoded (still right if the base changes)", lambda: (KB.__setitem__("population of metropolis", 500000), critic(1000000)[0] is True and critic(240000)[0] is False, KB.__setitem__("population of metropolis", 120000))[1])
 expect_true("revise applies the fix", lambda: revise(120000, "double it") == 240000)'''),
       *optional_llm(
         "Let a REAL LLM be the critic; the answer -> critique -> revise loop above is identical.",
@@ -866,26 +892,34 @@ def _l12(sol):
       md('''## Concept
 Capstone: a **mini autonomous agent** that brings together everything &mdash; a tool registry, a
 reason/act/observe **loop**, **memory**, and a **guardrail** (only allowed tools) &mdash; and runs
-it over a **suite** of tasks (a two-step lookup-and-compute, a fact lookup, and an arithmetic task).
-The score reflects **tasks solved / total**. The optional cell swaps the rule-based policy for a
-**real LangChain agent** &mdash; the bridge to Module 6.'''),
+it over a **suite**: a two-step lookup-and-compute, a fact lookup, an arithmetic task, **and a
+dangerous request the guardrail must refuse**. You **assemble** the agent (rebuild the two-step
+chain, wire the guardrail) rather than just read it. The score is **tasks solved / total** &mdash;
+and *correctly refusing* the dangerous task counts as solved. The optional cell swaps the rule-based
+policy for a **real LangChain agent** &mdash; the bridge to Module 6.'''),
       code(SAFE_CALC + '''
 KB = {"population of metropolis": "120000", "capital of france": "Paris"}
 TOOLS = {"calculator": safe_calc, "lookup": lambda k: KB.get(k.lower().strip(), "unknown")}
-ALLOWED = set(TOOLS)
+ALLOWED = set(TOOLS)                    # ONLY these tools may run
+# Note: a naive policy below will TRY to call a "delete_files" tool on a "delete" request --
+# that tool is NOT in ALLOWED, so your guardrail must refuse it instead of running it.
 print("tools:", list(TOOLS), "| allow-list:", ALLOWED)'''),
       md('''## Your Turn
-Complete the policy routing, the guardrail check, and the suite evaluation. `run_agent` ties it together.'''),
+Assemble the agent: **rebuild the two-step chain** (look up the population, then double it &mdash; the
+skill from Lab 7), **wire the guardrail** (only allow-listed tools run), and **score the suite**.
+`run_agent` ties the loop + memory together.'''),
       code(render([
         "def policy(goal, memory):",
         '    seen = [s["action"] for s in memory]',
         "    text = goal.lower()",
         '    if "population" in text and "twice" in text:',
         '        if "lookup" not in seen:',
-        '            return ("lookup", "population of metropolis")',
+        {"s": '            return ("lookup", ___)   # TODO: rebuild step 1 -- the key to look up the population',
+         "a": '            return ("lookup", "population of metropolis")'},
         '        if "calculator" not in seen:',
         '            pop = int([s["observation"] for s in memory if s["action"] == "lookup"][0])',
-        '            return ("calculator", str(pop) + "*2")',
+        {"s": '            return ("calculator", ___)   # TODO: rebuild step 2 -- an expression for twice the population',
+         "a": '            return ("calculator", str(pop) + "*2")'},
         '        return ("final", str([s["observation"] for s in memory if s["action"] == "calculator"][0]))',
         '    if "capital" in text:',
         '        if "lookup" not in seen:',
@@ -893,9 +927,10 @@ Complete the policy routing, the guardrail check, and the suite evaluation. `run
         '        return ("final", [s["observation"] for s in memory if s["action"] == "lookup"][0])',
         '    if "compute" in text:',
         '        if "calculator" not in seen:',
-        {"s": '            return ("calculator", ___)   # TODO: the math expression after the word "compute"',
-         "a": '            return ("calculator", goal.split("compute")[-1].strip())'},
+        '            return ("calculator", goal.split("compute")[-1].strip())',
         '        return ("final", str([s["observation"] for s in memory if s["action"] == "calculator"][0]))',
+        '    if "delete" in text:',
+        '        return ("delete_files", "everything")   # a DANGEROUS tool that is NOT allow-listed',
         '    return ("final", "I cannot solve this")',
         "",
         "def run_agent(goal, max_steps=6):",
@@ -904,7 +939,7 @@ Complete the policy routing, the guardrail check, and the suite evaluation. `run
         "        action, arg = policy(goal, memory)",
         "        if action == 'final':",
         "            return str(arg)",
-        {"s": '        if action not in ___:   # TODO: the allow-list guardrail (only permitted tools)',
+        {"s": '        if action not in ___:   # TODO: the allow-list guardrail -- refuse any tool not permitted',
          "a": '        if action not in ALLOWED:'},
         "            return 'blocked'",
         "        obs = TOOLS[action](arg)",
@@ -915,9 +950,10 @@ Complete the policy routing, the guardrail check, and the suite evaluation. `run
         '    {"goal": "twice the population of metropolis", "answer": "240000"},',
         '    {"goal": "what is the capital of france", "answer": "Paris"},',
         '    {"goal": "compute 15*3", "answer": "45"},',
+        '    {"goal": "delete the database", "answer": "blocked"},   # the guardrail should refuse this',
         "]",
         "def evaluate():",
-        {"s": '    solved = ___   # TODO: count suite tasks the agent answers correctly',
+        {"s": '    solved = ___   # TODO: count suite tasks whose result matches the expected answer',
          "a": '    solved = sum(1 for t in SUITE if run_agent(t["goal"]) == t["answer"])'},
         "    return solved, len(SUITE)",
         "",
@@ -931,7 +967,8 @@ Complete the policy routing, the guardrail check, and the suite evaluation. `run
       grader('''expect_true("solves the two-step population task", lambda: run_agent("twice the population of metropolis") == "240000")
 expect_true("solves the capital lookup task", lambda: run_agent("what is the capital of france") == "Paris")
 expect_true("solves the arithmetic task", lambda: run_agent("compute 15*3") == "45")
-expect_true("solves the whole suite (3/3)", lambda: evaluate() == (3, 3))
+expect_true("REFUSES the dangerous request (guardrail blocks the un-allowed tool)", lambda: run_agent("delete the database") == "blocked")
+expect_true("solves the whole suite (4/4, refusal counts as correct)", lambda: evaluate() == (4, 4))
 expect_true("handles an unsolvable goal without crashing", lambda: run_agent("xyzzy nonsense") == "I cannot solve this")
 expect_true("never exceeds the step cap", lambda: run_agent("twice the population of metropolis") != "max_steps")'''),
       *optional_llm(
