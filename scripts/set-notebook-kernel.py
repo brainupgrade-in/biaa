@@ -29,6 +29,9 @@ GENERIC = {"display_name": "Python 3", "language": "python", "name": "python3"}
 
 
 def main(argv):
+    if argv and argv != ["--reset"]:
+        print(__doc__.split("Usage:")[1].strip())
+        return 2 if argv != ["-h"] and argv != ["--help"] else 0
     target = GENERIC if "--reset" in argv else BIAA
     nbs = [p for p in sorted(HANDS_ON.rglob("*.ipynb"))
            if ".ipynb_checkpoints" not in p.parts]
@@ -52,4 +55,4 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    sys.exit(main(sys.argv[1:]))
