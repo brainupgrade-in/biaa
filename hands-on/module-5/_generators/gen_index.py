@@ -97,7 +97,7 @@ html = f'''<!DOCTYPE html>
       <span class="k">{len(order)} labs</span> |
       <span>{len(by["Beginner"])} Beginner &middot; {len(by["Intermediate"])} Intermediate &middot; {len(by["Advanced"])} Advanced</span> |
       <span class="k">~{total_min//60}h {total_min%60}m total</span> |
-      <span>Experiential: concept &rarr; demo &rarr; practice</span>
+      <span>Near-real: build it &rarr; run the real agent &rarr; read the trace</span>
     </div>
   </header>
 
@@ -141,7 +141,7 @@ html = f'''<!DOCTYPE html>
     &copy; 2026 Gheware DevOps &amp; Agentic AI |
     <a href="https://devops.gheware.com">devops.gheware.com</a> |
     Trainer: Rajesh Gheware |
-    Building Intelligent AI Agents &middot; Day 3 Module 5 Labs v1.0
+    Building Intelligent AI Agents &middot; Day 3 Module 5 Labs v1.1
   </footer>
 </body>
 </html>'''
