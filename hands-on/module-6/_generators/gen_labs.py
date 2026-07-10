@@ -315,22 +315,25 @@ print("formatted:", demo_prompt.format(who="Ada"))
 demo_model = ChatOllama(model="llama3.2:1b")
 print("model configured:", demo_model.model, "| has .invoke:", callable(getattr(demo_model, "invoke", None)))'''),
       md('''## Your Turn
-Build a prompt with an `{input}` slot, and configure the chat model. (The live call is the optional cell.)'''),
+Build the **template** (with an `{input}` slot), format it in `build_prompt`, and configure the chat model. (The live call is the optional cell.)'''),
       code(render([
         "from langchain_core.prompts import PromptTemplate",
         "from langchain_ollama import ChatOllama",
         "",
+        "def build_template():",
+        {"s": '    return PromptTemplate.from_template(___)   # TODO: a template with an {input} slot',
+         "a": '    return PromptTemplate.from_template("Answer concisely.\\nQuestion: {input}")'},
+        "",
         "def build_prompt(question):",
-        {"s": '    template = PromptTemplate.from_template(___)   # TODO: a template with an {input} slot',
-         "a": '    template = PromptTemplate.from_template("Answer concisely.\\nQuestion: {input}")'},
-        {"s": '    return ___   # TODO: format the template with input=question',
-         "a": '    return template.format(input=question)'},
+        {"s": '    return ___   # TODO: format build_template() with input=question',
+         "a": '    return build_template().format(input=question)'},
         "",
         "def build_model():",
         {"s": '    return ___   # TODO: a ChatOllama configured for the "llama3.2:1b" model',
          "a": '    return ChatOllama(model="llama3.2:1b")'},
         "",
         "try:",
+        "    print('input variables:', build_template().input_variables)",
         "    print(build_prompt('what is an agent?'))",
         "    m = build_model()",
         "    print('---')",
@@ -338,11 +341,11 @@ Build a prompt with an `{input}` slot, and configure the chat model. (The live c
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''expect_true("the prompt fills in the question", lambda: "capital of france" in build_prompt("capital of france"))
-expect_true("the prompt has a Question: slot", lambda: "Question:" in build_prompt("x"))
-expect_true("the model is a ChatOllama for llama3.2:1b", lambda: build_model().model == "llama3.2:1b")
-expect_true("every model shares the .invoke interface", lambda: callable(getattr(build_model(), "invoke", None)))
-expect_true("swapping the model is a one-line change", lambda: build_model().model == "llama3.2:1b")'''),
+      grader('''expect_true("the template exposes exactly the {input} variable", lambda: build_template().input_variables == ["input"])
+expect_true("the prompt fills in the question", lambda: "capital of france" in build_prompt("capital of france"))
+expect_true("a DIFFERENT question is substituted, not left as a slot", lambda: "photosynthesis" in build_prompt("photosynthesis") and "{input}" not in build_prompt("photosynthesis"))
+expect_true("the prompt keeps its Question: label", lambda: "Question:" in build_prompt("x"))
+expect_true("the model is a ChatOllama for llama3.2:1b", lambda: build_model().model == "llama3.2:1b")'''),
       *live(
         "Format a prompt, then actually call the model and read `.content`.",
         '''try:
@@ -766,7 +769,8 @@ def web_search(query: str) -> str:
 
 print("a search tool:", web_search.name, "->", web_search.invoke("population of france"))'''),
       md('''## Your Turn
-Give the agent **both** tools in `build_agent`, and complete `tools_used` to read a chained trace.'''),
+Give the agent **both** tools in `build_agent`, then complete `chain_is_grounded` &mdash; the check that the
+**calculator step's argument was derived from the search step's result** (and that flags a BROKEN chain).'''),
       code(render([
         SAFE_CALC,
         "",
@@ -792,43 +796,64 @@ Give the agent **both** tools in `build_agent`, and complete `tools_used` to rea
          "a": '    tools = [web_search, calculator]'},
         "    return create_agent(model, tools)",
         "",
-        "# a fixed sample trace that chained search -> calculator:",
-        "SAMPLE = [",
+        "# A GROUNDED trace: the calculator computed on the number search returned.",
+        "GROUNDED = [",
         '    AIMessage(content="", tool_calls=[{"name": "web_search", "args": {"query": "population of france"}, "id": "a"}]),',
         '    ToolMessage(content="68000000", tool_call_id="a"),',
         '    AIMessage(content="", tool_calls=[{"name": "calculator", "args": {"expression": "68000000/2"}, "id": "b"}]),',
         '    ToolMessage(content="34000000.0", tool_call_id="b"),',
         '    AIMessage(content="34000000"),',
         "]",
+        "# A BROKEN trace: the calculator argument was NOT derived from the search result (hallucinated).",
+        "BROKEN = [",
+        '    AIMessage(content="", tool_calls=[{"name": "web_search", "args": {"query": "population of france"}, "id": "a"}]),',
+        '    ToolMessage(content="68000000", tool_call_id="a"),',
+        '    AIMessage(content="", tool_calls=[{"name": "calculator", "args": {"expression": "42/2"}, "id": "b"}]),',
+        '    ToolMessage(content="21.0", tool_call_id="b"),',
+        '    AIMessage(content="21"),',
+        "]",
         "",
-        "def tools_used(messages):",
-        {"s": '    return [___ for m in messages for tc in (getattr(m, "tool_calls", None) or [])]   # TODO: tc name',
-         "a": '    return [tc["name"] for m in messages for tc in (getattr(m, "tool_calls", None) or [])]'},
+        "def chained_arg(messages):",
+        '    """Pull (first tool observation, calculator expression) out of a search->calculator trace."""',
+        '    obs = next((m.content for m in messages if isinstance(m, ToolMessage)), None)',
+        "    expr = None",
+        "    for m in messages:",
+        '        for tc in (getattr(m, "tool_calls", None) or []):',
+        '            if tc["name"] == "calculator":',
+        '                expr = tc["args"]["expression"]',
+        "    return obs, expr",
+        "",
+        "def chain_is_grounded(messages):",
+        "    obs, expr = chained_arg(messages)",
+        {"s": '    return bool(obs and expr and ___)   # TODO: the search observation appears inside the calculator expression',
+         "a": '    return bool(obs and expr and obs in expr)'},
         "",
         "try:",
         "    agent = build_agent()",
-        "    print('agent nodes:', set(agent.nodes) - {'__start__'})",
-        "    print('tools chained:', tools_used(SAMPLE))",
+        "    print('agent nodes   :', set(agent.nodes) - {'__start__'})",
+        "    print('grounded chain:', chained_arg(GROUNDED), '->', chain_is_grounded(GROUNDED))",
+        "    print('broken chain  :', chained_arg(BROKEN), '->', chain_is_grounded(BROKEN))",
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
       grader('''expect_true("both tools are bound to the agent", lambda: type(build_agent()).__name__ == "CompiledStateGraph" and "tools" in set(build_agent().nodes))
-expect_true("the trace chained two tools", lambda: len(tools_used(SAMPLE)) == 2)
-expect_true("tools ran in order: search then calculator", lambda: tools_used(SAMPLE) == ["web_search", "calculator"])
-expect_true("the search tool returns the population", lambda: web_search.invoke("population of france") == "68000000")
-expect_true("the calculator halves it exactly", lambda: calculator.invoke("68000000/2") == 34000000.0)'''),
+expect_true("a GROUNDED chain is accepted: calc arg derived from the search result", lambda: chain_is_grounded(GROUNDED) is True)
+expect_true("a BROKEN chain is detected: calc arg NOT grounded in the search result", lambda: chain_is_grounded(BROKEN) is False)
+expect_true("the data dependency is read straight from the trace", lambda: chained_arg(GROUNDED) == ("68000000", "68000000/2"))
+expect_true("the search tool returns the population the calculator consumes", lambda: web_search.invoke("population of france") == "68000000")'''),
       *live(
-        "Run the two-tool agent live and read which tools it actually chained.",
+        "Run the two-tool agent live and check whether it actually grounded the compute step in the search result.",
         '''try:
     if ollama_up():
         agent = build_agent()
         result = agent.invoke({"messages": [{"role": "user",
                  "content": "Use web_search for the population of france, then use the calculator to halve it."}]},
                  config={"recursion_limit": 8})
-        print("tools used live:", tools_used(result["messages"]))
+        print("data dependency:", chained_arg(result["messages"]))
+        print("grounded?      :", chain_is_grounded(result["messages"]))
         print("final          :", result["messages"][-1].content)
     else:
-        print("No Ollama reachable -- skipping the live run. The wiring + trace-reading above already work.")
+        print("No Ollama reachable -- skipping the live run. The wiring + grounding check above already work.")
 except Exception as e:
     print("Live run skipped:", type(e).__name__)'''),
       footer(9, "Chaining search + compute in one run is exactly where agents beat a single call. Same create_agent, two tools -- the 'day in the life' trace, for real."),
@@ -850,21 +875,29 @@ def _l10(sol):
       md('''## Concept
 Real agents reach the world through **tool integrations** (deck slide 16): **Google Search** for live
 facts beyond the training cutoff, **Wolfram Alpha** for exact computation. The pattern is always: get a
-key &rarr; wrap the service as a `@tool` &rarr; add it to the tools list. The **graded** cell wraps
-deterministic local stand-ins and binds them to a real agent; the **optional** cell calls the real APIs
-if you have keys.'''),
-      code('''from langchain_core.tools import tool
-
-@tool
-def google_search(query: str) -> str:
-    """Search the web for a current fact or figure."""
+key &rarr; wrap the service as a `@tool` &rarr; add it to the tools list. But **real APIs fail** &mdash;
+rate limits, timeouts, bad queries &mdash; so a production tool must **wrap the call and return a safe
+fallback** instead of crashing the whole agent. The **graded** cell wraps deterministic local stand-ins
+(with the failure path) and binds them to a real agent; the **optional** cell calls the real APIs if you
+have keys.'''),
+      code('''# Real APIs fail: rate limits, timeouts, bad queries. A resilient tool must NOT crash the agent.
+def flaky_source(query):
+    """Stand-in for a real API that can fail -- raises when it has no data for the query."""
     index = {"gold price today usd per oz": "2400"}
-    return index.get(query.lower().strip(), "no result")
+    key = query.lower().strip()
+    if key not in index:
+        raise ConnectionError("upstream API error for: " + query)
+    return index[key]
 
-print("search tool ready:", google_search.invoke("gold price today usd per oz"))'''),
+print("works :", flaky_source("gold price today usd per oz"))
+try:
+    flaky_source("who won the 3pm race")
+except Exception as e:
+    print("fails :", type(e).__name__, "-- a raw call would crash the agent")'''),
       md('''## Your Turn
-Wrap a **google_search** tool (over a small live-fact index) and a **wolfram** compute tool, then bind
-both to an agent with `create_agent`.'''),
+Make the **google_search** tool resilient: complete `safe_search` so a **failing** source returns the
+`FALLBACK` instead of crashing. Then wrap it as the tool, add a **wolfram** compute tool, and bind both
+to an agent with `create_agent`.'''),
       code(render([
         SAFE_CALC,
         "",
@@ -872,13 +905,29 @@ both to an agent with `create_agent`.'''),
         "from langchain_ollama import ChatOllama",
         "from langchain.agents import create_agent",
         "",
+        'FALLBACK = "no result (source unavailable)"   # the safe value to return when the source fails',
+        "",
+        "def flaky_source(query):",
+        '    """Stand-in for a real API that can fail -- raises when it has no data for the query."""',
+        '    index = {"gold price today usd per oz": "2400", "eiffel tower height m": "330"}',
+        "    key = query.lower().strip()",
+        "    if key not in index:",
+        '        raise ConnectionError("upstream API error for: " + query)',
+        "    return index[key]",
+        "",
+        "def safe_search(query):",
+        "    try:",
+        {"s": '        return ___   # TODO: call flaky_source(query) -- the success path',
+         "a": '        return flaky_source(query)'},
+        "    except Exception:",
+        {"s": '        return ___   # TODO: return FALLBACK so a failing source never crashes the agent',
+         "a": '        return FALLBACK'},
+        "",
         "@tool",
         "def google_search(query: str) -> str:",
         {"s": '    """___  (TODO: replace -- tell the model this searches for a live web fact)."""',
          "a": '    """Search the web for a current fact or figure. Use for anything not in the model own memory."""'},
-        '    index = {"gold price today usd per oz": "2400", "eiffel tower height m": "330"}',
-        {"s": '    return ___   # TODO: look query up in index (lowercased/stripped), else "no result"',
-         "a": '    return index.get(query.lower().strip(), "no result")'},
+        "    return safe_search(query)   # resilient: wraps the flaky source",
         "",
         "@tool",
         "def wolfram(expression: str) -> float:",
@@ -891,15 +940,16 @@ both to an agent with `create_agent`.'''),
          "a": '    return create_agent(model, [google_search, wolfram])'},
         "",
         "try:",
-        "    print('search known  :', google_search.invoke('gold price today usd per oz'))",
-        "    print('search unknown:', google_search.invoke('who won the 3pm race'))",
+        "    print('search success:', google_search.invoke('gold price today usd per oz'))",
+        "    print('search failure:', google_search.invoke('who won the 3pm race'))",
         "    print('wolfram        :', wolfram.invoke('2400*2'))",
         "    print('agent nodes    :', set(build_agent().nodes) - {'__start__'})",
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''expect_true("search returns a known live fact", lambda: google_search.invoke("gold price today usd per oz") == "2400")
-expect_true("search returns 'no result' for the unknown", lambda: google_search.invoke("who won the 3pm race") == "no result")
+      grader('''expect_true("safe_search returns the live fact on the SUCCESS path", lambda: safe_search("gold price today usd per oz") == "2400")
+expect_true("safe_search returns the FALLBACK on the FAILURE path (no crash)", lambda: safe_search("who won the 3pm race") == FALLBACK)
+expect_true("the google_search tool is resilient too: unknown query -> fallback, not a crash", lambda: google_search.invoke("who won the 3pm race") == FALLBACK)
 expect_true("the compute tool does exact math", lambda: wolfram.invoke("2400*2") == 4800)
 expect_true("both external tools bind to the agent", lambda: type(build_agent()).__name__ == "CompiledStateGraph" and "tools" in set(build_agent().nodes))
 expect_true("the search tool carries a real (filled-in) description", lambda: "___" not in google_search.description and "search" in google_search.description.lower())'''),
@@ -1041,17 +1091,18 @@ print("The guarded run above already traced every step offline.")'''),
 def _l12(sol):
     return [
       header(12, "Capstone: A Guardrailed LangChain Agent", "Advanced", 45,
-        ["Assemble the module: allow-listed @tools + create_agent + a recursion cap",
-         "Enforce a guardrail policy: only allow-listed tools are bound",
+        ["Compose the module: memory + tracing + a recursion cap over vetted tools",
+         "Assemble allow-listed @tools into a real create_agent",
          "Run the real agent over a suite of tasks (optional live cell)"],
         "Choosing a framework"),
       setup(12),
       md('''## Concept
-Capstone: a **guardrailed LangChain agent** that ties the module together &mdash; real `@tool` tools,
-a **system prompt**, an **allow-list** so only vetted tools are bound, `create_agent`, and a
-**`recursion_limit`** cap. The graded cell asserts the assembly and the guardrail policy
-(deterministic); the optional cell runs the **real** agent (Ollama/Groq) over a task suite &mdash; the
-bridge to Day 4.'''),
+Capstone &mdash; a real **synthesis** of the module. You compose the pieces you built into one guarded
+agent: **conversation memory** (Lab 7) so it carries context across turns, a **tracing callback**
+(Lab 11) so every step is recorded, a **`recursion_limit`** cap so the loop can never run away, and an
+**allow-list** so only vetted tools are bound to `create_agent`. The graded cell asserts the assembly
+and that all three cross-cutting assets are actually wired (deterministic); the optional cell runs the
+**real** agent (Ollama/Groq) over a task suite &mdash; the bridge to Day 4.'''),
       code('''from langchain_core.tools import tool
 
 @tool
@@ -1061,8 +1112,9 @@ def lookup(key: str) -> str:
 
 print("a vetted tool:", lookup.name)'''),
       md('''## Your Turn
-Complete `build_agent`: keep only the **allowed** tools, add a system prompt, and set the recursion cap.
-Complete `vet_tools` (the guardrail policy that drops anything not on the allow-list).'''),
+Complete `build_agent` (the allow-list + `create_agent`) and `run_config` (the recursion cap), then
+compose the three assets in `capstone_run`: **trace** each step (the callback) and **remember** it (the
+memory), capped by the recursion limit, over the vetted tools.'''),
       code(render([
         SAFE_CALC,
         "",
@@ -1083,36 +1135,66 @@ Complete `vet_tools` (the guardrail policy that drops anything not on the allow-
         "",
         'ALLOWED = {"lookup", "calculator"}',
         "SYSTEM = \"You are a careful assistant. Use tools for facts and math; never guess.\"",
+        "REGISTRY = {t.name: t for t in [lookup, calculator]}",
+        "",
+        "# --- Asset 1: conversation memory (Lab 7) ---",
+        "class ConversationMemory:",
+        "    def __init__(self): self.turns = []",
+        "    def add(self, role, text): self.turns.append((role, text))",
+        '    def history(self): return "\\n".join(r + ": " + t for r, t in self.turns)',
+        "",
+        "# --- Asset 2: tracing callback (Lab 11) ---",
+        "class TracingCallback:",
+        "    def __init__(self): self.events = []",
+        "    def on_step(self, action, arg, obs): self.events.append((action, arg, obs))",
         "",
         "def vet_tools(tools):",
         '    # guardrail: keep only tools whose name is on the allow-list',
         {"s": '    return [t for t in tools if ___]   # TODO: keep allow-listed tools only',
          "a": '    return [t for t in tools if t.name in ALLOWED]'},
         "",
-        "def build_agent(max_steps=8):",
+        "def build_agent():",
         '    model = ChatOllama(model="llama3.2:1b")',
         "    tools = vet_tools([lookup, calculator])",
         {"s": '    return create_agent(model, tools, system_prompt=___)   # TODO: the system prompt',
          "a": '    return create_agent(model, tools, system_prompt=SYSTEM)'},
         "",
+        "# --- Asset 3: the recursion cap ---",
         "def run_config(max_steps=8):",
         {"s": '    return ___   # TODO: cap the loop with recursion_limit',
          "a": '    return {"recursion_limit": max_steps}'},
         "",
+        "def capstone_run(steps, memory, cb, max_steps=8):",
+        "    # compose all three assets over the vetted tools, capped by the recursion limit",
+        "    cap = run_config(max_steps)['recursion_limit']",
+        "    for i, (action, arg) in enumerate(steps):",
+        "        if i >= cap or action not in ALLOWED:",
+        "            break",
+        "        obs = REGISTRY[action].invoke(arg)",
+        {"s": '        ___   # TODO: record the step with the tracing callback (action, arg, obs)',
+         "a": '        cb.on_step(action, arg, obs)'},
+        {"s": '        ___   # TODO: remember the step in conversation memory (role "tool")',
+         "a": '        memory.add("tool", action + " -> " + str(obs))'},
+        "    return {'trace': cb.events, 'history': memory.history()}",
+        "",
         "try:",
         "    agent = build_agent()",
-        "    print('agent type :', type(agent).__name__)",
-        "    print('bound tools:', [t.name for t in vet_tools([lookup, calculator])])",
-        "    print('a risky tool is dropped:', [t.name for t in vet_tools([lookup])] )",
-        "    print('run config :', run_config())",
+        "    mem, cb = ConversationMemory(), TracingCallback()",
+        "    out = capstone_run([('lookup', 'capital of france'), ('calculator', '120000/2')], mem, cb)",
+        "    print('agent type   :', type(agent).__name__)",
+        "    print('bound tools  :', [t.name for t in vet_tools([lookup, calculator])])",
+        "    print('trace events :', out['trace'])",
+        "    print('memory       :', out['history'].replace(chr(10), ' | '))",
+        "    print('run config   :', run_config())",
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''expect_true("the capstone agent is a runnable CompiledStateGraph", lambda: type(build_agent()).__name__ == "CompiledStateGraph")
-expect_true("both allow-listed tools are bound", lambda: {t.name for t in vet_tools([lookup, calculator])} == {"lookup", "calculator"})
+      grader('''expect_true("the capstone agent is a runnable CompiledStateGraph over the vetted tools", lambda: type(build_agent()).__name__ == "CompiledStateGraph")
 expect_true("the guardrail drops a non-allow-listed tool", lambda: (lambda fake: [t.name for t in vet_tools([lookup, fake])] == ["lookup"])(type("F", (), {"name": "delete_database"})()))
-expect_true("the recursion cap is set", lambda: run_config(5)["recursion_limit"] == 5)
-expect_true("the tools still compute correctly", lambda: calculator.invoke("120000*2") == 240000.0 and lookup.invoke("capital of france") == "Paris")'''),
+expect_true("Asset 3: the recursion cap is set", lambda: run_config(5)["recursion_limit"] == 5)
+expect_true("Asset 2: the tracing callback recorded every step", lambda: len((lambda m, c: (capstone_run([("lookup", "capital of france"), ("calculator", "120000/2")], m, c), c.events)[1])(ConversationMemory(), TracingCallback())) == 2)
+expect_true("Asset 1: memory carries context across turns", lambda: (lambda m, c: (capstone_run([("lookup", "capital of france"), ("calculator", "120000/2")], m, c), m.history())[1])(ConversationMemory(), TracingCallback()).count(chr(10)) == 1)
+expect_true("the recursion cap actually limits the run", lambda: len((lambda m, c: (capstone_run([("lookup", "capital of france"), ("calculator", "120000/2")], m, c, max_steps=1), c.events)[1])(ConversationMemory(), TracingCallback())) == 1)'''),
       *live(
         "Run the guardrailed agent on a real task -- the bridge to Day 4. (Try more questions from the SUITE list yourself.)",
         '''SUITE = ["What is 15 times 3?", "What is the capital of France?", "What is the population of metropolis?"]
