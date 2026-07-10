@@ -568,6 +568,83 @@ agent.<span class="fn">invoke</span>(
     </div>
   </section>
 
+  <!-- ============ AUTOGPT ARCHITECTURE (inserted) ============ -->
+  <section class="slide" data-title="AutoGPT architecture"
+    data-note="Open the hood on AutoGPT so 'autonomous agent' stops being a black box. It is ONE LLM wrapped in a self-prompting loop -- nothing more exotic. Walk the diagram left to right. You give it a GOAL. The agent core is the LLM, and the trick is the prompt: AutoGPT forces the model to answer in a fixed shape every single turn -- a Thought, its Reasoning, a short-term Plan, a Self-criticism, and then exactly ONE command to run next. That command is a tool call: web search, browse a page, read/write a file, run code. The result -- the observation -- is fed straight back in. Two memories keep it coherent: short-term is just the recent context window; long-term is a vector store it writes facts to and recalls by similarity. A file workspace persists artifacts across steps. Then it loops -- and here's the whole point -- by DEFAULT with no human in the loop and no fixed stopping point: the model itself decides when it's 'done', or it runs until you stop it or hit a cost/step limit you impose. Contrast this with the LangGraph diagram a few slides back: there YOU authored the nodes, edges and stop conditions. Here the structure lives in a prompt plus a while-loop. That one design choice -- implicit self-prompt loop vs explicit authored graph -- is the entire story, and it's exactly what the next slide compares head to head.">
+    <div class="kicker"><span class="dot"></span> Under the hood &mdash; one LLM in a self-prompting loop</div>
+    <h2 class="title">AutoGPT architecture</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 300" role="img" aria-label="AutoGPT architecture: a goal feeds an LLM agent core that emits thought, plan, self-critique and a single command each turn; commands run as tools and observations feed back; a short-term and long-term memory connect to the core; the core self-prompts and loops with no human by default">
+          <defs>
+            <marker id="ag1" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker>
+            <marker id="ag1a" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#f59e0b"/></marker>
+            <marker id="ag1c" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#06b6d4"/></marker>
+          </defs>
+          <!-- goal -->
+          <circle cx="58" cy="150" r="30" fill="#312e81" stroke="#06b6d4" stroke-width="2.5"/>
+          <text x="58" y="155" text-anchor="middle" font-size="13" font-weight="700" fill="#67e8f9">Goal</text>
+          <!-- agent core (LLM) -->
+          <rect x="175" y="92" width="250" height="116" rx="14" fill="#eef2ff" stroke="#4f46e5" stroke-width="2.5"/>
+          <text x="300" y="118" text-anchor="middle" font-size="14" font-weight="700" fill="#312e81">Agent core (LLM)</text>
+          <text x="300" y="142" text-anchor="middle" font-size="11" fill="#5b5f7a">Thought &middot; Reasoning</text>
+          <text x="300" y="162" text-anchor="middle" font-size="11" fill="#5b5f7a">Plan &middot; Self-critique</text>
+          <text x="300" y="182" text-anchor="middle" font-size="11" font-weight="700" fill="#4338ca">&rarr; one Command</text>
+          <!-- self-prompt loop -->
+          <path d="M250 92 C258 58 322 58 330 92" fill="none" stroke="#4f46e5" stroke-width="2" marker-end="url(#ag1)"/>
+          <text x="290" y="50" text-anchor="middle" font-size="10" font-weight="700" fill="#4338ca">self-prompts (no human)</text>
+          <!-- commands / tools -->
+          <rect x="560" y="34" width="220" height="92" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="2.5"/>
+          <text x="670" y="62" text-anchor="middle" font-size="14" font-weight="700" fill="#92400e">Commands / Tools</text>
+          <text x="670" y="85" text-anchor="middle" font-size="10.5" fill="#5b5f7a">search &middot; browse web</text>
+          <text x="670" y="104" text-anchor="middle" font-size="10.5" fill="#5b5f7a">run code &middot; read/write files</text>
+          <!-- memory -->
+          <rect x="560" y="182" width="220" height="92" rx="12" fill="#ecfeff" stroke="#06b6d4" stroke-width="2"/>
+          <text x="670" y="210" text-anchor="middle" font-size="14" font-weight="700" fill="#0e7490">Memory</text>
+          <text x="670" y="233" text-anchor="middle" font-size="10.5" fill="#5b5f7a">short-term: context window</text>
+          <text x="670" y="252" text-anchor="middle" font-size="10.5" fill="#5b5f7a">long-term: vector store</text>
+          <!-- edges -->
+          <path d="M88 150 L171 150" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#ag1)"/>
+          <path d="M425 118 C490 92 520 78 556 72" fill="none" stroke="#f59e0b" stroke-width="2.5" marker-end="url(#ag1a)"/>
+          <text x="500" y="86" text-anchor="middle" font-size="10" font-weight="700" fill="#b45309">run command</text>
+          <path d="M560 100 C500 120 468 130 428 140" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="6 5" marker-end="url(#ag1a)"/>
+          <text x="500" y="132" text-anchor="middle" font-size="10" font-weight="700" fill="#b45309">observe</text>
+          <path d="M425 176 C490 200 520 212 556 220" fill="none" stroke="#06b6d4" stroke-width="2.5" marker-end="url(#ag1c)"/>
+          <text x="502" y="206" text-anchor="middle" font-size="10" font-weight="700" fill="#0e7490">write</text>
+          <path d="M560 246 C500 236 470 220 430 198" fill="none" stroke="#06b6d4" stroke-width="2.5" stroke-dasharray="6 5" marker-end="url(#ag1c)"/>
+          <text x="502" y="250" text-anchor="middle" font-size="10" font-weight="700" fill="#0e7490">recall</text>
+          <!-- workspace note -->
+          <circle cx="900" cy="150" r="30" fill="#059669" stroke="#047857" stroke-width="2.5"/>
+          <text x="900" y="146" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">stop?</text>
+          <text x="900" y="160" text-anchor="middle" font-size="8.5" fill="#d1fae5">goal / cap</text>
+          <path d="M780 96 C840 118 866 130 878 140" fill="none" stroke="#059669" stroke-width="2.5" stroke-dasharray="6 5" marker-end="url(#ag1)"/>
+        </svg>
+        <figcaption><b>One LLM</b> forced to emit <b>Thought &rarr; Plan &rarr; Self-critique &rarr; one Command</b> each turn; the result feeds back through <b>memory</b> and it <b>loops</b> &mdash; by default with <b>no human</b> and no fixed stop (it decides, or you cap cost/steps). The structure lives in a <b>prompt + a while-loop</b>, not an authored graph.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ AUTOGPT vs LANGGRAPH — head-to-head (inserted) ============ -->
+  <section class="slide" data-title="AutoGPT vs LangGraph"
+    data-note="This is the slide that turns a philosophical point into an engineering one. Both answer the same question -- 'how do you run an agent loop?' -- but at opposite ends of the structure axis. Row by row. WHO WRITES THE FLOW: in AutoGPT the model invents the plan at run time by self-prompting; in LangGraph you author the nodes and edges up front. THE LOOP: AutoGPT runs until the model decides it's done (or you kill it); LangGraph is bounded -- explicit steps, a recursion cap, a real END. TOOLS: AutoGPT self-selects from a broad set; LangGraph only ever calls the tools you bound (that's least-privilege, the Module 9/10 guardrail). HUMAN-IN-THE-LOOP: none by default vs first-class pause/approve/resume. TYPICAL FAILURE: drift, loops and runaway cost vs predictable, steerable, per-node visibility. REACH FOR IT: AutoGPT is superb for learning and a quick autonomous demo; LangGraph is what you use for anything you must trust or ship. Then the money line: same goal, two runs -- the self-prompting loop wanders and can stall, the authored graph converges. The lesson only sticks when they SEE it, so the move is to run both on the same task and read the two traces side by side. Tie it home: this is exactly why the capstone is a bounded, guardrailed graph and not an unleashed AutoGPT -- not because autonomy is bad, but because you earn autonomy with structure.">
+    <div class="kicker"><span class="dot"></span> Two answers to &ldquo;how much structure?&rdquo; &mdash; head to head</div>
+    <h2 class="title">AutoGPT <span style="color:var(--muted)">vs</span> LangGraph</h2>
+    <div class="body">
+      <table>
+        <thead><tr><th style="width:22%"></th><th>AutoGPT &mdash; unbounded autonomy</th><th>LangGraph &mdash; authored control</th></tr></thead>
+        <tbody>
+          <tr><td><b>Who writes the flow</b></td><td>The <b>model</b>, at run time (self-prompts)</td><td><b>You</b>, up front &mdash; nodes &amp; edges</td></tr>
+          <tr><td><b>The loop</b></td><td>Runs until it &ldquo;decides&rdquo; done &mdash; or you kill it</td><td><span class="yes">Bounded</span> &mdash; explicit steps, a cap, an <code>END</code></td></tr>
+          <tr><td><b>Tools</b></td><td>Broad set, <b>self-selected</b></td><td>Only the tools you <b>bind</b> <span class="small">(least privilege)</span></td></tr>
+          <tr><td><b>Human-in-the-loop</b></td><td><span class="no">None by default</span></td><td><span class="yes">First-class</span> pause / approve / resume</td></tr>
+          <tr><td><b>Typical failure</b></td><td>Drift, loops, runaway <b>cost</b></td><td>Predictable &mdash; you see &amp; steer each node</td></tr>
+          <tr><td><b>Reach for it</b></td><td>Learning &amp; a quick autonomous demo</td><td>Anything you must <b>trust or ship</b></td></tr>
+        </tbody>
+      </table>
+      <p class="callout warn" style="margin-top:12px">&#128064; <b>Same goal, two runs:</b> the self-prompting loop <b>wanders</b> and can stall; the authored graph <b>converges</b>. It only sticks when you <i>see</i> it &mdash; run both on the <b>same task</b> and compare the traces. That&rsquo;s why your <b>capstone is a graph</b>, not an unleashed AutoGPT &mdash; you <i>earn</i> autonomy with structure.</p>
+    </div>
+  </section>
+
   <!-- ============ SLIDE 15 — THE MULTI-AGENT ECOSYSTEM ============ -->
   <section class="slide" data-title="Multi-agent frameworks"
     data-note="Preview the multi-agent frameworks so Day 4's collaboration module has a hook, without going deep. The idea: instead of one agent doing everything, use SEVERAL specialised agents that collaborate -- a researcher, a writer, a reviewer -- each with its own role, tools and prompt, passing work between them. Two names to know. CrewAI: role-based 'crews' -- you define agents with roles and goals and a process (sequential or hierarchical) and they hand off tasks; very readable, popular for business workflows. AutoGen (Microsoft): conversation-based multi-agent -- agents literally chat to solve a problem, including a human or a code-executor agent. Also mention this is a natural fit for the customer-service chatbot lab on Day 4. Keep the message crisp: more agents can mean better division of labour AND more coordination cost and more ways to fail -- same right-sizing discipline as before. Depth comes on Day 4.">
@@ -1087,7 +1164,7 @@ agent.<span class="fn">invoke</span>(
 <div id="notes"><span class="tag">Presenter note &middot; press N to hide</span><span id="noteText"></span></div>
 
 <!-- ===== Chrome ===== -->
-<div id="counter">1 / 43</div>
+<div id="counter">1 / 45</div>
 <div class="hint">&larr; &rarr; / Space to navigate &middot; <b>N</b> notes &middot; <b>O</b>/Esc overview &middot; <b>F</b> fullscreen</div>
 <div class="nav">
   <button id="prev" title="Previous (←)" aria-label="Previous slide">&#8249;</button>
@@ -1096,7 +1173,7 @@ agent.<span class="fn">invoke</span>(
 <div class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Day 3 · Module 6 — Frameworks for Building AI Agents</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.2</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.3</span>
 </div>
 
 <script>
