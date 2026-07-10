@@ -97,33 +97,34 @@ html = f'''<!DOCTYPE html>
       <span class="k">{len(order)} labs</span> |
       <span>{len(by["Beginner"])} Beginner &middot; {len(by["Intermediate"])} Intermediate &middot; {len(by["Advanced"])} Advanced</span> |
       <span class="k">~{total_min//60}h {total_min%60}m total</span> |
-      <span>Experiential: concept &rarr; demo &rarr; practice</span>
+      <span>Near-real: build &rarr; run for real &rarr; your turn</span>
     </div>
   </header>
 
   <div class="container">
     <div class="callout">
-      <strong>How these labs work.</strong> Each notebook follows the same rhythm &mdash; read the
-      <strong>Concept</strong>, run the <strong>Demo</strong>, then complete <strong>Your Turn</strong> by
-      replacing every <code>___</code> placeholder. Run the <strong>grader</strong> cell at the bottom: it
-      prints <code>[PASS]</code> / <code>[FAIL]</code> / <code>[TODO]</code> and a final <code>Score</code>.
+      <strong>How these labs work (near-real).</strong> Each notebook follows the same rhythm &mdash; read the
+      <strong>Concept</strong>, fill the real <code>___</code> blanks in <strong>Build it</strong> (the real
+      grounding / citation / compute logic, or the real <code>create_agent</code> wiring), then
+      <strong>Run it</strong> and read the output &mdash; and, for the agent labs, the real <strong>message
+      trace</strong>. Finish with an open <strong>Your turn</strong>. There is <strong>no auto-grader</strong>.
       Each lab writes to its own <code>/tmp/biaa-lab-09-NN/</code> working dir. Stuck? Every lab has a full
       answer key under <a href="solutions/"><code>solutions/</code></a> &mdash; try first, then check.
     </div>
     <div class="callout warn">
-      <strong>Setup.</strong> These labs use the <strong>real LangChain</strong> (<code>langchain</code>,
-      <code>langchain-core</code>, <code>langchain-ollama</code> &mdash; all in the course
+      <strong>Setup.</strong> These labs use the <strong>real LangChain 1.x</strong> (<code>langchain</code>,
+      <code>langchain-core</code>, <code>langchain-groq</code> &mdash; all in the course
       <code>biaa-venv</code>). You build the <strong>financial-report insight agent</strong>
       (the client&rsquo;s Lab 5.1) piece by piece: ground &amp; cite every figure, compute derived metrics,
       flag anomalies, the <strong>no-advice guardrail</strong>, <strong>withholding the trade tool</strong>,
       grounding validation, the audit trail, privacy/redaction, and assistive-not-autonomous. The
-      agent-assembly labs bind real <code>@tool</code> functions with <code>create_agent</code>. The
-      <strong>graded</strong> cells assert only on the deterministic parts you build (grounding/citation
-      logic, tool wiring, the read-only guardrail) and <strong>never call an LLM</strong>, so they verify
-      offline with <strong>no API keys and no network</strong>. Financial math uses a small
-      <strong>AST-based safe evaluator</strong> (never bare <code>eval</code>). Cells marked
-      <em>Optional &mdash; run it for real</em> call a live local model (<code>ollama run llama3.2:1b</code>,
-      or <code>ChatGroq</code> with a <code>GROQ_API_KEY</code>) and self-skip if none is reachable.
+      agent-assembly labs (10&ndash;12) bind real <code>@tool</code> functions with <code>create_agent</code>
+      and drive a <strong>real hosted model</strong> (<code>ChatGroq("openai/gpt-oss-20b")</code>, key in
+      <code>.env</code> as <code>GROQ_API_KEY</code>, free at <a href="https://console.groq.com">console.groq.com</a>) &mdash;
+      you read the <strong>real trace</strong> where the agent grounds &amp; cites a figure. If the key is
+      unset, the &ldquo;Run it for real&rdquo; cells print how to set it instead of crashing. Financial math
+      uses a small <strong>AST-based safe evaluator</strong> (never bare <code>eval</code>); a <code>@tool</code>
+      always catches its own errors and returns a string.
     </div>
     <div class="callout" style="border-left-color:#dc2626;background:#fef2f2;border-color:#fca5a5">
       &#128737;&#65039; <strong>Responsible-AI note.</strong> The insight agent is <strong>informational
@@ -143,9 +144,9 @@ html = f'''<!DOCTYPE html>
       <a href="../../presentation/day5-module9-agents-in-industry.html">Module 9 slides &mdash; Agents in Finance, Healthcare &amp; Cybersecurity</a>
       &middot; <a href="../../course-outline-building-intelligent-ai-agents.html">Full course outline</a>
       &middot; <a href="../module-8/index.html">Module 8 labs</a>.
-      These labs build the insight agent offline &amp; deterministically; the <em>optional</em> cells run the
-      genuine library. Next &mdash; <strong>Module 10</strong>: ethics &amp; responsible AI &mdash; bias,
-      transparency, safety, accountability &amp; debugging.
+      These labs build the insight agent for real &mdash; deterministic domain logic plus a real Groq
+      <code>create_agent</code> that grounds &amp; cites. Next &mdash; <strong>Module 10</strong>: ethics &amp;
+      responsible AI &mdash; bias, transparency, safety, accountability &amp; debugging.
     </div>
   </div>
 
@@ -153,7 +154,7 @@ html = f'''<!DOCTYPE html>
     &copy; 2026 Gheware DevOps &amp; Agentic AI |
     <a href="https://devops.gheware.com">devops.gheware.com</a> |
     Trainer: Rajesh Gheware |
-    Building Intelligent AI Agents &middot; Day 5 Module 9 Labs v1.0
+    Building Intelligent AI Agents &middot; Day 5 Module 9 Labs v1.1
   </footer>
 </body>
 </html>'''

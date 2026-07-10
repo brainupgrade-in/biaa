@@ -1,20 +1,27 @@
 # -*- coding: utf-8 -*-
-"""Generator for Day 5 Module 9 hands-on labs (12 notebooks).
+"""Generator for Day 5 Module 9 hands-on labs (12 notebooks) -- NEAR-REAL design.
 Emits STUDENT notebooks to OUT_DIR and SOLUTION notebooks to SOL_DIR.
 
 Design: this is the "Agents in Finance, Healthcare & Cybersecurity" module -- the labs build the
 FINANCIAL-REPORT INSIGHT AGENT (the client's Lab 5.1) piece by piece, exactly as the deck teaches:
-the domain-agent pattern (ground -> reason -> structure+cite -> guardrail -> human), grounding every
-figure with a citation, computing derived metrics, flagging anomalies, the no-advice guardrail,
-withholding the dangerous tool, validating grounding, the audit trail, privacy/redaction, assistive-
-not-autonomous, and the assembled agent. These labs use the REAL LangChain 1.x (no shim):
-langchain_core.tools.@tool, PromptTemplate, langchain_ollama.ChatOllama, langchain.agents.create_agent.
-Verify discipline is kept by the GRADE-SCAFFOLDING pattern -- every GRADED cell asserts only on
-deterministic structure (grounding/citation/compute logic; and in lab 11 the tool wiring + the
-read-only guardrail where place_trade is defined but never bound) and NEVER calls an LLM, so labs
-verify offline against biaa-venv (no keys/network). Each Advanced lab (10-12) adds ONE optional,
-non-graded live() cell that calls a real ChatOllama (self-skips via ollama_up()). Financial math uses
-a small AST-based safe evaluator -- never bare eval()."""
+ground -> reason -> structure+cite -> guardrail -> human. The labs are NEAR-REAL, not stubs: the
+insight agent is a REAL `create_agent` driven by a REAL hosted model (`ChatGroq("openai/gpt-oss-20b")`,
+key in the repo .env as GROQ_API_KEY), over REAL read-only `@tool`s, and the student reads the REAL
+message trace where the agent grounds & cites a figure. There is NO auto-grader -- each lab ends with
+"Build it -> Run it -> read the output/trace -> Your turn (open task)".
+
+Kept real & deterministic (NOT LLM stand-ins): the grounding/citation logic, the AST-safe calculator
+(wrapped in try/except -- financial math, never bare eval), anomaly flags, the no-advice guardrail, the
+withheld-tool guardrail (`place_trade` is defined but never bound), grounding validation, the audit
+trail, and privacy minimize/redact. Those stay real. Removed vs the old design: the mock/recorded
+determinism and the expect/expect_true/Score auto-grader.
+
+INFORMATIONAL ONLY: the agent grounds & cites every figure, gives NO investment advice, and has NO
+trade tool -- a human analyst decides.
+
+Student robustness (no grader): the cells that EXERCISE the blanks are wrapped by guard()/runguard()
+so an unfilled `___` prints a friendly note instead of crashing, and the live Groq cells self-skip
+cleanly when GROQ_API_KEY is unset -- so a student notebook runs top-to-bottom either way."""
 import json, os, sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -26,6 +33,7 @@ if SOL_DIR: os.makedirs(SOL_DIR, exist_ok=True)
 
 DECK = "../../presentation/day5-module9-agents-in-industry.html"
 OUTLINE = "../../course-outline-building-intelligent-ai-agents.html"
+REPO = "/home/rajesh/Training/courses/building-intelligents-ai-agents"
 
 def _lines(text):
     parts = text.split("\n")
@@ -43,38 +51,55 @@ def render(lines, sol):
         out.append((ln["a"] if sol else ln["s"]) if isinstance(ln, dict) else ln)
     return "\n".join(out)
 
-GRADER_HEAD = '''# === Auto-grader: run after filling the blanks above ===
-_results = []
-def _rec(label, status, extra=""):
-    _results.append(status); print(f"[{status}] {label}" + (f" -- {extra}" if extra else ""))
-def expect(label, got, want):
-    if got == "___" or got is None: _rec(label, "TODO")
-    elif got == want: _rec(label, "PASS")
-    else: _rec(label, "FAIL", f"got {got!r}")
-def expect_true(label, fn):
-    try: _rec(label, "PASS" if fn() else "FAIL")
-    except Exception as e: _rec(label, "TODO", type(e).__name__)
-'''
-GRADER_TAIL = '''_p = _results.count("PASS")
-print(f"\\nScore: {_p}/{len(_results)}")
-print("All checks passed -- lab complete!" if _p == len(_results) else "Keep going: fill the blanks marked ___ and re-run.")'''
+def _indent(text, n):
+    pad = " " * n
+    return "\n".join((pad + ln) if ln.strip() else ln for ln in text.split("\n"))
 
-def grader(body):
-    return code(GRADER_HEAD + "\n" + body.strip() + "\n\n" + GRADER_TAIL)
+def guard(exercise):
+    """Wrap an exercise (that calls the blanked code) so an unfilled ___ prints a note, not a crash."""
+    return ("try:\n" + _indent(exercise, 4) +
+            '\nexcept Exception as e:\n    print("(Fill the ___ blanks above, then re-run.)", type(e).__name__)')
 
-def setup(nn, extra=""):
+def runguard(exercise):
+    """Guard a 'run it for real' cell: skip cleanly if there's no GROQ_API_KEY, and if a blank is unfilled."""
+    return ('if not groq_ready():\n'
+            '    print("No GROQ_API_KEY -- add it to .env (free at console.groq.com), then re-run this cell.")\n'
+            'else:\n'
+            '    try:\n' + _indent(exercise, 8) +
+            '\n    except Exception as e:\n        print("(Rate-limited on the free tier? wait a few seconds. Or fill the ___ blanks, then re-run.)", type(e).__name__)')
+
+def setup(nn):
     return code(f'''# Setup -- run me first
-import os, socket
+import os, pathlib
+from dotenv import load_dotenv
+load_dotenv(pathlib.Path("{REPO}/.env"), override=True)   # GROQ_API_KEY (the Day-5 provider)
+
 WORK = "/tmp/biaa-lab-09-{nn:02d}"
 os.makedirs(WORK, exist_ok=True)
-def ollama_up(host="127.0.0.1", port=11434):
-    """True if a local Ollama server is listening -- the optional live cells self-skip when it isn't."""
-    try:
-        with socket.create_connection((host, port), timeout=1):
-            return True
-    except OSError:
-        return False
-print("Working dir:", WORK, "| Ollama reachable:", ollama_up()){extra}''')
+
+def groq_ready():
+    """True if a GROQ_API_KEY is set. Day-5 labs call a REAL hosted model (Groq)."""
+    return bool(os.environ.get("GROQ_API_KEY"))
+
+from langchain_groq import ChatGroq
+# Day-5 provider: a REAL hosted model. openai/gpt-oss-20b is a reliable tool-caller via create_agent.
+llm = ChatGroq(model="openai/gpt-oss-20b", temperature=0) if groq_ready() else None
+
+def print_trace(result):
+    """Print a REAL agent message trace: tool calls the model made, tool observations, final answer."""
+    for m in result["messages"]:
+        for tc in (getattr(m, "tool_calls", None) or []):
+            print("TOOL CALL:", tc["name"], tc["args"])
+        if type(m).__name__ == "ToolMessage":
+            print("OBS:", str(m.content)[:200])
+        elif str(getattr(m, "content", "")).strip():
+            print(type(m).__name__, ":", str(m.content)[:300])
+
+if groq_ready():
+    print("GROQ_API_KEY set | model: openai/gpt-oss-20b | WORK:", WORK)
+else:
+    print("GROQ_API_KEY NOT set -- add it to .env (free at console.groq.com).")
+    print("(The 'Run it for real' cells will print this note instead of crashing.)  WORK:", WORK)''')
 
 def header(nn, title, level, mins, goals, concept_slide):
     g = "\n".join(f"- {x}" for x in goals)
@@ -85,9 +110,9 @@ def header(nn, title, level, mins, goals, concept_slide):
 ### What you'll do
 {g}
 
-> **How this lab works (experiential flow):** read the **Concept**, run the **Demo** to see it work, then complete **Your Turn** by replacing every `___` placeholder. Run the **grader** cell at the end &mdash; it prints `[PASS]` / `[FAIL]` / `[TODO]` and a final `Score`. Aim for a full score.
+> **How this lab works (near-real):** read the **Concept**, fill the real `___` blanks in **Build it** (the real grounding / citation / compute logic, or the real `create_agent` wiring), then **Run it** and read the output &mdash; and, for the agent labs, the real **message trace**. Finish with an open **Your turn**. There is **no auto-grader**; the goal is a working, grounded insight agent you can read.
 
-> **Framework note:** these labs use the **real** LangChain (`langchain`, `langchain-core`, `langchain-ollama`). The **graded** cells assert only on the deterministic parts you build &mdash; grounding/citation/compute logic and, in the agent-assembly labs, tool wiring &amp; the read-only guardrail &mdash; and never call an LLM, so the lab always verifies offline. Cells marked **Optional &mdash; run it for real** call a live local model (`ollama run llama3.2:1b`, or Groq) and self-skip if none is reachable. You are building the **financial-report insight agent** &mdash; the client's Lab 5.1. It grounds &amp; cites every figure, gives **no advice**, and has **no trade tool** &mdash; a human analyst decides.
+> **Framework note:** these labs use the **real** LangChain 1.x (`langchain`, `langchain-core`, `langchain-groq`). The insight agent is a **real** `create_agent` driven by a **real hosted model** (`ChatGroq("openai/gpt-oss-20b")`, key in `.env` as `GROQ_API_KEY`). You are building the **financial-report insight agent** &mdash; the client's Lab 5.1. It is **informational only**: it grounds &amp; **cites** every figure, gives **no advice**, and has **no trade tool** (`place_trade` is defined but never bound &mdash; a human analyst decides). A `@tool` must **catch its own errors and return a string** &mdash; a tool that raises can abort the whole run. If `GROQ_API_KEY` is unset, the run cells print how to set it instead of crashing.
 
 **Reference:** [Module 9 slides &mdash; {concept_slide}]({DECK}) &nbsp;&middot;&nbsp; [Course outline]({OUTLINE}) &nbsp;&middot;&nbsp; [All Module 9 labs](./index.html)''')
 
@@ -100,25 +125,18 @@ def footer(nn, nxt):
 
 <sub>&copy; 2026 Gheware DevOps &amp; Agentic AI &middot; Building Intelligent AI Agents &middot; devops.gheware.com &middot; Trainer: Rajesh Gheware</sub>''')
 
-def live(intro, body):
-    """An OPTIONAL, non-graded cell that runs REAL LangChain against a live local LLM (or self-skips)."""
-    return [md(f'''## Optional &mdash; run it for real (not graded)
-{intro} This calls a **real** local model via `ChatOllama("llama3.2:1b")` &mdash; start it with
-`ollama run llama3.2:1b` (or swap in `ChatGroq` with a `GROQ_API_KEY`). If none is reachable the cell
-prints a note and moves on. **The graded cells above never call an LLM, so the lab always verifies offline.**
-*(llama3.2:1b is tiny &mdash; tool-calling can be hit-or-miss; the point is to see a real invocation.)*'''),
-            code(body)]
+def concept(text):   return md("## Concept\n" + text)
+def buildmd(text):   return md("## Build it\n" + text)
+def observemd(text): return md("## Run it &amp; observe\n" + text)
+def runmd(text):     return md("## Run it for real &amp; read the trace\n" + text + "\n\n_This calls the real `openai/gpt-oss-20b` via Groq. If `GROQ_API_KEY` is unset the cell prints how to set it instead of crashing. On the free tier, if you hit a rate limit wait a few seconds and re-run._")
+def noticemd(text):  return md("## What to notice\n" + text)
+def yourturn(text):  return md("## Your turn (open task &mdash; no grader)\n" + text)
 
-def optional_real(intro, body):
-    """An OPTIONAL, non-graded cell that shows a REAL LangChain interface (no live model call needed)."""
-    return [md(f'''## Optional &mdash; the real LangChain interface (not graded)
-{intro} It needs only `pip install langchain-core` (already in the course env) and makes **no** network
-call. **The graded steps above never call an LLM, so the lab always verifies offline.**'''),
-            code(body)]
+def realcell(parts, demo):
+    """A code cell = real-library imports/fixtures + a runnable demo."""
+    return code("\n\n".join(parts) + "\n\n" + demo)
 
-# ---- shared building blocks (pure stdlib) -------------------------------------------------
-
-# AST-based safe arithmetic -- never bare eval() on free text (this is financial math).
+# AST-based safe arithmetic -- never bare eval() on free text (this is financial math). Tools wrap it in try/except.
 SAFE_CALC = '''import ast, operator
 # safe arithmetic: walk a parsed AST of numbers + (+ - * / ** unary-minus) -- never bare eval()
 _OPS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
@@ -134,9 +152,7 @@ def safe_calc(expr):
         raise ValueError("unsupported expression")
     return ev(ast.parse(expr, mode="eval").body)'''
 
-# Real-LangChain import snippets (dropped into the cells that need them).
 TOOL_IMPORT = "from langchain_core.tools import tool"
-PROMPT_IMPORT = "from langchain_core.prompts import PromptTemplate"
 
 # The financial report fixture -- every figure carries its SOURCE (for grounding & citation).
 REPORT_FIXTURE = '''# A small financial report -- each figure carries its SOURCE, so every claim can be cited.
@@ -146,10 +162,6 @@ REPORT = {
     "total_debt": {"value": 40.0,  "unit": "M", "source": "p7, balance sheet"},
 }
 PRIOR = {"revenue": 107.1, "net_income": 9.7, "total_debt": 25.0}   # prior period, for YoY'''
-
-def realcell(parts, demo):
-    """A code cell = real-library imports/fixtures + a runnable demo (replaces the old shimcell)."""
-    return code("\n\n".join(parts) + "\n\n" + demo)
 
 NB = {}
 def lab(nn, slug, level, title, mins, summary, concepts):
@@ -165,6 +177,23 @@ def lab(nn, slug, level, title, mins, summary, concepts):
      "Extract a figure AND its source from a report -- the grounding discipline: never reason from memory.",
      ["Grounding", "Citation", "Source of truth"])
 def _l1(sol):
+    DEFS = [
+      REPORT_FIXTURE, "",
+      "def extract_figure(name, report):",
+      '    # return the figure dict {value, source} from the report, or None if it is not there',
+      {"s": '    return ___   # TODO: look up name in report (None if missing)',
+       "a": '    return report.get(name)'},
+      "",
+      "def is_grounded(fig):",
+      '    # grounded = the figure exists AND carries a non-empty source citation',
+      {"s": '    return fig is not None and ___   # TODO: it has a truthy "source"',
+       "a": '    return fig is not None and bool(fig.get("source"))'},
+    ]
+    EX = '''rev = extract_figure("revenue", REPORT)
+print("revenue :", rev)
+print("grounded:", is_grounded(rev))
+print("missing :", extract_figure("ebitda", REPORT))
+print("no-source grounded?", is_grounded({"value": 5.0}))'''
     return [
       header(1, "Ground a Figure (Extract + Cite)", "Beginner", 20,
         ["Extract a reported figure together with its source",
@@ -172,60 +201,55 @@ def _l1(sol):
          "See why a figure with no source is unusable here"],
         "The domain-agent pattern"),
       setup(1),
-      md('''## Concept
-In a high-stakes domain the model's memory isn't just unreliable &mdash; it's **dangerous** (deck
+      concept('''In a high-stakes domain the model's memory isn't just unreliable &mdash; it's **dangerous** (deck
 slides 4&ndash;5, 14). Every figure must be **grounded**: pulled from the actual document, carrying its
-**source** so a human can verify it. A number without a citation is a liability dressed up as an
-answer. Here you build the core move &mdash; extract a figure **and** its source.'''),
-      realcell([REPORT_FIXTURE],
-        '''print("figures on file:", list(REPORT))
-print("revenue entry:", REPORT["revenue"])'''),
-      md('''## Memory vs the document &mdash; why this matters (not graded)
-Ask a model for revenue **from memory** and it may answer a *plausible but wrong* number, with total
-confidence and **no source**. The grounded value comes from the filing, with a page cite. Same
-question &mdash; very different trustworthiness. This is the stake behind everything in this module.'''),
-      code('''MEMORY_GUESS = 118.0            # what a model might "recall" -- plausible, and WRONG
-grounded = REPORT["revenue"]
+**source** so a human can verify it. A number without a citation is a liability dressed up as an answer.
+Here you build the core move &mdash; extract a figure **and** its source &mdash; the discipline the real
+insight agent (Lab 11) enforces with a read-only `extract_figure` tool.'''),
+      code('''# Memory vs the document -- why this matters.
+# Ask a model for revenue FROM MEMORY and it may answer a plausible-but-wrong number, with no source.
+MEMORY_GUESS = 118.0            # what a model might "recall" -- plausible, and WRONG
+GROUNDED = {"value": 120.0, "source": "p4, income stmt"}
 print("from memory (ungrounded):", MEMORY_GUESS, "M   <- no source, do NOT trust")
-print("grounded (from filing)  :", grounded["value"], "M  [", grounded["source"], "]")
-print("gap:", round(grounded["value"] - MEMORY_GUESS, 1), "M of pure hallucination risk")'''),
-      md('''## Your Turn
-Complete `extract_figure` (return the figure with its source) and `is_grounded` (it must carry a
-citation).'''),
-      code(render([
-        "def extract_figure(name, report):",
-        '    # return the figure dict {value, source} from the report, or None if it is not there',
-        {"s": '    return ___   # TODO: look up name in report (None if missing)',
-         "a": '    return report.get(name)'},
-        "",
-        "def is_grounded(fig):",
-        '    # grounded = the figure exists AND carries a non-empty source citation',
-        {"s": '    return fig is not None and ___   # TODO: it has a truthy "source"',
-         "a": '    return fig is not None and bool(fig.get("source"))'},
-        "",
-        "try:",
-        "    rev = extract_figure('revenue', REPORT)",
-        "    print('revenue :', rev)",
-        "    print('grounded:', is_grounded(rev))",
-        "    print('missing :', extract_figure('ebitda', REPORT))",
-        "    print('no-source grounded?', is_grounded({'value': 5.0}))",
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("extract_figure pulls the reported value", lambda: extract_figure("revenue", REPORT)["value"] == 120.0)
-expect_true("the figure carries its source", lambda: "source" in extract_figure("revenue", REPORT))
-expect_true("a missing figure returns None", lambda: extract_figure("ebitda", REPORT) is None)
-expect_true("a real, sourced figure is grounded", lambda: is_grounded(extract_figure("net_income", REPORT)) is True)
-expect_true("a figure with no source is NOT grounded", lambda: is_grounded({"value": 5.0}) is False)'''),
+print("grounded (from filing)  :", GROUNDED["value"], "M  [", GROUNDED["source"], "]")
+print("gap:", round(GROUNDED["value"] - MEMORY_GUESS, 1), "M of pure hallucination risk")'''),
+      buildmd('''Complete `extract_figure` (return the figure with its source) and `is_grounded` (it must carry a
+citation), then run the cell to watch a grounded vs an ungrounded figure.'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      noticemd('''- A grounded figure carries **`source`** &mdash; the page cite a human can check. A bare `{"value": ...}` is **not** grounded.
+- A missing figure returns **`None`** rather than a guess &mdash; the agent must say "not in the filing", never invent.
+- This is exactly what the real `extract_figure` tool does in Lab 11: pull the value **with** its source.'''),
+      yourturn('''Add a new figure to `REPORT` (say `"opex"` with a source), extract it, and confirm `is_grounded` is
+True; then add one **without** a source and confirm it's False. **What good looks like:** every figure the
+agent will state carries a page cite, and anything uncited is caught before it ships.'''),
       footer(1, "Ground every figure: extract it WITH its source. A number without a citation can't be verified -- and in finance, health or cyber, an unverifiable claim doesn't ship."),
     ]
 
 # ============================================================ LAB 02
 @lab(2, "lab-02-cite-every-claim", "Beginner",
      "Cite Every Claim", 20,
-     "Turn a grounded figure into a claim that carries its citation, and check a whole summary is fully cited.",
+     "Turn a grounded figure into a claim that carries its citation, and detect which claims in a summary are uncited.",
      ["Citations", "Structured claim", "Auditability"])
 def _l2(sol):
+    DEFS = [
+      REPORT_FIXTURE, "",
+      "def make_claim(statement, fig):",
+      '    # a claim ties a statement to its grounded value AND carries its exact source string',
+      {"s": '    return {"statement": statement, "value": fig["value"], "source": ___}   # TODO: the citation',
+       "a": '    return {"statement": statement, "value": fig["value"], "source": fig["source"]}'},
+      "",
+      "def uncited_claims(claims):",
+      '    # return the STATEMENT of each claim in the summary that is missing a source citation',
+      {"s": '    return [___ for c in claims if not c.get("source")]   # TODO: the statement of each uncited claim',
+       "a": '    return [c["statement"] for c in claims if not c.get("source")]'},
+    ]
+    EX = '''c = make_claim("revenue", REPORT["revenue"])
+print("claim:", c)
+summary = [make_claim("revenue", REPORT["revenue"]),
+           make_claim("net_income", REPORT["net_income"]),
+           {"statement": "guess", "value": 5.0, "source": ""}]   # a slipped-in uncited claim
+print("uncited in the mix:", uncited_claims(summary))
+print("fully-cited pair  :", uncited_claims(summary[:2]))'''
     return [
       header(2, "Cite Every Claim", "Beginner", 20,
         ["Build a claim that carries its statement, value AND the exact source string",
@@ -233,55 +257,51 @@ def _l2(sol):
          "See why one uncited claim in a mix breaks auditability"],
         "Auditability: structure & the trail"),
       setup(2),
-      md('''## Concept
-Lab 1 checked a *single* figure was grounded. A real summary makes **many** claims at once, and the
-danger is the **mix**: five cited numbers and one silently uncited one. Auditability means every
-conclusion is **traceable** (deck slide 15), so each **claim** carries the exact **source string**
-it came from &mdash; the citation a later validation step (Lab 7) checks for *correctness*. Here you
-build the claim record and a detector that names **which** claims in a summary are uncited.'''),
+      concept('''Lab 1 checked a *single* figure was grounded. A real summary makes **many** claims at once, and the
+danger is the **mix**: five cited numbers and one silently uncited one. Auditability means every conclusion
+is **traceable** (deck slide 15), so each **claim** carries the exact **source string** it came from
+&mdash; the citation a later validation step (Lab 7) checks for *correctness*. Here you build the claim
+record and a detector that names **which** claims in a summary are uncited.'''),
       realcell([REPORT_FIXTURE],
         '''print("a claim carries the SOURCE STRING through, e.g.:")
 print({"statement": "revenue", "value": 120.0, "source": "p4, income stmt"})
 print("a summary is a LIST of these -- and we must find any that are uncited.")'''),
-      md('''## Your Turn
-Complete `make_claim` (carry the source string through) and `uncited_claims` (return the statements of
-every claim in a summary that is missing a citation &mdash; the mix detector).'''),
-      code(render([
-        "def make_claim(statement, fig):",
-        '    # a claim ties a statement to its grounded value AND carries its exact source string',
-        {"s": '    return {"statement": statement, "value": fig["value"], "source": ___}   # TODO: the citation',
-         "a": '    return {"statement": statement, "value": fig["value"], "source": fig["source"]}'},
-        "",
-        "def uncited_claims(claims):",
-        '    # return the STATEMENT of each claim in the summary that is missing a source citation',
-        {"s": '    return [___ for c in claims if not c.get("source")]   # TODO: the statement of each uncited claim',
-         "a": '    return [c["statement"] for c in claims if not c.get("source")]'},
-        "",
-        "try:",
-        "    c = make_claim('revenue', REPORT['revenue'])",
-        "    print('claim:', c)",
-        "    summary = [make_claim('revenue', REPORT['revenue']),",
-        "               make_claim('net_income', REPORT['net_income']),",
-        "               {'statement': 'guess', 'value': 5.0, 'source': ''}]   # a slipped-in uncited claim",
-        "    print('uncited in the mix:', uncited_claims(summary))",
-        "    print('fully-cited pair  :', uncited_claims(summary[:2]))",
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("a claim carries its value", lambda: make_claim("revenue", REPORT["revenue"])["value"] == 120.0)
-expect_true("a claim carries the exact source string through", lambda: make_claim("net_income", REPORT["net_income"])["source"] == "p4, income stmt")
-expect_true("a fully-cited summary has no uncited claims", lambda: uncited_claims([make_claim("revenue", REPORT["revenue"]), make_claim("net_income", REPORT["net_income"])]) == [])
-expect_true("the mix detector names the one uncited claim", lambda: uncited_claims([make_claim("revenue", REPORT["revenue"]), {"statement": "guess", "value": 5.0, "source": ""}]) == ["guess"])
-expect_true("several uncited claims are all listed", lambda: set(uncited_claims([{"statement": "a", "source": ""}, {"statement": "b", "source": None}, make_claim("revenue", REPORT["revenue"])])) == {"a", "b"})'''),
-      footer(2, "A summary is a mix of claims, and one silently uncited number breaks the chain. Carrying the exact source string through -- and naming which claims lack it -- is what a validator (Lab 7) checks for correctness and what makes the agent auditable."),
+      buildmd('''Complete `make_claim` (carry the source string through) and `uncited_claims` (name every claim in a
+summary that is missing a citation &mdash; the mix detector), then run the cell.'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      noticemd('''- A claim carries its **exact source string** &mdash; not "cited: yes", but the page the number came from.
+- The mix detector names the **one** uncited claim among several cited ones &mdash; the failure that's easy to miss.
+- Lab 7 will check these citations for *correctness* (right page); here we just guarantee each claim *has* one.'''),
+      yourturn('''Build a three-claim summary where the middle claim has `source=None`, and confirm `uncited_claims`
+returns just that one. **What good looks like:** the detector pinpoints exactly the uncited claim(s), so a
+single slipped-in figure can never ride along uncited into an analyst's summary.'''),
+      footer(2, "A summary is a mix of claims, and one silently uncited number breaks the chain. Carrying the exact source string through -- and naming which claims lack it -- is what a validator (Lab 7) checks and what makes the agent auditable."),
     ]
 
 # ============================================================ LAB 03
 @lab(3, "lab-03-compute-metrics", "Beginner",
      "Compute Derived Metrics", 25,
-     "Compute YoY growth and margin from grounded figures using a safe calculator -- exact financial math.",
+     "Compute YoY growth and margin from grounded figures using a safe calculator -- exact financial math, never bare eval.",
      ["Derived metrics", "Safe compute", "YoY & margin"])
 def _l3(sol):
+    DEFS = [
+      SAFE_CALC, "", REPORT_FIXTURE, "",
+      "def yoy_growth(current, prior):",
+      '    # percent change year over year, rounded to 1 dp',
+      {"s": '    return round(___, 1)   # TODO: (current - prior) / prior * 100',
+       "a": '    return round((current - prior) / prior * 100, 1)'},
+      "",
+      "def margin_pct(net_income, revenue):",
+      '    # net margin as a percentage, rounded to 1 dp',
+      {"s": '    return round(___, 1)   # TODO: net_income / revenue * 100',
+       "a": '    return round(net_income / revenue * 100, 1)'},
+    ]
+    EX = '''rev_now = REPORT["revenue"]["value"]; rev_prior = PRIOR["revenue"]
+ni_now  = REPORT["net_income"]["value"]
+print("revenue YoY  :", yoy_growth(rev_now, rev_prior), "%")
+print("net margin   :", margin_pct(ni_now, rev_now), "%")
+print("prior margin :", margin_pct(PRIOR["net_income"], PRIOR["revenue"]), "%")
+print("safe_calc still exact:", safe_calc("(120-107.1)/107.1*100"))'''
     return [
       header(3, "Compute Derived Metrics", "Beginner", 25,
         ["Compute year-over-year growth from grounded figures",
@@ -289,40 +309,26 @@ def _l3(sol):
          "Use a safe calculator -- never bare eval on financial input"],
         "The financial-report insight agent, end to end"),
       setup(3),
-      md('''## Concept
-The insight agent computes the **derived metrics** an analyst cares about (deck slides 7&ndash;8):
-**year-over-year growth**, **margins**, notable movements &mdash; all from the **grounded** figures,
-never invented. Financial math must be exact and safe, so compute goes through a small **AST-based
-safe calculator**, never bare `eval` on model output.'''),
+      concept('''The insight agent computes the **derived metrics** an analyst cares about (deck slides 7&ndash;8):
+**year-over-year growth**, **margins**, notable movements &mdash; all from the **grounded** figures, never
+invented. Financial math must be exact and safe, so compute goes through a small **AST-based safe
+calculator**, never bare `eval` on model output. This is the same `safe_calc` the agent's `compute` tool
+wraps in Lab 11 (catching errors, returning a string).'''),
       realcell([SAFE_CALC, REPORT_FIXTURE],
-        '''print("safe compute:", safe_calc("(120-107.1)/107.1*100"), "(revenue YoY %)")'''),
-      md('''## Your Turn
-Complete `yoy_growth` (percent change) and `margin_pct` (net income over revenue).'''),
-      code(render([
-        "def yoy_growth(current, prior):",
-        '    # percent change year over year, rounded to 1 dp',
-        {"s": '    return round(___, 1)   # TODO: (current - prior) / prior * 100',
-         "a": '    return round((current - prior) / prior * 100, 1)'},
-        "",
-        "def margin_pct(net_income, revenue):",
-        '    # net margin as a percentage, rounded to 1 dp',
-        {"s": '    return round(___, 1)   # TODO: net_income / revenue * 100',
-         "a": '    return round(net_income / revenue * 100, 1)'},
-        "",
-        "try:",
-        "    rev_now = REPORT['revenue']['value']; rev_prior = PRIOR['revenue']",
-        "    ni_now  = REPORT['net_income']['value']",
-        "    print('revenue YoY  :', yoy_growth(rev_now, rev_prior), '%')",
-        "    print('net margin   :', margin_pct(ni_now, rev_now), '%')",
-        "    print('prior margin :', margin_pct(PRIOR['net_income'], PRIOR['revenue']), '%')",
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("revenue YoY is +12.0%", lambda: yoy_growth(120.0, 107.1) == 12.0)
-expect_true("a decline gives a negative growth", lambda: yoy_growth(90.0, 100.0) == -10.0)
-expect_true("net margin is 7.5%", lambda: margin_pct(9.0, 120.0) == 7.5)
-expect_true("the prior margin is ~9.1%", lambda: margin_pct(9.7, 107.1) == 9.1)
-expect_true("metrics are grounded in the passed figures (deterministic)", lambda: yoy_growth(120.0, 107.1) == yoy_growth(REPORT["revenue"]["value"], PRIOR["revenue"]))'''),
+        '''print("safe compute:", safe_calc("(120-107.1)/107.1*100"), "(revenue YoY %)")
+try:
+    safe_calc("__import__('os')")           # not arithmetic -> raises, so a tool must catch it
+except Exception as e:
+    print("safe_calc refuses non-arithmetic:", type(e).__name__)'''),
+      buildmd('''Complete `yoy_growth` (percent change) and `margin_pct` (net income over revenue), then run the cell to
+compute this quarter's metrics from the grounded figures.'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      noticemd('''- Every metric is computed **from the grounded figures** &mdash; nothing is recalled or invented.
+- `safe_calc` **refuses** anything that isn't arithmetic, which is why the agent's `compute` tool wraps it in try/except and returns a string.
+- The margin fell from ~9.1% to 7.5% even as revenue grew &mdash; exactly the movement Lab 4 flags for a human.'''),
+      yourturn('''Compute a **debt-to-revenue** ratio (or another metric you care about) from the grounded figures via
+`safe_calc`, and print it with the pages it was derived from. **What good looks like:** the number is exact,
+computed from cited inputs, and you can trace it back to the filing.'''),
       footer(3, "Derived metrics come from the grounded figures, computed exactly through a safe calculator. The margin fell from 9.1% to 7.5% even as revenue grew -- exactly the kind of movement the agent must surface next."),
     ]
 
@@ -332,6 +338,19 @@ expect_true("metrics are grounded in the passed figures (deterministic)", lambda
      "Flag notable movements -- a falling margin, a debt spike -- so an analyst's attention goes to what matters.",
      ["Anomaly flags", "Thresholds", "Surface, don't decide"])
 def _l4(sol):
+    DEFS = [
+      "def analyze_flags(margin_now, margin_prior, debt_growth_pct):",
+      "    flags = []",
+      {"s": '    if ___:   # TODO: the margin declined vs the prior period',
+       "a": '    if margin_now < margin_prior:'},
+      '        flags.append("margin_down")',
+      {"s": '    if ___:   # TODO: debt grew by more than 50%',
+       "a": '    if debt_growth_pct > 50:'},
+      '        flags.append("debt_spike")',
+      "    return flags",
+    ]
+    EX = '''print("margin 7.5 vs 9.1, debt +60% ->", analyze_flags(7.5, 9.1, 60))
+print("margin 9.5 vs 9.1, debt +5%  ->", analyze_flags(9.5, 9.1, 5))'''
     return [
       header(4, "Flag Anomalies", "Beginner", 20,
         ["Flag a margin that declined versus the prior period",
@@ -339,37 +358,21 @@ def _l4(sol):
          "Surface what an analyst should look at -- not a decision"],
         "The financial-report insight agent, end to end"),
       setup(4),
-      md('''## Concept
-Part of the agent's value is directing a human's attention: **flag** the notable movements &mdash; a
-**margin that fell**, **debt that spiked** &mdash; so the analyst spends judgement where it matters
-(deck slide 7). A flag is a **signal to look**, never a decision. Thresholds keep it deterministic and
+      concept('''Part of the agent's value is directing a human's attention: **flag** the notable movements &mdash; a
+**margin that fell**, **debt that spiked** &mdash; so the analyst spends judgement where it matters (deck
+slide 7). A flag is a **signal to look**, never a decision. Thresholds keep it deterministic and
 auditable.'''),
       realcell([REPORT_FIXTURE],
         '''print("this quarter debt:", REPORT["total_debt"]["value"], "M  |  prior:", PRIOR["total_debt"], "M")'''),
-      md('''## Your Turn
-Complete `analyze_flags`: flag a declining margin and a debt spike (growth over 50%).'''),
-      code(render([
-        "def analyze_flags(margin_now, margin_prior, debt_growth_pct):",
-        "    flags = []",
-        {"s": '    if ___:   # TODO: the margin declined vs the prior period',
-         "a": '    if margin_now < margin_prior:'},
-        '        flags.append("margin_down")',
-        {"s": '    if ___:   # TODO: debt grew by more than 50%',
-         "a": '    if debt_growth_pct > 50:'},
-        '        flags.append("debt_spike")',
-        "    return flags",
-        "",
-        "try:",
-        "    print('margin 7.5 vs 9.1, debt +60% ->', analyze_flags(7.5, 9.1, 60))",
-        "    print('margin 9.5 vs 9.1, debt +5%  ->', analyze_flags(9.5, 9.1, 5))",
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("a falling margin is flagged", lambda: "margin_down" in analyze_flags(7.5, 9.1, 10))
-expect_true("a stable/rising margin is not flagged", lambda: "margin_down" not in analyze_flags(9.5, 9.1, 10))
-expect_true("a debt spike (>50%) is flagged", lambda: "debt_spike" in analyze_flags(9.0, 9.0, 60))
-expect_true("modest debt growth is not flagged", lambda: "debt_spike" not in analyze_flags(9.0, 9.0, 20))
-expect_true("both conditions raise both flags", lambda: set(analyze_flags(7.5, 9.1, 60)) == {"margin_down", "debt_spike"})'''),
+      buildmd('''Complete `analyze_flags`: flag a declining margin and a debt spike (growth over 50%), then run the
+cell.'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      noticemd('''- A flag says **"look here"**, it never says "sell" &mdash; surfacing is not deciding.
+- Thresholds are explicit and deterministic, so every flag is **auditable**: you can say exactly why it fired.
+- Both conditions can fire at once (margin down **and** debt spike) &mdash; the analyst sees the full picture.'''),
+      yourturn('''Add a third flag &mdash; e.g. `revenue_down` when YoY growth is negative, or `high_leverage` when
+debt-to-revenue crosses a threshold you pick. **What good looks like:** the new flag fires on the right
+inputs and stays a signal for a human, not a recommendation.'''),
       footer(4, "Flags point the analyst at what matters -- a margin that fell as revenue grew, debt that spiked. They surface, they don't decide; the human judges what the flag means."),
     ]
 
@@ -379,6 +382,23 @@ expect_true("both conditions raise both flags", lambda: set(analyze_flags(7.5, 9
      "Detect and block forbidden advice language -- the insight agent informs, it never recommends buying or selling.",
      ["Guardrail", "No advice", "Informational only"])
 def _l5(sol):
+    DEFS = [
+      'ADVICE_TERMS = ("buy", "sell", "you should", "recommend", "strong buy", "invest in")',
+      "",
+      "def contains_advice(text):",
+      "    t = text.lower()",
+      {"s": '    return ___   # TODO: True if ANY advice term appears in the text',
+       "a": '    return any(term in t for term in ADVICE_TERMS)'},
+      "",
+      "def enforce_no_advice(summary):",
+      '    # a valid insight is informational; reject it if it crosses into advice',
+      {"s": '    return {"ok": ___, "summary": summary}   # TODO: ok = it does NOT contain advice',
+       "a": '    return {"ok": not contains_advice(summary), "summary": summary}'},
+    ]
+    EX = '''clean  = "Revenue +12% YoY [p4]; net margin down to 7.5% [p4] -- FLAG."
+advice = "Revenue is up -- you should buy this stock now."
+print("clean  ->", enforce_no_advice(clean))
+print("advice ->", enforce_no_advice(advice))'''
     return [
       header(5, "The No-Advice Guardrail", "Beginner", 20,
         ["Detect buy/sell/recommend language in a summary",
@@ -386,42 +406,24 @@ def _l5(sol):
          "Keep the agent informational -- analysis, not a recommendation"],
         "The insight agent, in code"),
       setup(5),
-      md('''## Concept
-The insight agent has a hard boundary (deck slides 6, 9): it **informs** &mdash; it does **not** give
-personalized investment advice. Providing buy/sell recommendations is a regulated activity, out of
-scope, and dangerous to hand to an LLM. So a guardrail **detects advice language** and rejects it: the
-output stays **analysis**, and a human analyst draws any conclusion.'''),
+      concept('''The insight agent has a hard boundary (deck slides 6, 9): it **informs** &mdash; it does **not** give
+personalized investment advice. Providing buy/sell recommendations is a regulated activity, out of scope,
+and dangerous to hand to an LLM. So a guardrail **detects advice language** and rejects it: the output stays
+**analysis**, and a human analyst draws any conclusion. In Lab 10 you'll run this same check over a **real
+model's** output.'''),
       code('''# Words that turn analysis into (forbidden) advice.
 ADVICE_TERMS = ("buy", "sell", "you should", "recommend", "strong buy", "invest in")
 print("advice terms to block:", ADVICE_TERMS)'''),
-      md('''## Your Turn
-Complete `contains_advice` and `enforce_no_advice` (reject a summary that gives advice).'''),
-      code(render([
-        'ADVICE_TERMS = ("buy", "sell", "you should", "recommend", "strong buy", "invest in")',
-        "",
-        "def contains_advice(text):",
-        "    t = text.lower()",
-        {"s": '    return ___   # TODO: True if ANY advice term appears in the text',
-         "a": '    return any(term in t for term in ADVICE_TERMS)'},
-        "",
-        "def enforce_no_advice(summary):",
-        '    # a valid insight is informational; reject it if it crosses into advice',
-        {"s": '    return {"ok": ___, "summary": summary}   # TODO: ok = it does NOT contain advice',
-         "a": '    return {"ok": not contains_advice(summary), "summary": summary}'},
-        "",
-        "try:",
-        '    clean  = "Revenue +12% YoY [p4]; net margin down to 7.5% [p4] -- FLAG."',
-        '    advice = "Revenue is up -- you should buy this stock now."',
-        "    print('clean  ->', enforce_no_advice(clean))",
-        "    print('advice ->', enforce_no_advice(advice))",
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("advice language is detected", lambda: contains_advice("you should buy this stock") is True)
-expect_true("an informational summary has no advice", lambda: contains_advice("Revenue +12% YoY [p4]; margin down.") is False)
-expect_true("a 'recommend' summary is caught", lambda: contains_advice("We recommend increasing the position.") is True)
-expect_true("enforce_no_advice rejects advice", lambda: enforce_no_advice("you should sell now")["ok"] is False)
-expect_true("enforce_no_advice passes a clean summary", lambda: enforce_no_advice("Revenue +12% YoY [p4].")["ok"] is True)'''),
+      buildmd('''Complete `contains_advice` and `enforce_no_advice` (reject a summary that gives advice), then run the
+cell.'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      noticemd('''- A clean, cited summary passes; the moment it says "you should buy", it's **rejected** &mdash; informational only.
+- This is a deterministic guardrail you own; it runs *after* the model, on whatever text the model produced.
+- Withholding the trade tool (Lab 6) stops the agent *acting*; this stops it *advising*. Both are needed.'''),
+      yourturn('''The keyword list is a blunt instrument &mdash; try a phrasing that slips past it (e.g. *"a compelling
+entry point"*) and decide whether you'd add it. **What good looks like:** you understand the guardrail's
+limits and can tighten it, while accepting that the *real* safety net is the withheld tool, not the word
+list.'''),
       footer(5, "The agent informs, never advises. Detecting and blocking advice language keeps it on the safe, valuable side of the line -- analysis for a human, not a recommendation. Next: the stronger guardrail."),
     ]
 
@@ -431,6 +433,23 @@ expect_true("enforce_no_advice passes a clean summary", lambda: enforce_no_advic
      "The strongest guardrail: give the agent read/compute tools but NO trade or advice tool -- it cannot act.",
      ["Withhold the tool", "Read-only", "Cannot act"])
 def _l6(sol):
+    DEFS = [
+      'FORBIDDEN = {"place_trade", "give_advice", "execute_order", "wire_funds"}',
+      'ALL_TOOLS = ["extract_figure", "compute", "place_trade", "give_advice"]   # a MIXED, untrusted toolbox',
+      "",
+      "def agent_tools():",
+      '    # read-only: keep every tool from ALL_TOOLS that is NOT a forbidden capability',
+      {"s": '    return ___   # TODO: filter ALL_TOOLS, dropping anything that is in FORBIDDEN',
+       "a": '    return [t for t in ALL_TOOLS if t not in FORBIDDEN]'},
+      "",
+      "def can_act(tools):",
+      '    # True if the toolset contains any consequential (forbidden) tool',
+      {"s": '    return ___   # TODO: any tool that is in FORBIDDEN',
+       "a": '    return any(t in FORBIDDEN for t in tools)'},
+    ]
+    EX = '''print("tools    :", agent_tools())
+print("can act? :", can_act(agent_tools()))
+print("if given a trade tool:", can_act(agent_tools() + ["place_trade"]))'''
     return [
       header(6, "Withhold the Dangerous Tool", "Beginner", 25,
         ["Give the agent only read-only tools (extract, compute)",
@@ -438,44 +457,26 @@ def _l6(sol):
          "See why withholding the tool beats any prompt instruction"],
         "Assistive on judgement, autonomous on legwork"),
       setup(6),
-      md('''## Concept
-The strongest guardrail is the simplest (deck slides 9, 17): don't **give** the agent the dangerous
+      concept('''The strongest guardrail is the simplest (deck slides 9, 17): don't **give** the agent the dangerous
 tool. The insight agent gets `extract_figure` and `compute` &mdash; **read-only** &mdash; and there is
 **no** `place_trade`, no `give_advice`. Just as the email agent couldn't send, this agent literally
-**cannot** trade or advise. Withholding a capability is far stronger than instructing against it.'''),
+**cannot** trade or advise. Withholding a capability is far stronger than instructing against it &mdash; and
+in Lab 11 you'll see this exact list drive a **real** `create_agent` where `place_trade` is defined but
+never bound.'''),
       code('''FORBIDDEN = {"place_trade", "give_advice", "execute_order", "wire_funds"}
 ALL_TOOLS = ["extract_figure", "compute", "place_trade", "give_advice"]   # a MIXED, untrusted toolbox
 print("all available tools :", ALL_TOOLS)
 print("tools an insight agent must NEVER hold:", FORBIDDEN)'''),
-      md('''## Your Turn
-Complete `agent_tools` &mdash; **filter** the mixed `ALL_TOOLS` toolbox down to the read-only ones &mdash;
-and `can_act` (does the toolset contain a forbidden tool?).'''),
-      code(render([
-        'FORBIDDEN = {"place_trade", "give_advice", "execute_order", "wire_funds"}',
-        'ALL_TOOLS = ["extract_figure", "compute", "place_trade", "give_advice"]',
-        "",
-        "def agent_tools():",
-        '    # read-only: keep every tool from ALL_TOOLS that is NOT a forbidden capability',
-        {"s": '    return ___   # TODO: filter ALL_TOOLS, dropping anything that is in FORBIDDEN',
-         "a": '    return [t for t in ALL_TOOLS if t not in FORBIDDEN]'},
-        "",
-        "def can_act(tools):",
-        '    # True if the toolset contains any consequential (forbidden) tool',
-        {"s": '    return ___   # TODO: any tool that is in FORBIDDEN',
-         "a": '    return any(t in FORBIDDEN for t in tools)'},
-        "",
-        "try:",
-        "    print('tools    :', agent_tools())",
-        "    print('can act? :', can_act(agent_tools()))",
-        "    print('if given a trade tool:', can_act(agent_tools() + ['place_trade']))",
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("the toolset has extract_figure & compute", lambda: set(agent_tools()) == {"extract_figure", "compute"})
-expect_true("the toolset holds NO place_trade", lambda: "place_trade" not in agent_tools())
-expect_true("the read-only agent cannot act", lambda: can_act(agent_tools()) is False)
-expect_true("adding a trade tool would let it act", lambda: can_act(agent_tools() + ["place_trade"]) is True)
-expect_true("giving advice is also forbidden", lambda: can_act(["give_advice"]) is True)'''),
+      buildmd('''Complete `agent_tools` &mdash; **filter** the mixed `ALL_TOOLS` toolbox down to the read-only ones &mdash;
+and `can_act` (does the toolset contain a forbidden tool?), then run the cell.'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      noticemd('''- The bound toolset is exactly `["extract_figure", "compute"]` &mdash; **read-only**, so `can_act` is False.
+- *Add* a trade tool and `can_act` flips True &mdash; which is why you never add it. The guardrail is the missing capability.
+- A prompt ("please don't trade") can be jailbroken; a tool that isn't bound cannot be called at all.'''),
+      yourturn('''Imagine a stakeholder asks to "let the agent auto-rebalance". Show what `can_act` returns if you add
+`execute_order`, and write one sentence on why you'd refuse. **What good looks like:** you can demonstrate,
+in code, that adding the capability is what makes the agent able to act &mdash; so the safe design is to
+leave it out.'''),
       footer(6, "In a high-stakes domain your strongest safety control is the tool you DON'T provide. Read-only tools mean the agent can analyse all day and still cannot trade or advise -- the guardrail is the missing capability."),
     ]
 
@@ -485,6 +486,26 @@ expect_true("giving advice is also forbidden", lambda: can_act(["give_advice"]) 
      "Before shipping a summary, validate that every claim is grounded and cites the RIGHT source.",
      ["Validation", "Grounding check", "Right source"])
 def _l7(sol):
+    DEFS = [
+      REPORT_FIXTURE, "",
+      "def validate_summary(claims, report):",
+      "    problems = []",
+      "    for c in claims:",
+      "        fig = report.get(c['metric'])",
+      "        if fig is None:",
+      '            problems.append("ungrounded: " + c["metric"])   # cites a figure not in the report',
+      {"s": '        elif ___:   # TODO: the claim cites a source that does not match the report',
+       "a": '        elif c["source"] != fig["source"]:'},
+      '            problems.append("wrong source: " + c["metric"])',
+      {"s": '    return {"ok": ___, "problems": problems}   # TODO: ok = no problems',
+       "a": '    return {"ok": len(problems) == 0, "problems": problems}'},
+    ]
+    EX = '''good = [{"metric": "revenue", "source": "p4, income stmt"}]
+ungrounded = [{"metric": "ebitda", "source": "p9"}]
+wrong = [{"metric": "revenue", "source": "p1, cover"}]
+print("good      ->", validate_summary(good, REPORT))
+print("ungrounded->", validate_summary(ungrounded, REPORT))
+print("wrong src ->", validate_summary(wrong, REPORT))'''
     return [
       header(7, "Validate Grounding", "Intermediate", 30,
         ["Check every claim maps to a real figure in the report",
@@ -492,44 +513,21 @@ def _l7(sol):
          "Refuse to ship a summary with an ungrounded claim"],
         "Grounding: RAG & citations"),
       setup(7),
-      md('''## Concept
-Never ship an ungrounded claim (deck slides 4, 8, 14). Before the summary goes to an analyst, the agent
-**validates** it: every claim must map to a **real figure** in the report, and it must cite the
-**correct source**. A claim that cites the wrong page, or a figure that isn't in the report, is a
-grounding failure &mdash; don't ship it.'''),
+      concept('''Never ship an ungrounded claim (deck slides 4, 8, 14). Before the summary goes to an analyst, the agent
+**validates** it: every claim must map to a **real figure** in the report, and it must cite the **correct
+source**. A claim that cites the wrong page, or a figure that isn't in the report, is a grounding failure
+&mdash; don't ship it. This is the gate that turns "cited" (Lab 2) into "**correctly** cited".'''),
       realcell([REPORT_FIXTURE],
-        '''print("a claim must match REPORT[metric] on BOTH value-source and source string")'''),
-      md('''## Your Turn
-Complete `validate_summary`: collect an ungrounded claim and a wrong-source claim.'''),
-      code(render([
-        "def validate_summary(claims, report):",
-        "    problems = []",
-        "    for c in claims:",
-        "        fig = report.get(c['metric'])",
-        "        if fig is None:",
-        {"s": '            problems.append("ungrounded: " + c["metric"])   # TODO: keep this line',
-         "a": '            problems.append("ungrounded: " + c["metric"])'},
-        {"s": '        elif ___:   # TODO: the claim cites a source that does not match the report',
-         "a": '        elif c["source"] != fig["source"]:'},
-        '            problems.append("wrong source: " + c["metric"])',
-        {"s": '    return {"ok": ___, "problems": problems}   # TODO: ok = no problems',
-         "a": '    return {"ok": len(problems) == 0, "problems": problems}'},
-        "",
-        "try:",
-        "    good = [{'metric': 'revenue', 'source': 'p4, income stmt'}]",
-        "    ungrounded = [{'metric': 'ebitda', 'source': 'p9'}]",
-        "    wrong = [{'metric': 'revenue', 'source': 'p1, cover'}]",
-        "    print('good      ->', validate_summary(good, REPORT))",
-        "    print('ungrounded->', validate_summary(ungrounded, REPORT))",
-        "    print('wrong src ->', validate_summary(wrong, REPORT))",
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("a correctly-grounded summary passes", lambda: validate_summary([{"metric": "revenue", "source": "p4, income stmt"}], REPORT)["ok"] is True)
-expect_true("a claim about a missing figure is caught", lambda: any("ungrounded" in p for p in validate_summary([{"metric": "ebitda", "source": "p9"}], REPORT)["problems"]))
-expect_true("a wrong-source citation is caught", lambda: any("wrong source" in p for p in validate_summary([{"metric": "revenue", "source": "p1, cover"}], REPORT)["problems"]))
-expect_true("ok is False when any problem exists", lambda: validate_summary([{"metric": "ebitda", "source": "p9"}], REPORT)["ok"] is False)
-expect_true("multiple problems are all collected", lambda: len(validate_summary([{"metric": "ebitda", "source": "p9"}, {"metric": "revenue", "source": "wrong"}], REPORT)["problems"]) == 2)'''),
+        '''print("a claim must match REPORT[metric] on the source string, e.g. revenue -> 'p4, income stmt'")'''),
+      buildmd('''Complete `validate_summary`: collect an ungrounded claim and a wrong-source claim, and return `ok` only
+when there are no problems. Then run the cell.'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      noticemd('''- A claim about a figure **not in the report** is `ungrounded`; a claim citing the **wrong page** is `wrong source`.
+- `ok` is True only when the `problems` list is empty &mdash; one bad claim blocks the whole summary.
+- This is the validation Lab 12's capstone pipeline runs before it flags a report `needs_review`.'''),
+      yourturn('''Feed `validate_summary` a mixed list with one good claim, one ungrounded, and one wrong-source, and read
+the collected problems. **What good looks like:** every problem is named individually, and `ok` is False, so
+nothing ungrounded or mis-cited can slip through to an analyst.'''),
       footer(7, "Validation is the gate before an analyst sees the summary: every claim must map to a real figure and cite the right source. An ungrounded or mis-cited claim doesn't ship -- that's the high-stakes bar."),
     ]
 
@@ -539,6 +537,27 @@ expect_true("multiple problems are all collected", lambda: len(validate_summary(
      "Log the whole run -- trigger, figures pulled, reasoning, output -- into a replayable, fully-sourced trail.",
      ["Audit trail", "Replayable", "Fully sourced"])
 def _l8(sol):
+    DEFS = [
+      "class AuditTrail:",
+      "    def __init__(self):",
+      "        self.entries = []",
+      "    def record(self, step, detail, source=None):",
+      {"s": '        ___   # TODO: append {"step": step, "detail": detail, "source": source}',
+       "a": '        self.entries.append({"step": step, "detail": detail, "source": source})'},
+      "    def steps(self):",
+      "        return [e['step'] for e in self.entries]",
+      "    def fully_sourced(self):",
+      '        # every FIGURE step must carry a source (analysis/decision steps need not)',
+      {"s": '        return all(___ for e in self.entries if e["step"] == "figure")   # TODO: e has a source',
+       "a": '        return all(e["source"] for e in self.entries if e["step"] == "figure")'},
+    ]
+    EX = '''t = AuditTrail()
+t.record("trigger", "analyze Q3 report")
+t.record("figure", "revenue=120.0M", "p4, income stmt")
+t.record("figure", "net_income=9.0M", "p4, income stmt")
+t.record("output", "summary + needs_review")
+print("steps        :", t.steps())
+print("fully sourced:", t.fully_sourced())'''
     return [
       header(8, "The Audit Trail", "Intermediate", 30,
         ["Record each step of the run with its detail and source",
@@ -546,45 +565,22 @@ def _l8(sol):
          "Check every figure step carries a source"],
         "Auditability: structure & the trail"),
       setup(8),
-      md('''## Concept
-In a regulated domain you must be able to **prove** how the agent reached its conclusion (deck slides
-15, 19). The **audit trail** logs the whole run &mdash; the trigger, every figure pulled and its
-source, the reasoning, the output, the human decision &mdash; so the run is **replayable** and every
-figure is **traceable**. It's also how you debug and improve the agent.'''),
+      concept('''In a regulated domain you must be able to **prove** how the agent reached its conclusion (deck slides 15,
+19). The **audit trail** logs the whole run &mdash; the trigger, every figure pulled and its source, the
+reasoning, the output, the human decision &mdash; so the run is **replayable** and every figure is
+**traceable**. It's also how you debug and improve the agent. (In Lab 11 the real agent's **message trace**
+is exactly this, produced for free by `create_agent`.)'''),
       code('''# One entry per step: what happened, and (for a figure) where it came from.
 print("an entry:", {"step": "figure", "detail": "revenue=120.0M", "source": "p4, income stmt"})'''),
-      md('''## Your Turn
-Complete `AuditTrail`: record entries, read back the steps, and check every figure is sourced.'''),
-      code(render([
-        "class AuditTrail:",
-        "    def __init__(self):",
-        "        self.entries = []",
-        "    def record(self, step, detail, source=None):",
-        {"s": '        ___   # TODO: append {"step": step, "detail": detail, "source": source}',
-         "a": '        self.entries.append({"step": step, "detail": detail, "source": source})'},
-        "    def steps(self):",
-        "        return [e['step'] for e in self.entries]",
-        "    def fully_sourced(self):",
-        '        # every FIGURE step must carry a source (analysis/decision steps need not)',
-        {"s": '        return all(___ for e in self.entries if e["step"] == "figure")   # TODO: e has a source',
-         "a": '        return all(e["source"] for e in self.entries if e["step"] == "figure")'},
-        "",
-        "try:",
-        "    t = AuditTrail()",
-        "    t.record('trigger', 'analyze Q3 report')",
-        "    t.record('figure', 'revenue=120.0M', 'p4, income stmt')",
-        "    t.record('figure', 'net_income=9.0M', 'p4, income stmt')",
-        "    t.record('output', 'summary + needs_review')",
-        "    print('steps        :', t.steps())",
-        "    print('fully sourced:', t.fully_sourced())",
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("record appends an entry", lambda: (lambda t: (t.record("trigger", "x"), len(t.entries))[1])(AuditTrail()) == 1)
-expect_true("steps are read back in order", lambda: (lambda t: [t.record(s, "d") for s in ("trigger", "figure", "output")] and t.steps())(AuditTrail()) == ["trigger", "figure", "output"])
-expect_true("a run whose figures are all sourced passes", lambda: (lambda t: (t.record("figure", "rev", "p4"), t.fully_sourced())[1])(AuditTrail()) is True)
-expect_true("a figure with no source fails the check", lambda: (lambda t: (t.record("figure", "rev", None), t.fully_sourced())[1])(AuditTrail()) is False)
-expect_true("the trail is replayable (entries preserved)", lambda: (lambda t: [t.record("figure", "rev", "p4"), t.record("output", "sum")] and len(t.entries))(AuditTrail()) == 2)'''),
+      buildmd('''Complete `AuditTrail`: record entries, read back the steps, and check every figure is sourced. Then run
+the cell.'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      noticemd('''- The trail preserves **order**, so the run is replayable step by step &mdash; what a regulator asks for.
+- `fully_sourced` checks only **figure** steps carry a source (a "trigger" or "output" step needn't).
+- The real agent gives you this automatically: its list of `AIMessage`/`ToolMessage` **is** the trail (Lab 11).'''),
+      yourturn('''Add a step to the trail with **no** source for a figure and confirm `fully_sourced` turns False; then add
+a "human_decision" step and read the full ordered trail. **What good looks like:** any unsourced figure is
+caught, and the trail reads as a replayable record of the whole run.'''),
       footer(8, "The audit trail makes the whole run replayable and every figure traceable -- what a regulator needs and what lets you debug the agent. Structured claims make each answer checkable; the trail makes the run accountable."),
     ]
 
@@ -594,6 +590,30 @@ expect_true("the trail is replayable (entries preserved)", lambda: (lambda t: [t
      "Minimize what you send the model and redact sensitive identifiers -- data handling as a first-class concern.",
      ["Privacy", "Minimize", "Redaction"])
 def _l9(sol):
+    DEFS = [
+      "def redact_account(text):",
+      '    out, run = [], ""',
+      '    for ch in text + " ":            # trailing space flushes the final run',
+      "        if ch.isdigit():",
+      "            run += ch",
+      "        else:",
+      {"s": '            if ___:            # TODO: run is a long number (6+ digits)',
+       "a": '            if len(run) >= 6:'},
+      '                out.append("[REDACTED]")',
+      "            else:",
+      "                out.append(run)",
+      '            run = ""',
+      "            out.append(ch)",
+      '    return "".join(out).rstrip()',
+      "",
+      "def minimize(record, needed_fields):",
+      '    # send the model ONLY the fields the task needs -- not the whole record',
+      {"s": '    return ___   # TODO: build a dict of just the needed_fields that exist in record',
+       "a": '    return {k: record[k] for k in needed_fields if k in record}'},
+    ]
+    EX = '''print(redact_account("acct 1234567890 for FY2026"))
+rec = {"name": "ACME", "revenue": 120.0, "account": "1234567890", "ssn": "999-99-9999"}
+print(minimize(rec, ["name", "revenue"]))'''
     return [
       header(9, "Privacy: Minimize & Redact", "Intermediate", 30,
         ["Redact long identifiers (account/card numbers) from text",
@@ -601,242 +621,190 @@ def _l9(sol):
          "Treat data handling as a first-class design constraint"],
         "Privacy, compliance & data handling"),
       setup(9),
-      md('''## Concept
-High-stakes agents run on the most sensitive data there is (deck slide 16). Two disciplines: **minimize**
+      concept('''High-stakes agents run on the most sensitive data there is (deck slide 16). Two disciplines: **minimize**
 &mdash; send the model only the fields the task needs, not the whole record &mdash; and **redact** &mdash;
-mask identifiers (account numbers, card numbers) before they leave your systems. Less exposed data is
-less risk. It's why Day 1 started on **local models**.'''),
+mask identifiers (account numbers, card numbers) before they leave your systems. Less exposed data is less
+risk. It's why Day 1 started on **local models**; here you also see why Day-5 hosted calls (Groq) must be
+fed **minimized, redacted** input.'''),
       code('''# We mask any run of 6+ consecutive digits (account/card numbers), keeping short numbers like a year.
 print("redact 'acct 1234567890 for FY2026' -> mask the long number, keep 2026")'''),
-      md('''## Your Turn
-Complete `redact_account` (mask long digit runs) and `minimize` (keep only needed fields).'''),
-      code(render([
-        "def redact_account(text):",
-        '    out, run = [], ""',
-        '    for ch in text + " ":            # trailing space flushes the final run',
-        "        if ch.isdigit():",
-        "            run += ch",
-        "        else:",
-        {"s": '            if ___:            # TODO: run is a long number (6+ digits)',
-         "a": '            if len(run) >= 6:'},
-        '                out.append("[REDACTED]")',
-        "            else:",
-        "                out.append(run)",
-        '            run = ""',
-        "            out.append(ch)",
-        '    return "".join(out).rstrip()',
-        "",
-        "def minimize(record, needed_fields):",
-        '    # send the model ONLY the fields the task needs -- not the whole record',
-        {"s": '    return ___   # TODO: build a dict of just the needed_fields that exist in record',
-         "a": '    return {k: record[k] for k in needed_fields if k in record}'},
-        "",
-        "try:",
-        "    print(redact_account('acct 1234567890 for FY2026'))",
-        "    rec = {'name': 'ACME', 'revenue': 120.0, 'account': '1234567890', 'ssn': '999-99-9999'}",
-        "    print(minimize(rec, ['name', 'revenue']))",
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("a 10-digit account number is masked", lambda: "[REDACTED]" in redact_account("acct 1234567890 here"))
-expect_true("a short number (a year) is kept", lambda: "2026" in redact_account("for FY2026"))
-expect_true("the redacted text has no long digit run", lambda: not any(len(w) >= 6 and w.isdigit() for w in redact_account("acct 1234567890").split()))
-expect_true("minimize keeps only the needed fields", lambda: minimize({"name": "ACME", "revenue": 120.0, "account": "1234567890"}, ["name", "revenue"]) == {"name": "ACME", "revenue": 120.0})
-expect_true("minimize drops the sensitive fields", lambda: "account" not in minimize({"name": "ACME", "account": "1234567890", "ssn": "999-99-9999"}, ["name"]))'''),
-      footer(9, "Minimize what you send and redact identifiers before they leave your systems. Data handling is a first-class design constraint -- decide where the data can go before you build, which is why this course runs on local models."),
+      buildmd('''Complete `redact_account` (mask long digit runs) and `minimize` (keep only needed fields), then run the
+cell.'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      noticemd('''- A 10-digit account number becomes **`[REDACTED]`**; a 4-digit year survives &mdash; the threshold is the rule.
+- `minimize` sends **only** `["name", "revenue"]`; the account number and SSN never leave your systems.
+- Before any text goes to a hosted model, run it through both &mdash; the model should never see what it doesn't need.'''),
+      yourturn('''Extend `redact_account` (or write a second redactor) to also mask an email address, then minimize a record
+down to the two fields a summary needs. **What good looks like:** the text you'd send a hosted model carries
+no raw identifiers, and only the necessary fields leave your boundary.'''),
+      footer(9, "Minimize what you send and redact identifiers before they leave your systems. Data handling is a first-class design constraint -- decide where the data can go before you build, which is why this course runs on local models where it can."),
     ]
 
 # ============================================================ LAB 10
 @lab(10, "lab-10-assistive-not-autonomous", "Advanced",
      "Assistive, Not Autonomous", 40,
-     "Make the agent recommend but never decide -- flag for review, require citations, and keep the human in charge.",
+     "Make the agent recommend-for-review but never decide -- then run a REAL Groq model and push its output through the assistive gate.",
      ["Assistive", "needs_review", "Automation bias"])
 def _l10(sol):
+    DEFS = [
+      "def make_insight(summary, claims):",
+      '    # analysis + a needs_review flag -- the agent never decides',
+      {"s": '    return {"summary": summary, "status": ___, "claims": claims}   # TODO: the review flag',
+       "a": '    return {"summary": summary, "status": "needs_review", "claims": claims}'},
+      "",
+      "def reviewable(insight):",
+      '    # a review is only genuine if EVERY claim is cited (defends against automation bias)',
+      {"s": '    return all(___ for c in insight["claims"])   # TODO: each claim has a source',
+       "a": '    return all(c.get("source") for c in insight["claims"])'},
+      "",
+      "def owns_decision(insight):",
+      '    # the agent only "owns" a decision it already executed; an assistive (needs_review) insight',
+      '    # is owned by a human -- so branch on the status field to return the owner',
+      {"s": '    return "agent" if ___ else "human"   # TODO: the status shows the agent already acted (executed)',
+       "a": '    return "agent" if insight["status"] == "executed" else "human"'},
+    ]
+    EX = '''claims = [{"metric": "revenue", "source": "p4"}, {"metric": "margin", "source": "p4"}]
+ins = make_insight("Revenue +12% YoY [p4]; margin down [p4].", claims)
+print("status    :", ins["status"])
+print("reviewable:", reviewable(ins))
+print("owns (assistive):", owns_decision(ins))
+print("owns (if executed):", owns_decision({"status": "executed"}))
+uncited = make_insight("...", [{"metric": "guess", "source": ""}])
+print("uncited reviewable?", reviewable(uncited))'''
+    RUN = '''# Ask the REAL model for a one-line, cited, NO-advice insight -- then push its output through YOUR gate.
+prompt = ("In ONE line, state revenue and net income with their page cites, and give NO advice: "
+          "revenue 120.0M (p4, income stmt), net income 9.0M (p4, income stmt).")
+text = llm.invoke(prompt).content
+print("REAL model insight:", text)
+ins = make_insight(text, [{"metric": "revenue", "source": "p4, income stmt"},
+                          {"metric": "net_income", "source": "p4, income stmt"}])
+print("status                  :", ins["status"], "(never a decision)")
+print("owner of the decision   :", owns_decision(ins))
+advice_terms = ("buy", "sell", "recommend", "you should", "invest in")
+print("no-advice guardrail holds:", not any(t in text.lower() for t in advice_terms))'''
     return [
       header(10, "Assistive, Not Autonomous", "Advanced", 40,
         ["Return analysis flagged for review -- never a decision",
          "Require every claim to be cited so review is genuine",
-         "Keep a human as the owner of any consequential decision"],
+         "Run a REAL model and gate its output as needs_review"],
         "Assistive on judgement, autonomous on legwork"),
       setup(10),
-      md('''## Concept
-The golden rule of Day 5 (deck slides 11, 17): agents are **assistive, not autonomous**. The insight
-agent does the grounded legwork and returns analysis flagged **`needs_review`** &mdash; it never
-decides. And to defend against **automation bias** (humans rubber-stamping a confident machine), the
-review is only real if the agent **shows its work**: every claim **cited**. The **human** owns any
-consequential decision.'''),
+      concept('''The golden rule of Day 5 (deck slides 11, 17): agents are **assistive, not autonomous**. The insight
+agent does the grounded legwork and returns analysis flagged **`needs_review`** &mdash; it never decides.
+And to defend against **automation bias** (humans rubber-stamping a confident machine), the review is only
+real if the agent **shows its work**: every claim **cited**. The **human** owns any consequential decision.
+Here you build the gate, then push a **real model's** output through it.'''),
       code('''# The agent's output is analysis + a needs_review flag -- never "executed" or a recommendation.
 print("assistive output shape:", {"summary": "...", "status": "needs_review", "claims": ["..."]})'''),
-      md('''## Your Turn
-Complete `make_insight` (flag for review), `reviewable` (require citations), and `owns_decision`.'''),
-      code(render([
-        "def make_insight(summary, claims):",
-        '    # analysis + a needs_review flag -- the agent never decides',
-        {"s": '    return {"summary": summary, "status": ___, "claims": claims}   # TODO: the review flag',
-         "a": '    return {"summary": summary, "status": "needs_review", "claims": claims}'},
-        "",
-        "def reviewable(insight):",
-        '    # a review is only genuine if EVERY claim is cited (defends against automation bias)',
-        {"s": '    return all(___ for c in insight["claims"])   # TODO: each claim has a source',
-         "a": '    return all(c.get("source") for c in insight["claims"])'},
-        "",
-        "def owns_decision(insight):",
-        '    # the agent only "owns" a decision it already executed; an assistive (needs_review) insight',
-        '    # is owned by a human -- so branch on the status field to return the owner',
-        {"s": '    return "agent" if ___ else "human"   # TODO: the status shows the agent already acted (executed)',
-         "a": '    return "agent" if insight["status"] == "executed" else "human"'},
-        "",
-        "try:",
-        "    claims = [{'metric': 'revenue', 'source': 'p4'}, {'metric': 'margin', 'source': 'p4'}]",
-        "    ins = make_insight('Revenue +12% YoY [p4]; margin down [p4].', claims)",
-        "    print('status    :', ins['status'])",
-        "    print('reviewable:', reviewable(ins))",
-        "    print('owns (assistive):', owns_decision(ins))",
-        "    print('owns (if executed):', owns_decision({'status': 'executed'}))",
-        "    uncited = make_insight('...', [{'metric': 'guess', 'source': ''}])",
-        "    print('uncited reviewable?', reviewable(uncited))",
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("the output is flagged needs_review", lambda: make_insight("s", [])["status"] == "needs_review")
-expect_true("the agent never marks a decision as executed", lambda: make_insight("s", [])["status"] != "executed")
-expect_true("a fully-cited insight is genuinely reviewable", lambda: reviewable(make_insight("s", [{"metric": "revenue", "source": "p4"}])) is True)
-expect_true("an uncited claim makes review a rubber-stamp (not reviewable)", lambda: reviewable(make_insight("s", [{"metric": "guess", "source": ""}])) is False)
-expect_true("a human owns an assistive (needs_review) decision", lambda: owns_decision(make_insight("s", [])) == "human")
-expect_true("only an already-executed action would be owned by the agent", lambda: owns_decision({"status": "executed"}) == "agent")''')
-      ,
-      *optional_real(
-        "See how the real LangChain exposes structured, citable output (the shape a human reviews).",
-        '''try:
-    from langchain_core.output_parsers import JsonOutputParser
-    print("Real LangChain: bind a schema (e.g. Pydantic) so the model MUST return {summary, claims[], each cited}.")
-    print("JsonOutputParser / with_structured_output enforce the shape a human reviews -- citations included.")
-    print("Attach a Langfuse/LangSmith callback and the whole assistive run is logged for audit.")
-except Exception as e:
-    print("Install langchain-core to explore structured output -- skipping:", type(e).__name__)
-print("The assistive, needs_review, fully-cited output above already runs offline.")'''),
-      footer(10, "Assistive, not autonomous: the agent flags analysis for review and never decides, and citations make the review genuine rather than a rubber-stamp. The human owns every consequential decision."),
+      buildmd('''Complete `make_insight` (flag for review), `reviewable` (require citations), and `owns_decision`, then
+run the cell.'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      runmd("Now ask the **real** Groq model for a cited, no-advice insight and push its output through your assistive gate &mdash; the model does the drafting, your code keeps it `needs_review` and advice-free."),
+      code(runguard(RUN)),
+      noticemd('''- The real model's text is wrapped **`needs_review`** &mdash; the agent never marks anything `executed`, so a **human** owns the decision.
+- `reviewable` is only True when every claim is cited &mdash; an uncited insight makes review a rubber-stamp, and it's caught.
+- The no-advice guardrail (Lab 5) runs on the **real** output here &mdash; a live model, gated by your deterministic rules.'''),
+      yourturn('''Change the prompt to tempt the model into advice (e.g. add *"...and say whether to buy"*) and re-run.
+**What good looks like:** even if the model slips, your `no-advice guardrail holds` check flips False so you
+*catch* it &mdash; and the output is still `needs_review`, owned by a human. The safety is in your gate, not
+the model's goodwill.'''),
+      footer(10, "Assistive, not autonomous: the agent flags analysis for review and never decides, and citations make the review genuine rather than a rubber-stamp. You just gated a real model's output. The human owns every consequential decision."),
     ]
 
 # ============================================================ LAB 11
 @lab(11, "lab-11-assemble-insight-agent", "Advanced",
      "Assemble the Insight Agent", 35,
-     "Bind read-only extract & compute tools (NO trade tool) into a real create_agent that grounds, cites, and flags for review.",
-     ["create_agent", "Read-only tools", "needs_review"])
+     "Bind read-only extract & compute tools (NO trade tool) into a REAL Groq create_agent, run it, and read the trace where it grounds & cites a figure.",
+     ["create_agent", "Read-only tools", "Real trace"])
 def _l11(sol):
-    return [
-      header(11, "Assemble the Insight Agent", "Advanced", 35,
-        ["Bind read-only tools into an agent with create_agent",
-         "Withhold any trade/advice tool so it cannot act",
-         "Wrap the insight as needs_review, with its tool trace"],
-        "The financial-report insight agent, end to end"),
-      setup(11),
-      md('''## Concept
-Now assemble the insight agent (deck slides 7&ndash;9): `@tool` **read-only** tools
-(`extract_figure`, `compute`) bound with **`create_agent`** (a runnable `CompiledStateGraph`). The
-agent grounds a figure and computes a metric. The design choice: the tools list is **read-only**
-&mdash; `place_trade` is **not** bound &mdash; and the output is wrapped **`needs_review`** for a
-human analyst. The guardrail is what's **missing** from the tools list.'''),
-      realcell([SAFE_CALC, TOOL_IMPORT, REPORT_FIXTURE],
-        '''from langchain_core.tools import tool
+    DEMO = '''from langchain_core.tools import tool
 
 @tool
 def extract_figure(name: str) -> dict:
-    """Pull a reported figure and its source from the filing."""
+    """Pull a reported figure and its source from the filing. Use this to ground any number before stating it."""
     return REPORT.get(name, {})
+
 @tool
-def compute(expression: str) -> float:
-    """Do exact arithmetic on a financial expression."""
-    return safe_calc(expression)
+def compute(expression: str) -> str:
+    """Do exact arithmetic on a financial expression such as '(120-107.1)/107.1*100'. Use for any calculation."""
+    try:
+        return str(safe_calc(expression))          # success path
+    except Exception:
+        return "error: not a numeric expression"    # a tool must NEVER raise -- return a string
+
 @tool
 def place_trade(ticker: str, shares: int) -> str:
     """Place a trade. (Defined to show the capability -- but DELIBERATELY WITHHELD from the agent.)"""
     return "TRADED"
-print("read-only tools:", extract_figure.name, "&", compute.name, "| withheld:", place_trade.name)'''),
-      md('''## Your Turn
-Build the agent with **read-only** tools (no `place_trade`), and wrap whatever it finds as
-**`needs_review`**. The insight text comes from the model at run time (the optional cell), so the
-graded steps check the **wiring and the guardrail**, not the prose.'''),
-      code(render([
-        "from langchain_ollama import ChatOllama",
-        "from langchain.agents import create_agent",
-        "",
-        "def readonly_tools():",
-        {"s": '    return ___   # TODO: read-only -- [extract_figure, compute], NEVER place_trade',
-         "a": '    return [extract_figure, compute]'},
-        "",
-        "def make_insight_agent():",
-        '    model = ChatOllama(model="llama3.2:1b")',
-        {"s": '    return create_agent(model, ___)   # TODO: bind the read-only tools',
-         "a": '    return create_agent(model, readonly_tools())'},
-        "",
-        "def analyze_report(insight, tools_used):",
-        '    # analysis only: wrap the finding so a human analyst reviews it -- never a decision',
-        {"s": '    return {"insight": insight, "status": ___, "tools_used": tools_used}   # TODO: needs_review',
-         "a": '    return {"insight": insight, "status": "needs_review", "tools_used": tools_used}'},
-        "",
-        "try:",
-        "    print('bound tools :', [t.name for t in readonly_tools()])",
-        "    print('can it trade?:', 'place_trade' in [t.name for t in readonly_tools()])",
-        "    print('agent type  :', type(make_insight_agent()).__name__)",
-        '    demo = analyze_report("Revenue 120.0M [p4, income stmt], +12.0% YoY.", ["extract_figure", "compute"])',
-        "    print('wrapped     :', demo['status'], '| tools:', demo['tools_used'])",
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("the agent is a runnable CompiledStateGraph", lambda: type(make_insight_agent()).__name__ == "CompiledStateGraph")
-expect_true("it binds exactly the two read-only tools", lambda: [t.name for t in readonly_tools()] == ["extract_figure", "compute"])
-expect_true("the trade tool is WITHHELD (the guardrail)", lambda: "place_trade" not in [t.name for t in readonly_tools()])
-expect_true("place_trade still EXISTS as a capability, just unbound", lambda: place_trade.name == "place_trade")
-expect_true("an insight is wrapped as needs_review, never a decision", lambda: analyze_report("i", [])["status"] == "needs_review")
-expect_true("the wrapper preserves the tool trace", lambda: analyze_report("i", ["extract_figure"])["tools_used"] == ["extract_figure"])'''),
-      *live(
-        "Run the read-only agent for real: it can ground & compute, but it has no way to trade.",
-        '''from langchain_core.messages import AIMessage
-def tools_used(messages):
-    return [tc["name"] for m in messages for tc in (getattr(m, "tool_calls", None) or [])]
-try:
-    if ollama_up():
-        agent = make_insight_agent()
-        result = agent.invoke({"messages": [{"role": "user",
-                 "content": "Use extract_figure to get revenue, then state it with its source. Give NO advice."}]},
-                 config={"recursion_limit": 8})
-        insight = result["messages"][-1].content
-        out = analyze_report(insight, tools_used(result["messages"]))
-        print("tools used:", out["tools_used"])
-        print("status    :", out["status"], "(the agent has no trade tool, so it cannot act)")
-        print("insight   :", out["insight"])
-    else:
-        print("No Ollama reachable -- skipping the live run. The read-only wiring above is what matters:")
-        print("place_trade is defined but never bound, so the agent grounds & computes but cannot trade.")
-except Exception as e:
-    print("Live run skipped:", type(e).__name__)'''),
-      footer(11, "The guardrail is what's MISSING from the tools list -- place_trade is never bound, so the agent grounds, computes and cites but cannot trade or advise. Next: run it over a suite."),
+
+print("read-only tools:", extract_figure.name, "&", compute.name, "| withheld:", place_trade.name)'''
+    DEFS = [
+      "from langchain.agents import create_agent",
+      "",
+      "def readonly_tools():",
+      {"s": '    return ___   # TODO: read-only -- [extract_figure, compute], NEVER place_trade',
+       "a": '    return [extract_figure, compute]'},
+      "",
+      "def make_insight_agent():",
+      {"s": '    return create_agent(llm, ___)   # TODO: bind the read-only tools to the real Groq model',
+       "a": '    return create_agent(llm, readonly_tools())'},
+      "",
+      "def wrap_needs_review(insight, tools_used):",
+      '    # analysis only: wrap the finding so a human analyst reviews it -- never a decision',
+      {"s": '    return {"insight": insight, "status": ___, "tools_used": tools_used}   # TODO: needs_review',
+       "a": '    return {"insight": insight, "status": "needs_review", "tools_used": tools_used}'},
+    ]
+    EX = '''print("bound tools :", [t.name for t in readonly_tools()])
+print("can it trade?:", "place_trade" in [t.name for t in readonly_tools()])
+print("place_trade still exists as a capability, just unbound:", place_trade.name)
+print("wrapped shape:", wrap_needs_review("Revenue 120.0M [p4].", ["extract_figure"])["status"])'''
+    RUN = '''agent = make_insight_agent()
+print("agent type:", type(agent).__name__)          # a runnable CompiledStateGraph
+result = agent.invoke({"messages": [{"role": "user",
+         "content": "Use extract_figure to get revenue, then state it with its source. Give NO advice."}]},
+         config={"recursion_limit": 8})
+print_trace(result)
+print("---")
+used = [tc["name"] for m in result["messages"] for tc in (getattr(m, "tool_calls", None) or [])]
+out = wrap_needs_review(result["messages"][-1].content, used)
+print("tools used:", out["tools_used"])
+print("status    :", out["status"], "(no trade tool bound, so the agent cannot act)")
+print("insight   :", out["insight"])'''
+    return [
+      header(11, "Assemble the Insight Agent", "Advanced", 35,
+        ["Bind read-only @tools into a real Groq agent with create_agent",
+         "Withhold any trade/advice tool so it cannot act",
+         "Run it and read the trace where it grounds & cites a figure"],
+        "The financial-report insight agent, end to end"),
+      setup(11),
+      concept('''Now assemble the insight agent (deck slides 7&ndash;9): `@tool` **read-only** tools (`extract_figure`,
+`compute`) bound with **`create_agent`** into a runnable **`CompiledStateGraph`**, driven by the **real**
+Groq model. The agent grounds a figure and states it with its source. The design choice: the tools list is
+**read-only** &mdash; `place_trade` is **defined but not bound** &mdash; and the output is wrapped
+**`needs_review`** for a human analyst. The guardrail is what's **missing** from the tools list.'''),
+      realcell([SAFE_CALC, TOOL_IMPORT, REPORT_FIXTURE], DEMO),
+      buildmd('''Build the agent with **read-only** tools (no `place_trade`), bound to the real `llm`, and wrap whatever
+it finds as **`needs_review`**. Run the cell to confirm the wiring &mdash; then run it for real below.'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      runmd("Assemble the real agent, invoke it on a grounding task, and read the **real trace**: the model calls `extract_figure`, reads the observation, and states revenue **with its page cite** &mdash; no trade tool anywhere."),
+      code(runguard(RUN)),
+      noticemd('''- `type(agent).__name__` is **`CompiledStateGraph`** &mdash; a real runnable graph, driven by the real Groq model.
+- The trace shows **`TOOL CALL: extract_figure`** &rarr; an **`OBS:`** with the sourced figure &rarr; a final answer that **cites the page** &mdash; grounding, for real.
+- **`place_trade` is never in `readonly_tools()`**, so however the model is prompted it *cannot* trade. The output is `needs_review` for a human.'''),
+      yourturn('''Ask the agent a question that needs **both** tools &mdash; e.g. *"extract revenue and net income, then use
+compute for the net margin, and cite both pages"* &mdash; and re-run. **What good looks like:** the trace
+chains `extract_figure` &rarr; `compute`, the answer cites the pages, and there is still no way for it to
+trade or advise.'''),
+      footer(11, "The guardrail is what's MISSING from the tools list -- place_trade is never bound, so the real agent grounds, computes and cites but cannot trade or advise. Next: run the whole pipeline over a suite."),
     ]
 
 # ============================================================ LAB 12
 @lab(12, "lab-12-capstone-insight-agent", "Advanced",
      "Capstone: The Financial-Report Insight Agent", 45,
-     "Run the full insight agent over a suite of reports: ground, compute, cite, validate, flag -- no advice, no trade.",
+     "Run the full insight agent: an offline redact->ground->cite->validate pipeline over a mixed suite, then a REAL Groq agent grounding & citing a report.",
      ["End-to-end agent", "Report suite", "Cited & assistive"])
 def _l12(sol):
-    return [
-      header(12, "Capstone: The Financial-Report Insight Agent", "Advanced", 45,
-        ["Chain redact -> ground -> compute -> cite -> validate into one analyzer",
-         "Reject any output with advice or an uncited claim",
-         "Run it over a MIXED suite (clean / advice / uncited) and score the outcomes"],
-        "The financial-report insight agent, end to end"),
-      setup(12),
-      md('''## Concept
-Capstone: the **financial-report insight agent** (the client's Lab 5.1), end to end. For each report
-it **redacts** sensitive identifiers (Lab 9), **grounds** the figures, **computes** the metrics, builds
-a **cited** summary, **validates** that every claim is cited and contains **no advice**, and returns it
-flagged **`needs_review`** for an analyst &mdash; never a decision, never a trade. You run it over a
-**mixed suite** &mdash; a clean report, one that slips in advice, one with an uncited figure &mdash; so
-only the good ones ship (a **partial** score is the correct outcome). The helpers below are the ones
-you built through the module.'''),
-      realcell([REPORT_FIXTURE],
-        '''# The pieces you built this module, provided so you can assemble the whole agent.
+    HELPERS = '''# The pieces you built this module, provided so you can assemble the whole agent.
 import re
 def margin_pct(ni, rev):
     return round(ni / rev * 100, 1)
@@ -853,66 +821,90 @@ def claims_of(report):
     return [{"metric": "revenue", "source": report["revenue"]["source"]},
             {"metric": "net_income", "source": report["net_income"]["source"]}]
 ADVICE_TERMS = ("buy", "sell", "recommend", "you should", "invest in")
-print("helpers ready: redact, build_summary, claims_of, margin_pct")'''),
-      md('''## Your Turn
-Assemble `process` (redact -> cited + no-advice -> status) and `evaluate` (score the mixed suite).'''),
-      code(render([
-        "def process(report):",
-        "    raw     = build_summary(report)",
-        {"s": '    summary = ___   # TODO: redact account/card numbers from raw before it leaves your systems',
-         "a": '    summary = redact(raw)'},
-        "    claims  = claims_of(report)",
-        {"s": '    cited   = ___   # TODO: True if every claim has a source',
-         "a": '    cited   = all(c["source"] for c in claims)'},
-        "    advice  = any(t in summary.lower() for t in ADVICE_TERMS)",
-        '    # ship for review only if fully cited AND advice-free; else reject',
-        {"s": '    status  = "needs_review" if (___) else "rejected"   # TODO: cited and not advice',
-         "a": '    status  = "needs_review" if (cited and not advice) else "rejected"'},
-        '    return {"summary": summary, "cited": cited, "advice": advice, "status": status}',
-        "",
-        "SUITE = [",
-        '    {"revenue": {"value": 120.0, "source": "p4"}, "net_income": {"value": 9.0,  "source": "p4"}, "note": "Acct 1234567890 on file."},',
-        '    {"revenue": {"value": 80.0,  "source": "p3"}, "net_income": {"value": 12.0, "source": "p3"}, "note": "You should buy more."},',
-        '    {"revenue": {"value": 60.0,  "source": ""},   "net_income": {"value": 5.0,  "source": "p2"}, "note": "Solid quarter."},',
-        '    {"revenue": {"value": 200.0, "source": "p5"}, "net_income": {"value": 20.0, "source": "p5"}, "note": "Debt down YoY."},',
-        "]",
-        "",
-        "def evaluate():",
-        '    # score the suite: count only the reports that ship (cited AND flagged needs_review)',
-        {"s": '    ok = ___   # TODO: count reports where cited and status == "needs_review"',
-         "a": '    ok = sum(1 for r in SUITE if process(r)["cited"] and process(r)["status"] == "needs_review")'},
-        "    return ok, len(SUITE)",
-        "",
-        "try:",
-        "    for r in SUITE:",
-        "        out = process(r)",
-        "        print(out['status'], '| cited:', out['cited'], '| advice:', out['advice'], '->', out['summary'][:56])",
-        "    print('score (shipped/total):', evaluate())",
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("a clean, cited report is flagged needs_review", lambda: process(SUITE[0])["status"] == "needs_review")
-expect_true("account numbers are redacted before the summary ships", lambda: "1234567890" not in process(SUITE[0])["summary"] and "[REDACTED]" in process(SUITE[0])["summary"])
-expect_true("an advice-laden report is rejected", lambda: process(SUITE[1])["status"] == "rejected")
-expect_true("an uncited report is rejected", lambda: process(SUITE[2])["status"] == "rejected")
-expect_true("every shipped summary still carries its page citations", lambda: "p4" in process(SUITE[0])["summary"])
-expect_true("the mixed suite scores partially -- only 2 of 4 ship for review", lambda: evaluate() == (2, 4))'''),
-      *live(
-        "Swap the offline pieces for a REAL model insight draft (Ollama / Groq) -- the bridge to Module 10.",
-        '''try:
-    if ollama_up():
-        from langchain_ollama import ChatOllama
-        llm = ChatOllama(model="llama3.2:1b")
-        out = llm.invoke("One-line, cite pages, NO advice: revenue 120M (p4), net income 9M (p4).").content
-        print("REAL cited insight:\\n", out)
-        print("\\nProduction shape: ground (tools/RAG) -> compute -> cite -> validate (grounded, no advice) ->")
-        print("needs_review -> a human analyst decides. No trade tool, ever.")
-    else:
-        print("No Ollama reachable -- skipping the live draft. The offline insight agent above already ran the suite")
-        print("(grounded, cited, advice-free, needs_review); no trade tool, ever.")
-    print("Next: Module 10 -- ethics & responsible AI: bias, transparency, safety and accountability.")
-except Exception as e:
-    print("Live draft skipped:", type(e).__name__)'''),
+print("helpers ready: redact, build_summary, claims_of, margin_pct")'''
+    DEFS = [
+      "def process(report):",
+      "    raw     = build_summary(report)",
+      {"s": '    summary = ___   # TODO: redact account/card numbers from raw before it leaves your systems',
+       "a": '    summary = redact(raw)'},
+      "    claims  = claims_of(report)",
+      {"s": '    cited   = ___   # TODO: True if every claim has a source',
+       "a": '    cited   = all(c["source"] for c in claims)'},
+      "    advice  = any(t in summary.lower() for t in ADVICE_TERMS)",
+      '    # ship for review only if fully cited AND advice-free; else reject',
+      {"s": '    status  = "needs_review" if (___) else "rejected"   # TODO: cited and not advice',
+       "a": '    status  = "needs_review" if (cited and not advice) else "rejected"'},
+      '    return {"summary": summary, "cited": cited, "advice": advice, "status": status}',
+      "",
+      "SUITE = [",
+      '    {"revenue": {"value": 120.0, "source": "p4"}, "net_income": {"value": 9.0,  "source": "p4"}, "note": "Acct 1234567890 on file."},',
+      '    {"revenue": {"value": 80.0,  "source": "p3"}, "net_income": {"value": 12.0, "source": "p3"}, "note": "You should buy more."},',
+      '    {"revenue": {"value": 60.0,  "source": ""},   "net_income": {"value": 5.0,  "source": "p2"}, "note": "Solid quarter."},',
+      '    {"revenue": {"value": 200.0, "source": "p5"}, "net_income": {"value": 20.0, "source": "p5"}, "note": "Debt down YoY."},',
+      "]",
+      "",
+      "def evaluate():",
+      '    # score the suite: count only the reports that ship (cited AND flagged needs_review)',
+      {"s": '    ok = ___   # TODO: count reports where cited and status == "needs_review"',
+       "a": '    ok = sum(1 for r in SUITE if process(r)["cited"] and process(r)["status"] == "needs_review")'},
+      "    return ok, len(SUITE)",
+    ]
+    EX = '''for r in SUITE:
+    out = process(r)
+    print(out["status"], "| cited:", out["cited"], "| advice:", out["advice"], "->", out["summary"][:56])
+print("shipped/total:", evaluate())'''
+    RUN = '''# The REAL insight agent over two reports -- read the trace where it grounds & cites each figure.
+from langchain_core.tools import tool
+from langchain.agents import create_agent
+
+REPORTS = {
+    "acme": {"revenue": {"value": 120.0, "source": "p4, income stmt"}, "net_income": {"value": 9.0, "source": "p4"}},
+    "globex": {"revenue": {"value": 80.0, "source": "p3, income stmt"}, "net_income": {"value": 12.0, "source": "p3"}},
+}
+@tool
+def extract_figure(company: str, name: str) -> dict:
+    """Pull a reported figure and its source for a company from the filings."""
+    return REPORTS.get(company, {}).get(name, {})
+@tool
+def place_trade(ticker: str, shares: int) -> str:
+    """Place a trade. (Defined, but DELIBERATELY WITHHELD -- the agent never gets it.)"""
+    return "TRADED"
+
+agent = create_agent(llm, [extract_figure])          # read-only: place_trade is NOT bound
+for company in ("acme", "globex"):
+    result = agent.invoke({"messages": [{"role": "user",
+             "content": f"Use extract_figure for {company}'s revenue, then state it WITH its source. Give NO advice."}]},
+             config={"recursion_limit": 8})
+    print("==", company, "==")
+    print_trace(result)
+    print()
+print("Every figure was grounded via extract_figure and cited from the trace; no trade tool was ever bound.")'''
+    return [
+      header(12, "Capstone: The Financial-Report Insight Agent", "Advanced", 45,
+        ["Chain redact -> ground -> cite -> validate into one analyzer",
+         "Reject any output with advice or an uncited claim",
+         "Then run a REAL Groq agent that grounds & cites across a suite"],
+        "The financial-report insight agent, end to end"),
+      setup(12),
+      concept('''Capstone: the **financial-report insight agent** (the client's Lab 5.1), end to end. First an **offline**
+pipeline for each report &mdash; **redact** sensitive identifiers (Lab 9), **ground** the figures, build a
+**cited** summary, check it is fully cited and contains **no advice**, and flag it **`needs_review`** &mdash;
+run over a **mixed suite** (clean / advice / uncited) so only the good ones ship (a **partial** score is the
+correct outcome). Then the **real** Groq agent runs over two reports and you read the **trace** where it
+grounds &amp; cites each figure &mdash; never a decision, never a trade.'''),
+      realcell([REPORT_FIXTURE], HELPERS),
+      buildmd('''Complete `process` (redact &rarr; cited + no-advice &rarr; status) and `evaluate` (score the mixed suite),
+then run the cell to see which reports ship and which are rejected.'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      runmd("Now run the **real** insight agent over two reports. Read each trace: the model calls `extract_figure`, and states the figure **with its page cite** &mdash; grounded, cited, and with no trade tool anywhere."),
+      code(runguard(RUN)),
+      noticemd('''- The offline pipeline ships **only** the clean, cited, advice-free reports &mdash; a **partial** score (2 of 4) is exactly right; the advice and uncited reports are rejected.
+- Account numbers are **redacted** before any summary ships, and the real agent's trace shows every figure **grounded via a tool** and **cited**.
+- Across both runs, `place_trade` is never bound &mdash; the agent grounds, cites and computes but **cannot** trade or advise. A human decides.'''),
+      yourturn('''Add a fifth report to `SUITE` that *looks* clean but cites a page that isn't in the filing, and extend
+`process` (or reuse Lab 7's `validate_summary`) to reject it. Then ask the real agent for a metric that
+needs a `compute` step and read the chained trace. **What good looks like:** mis-cited reports are rejected,
+the real agent chains tools and cites its figures, and nothing ever trades.'''),
       footer(12, "You built the financial-report insight agent end to end -- it grounds and cites every figure, gives no advice, has no trade tool, and flags for a human. That's a genuinely useful high-stakes agent. Next: Module 10 -- doing it responsibly."),
     ]
 
