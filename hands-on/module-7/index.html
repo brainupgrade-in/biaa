@@ -104,8 +104,8 @@
           <span class="time">&#9201; 20 min</span>
         </div>
         <h4>Gather Context with Tools</h4>
-        <p>Ground the task first: wrap lookup_order and get_template as tools and gather context before drafting.</p>
-        <div class="chips"><span class="chip">Gather-first</span><span class="chip">Tools</span><span class="chip">Grounding</span></div>
+        <p>Wrap lookup_order and get_template as real @tools, then watch a real Groq agent gather context before drafting.</p>
+        <div class="chips"><span class="chip">Gather-first</span><span class="chip">Real tools</span><span class="chip">Real agent</span></div>
         <div class="links">
           <a class="open" href="lab-02-gather-context.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-02-gather-context.ipynb">Solution</a>
@@ -156,8 +156,8 @@
           <span class="time">&#9201; 25 min</span>
         </div>
         <h4>Draft: Generate a Grounded Reply</h4>
-        <p>Fill a grounded template with real order fields to draft an on-tone reply that invents nothing.</p>
-        <div class="chips"><span class="chip">Draft</span><span class="chip">Grounding</span><span class="chip">Voice</span></div>
+        <p>Ground a prompt in real order fields and call a REAL Groq model to draft an on-tone reply that invents nothing.</p>
+        <div class="chips"><span class="chip">Draft</span><span class="chip">Grounding</span><span class="chip">Real model</span></div>
         <div class="links">
           <a class="open" href="lab-06-draft-a-reply.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-06-draft-a-reply.ipynb">Solution</a>
@@ -233,7 +233,7 @@
           <span class="time">&#9201; 35 min</span>
         </div>
         <h4>Assemble the Email Agent</h4>
-        <p>Bind gather-only tools into a real create_agent that can draft a grounded reply but has no way to send.</p>
+        <p>Bind gather-only tools into a REAL Groq create_agent that can draft a grounded reply but has no way to send.</p>
         <div class="chips"><span class="chip">create_agent</span><span class="chip">Gather-only</span><span class="chip">needs_approval</span></div>
         <div class="links">
           <a class="open" href="lab-11-assemble-email-agent.ipynb">&#9654; Open lab</a>
@@ -246,7 +246,7 @@
           <span class="time">&#9201; 45 min</span>
         </div>
         <h4>Capstone: The Email-Drafting Agent</h4>
-        <p>Chain extract -> route -> gather -> draft -> validate -> approval over a suite of client emails, and score it.</p>
+        <p>Chain extract -> route -> gather -> draft (real Groq) -> validate over a suite of client emails; never auto-send.</p>
         <div class="chips"><span class="chip">End-to-end pipeline</span><span class="chip">Task suite</span><span class="chip">Draft-not-send</span></div>
         <div class="links">
           <a class="open" href="lab-12-capstone-email-drafting-agent.ipynb">&#9654; Open lab</a>

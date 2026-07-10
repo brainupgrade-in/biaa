@@ -1,18 +1,26 @@
 # -*- coding: utf-8 -*-
-"""Generator for Day 4 Module 7 hands-on labs (12 notebooks).
+"""Generator for Day 4 Module 7 hands-on labs (12 notebooks) -- NEAR-REAL design.
 Emits STUDENT notebooks to OUT_DIR and SOLUTION notebooks to SOL_DIR.
 
-Design: this is the "Task Automation with AI Agents" module -- the labs build the
-EMAIL-DRAFTING AGENT (the client's Lab 4.1) piece by piece, exactly as the deck teaches:
-the automation pipeline (trigger -> gather -> draft -> validate -> approve -> act), the three
-patterns (draft / extract / route), structured output, reliability (validate / retry /
-idempotency), and the draft-not-send human-in-the-loop guardrail. To keep the course's verify
-discipline (every GRADED cell runs offline & deterministically -- no live LLM, no keys, no
-network), the graded cells are pure Python stdlib, and the agent-assembly labs reuse the SAME
-compact LangChain-shaped shim as Module 6 (names & shapes mirror real LangChain), driven by a
-deterministic scripted "FakeChatModel". Each Advanced lab (10-12) adds ONE optional, non-graded,
-guarded cell that runs the SAME shapes against the REAL library and degrades gracefully.
-The calculator/compute tools use a small AST-based safe evaluator -- never bare eval()."""
+Design: this is the "Task Automation with AI Agents" module. Participants HAVE a GROQ_API_KEY in
+the repo .env. So the labs are NEAR-REAL, not stubs: the DRAFT step and the assembled email agent
+are driven by a REAL hosted model (ChatGroq "openai/gpt-oss-20b", reliable tool-calling via
+create_agent), and the student reads the REAL output/message trace. There is NO auto-grader -- each
+lab ends with "Run it for real -> Read the trace/output -> Your turn (open task)".
+
+Kept real & deterministic (NOT LLM stand-ins): the automation pipeline, the extract/route/coerce
+schema logic, validation, retry/idempotency, the draft-not-send gate, and the run log. These are
+legitimate rule-based Python -- not stubs -- so they stay. What changed from the graded version:
+the mock/scripted policy and the [PASS]/[FAIL]/Score grader are gone; the draft + agent labs now
+call a REAL Groq model; tools ALWAYS catch their own exceptions and RETURN a string.
+
+The withheld-tool guardrail stays and is checked as REAL structure: `send_email` is defined but
+NEVER bound to the agent, so the email agent drafts but has no way to send -- a human approves.
+
+Student robustness (no grader): cells that EXERCISE the blanks are wrapped by guard()/runguard()
+so an unfilled `___` prints a friendly note instead of crashing -- a student notebook runs
+top-to-bottom, and a solution notebook runs the real thing. runguard() also self-skips (with a
+note) when GROQ_API_KEY is unset, and retries with backoff on Groq rate limits (HTTP 429)."""
 import json, os, sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -24,6 +32,7 @@ if SOL_DIR: os.makedirs(SOL_DIR, exist_ok=True)
 
 DECK = "../../presentation/day4-module7-task-automation.html"
 OUTLINE = "../../course-outline-building-intelligent-ai-agents.html"
+REPO = "/home/rajesh/Training/courses/building-intelligents-ai-agents"
 
 def _lines(text):
     parts = text.split("\n")
@@ -41,38 +50,72 @@ def render(lines, sol):
         out.append((ln["a"] if sol else ln["s"]) if isinstance(ln, dict) else ln)
     return "\n".join(out)
 
-GRADER_HEAD = '''# === Auto-grader: run after filling the blanks above ===
-_results = []
-def _rec(label, status, extra=""):
-    _results.append(status); print(f"[{status}] {label}" + (f" -- {extra}" if extra else ""))
-def expect(label, got, want):
-    if got == "___" or got is None: _rec(label, "TODO")
-    elif got == want: _rec(label, "PASS")
-    else: _rec(label, "FAIL", f"got {got!r}")
-def expect_true(label, fn):
-    try: _rec(label, "PASS" if fn() else "FAIL")
-    except Exception as e: _rec(label, "TODO", type(e).__name__)
-'''
-GRADER_TAIL = '''_p = _results.count("PASS")
-print(f"\\nScore: {_p}/{len(_results)}")
-print("All checks passed -- lab complete!" if _p == len(_results) else "Keep going: fill the blanks marked ___ and re-run.")'''
+def _indent(text, n):
+    pad = " " * n
+    return "\n".join((pad + ln) if ln.strip() else ln for ln in text.split("\n"))
 
-def grader(body):
-    return code(GRADER_HEAD + "\n" + body.strip() + "\n\n" + GRADER_TAIL)
+def guard(exercise):
+    """Wrap an exercise (that calls the blanked code) so an unfilled ___ prints a note, not a crash."""
+    return ("try:\n" + _indent(exercise, 4) +
+            '\nexcept Exception as e:\n    print("(Fill the ___ blanks above, then re-run.)", type(e).__name__)')
 
-def setup(nn, extra=""):
+def runguard(exercise):
+    """Guard a 'run it for real' cell: skip cleanly if there's no GROQ_API_KEY, and if a blank is unfilled."""
+    return ('if not groq_ready():\n'
+            '    print("No GROQ_API_KEY -- add it to the repo .env (free key at console.groq.com), then re-run this cell.")\n'
+            'else:\n'
+            '    try:\n' + _indent(exercise, 8) +
+            '\n    except Exception as e:\n        print("(Fill the ___ blanks above, then re-run.)", type(e).__name__)')
+
+def setup(nn):
     return code(f'''# Setup -- run me first
-import os, socket
+import os, time, socket, pathlib
+from dotenv import load_dotenv
+load_dotenv(pathlib.Path("{REPO}/.env"), override=True)   # GROQ_API_KEY (+ other keys)
+
 WORK = "/tmp/biaa-lab-07-{nn:02d}"
 os.makedirs(WORK, exist_ok=True)
-def ollama_up(host="127.0.0.1", port=11434):
-    """True if a local Ollama server is listening -- the optional live cells self-skip when it isn't."""
-    try:
-        with socket.create_connection((host, port), timeout=1):
-            return True
-    except OSError:
-        return False
-print("Working dir:", WORK, "| Ollama reachable:", ollama_up()){extra}''')
+
+def groq_ready():
+    """True if a GROQ_API_KEY is configured -- the 'Run it for real' cells self-skip if not."""
+    return bool(os.environ.get("GROQ_API_KEY"))
+
+from langchain_groq import ChatGroq
+# Day-4 provider: a REAL hosted model with reliable tool-calling via create_agent.
+MODEL = "openai/gpt-oss-20b"
+llm = ChatGroq(model=MODEL, temperature=0) if groq_ready() else None
+
+def with_backoff(fn, tries=4):
+    """Run fn(); retry with backoff on Groq rate limits (HTTP 429). Other errors propagate."""
+    last = None
+    for attempt in range(tries):
+        try:
+            return fn()
+        except Exception as e:
+            last = e
+            if "429" in str(e) or "rate limit" in str(e).lower() or "rate_limit" in str(e).lower():
+                wait = 5 * (attempt + 1)
+                print(f"(rate-limited -- retrying in {{wait}}s)")
+                time.sleep(wait)
+                continue
+            raise
+    raise last
+
+def print_trace(result):
+    """Print a REAL agent message trace: tool calls the model made, tool observations, final answer."""
+    for m in result["messages"]:
+        for tc in (getattr(m, "tool_calls", None) or []):
+            print("TOOL CALL:", tc["name"], tc["args"])
+        if type(m).__name__ == "ToolMessage":
+            print("OBS:", str(m.content)[:200])
+        elif str(getattr(m, "content", "")).strip():
+            print(type(m).__name__, ":", str(m.content)[:300])
+
+if groq_ready():
+    print("Groq ready | model:", MODEL, "| WORK:", WORK)
+else:
+    print("GROQ_API_KEY not set -- add it to the repo .env (free key at console.groq.com).")
+    print("(The 'Run it for real' cells will print this note instead of crashing.)  WORK:", WORK)''')
 
 def header(nn, title, level, mins, goals, concept_slide):
     g = "\n".join(f"- {x}" for x in goals)
@@ -83,9 +126,9 @@ def header(nn, title, level, mins, goals, concept_slide):
 ### What you'll do
 {g}
 
-> **How this lab works (experiential flow):** read the **Concept**, run the **Demo** to see it work, then complete **Your Turn** by replacing every `___` placeholder. Run the **grader** cell at the end &mdash; it prints `[PASS]` / `[FAIL]` / `[TODO]` and a final `Score`. Aim for a full score.
+> **How this lab works (near-real):** you have a `GROQ_API_KEY` in the repo `.env`. Read the **Concept**, fill the real `___` blanks in **Build it** (real pipeline logic, real tool bodies, the real draft/`create_agent` call), then **Run it for real** &mdash; a real Groq model drives the step over real tools &mdash; and **read the output/trace**. Finish with an open **Your turn**. There is **no auto-grader**; the goal is a working email agent and a trace you can read.
 
-> **Framework note:** these labs use the **real** LangChain (`langchain`, `langchain-core`, `langchain-ollama`). The **graded** cells assert only on the deterministic parts you build &mdash; tool wiring, prompt formatting, agent structure, and the pipeline logic &mdash; and never call an LLM, so the lab always verifies offline. Cells marked **Optional &mdash; run it for real** call a live local model (`ollama run llama3.2:1b`, or Groq) and self-skip if none is reachable. You are building the **email-drafting agent** &mdash; the client's Lab 4.1.
+> **Framework note:** these labs use the **real** LangChain 1.x (`langchain`, `langchain-core`, `langchain-groq`) and a **real hosted model** (`ChatGroq("openai/gpt-oss-20b")` &mdash; reliable tool-calling via `create_agent`). If `GROQ_API_KEY` is unset, the run cells print how to set it instead of crashing. A `@tool` must **catch its own errors and return a string** &mdash; a tool that *raises* can abort the whole agent run. You are building the **email-drafting agent** (the client's Lab 4.1): it **drafts but never sends** &mdash; `send_email` is withheld and a human approves.
 
 **Reference:** [Module 7 slides &mdash; {concept_slide}]({DECK}) &nbsp;&middot;&nbsp; [Course outline]({OUTLINE}) &nbsp;&middot;&nbsp; [All Module 7 labs](./index.html)''')
 
@@ -98,23 +141,13 @@ def footer(nn, nxt):
 
 <sub>&copy; 2026 Gheware DevOps &amp; Agentic AI &middot; Building Intelligent AI Agents &middot; devops.gheware.com &middot; Trainer: Rajesh Gheware</sub>''')
 
-def live(intro, body):
-    """An OPTIONAL, non-graded cell that runs REAL LangChain against a live local LLM (or self-skips)."""
-    return [md(f'''## Optional &mdash; run it for real (not graded)
-{intro} This calls a **real** local model via `ChatOllama("llama3.2:1b")` &mdash; start it with
-`ollama run llama3.2:1b` (or swap in `ChatGroq` with a `GROQ_API_KEY`). If none is reachable the cell
-prints a note and moves on. **The graded cells above never call an LLM, so the lab always verifies offline.**
-*(llama3.2:1b is tiny &mdash; tool-calling can be hit-or-miss; the point is to see a real invocation.)*'''),
-            code(body)]
+def concept(text):   return md("## Concept\n" + text)
+def buildmd(text):   return md("## Build it\n" + text)
+def runmd(text):     return md("## Run it for real &amp; read the trace\n" + text + "\n\n_This calls the real `openai/gpt-oss-20b` via Groq. If `GROQ_API_KEY` is unset the cell prints how to set it instead of crashing._")
+def noticemd(text):  return md("## What to notice\n" + text)
+def yourturn(text):  return md("## Your turn (open task &mdash; no grader)\n" + text)
 
-def optional_real(intro, body):
-    """An OPTIONAL, non-graded cell that shows a REAL LangChain interface (no live model call needed)."""
-    return [md(f'''## Optional &mdash; the real LangChain interface (not graded)
-{intro} It needs only `pip install langchain-core` (already in the course env) and makes **no** network
-call. **The graded steps above never call an LLM, so the lab always verifies offline.**'''),
-            code(body)]
-
-# ---- shared building blocks (pure stdlib) -------------------------------------------------
+# ---- shared building blocks -----------------------------------------------------------------
 
 # AST-based safe arithmetic -- never bare eval() on free text.
 SAFE_CALC = '''import ast, operator
@@ -148,7 +181,7 @@ TEMPLATES = {
 }'''
 
 def realcell(parts, demo):
-    """A code cell = real-library imports/fixtures + a runnable demo (replaces the old shimcell)."""
+    """A code cell = real-library imports/fixtures + a runnable demo."""
     return code("\n\n".join(parts) + "\n\n" + demo)
 
 NB = {}
@@ -165,6 +198,30 @@ def lab(nn, slug, level, title, mins, summary, concepts):
      "Model the pipeline every task automation follows: trigger, gather, draft, validate, approve, act.",
      ["Pipeline", "Stages", "Checkpoint"])
 def _l1(sol):
+    DEFS = [
+      'PIPELINE = ["trigger", "gather", "draft", "validate", "approve", "act"]',
+      "",
+      "def next_stage(current):",
+      "    i = PIPELINE.index(current)",
+      {"s": '    return ___   # TODO: "done" if this is the last stage, else the next stage',
+       "a": '    return "done" if i == len(PIPELINE) - 1 else PIPELINE[i + 1]'},
+      "",
+      "def is_checkpoint(stage):",
+      '    # the human approval gate: a person must approve before the irreversible act',
+      {"s": '    return ___   # TODO: True only for the "approve" stage',
+       "a": '    return stage == "approve"'},
+      "",
+      "def run_pipeline():",
+      '    order, stage = [], "trigger"',
+      '    while stage != "done":',
+      "        order.append(stage)",
+      "        stage = next_stage(stage)",
+      "    return order",
+    ]
+    EX = '''print("after trigger ->", next_stage("trigger"))
+print("after act     ->", next_stage("act"))
+print("full run:", run_pipeline())
+print("checkpoint at approve?", is_checkpoint("approve"))'''
     return [
       header(1, "The Automation Pipeline", "Beginner", 20,
         ["Walk the six pipeline stages in order, from trigger to act",
@@ -172,112 +229,88 @@ def _l1(sol):
          "Mark the approval checkpoint that guards the irreversible act"],
         "The task-automation pipeline"),
       setup(1),
-      md('''## Concept
-Every task-automation agent, however complex, follows the **same pipeline** (deck slide 5):
+      concept('''Every task-automation agent, however complex, follows the **same pipeline** (deck slide 5):
 **trigger** &rarr; **gather** &rarr; **draft** &rarr; **validate** &rarr; **approve** &rarr; **act**.
 The Day-3 ReAct loop lives inside *reason/draft*; the outer stages &mdash; gather, validate,
 approve &mdash; are what make it **reliable** and **safe**. The **approve** stage is a human
-checkpoint that guards the one irreversible step: **act**.'''),
+checkpoint that guards the one irreversible step: **act**. (This lab is pure Python &mdash; it's the
+scaffold the real Groq-driven steps in later labs slot into.)'''),
       code('''PIPELINE = ["trigger", "gather", "draft", "validate", "approve", "act"]
 print("the shape of every automation:")
 print(" -> ".join(PIPELINE))'''),
-      md('''## Your Turn
-Implement `next_stage` (what follows each stage) and `is_checkpoint` (the human gate before the
-irreversible act), then `run_pipeline` walks the whole thing.'''),
-      code(render([
-        'PIPELINE = ["trigger", "gather", "draft", "validate", "approve", "act"]',
-        "",
-        "def next_stage(current):",
-        "    i = PIPELINE.index(current)",
-        {"s": '    return ___   # TODO: "done" if this is the last stage, else the next stage',
-         "a": '    return "done" if i == len(PIPELINE) - 1 else PIPELINE[i + 1]'},
-        "",
-        "def is_checkpoint(stage):",
-        '    # the human approval gate: a person must approve before the irreversible act',
-        {"s": '    return ___   # TODO: True only for the "approve" stage',
-         "a": '    return stage == "approve"'},
-        "",
-        "def run_pipeline():",
-        '    order, stage = [], "trigger"',
-        '    while stage != "done":',
-        "        order.append(stage)",
-        "        stage = next_stage(stage)",
-        "    return order",
-        "",
-        "try:",
-        "    print('after trigger ->', next_stage('trigger'))",
-        "    print('after act     ->', next_stage('act'))",
-        "    print('full run:', run_pipeline())",
-        "    print('checkpoint at approve?', is_checkpoint('approve'))",
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("gather follows trigger", lambda: next_stage("trigger") == "gather")
-expect_true("act is the last stage (-> done)", lambda: next_stage("act") == "done")
-expect_true("the run walks all six stages in order", lambda: run_pipeline() == PIPELINE)
-expect_true("approve is the human checkpoint", lambda: is_checkpoint("approve") is True)
-expect_true("gather is not a checkpoint", lambda: is_checkpoint("gather") is False)'''),
-      footer(1, "Trigger -> gather -> draft -> validate -> approve -> act. The outer stages are what turn a demo agent into an automation. Next: the gather stage -- grounding the task in real data."),
+      buildmd('''Implement `next_stage` (what follows each stage) and `is_checkpoint` (the human gate before the
+irreversible act); `run_pipeline` then walks the whole thing.'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      noticemd('''- `run_pipeline()` walks all six stages in order &mdash; that ordering is the contract every later lab honours.
+- `is_checkpoint("approve")` marks the one **human** gate; everything before it is autonomous, everything after it is irreversible.
+- The `draft` stage is where the real model runs (Lab 6); `gather` is where real tools run (Lab 2).'''),
+      yourturn('''Add a seventh stage &mdash; e.g. `"log"` after `act` &mdash; and re-run `run_pipeline()`. **What good looks
+like:** the walk includes your new stage in the right place and `next_stage` still terminates at `"done"`.
+Then ask yourself: which of your stages are reversible, and which one truly needs the human gate?'''),
+      footer(1, "Trigger -> gather -> draft -> validate -> approve -> act. The outer stages are what turn a demo agent into an automation. Next: the gather stage -- grounding the task in real data with real tools."),
     ]
 
 # ============================================================ LAB 02
 @lab(2, "lab-02-gather-context", "Beginner",
      "Gather Context with Tools", 20,
-     "Ground the task first: wrap lookup_order and get_template as tools and gather context before drafting.",
-     ["Gather-first", "Tools", "Grounding"])
+     "Wrap lookup_order and get_template as real @tools, then watch a real Groq agent gather context before drafting.",
+     ["Gather-first", "Real tools", "Real agent"])
 def _l2(sol):
+    DEFS = [
+      "from langchain_core.tools import tool",
+      "",
+      "@tool",
+      "def lookup_order(order_id: str) -> dict:",
+      '    """Look up an order\'s status, ETA and carrier by id."""',
+      {"s": '    return ___   # TODO: the order dict for order_id, or {"status": "unknown"} if not found',
+       "a": '    return ORDERS.get(order_id, {"status": "unknown"})'},
+      "",
+      "@tool",
+      "def get_template(kind: str) -> str:",
+      '    """Fetch a reply template by kind, e.g. delivery_delay or refund."""',
+      {"s": '    return ___   # TODO: the template string for kind, or "" if none',
+       "a": '    return TEMPLATES.get(kind, "")'},
+      "",
+      "def gather(order_id, kind):",
+      '    # gather FIRST: pull the order AND the template before we draft anything',
+      {"s": '    return {"order": ___, "template": ___}   # TODO: invoke each tool',
+       "a": '    return {"order": lookup_order.invoke(order_id), "template": get_template.invoke(kind)}'},
+    ]
+    EX = '''print("order 4471 :", lookup_order.invoke("4471"))
+print("unknown    :", lookup_order.invoke("9999"))
+print("gathered   :", gather("4471", "delivery_delay"))'''
+    RUN = '''from langchain.agents import create_agent
+agent = create_agent(llm, tools=[lookup_order, get_template])
+result = with_backoff(lambda: agent.invoke(
+    {"messages": [("user", "Gather the status and ETA of order 4471 for a delivery update. Do not send anything.")]},
+    config={"recursion_limit": 8}))
+print_trace(result)'''
     return [
       header(2, "Gather Context with Tools", "Beginner", 20,
         ["Wrap lookup_order and get_template as @tool functions",
          "Gather the order + the reply template BEFORE drafting",
-         "See why gather-first prevents hallucinated specifics"],
+         "Watch a real Groq agent call YOUR gather tools from the trace"],
         "Grounding the task in real data"),
       setup(2),
-      md('''## Concept
-A general model doesn't know **your** client's order or **your** reply templates &mdash; so the agent
+      concept('''A general model doesn't know **your** client's order or **your** reply templates &mdash; so the agent
 must **gather context first, then draft** (deck slide 6). Gathering happens through **tools** over
 your systems: an orders DB, a template store, the CRM. An agent that drafts before it gathers
 **hallucinates specifics**; one that grounds every claim in retrieved context is accurate and
-auditable.'''),
+auditable. Here you build real `@tool`s and watch a **real agent** call them.'''),
       realcell([TOOL_IMPORT, EMAIL_FIXTURE],
         '''print("orders on file :", list(ORDERS))
 print("templates on file:", list(TEMPLATES))'''),
-      md('''## Your Turn
-Complete the two gather tools and the `gather` step that pulls both before any drafting.'''),
-      code(render([
-        "from langchain_core.tools import tool",
-        "",
-        "@tool",
-        "def lookup_order(order_id: str) -> dict:",
-        '    """Look up an order\'s status, ETA and carrier by id."""',
-        {"s": '    return ___   # TODO: the order dict for order_id, or {"status": "unknown"} if not found',
-         "a": '    return ORDERS.get(order_id, {"status": "unknown"})'},
-        "",
-        "@tool",
-        "def get_template(kind: str) -> str:",
-        '    """Fetch a reply template by kind, e.g. delivery_delay or refund."""',
-        {"s": '    return ___   # TODO: the template string for kind, or "" if none',
-         "a": '    return TEMPLATES.get(kind, "")'},
-        "",
-        "def gather(order_id, kind):",
-        '    # gather FIRST: pull the order AND the template before we draft anything',
-        {"s": '    return {"order": ___, "template": ___}   # TODO: invoke each tool',
-         "a": '    return {"order": lookup_order.invoke(order_id), "template": get_template.invoke(kind)}'},
-        "",
-        "try:",
-        "    print('order 4471 :', lookup_order.invoke('4471'))",
-        "    print('unknown    :', lookup_order.invoke('9999'))",
-        "    ctx = gather('4471', 'delivery_delay')",
-        "    print('gathered   :', ctx)",
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("lookup_order finds a real order", lambda: lookup_order.invoke("4471")["status"] == "shipped")
-expect_true("an unknown order degrades to 'unknown'", lambda: lookup_order.invoke("9999")["status"] == "unknown")
-expect_true("get_template returns the delivery template", lambda: "{name}" in get_template.invoke("delivery_delay"))
-expect_true("gather returns BOTH order and template", lambda: set(gather("4471", "delivery_delay")) == {"order", "template"})
-expect_true("gather grounds on real data (ETA Friday)", lambda: gather("4471", "delivery_delay")["order"]["eta"] == "Friday")'''),
-      footer(2, "Gather first, draft second. These are just Module-6 tools pointed at a real job -- the order and the template are the ground truth the draft will stand on."),
+      buildmd('''Complete the two gather tools and the `gather` step that pulls both **before** any drafting.'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      runmd("Bind your two gather tools to a real Groq agent and ask it to gather order 4471. Read the trace: the model calls YOUR functions to ground itself before answering."),
+      code(runguard(RUN)),
+      noticemd('''- The trace shows **`TOOL CALL: lookup_order {'order_id': '4471'}`** &mdash; the real model chose to call your Python.
+- Each **`OBS:`** line is what your tool returned; the model reads it, then answers with grounded specifics.
+- Gather-first is why the reply can say "due Friday" truthfully &mdash; it retrieved that, it didn't invent it.'''),
+      yourturn('''Ask the agent about an order that isn't on file (e.g. `9999`), or add a third gather tool (say
+`order_history(order_id)`), bind it, and re-run. **What good looks like:** for the unknown order the tool
+returns `{"status": "unknown"}` and the agent says so honestly instead of inventing an ETA.'''),
+      footer(2, "Gather first, draft second. These are just tools pointed at a real job -- and a real Groq agent calls them to ground itself before it writes a word."),
     ]
 
 # ============================================================ LAB 03
@@ -286,6 +319,43 @@ expect_true("gather grounds on real data (ETA Friday)", lambda: gather("4471", "
      "Return a machine-readable record (a defined shape) instead of prose, and check it is well-formed.",
      ["Structured output", "Schema", "Machine-readable"])
 def _l3(sol):
+    DEFS = [
+      'SCHEMA = {',
+      '    "order_id": {"type": str, "default": None},',
+      '    "intent":   {"type": str, "default": "other"},',
+      '    "urgency":  {"type": str, "default": "low"},',
+      '    "attempts": {"type": int, "default": 0},',
+      '}',
+      'REQUIRED = ("order_id", "intent")',
+      "",
+      "def coerce(raw):",
+      "    out = {}",
+      "    for field, spec in SCHEMA.items():",
+      '        typ, default = spec["type"], spec["default"]',
+      "        if field not in raw:",
+      {"s": '            out[field] = ___   # TODO: a missing field takes its declared default',
+       "a": '            out[field] = default'},
+      "            continue",
+      "        val = raw[field]",
+      {"s": '        if ___:   # TODO: the value is present but NOT of the declared type',
+       "a": '        if not isinstance(val, typ):'},
+      "            try:",
+      {"s": '                val = ___   # TODO: coerce val to the declared type',
+       "a": '                val = typ(val)'},
+      "            except (ValueError, TypeError):",
+      "                val = default",
+      "        out[field] = val",
+      "    return out",
+      "",
+      "def is_valid(rec):",
+      '    # required fields must be present AND non-None after coercion',
+      {"s": '    return all(___ for f in REQUIRED)   # TODO: each REQUIRED field is present and not None',
+       "a": '    return all(rec.get(f) is not None for f in REQUIRED)'},
+    ]
+    EX = '''print("coerced   :", coerce({"order_id": 4471, "urgency": "high"}))
+print("defaults  :", coerce({"order_id": "5090"}))
+print("valid?    :", is_valid(coerce({"order_id": "4471", "intent": "refund"})))
+print("missing id:", is_valid(coerce({"intent": "refund"})))'''
     return [
       header(3, "Structured Output, Not Prose", "Beginner", 20,
         ["Define a SCHEMA: each field's declared type and default",
@@ -293,68 +363,25 @@ def _l3(sol):
          "Validate that the required fields ended up present"],
         "Structured output, not prose"),
       setup(3),
-      md('''## Concept
-Structured output is only useful if it's **well-shaped** &mdash; every field present, every value the
+      concept('''Structured output is only useful if it's **well-shaped** &mdash; every field present, every value the
 right type (deck slide 7). Downstream code (route, draft, validate) indexes `rec["order_id"]` and
 `rec["intent"]`, so a record that's **missing a field** or carries a **wrong-typed value** breaks the
 pipeline. The fix is a **schema**: declare each field's **type** and **default**, then **coerce** any
 raw record into that shape &mdash; fill missing fields from their defaults, and convert wrong types (a
-numeric `order_id` becomes the **string** the orders DB is keyed by). Prose for humans, a
-**validated schema** for machines.'''),
+numeric `order_id` becomes the **string** the orders DB is keyed by). This is real, deterministic
+plumbing &mdash; the model's messy output is what you'll coerce.'''),
       code('''raw = {"order_id": 4471, "urgency": "high"}   # order_id is an int; intent & attempts are missing
 print("raw (messy, from an upstream extract):", raw)
 print("we want a COMPLETE, correctly-typed record out.")'''),
-      md('''## Your Turn
-Complete `coerce` (fill defaults for missing fields; coerce wrong-typed values) and `is_valid`
+      buildmd('''Complete `coerce` (fill defaults for missing fields; coerce wrong-typed values) and `is_valid`
 (the required fields must end up present and non-None).'''),
-      code(render([
-        'SCHEMA = {',
-        '    "order_id": {"type": str, "default": None},',
-        '    "intent":   {"type": str, "default": "other"},',
-        '    "urgency":  {"type": str, "default": "low"},',
-        '    "attempts": {"type": int, "default": 0},',
-        '}',
-        'REQUIRED = ("order_id", "intent")',
-        "",
-        "def coerce(raw):",
-        "    out = {}",
-        "    for field, spec in SCHEMA.items():",
-        '        typ, default = spec["type"], spec["default"]',
-        "        if field not in raw:",
-        {"s": '            out[field] = ___   # TODO: a missing field takes its declared default',
-         "a": '            out[field] = default'},
-        "            continue",
-        "        val = raw[field]",
-        {"s": '        if ___:   # TODO: the value is present but NOT of the declared type',
-         "a": '        if not isinstance(val, typ):'},
-        "            try:",
-        {"s": '                val = ___   # TODO: coerce val to the declared type',
-         "a": '                val = typ(val)'},
-        "            except (ValueError, TypeError):",
-        "                val = default",
-        "        out[field] = val",
-        "    return out",
-        "",
-        "def is_valid(rec):",
-        '    # required fields must be present AND non-None after coercion',
-        {"s": '    return all(___ for f in REQUIRED)   # TODO: each REQUIRED field is present and not None',
-         "a": '    return all(rec.get(f) is not None for f in REQUIRED)'},
-        "",
-        "try:",
-        '    print("coerced   :", coerce({"order_id": 4471, "urgency": "high"}))',
-        '    print("defaults  :", coerce({"order_id": "5090"}))',
-        '    print("valid?    :", is_valid(coerce({"order_id": "4471", "intent": "refund"})))',
-        '    print("missing id:", is_valid(coerce({"intent": "refund"})))',
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("a missing field gets its schema default", lambda: coerce({"order_id": "4471"})["urgency"] == "low")
-expect_true("a missing typed field gets its typed default (0)", lambda: coerce({"order_id": "4471"})["attempts"] == 0)
-expect_true("a wrong-typed order_id is coerced to a STRING", lambda: coerce({"order_id": 4471})["order_id"] == "4471")
-expect_true("the coerced order_id is really a str", lambda: isinstance(coerce({"order_id": 4471})["order_id"], str))
-expect_true("a numeric string coerces to int for a typed field", lambda: coerce({"attempts": "3"})["attempts"] == 3)
-expect_true("a full record with the required fields is valid", lambda: is_valid(coerce({"order_id": "4471", "intent": "refund"})) is True)
-expect_true("a record still missing a required field is invalid", lambda: is_valid(coerce({"intent": "refund"})) is False)'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      noticemd('''- A wrong-typed `order_id` (the int `4471`) is coerced to the **string** `"4471"` &mdash; the type the orders DB is keyed by.
+- Missing fields fall back to their **declared defaults**, so downstream `rec["attempts"]` never `KeyError`s.
+- `is_valid` is the gate: a record still missing a required field is rejected before it can break a later stage.'''),
+      yourturn('''Add a new field to `SCHEMA` (e.g. `"channel": {"type": str, "default": "email"}`) and feed `coerce`
+records that omit it or give it the wrong type. **What good looks like:** the coerced record always has
+your field, correctly typed, and `is_valid` still guards the required set.'''),
       footer(3, "A schema of typed fields with defaults turns a messy, half-filled record into something the pipeline can trust. Coerce first, validate second -- next we produce records by extraction."),
     ]
 
@@ -364,6 +391,34 @@ expect_true("a record still missing a required field is invalid", lambda: is_val
      "Pull order_id, intent and sentiment out of a messy client email into a tight schema; handle missing data.",
      ["Extract", "Tight schema", "Missing data"])
 def _l4(sol):
+    DEFS = [
+      'INTENTS = ("refund", "delivery", "cancel", "other")',
+      "",
+      "def extract(email):",
+      "    text = email.lower()",
+      '    # order id: the digits in the message, or None if there are none',
+      '    digits = "".join(ch for ch in email if ch.isdigit())',
+      {"s": '    order_id = ___   # TODO: the digits as-is if we found any, else None (keep order_id a STRING -- the orders DB is keyed by strings)',
+       "a": '    order_id = digits if digits else None'},
+      '    # intent: map keywords to a label from the CLOSED set INTENTS',
+      '    if "refund" in text or "money back" in text:',
+      '        intent = "refund"',
+      {"s": '    elif ___:   # TODO: a delivery-ish message (deliver / arrive / late / where is)',
+       "a": '    elif any(w in text for w in ("deliver", "arrive", "late", "where is", "hasn\'t")):'},
+      '        intent = "delivery"',
+      '    elif "cancel" in text:',
+      '        intent = "cancel"',
+      "    else:",
+      '        intent = "other"',
+      '    # sentiment: negative if the customer sounds unhappy',
+      {"s": '    sentiment = ___   # TODO: "negative" if any unhappy word is present, else "neutral"',
+       "a": '    sentiment = "negative" if any(w in text for w in ("frustrated", "angry", "late", "still", "unhappy")) else "neutral"'},
+      '    return {"order_id": order_id, "intent": intent, "sentiment": sentiment}',
+    ]
+    EX = '''print(extract("my order 4471 still hasn't arrived, getting frustrated"))
+print(extract("please cancel my subscription"))
+print(extract("I want a refund"))
+print(extract("where is my stuff?"))'''
     return [
       header(4, "Extract: Mess In, Structure Out", "Beginner", 25,
         ["Pull defined fields out of an unstructured email",
@@ -371,57 +426,26 @@ def _l4(sol):
          "Return the tight schema the rest of the pipeline consumes"],
         "Extract — mess in, structure out"),
       setup(4),
-      md('''## Concept
-**Extract** turns unstructured input into structured data (deck slide 10): an email *"my order from
+      concept('''**Extract** turns unstructured input into structured data (deck slide 10): an email *"my order from
 last Tuesday still hasn't arrived, ref 4471, getting frustrated"* becomes
 `{"order_id": "4471", "intent": "delivery", "sentiment": "negative"}`. Keys: a **tight schema** (only
 the fields you'll use, intents from a **closed set**), **handle missing data** (return `None`, don't
 invent an id), and **type consistency** &mdash; `order_id` is a **string** because the orders DB is
 keyed by strings. Extract is usually the **first step** in the chain &mdash; extract &rarr; route
-&rarr; draft.'''),
+&rarr; draft. (A keyword extractor is deterministic and auditable; a model can extract too, but you
+must still validate its output against a closed schema.)'''),
       code('''sample = "Hi, my order from last Tuesday still hasn't arrived, ref 4471, getting frustrated."
 print("unstructured in:", sample)
 print("we want out    : {order_id, intent, sentiment}")'''),
-      md('''## Your Turn
-Complete `extract`: pull the order id (digits), classify the intent from a closed set, and read a
+      buildmd('''Complete `extract`: pull the order id (digits), classify the intent from a closed set, and read a
 rough sentiment.'''),
-      code(render([
-        'INTENTS = ("refund", "delivery", "cancel", "other")',
-        "",
-        "def extract(email):",
-        "    text = email.lower()",
-        '    # order id: the digits in the message, or None if there are none',
-        '    digits = "".join(ch for ch in email if ch.isdigit())',
-        {"s": '    order_id = ___   # TODO: the digits as-is if we found any, else None (keep order_id a STRING -- the orders DB is keyed by strings)',
-         "a": '    order_id = digits if digits else None'},
-        '    # intent: map keywords to a label from the CLOSED set INTENTS',
-        '    if "refund" in text or "money back" in text:',
-        '        intent = "refund"',
-        {"s": '    elif ___:   # TODO: a delivery-ish message (deliver / arrive / late / where is)',
-         "a": '    elif any(w in text for w in ("deliver", "arrive", "late", "where is", "hasn\'t")):'},
-        '        intent = "delivery"',
-        '    elif "cancel" in text:',
-        '        intent = "cancel"',
-        "    else:",
-        '        intent = "other"',
-        '    # sentiment: negative if the customer sounds unhappy',
-        {"s": '    sentiment = ___   # TODO: "negative" if any unhappy word is present, else "neutral"',
-         "a": '    sentiment = "negative" if any(w in text for w in ("frustrated", "angry", "late", "still", "unhappy")) else "neutral"'},
-        '    return {"order_id": order_id, "intent": intent, "sentiment": sentiment}',
-        "",
-        "try:",
-        '    print(extract("my order 4471 still hasn\'t arrived, getting frustrated"))',
-        '    print(extract("please cancel my subscription"))',
-        '    print(extract("I want a refund"))',
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("pulls the order id as a STRING", lambda: extract("ref 4471 please")["order_id"] == "4471")
-expect_true("a message with no id -> order_id is None", lambda: extract("where is my stuff?")["order_id"] is None)
-expect_true("detects a delivery intent", lambda: extract("my order hasn't arrived, it's late")["intent"] == "delivery")
-expect_true("detects a refund intent", lambda: extract("I want a refund")["intent"] == "refund")
-expect_true("intent is always from the closed set", lambda: extract("hello there")["intent"] in ("refund", "delivery", "cancel", "other"))
-expect_true("reads a negative sentiment", lambda: extract("I am frustrated, still no order")["sentiment"] == "negative")'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      noticemd('''- The order id comes out a **string** (`"4471"`), matching the DB key; a message with no digits yields `None`, not a made-up id.
+- `intent` is always one of the **closed set** &mdash; that's what makes the label safe to branch on in the router.
+- The keyword rules mis-read some phrasings (e.g. "never showed up") &mdash; a real, visible failure mode you'll see again in the capstone.'''),
+      yourturn('''Feed `extract` a few of your own emails &mdash; especially awkward ones like *"my parcel never showed up"*
+(no keyword hit) &mdash; and see where it mislabels. **What good looks like:** you can name exactly which
+phrasings slip past the keywords, which tells you where a model-based extractor would earn its keep.'''),
       footer(4, "Extract is the workhorse: it turns email, chat and forms into rows your systems can process. A tight schema plus missing-data handling is what makes it reliable enough to build on."),
     ]
 
@@ -431,6 +455,21 @@ expect_true("reads a negative sentiment", lambda: extract("I am frustrated, stil
      "Route an extracted query to the right team from a closed label set, and escalate hard cases to a human.",
      ["Route", "Closed labels", "Escalate"])
 def _l5(sol):
+    DEFS = [
+      'TEAMS = {"refund": "billing", "delivery": "logistics", "cancel": "billing", "other": "general"}',
+      "",
+      "def route(record):",
+      '    intent = record.get("intent", "other")',
+      {"s": '    team = ___   # TODO: the team for intent, defaulting to "general" (the escape hatch)',
+       "a": '    team = TEAMS.get(intent, "general")'},
+      '    # escalate to a human when the customer is unhappy OR the intent is unknown',
+      {"s": '    escalate = ___   # TODO: True if sentiment is negative or intent not in TEAMS',
+       "a": '    escalate = record.get("sentiment") == "negative" or intent not in TEAMS'},
+      '    return {"team": team, "escalate": escalate}',
+    ]
+    EX = '''print("refund   ->", route({"intent": "refund", "sentiment": "neutral"}))
+print("delivery ->", route({"intent": "delivery", "sentiment": "negative"}))
+print("unknown  ->", route({"intent": "mystery", "sentiment": "neutral"}))'''
     return [
       header(5, "Route: Decide What Happens Next", "Beginner", 20,
         ["Map an intent to a team from a fixed set (with an escape hatch)",
@@ -438,88 +477,82 @@ def _l5(sol):
          "Emit a label that drives the next branch of the workflow"],
         "Route — decide what happens next"),
       setup(5),
-      md('''## Concept
-**Route** decides what happens next and emits a **label from a fixed set** that drives a branch
+      concept('''**Route** decides what happens next and emits a **label from a fixed set** that drives a branch
 (deck slide 11): which team, how urgent, auto-handle or escalate. The **closed list** is the trick
 that makes an LLM a reliable classifier &mdash; include an **escape hatch** (`other` / `unsure`), and
-a **fallback path** that routes low-confidence or high-stakes cases to a human.'''),
+a **fallback path** that routes low-confidence or high-stakes cases to a human. (Deterministic
+routing here; routing to a specialist *agent* is Module 8.)'''),
       code('''TEAMS = {"refund": "billing", "delivery": "logistics", "cancel": "billing", "other": "general"}
 print("closed label set -> team:", TEAMS)'''),
-      md('''## Your Turn
-Complete `route`: pick the team from the closed map, and decide when to **escalate** to a human.'''),
-      code(render([
-        'TEAMS = {"refund": "billing", "delivery": "logistics", "cancel": "billing", "other": "general"}',
-        "",
-        "def route(record):",
-        '    intent = record.get("intent", "other")',
-        {"s": '    team = ___   # TODO: the team for intent, defaulting to "general" (the escape hatch)',
-         "a": '    team = TEAMS.get(intent, "general")'},
-        '    # escalate to a human when the customer is unhappy OR the intent is unknown',
-        {"s": '    escalate = ___   # TODO: True if sentiment is negative or intent not in TEAMS',
-         "a": '    escalate = record.get("sentiment") == "negative" or intent not in TEAMS'},
-        '    return {"team": team, "escalate": escalate}',
-        "",
-        "try:",
-        '    print("refund   ->", route({"intent": "refund", "sentiment": "neutral"}))',
-        '    print("delivery ->", route({"intent": "delivery", "sentiment": "negative"}))',
-        '    print("unknown  ->", route({"intent": "mystery", "sentiment": "neutral"}))',
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("a refund routes to billing", lambda: route({"intent": "refund", "sentiment": "neutral"})["team"] == "billing")
-expect_true("a delivery routes to logistics", lambda: route({"intent": "delivery", "sentiment": "neutral"})["team"] == "logistics")
-expect_true("an unknown intent falls back to general (escape hatch)", lambda: route({"intent": "mystery", "sentiment": "neutral"})["team"] == "general")
-expect_true("a negative sentiment escalates to a human", lambda: route({"intent": "delivery", "sentiment": "negative"})["escalate"] is True)
-expect_true("a neutral known case does not escalate", lambda: route({"intent": "refund", "sentiment": "neutral"})["escalate"] is False)'''),
+      buildmd('''Complete `route`: pick the team from the closed map, and decide when to **escalate** to a human.'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      noticemd('''- An unknown intent falls back to `general` via the **escape hatch** &mdash; the router never crashes on a label it hasn't seen.
+- A **negative** sentiment escalates to a human even when the team is known &mdash; the high-stakes fallback path.
+- The emitted `{team, escalate}` is the label the rest of the workflow branches on; keep it small and closed.'''),
+      yourturn('''Add a new intent/team pair (e.g. `"billing_query": "billing"`) or a stricter escalation rule (escalate
+any `refund` over a threshold). **What good looks like:** known intents route deterministically, unknowns
+fall to `general`, and the cases you'd want a human to see are the ones that get `escalate=True`.'''),
       footer(5, "Routing makes one agent the front door to a whole system. Routing to the right specialist AGENT is the bridge to Module 8 -- for now it's the label that drives the branch."),
     ]
 
 # ============================================================ LAB 06
 @lab(6, "lab-06-draft-a-reply", "Beginner",
      "Draft: Generate a Grounded Reply", 25,
-     "Fill a grounded template with real order fields to draft an on-tone reply that invents nothing.",
-     ["Draft", "Grounding", "Voice"])
+     "Ground a prompt in real order fields and call a REAL Groq model to draft an on-tone reply that invents nothing.",
+     ["Draft", "Grounding", "Real model"])
 def _l6(sol):
+    DEFS = [
+      "from langchain_core.prompts import PromptTemplate",
+      "",
+      "DRAFT_PROMPT = PromptTemplate.from_template(",
+      '    "You are a customer-support agent. Using ONLY these order facts, write a short, polite reply.\\n"',
+      '    "Invent no date or fact that is not given below.\\n"',
+      '    "Customer name: {name}\\nOrder id: {id}\\nStatus: {status}\\nETA: {eta}\\nReply:")',
+      "",
+      "def build_prompt(order):",
+      '    # ground the draft in the REAL order fields -- never invent anything',
+      {"s": '    return DRAFT_PROMPT.format(name=___, id=___, status=___, eta=___)   # TODO: from order',
+       "a": '    return DRAFT_PROMPT.format(name=order["name"], id=order["id"], status=order["status"], eta=order["eta"])'},
+      "",
+      "def draft_reply(order):",
+      '    """Ask the REAL Groq model to draft a reply, grounded in this order."""',
+      {"s": '    return ___   # TODO: with_backoff(lambda: llm.invoke(build_prompt(order)).content)',
+       "a": '    return with_backoff(lambda: llm.invoke(build_prompt(order)).content)'},
+    ]
+    EX = '''# No model call here -- just inspect the grounded prompt the model will receive:
+print(build_prompt(ORDERS["4471"]))'''
+    RUN = '''reply = draft_reply(ORDERS["4471"])
+print(reply)
+print("---")
+print("mentions the id? ", "4471" in reply)
+print("grounded ETA?    ", "Friday" in reply)'''
     return [
       header(6, "Draft: Generate a Grounded Reply", "Beginner", 25,
-        ["Fill a reply template with the gathered order fields",
-         "Keep it grounded -- use only fields you actually have",
-         "Give the reply a consistent voice (tone & sign-off)"],
+        ["Build a prompt grounded in the gathered order fields",
+         "Call a REAL Groq model to draft the reply",
+         "Check the draft is grounded -- it uses only fields you gave it"],
         "Draft — generate a work product"),
       setup(6),
-      md('''## Concept
-**Draft** turns gathered context into a work product a human will review (deck slide 9): a reply, a
-summary, a proposal. Three keys: **ground it** (feed the real order &amp; template so it's specific,
-not generic), **give it a voice** (tone, format, limits), and **keep the human** (a draft is a
-suggestion, not a sent message). The failure mode to avoid: a draft that **invents** a date or a
-policy because it wasn't grounded.'''),
+      concept('''**Draft** turns gathered context into a work product a human will review (deck slide 9): a reply, a
+summary, a proposal. Three keys: **ground it** (feed the real order so it's specific, not generic),
+**give it a voice** (tone, format, limits &mdash; set in the prompt), and **keep the human** (a draft
+is a suggestion, not a sent message). The failure mode to avoid: a draft that **invents** a date or a
+policy because it wasn't grounded. Here a **real Groq model** writes the draft &mdash; grounded in the
+order fields you pass in.'''),
       realcell([PROMPT_IMPORT, EMAIL_FIXTURE],
-        '''print("template:", TEMPLATES["delivery_delay"])'''),
-      md('''## Your Turn
-Complete `draft_reply`: fill the grounded template from the order &mdash; never invent a field.'''),
-      code(render([
-        "from langchain_core.prompts import PromptTemplate",
-        "",
-        "def draft_reply(order, kind):",
-        '    template = PromptTemplate.from_template(TEMPLATES[kind])',
-        '    # ground the draft in the REAL order fields -- do not invent anything',
-        {"s": '    return template.format(name=___, id=___, status=___, eta=___)   # TODO: from order',
-         "a": '    return template.format(name=order["name"], id=order["id"], status=order["status"], eta=order["eta"])'},
-        "",
-        "try:",
-        "    reply = draft_reply(ORDERS['4471'], 'delivery_delay')",
-        "    print(reply)",
-        "    print('---')",
-        "    print('mentions the id? ', '4471' in reply)",
-        "    print('grounded ETA?    ', 'Friday' in reply)",
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("the draft greets the customer by name", lambda: "Priya" in draft_reply(ORDERS["4471"], "delivery_delay"))
-expect_true("the draft names the order id", lambda: "4471" in draft_reply(ORDERS["4471"], "delivery_delay"))
-expect_true("the draft is grounded in the real ETA", lambda: "Friday" in draft_reply(ORDERS["4471"], "delivery_delay"))
-expect_true("the draft invents no other date", lambda: "Monday" not in draft_reply(ORDERS["4471"], "delivery_delay"))
-expect_true("the draft keeps its voice (a sign-off)", lambda: "Thanks" in draft_reply(ORDERS["4471"], "delivery_delay"))'''),
+        '''print("order to ground on:", ORDERS["4471"])'''),
+      buildmd('''Complete `build_prompt` (fill the grounded prompt from the order &mdash; never invent a field) and
+`draft_reply` (call the real model on it).'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      runmd("Call the real Groq model through `draft_reply()` and read the reply it writes &mdash; grounded in the order you gave it."),
+      code(runguard(RUN)),
+      noticemd('''- The reply is written by the **real model**, yet it names the real order id and the real ETA (`Friday`) &mdash; because the prompt grounded it.
+- Nothing in the prompt says "Friday" is optional; the instruction *"invent no date not given"* is the guardrail against a hallucinated promise.
+- Change the ETA in `ORDERS["4471"]` and re-run: the draft follows the data. That's grounding, not luck.'''),
+      yourturn('''Change the **voice** in `DRAFT_PROMPT` &mdash; make it warmer, add a sign-off, cap it at two sentences,
+or draft in another language &mdash; and re-run `draft_reply()`. **What good looks like:** the style changes
+with your prompt while the **facts stay grounded** (id and ETA still correct). Try feeding `ORDERS["5090"]`
+(a different order) and confirm the draft tracks *its* fields.'''),
       footer(6, "A grounded draft is specific and correct; an ungrounded one invents facts. Draft agents are high-value and low-risk because the human still holds the pen -- which is why the email agent is the canonical first real-world lab."),
     ]
 
@@ -529,6 +562,27 @@ expect_true("the draft keeps its voice (a sign-off)", lambda: "Thanks" in draft_
      "Never act on unchecked output: verify required fields, allowed values, and that the reply invents no dates.",
      ["Validation", "Allowed values", "No invented promises"])
 def _l7(sol):
+    DEFS = [
+      'ALLOWED_INTENTS = {"refund", "delivery", "cancel", "other"}',
+      "",
+      "def validate(rec, order):",
+      "    problems = []",
+      {"s": '    if ___:   # TODO: order_id is missing (None)',
+       "a": '    if rec.get("order_id") is None:'},
+      '        problems.append("missing order_id")',
+      {"s": '    if ___:   # TODO: intent is not in the allowed set',
+       "a": '    if rec.get("intent") not in ALLOWED_INTENTS:'},
+      '        problems.append("bad intent")',
+      '    # no invented promise: the real ETA must actually appear in the reply text',
+      {"s": '    if ___:   # TODO: the order ETA is NOT present in rec["reply"]',
+       "a": '    if order["eta"] not in rec.get("reply", ""):'},
+      '        problems.append("ungrounded eta")',
+      {"s": '    return {"ok": ___, "problems": problems}   # TODO: ok = no problems',
+       "a": '    return {"ok": len(problems) == 0, "problems": problems}'},
+    ]
+    EX = '''ORDER = {"id": "4471", "eta": "Friday"}
+print("valid  ->", validate({"order_id": "4471", "intent": "delivery", "reply": "due Friday"}, ORDER))
+print("invalid->", validate({"order_id": None, "intent": "sing", "reply": "due Monday"}, ORDER))'''
     return [
       header(7, "Validate Before You Act", "Intermediate", 30,
         ["Check the structured record has its required fields",
@@ -536,48 +590,22 @@ def _l7(sol):
          "Catch an ungrounded reply (an invented date) before it goes out"],
         "Reliability: validate, then act"),
       setup(7),
-      md('''## Concept
-The line between a demo and production is **validation** (deck slide 12): never trust the model
+      concept('''The line between a demo and production is **validation** (deck slide 12): never trust the model
 blindly. Check the record **parses**, the **required fields** are present, the values are in the
 **allowed set**, and &mdash; crucially for a drafted reply &mdash; that it **invents no promises**
-(the ETA in the reply must match the real order). If it fails validation, **don't act**.'''),
+(the ETA in the reply must match the real order). If it fails validation, **don't act**. This runs on
+the real model's draft output &mdash; it's the safety net under the LLM.'''),
       code('''ALLOWED_INTENTS = {"refund", "delivery", "cancel", "other"}
 good = {"order_id": "4471", "intent": "delivery", "reply": "...due Friday..."}
 print("we will check records like:", good)'''),
-      md('''## Your Turn
-Complete `validate`: collect problems for a missing id, a bad intent, and an ungrounded ETA.'''),
-      code(render([
-        'ALLOWED_INTENTS = {"refund", "delivery", "cancel", "other"}',
-        "",
-        "def validate(rec, order):",
-        "    problems = []",
-        {"s": '    if ___:   # TODO: order_id is missing (None)',
-         "a": '    if rec.get("order_id") is None:'},
-        '        problems.append("missing order_id")',
-        {"s": '    if ___:   # TODO: intent is not in the allowed set',
-         "a": '    if rec.get("intent") not in ALLOWED_INTENTS:'},
-        '        problems.append("bad intent")',
-        '    # no invented promise: the real ETA must actually appear in the reply text',
-        {"s": '    if ___:   # TODO: the order ETA is NOT present in rec["reply"]',
-         "a": '    if order["eta"] not in rec.get("reply", ""):'},
-        '        problems.append("ungrounded eta")',
-        {"s": '    return {"ok": ___, "problems": problems}   # TODO: ok = no problems',
-         "a": '    return {"ok": len(problems) == 0, "problems": problems}'},
-        "",
-        'ORDER = {"id": "4471", "eta": "Friday"}',
-        "try:",
-        '    ok = validate({"order_id": "4471", "intent": "delivery", "reply": "due Friday"}, ORDER)',
-        '    bad = validate({"order_id": None, "intent": "sing", "reply": "due Monday"}, ORDER)',
-        "    print('valid  ->', ok)",
-        "    print('invalid->', bad)",
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("a well-grounded record passes", lambda: validate({"order_id": "4471", "intent": "delivery", "reply": "due Friday"}, {"id": "4471", "eta": "Friday"})["ok"] is True)
-expect_true("a missing order_id is caught", lambda: "missing order_id" in validate({"order_id": None, "intent": "delivery", "reply": "due Friday"}, {"id": "4471", "eta": "Friday"})["problems"])
-expect_true("a bad intent is caught", lambda: "bad intent" in validate({"order_id": "1", "intent": "sing", "reply": "due Friday"}, {"id": "4471", "eta": "Friday"})["problems"])
-expect_true("an invented date (wrong ETA) is caught", lambda: "ungrounded eta" in validate({"order_id": "1", "intent": "delivery", "reply": "due Monday"}, {"id": "4471", "eta": "Friday"})["problems"])
-expect_true("ok is True only when there are no problems", lambda: validate({"order_id": "1", "intent": "delivery", "reply": "Friday"}, {"id": "4471", "eta": "Friday"})["ok"] and not validate({"order_id": None, "intent": "delivery", "reply": "Friday"}, {"id": "4471", "eta": "Friday"})["ok"])'''),
+      buildmd('''Complete `validate`: collect problems for a missing id, a bad intent, and an ungrounded ETA.'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      noticemd('''- The **ungrounded eta** check is the important one: it catches a draft that promised "Monday" when the order says "Friday".
+- Because `ok` is just *no problems*, one failing check is enough to **stop the act** &mdash; fail-closed, not fail-open.
+- Run this on the real draft from Lab 6 and you have a model-agnostic guard: it doesn't trust the LLM, it checks it.'''),
+      yourturn('''Take a real reply from Lab 6's `draft_reply` and validate it against the order. Then deliberately corrupt
+it (swap the ETA) and re-validate. **What good looks like:** the honest draft passes; the tampered one is
+caught as `ungrounded eta`. Add one more check of your own &mdash; e.g. reject a reply that's suspiciously long.'''),
       footer(7, "Validate parses, fields, ranges, and grounding BEFORE you act. An automation that acts on unchecked output is a liability; one that validates first is something you can trust to run."),
     ]
 
@@ -587,6 +615,43 @@ expect_true("ok is True only when there are no problems", lambda: validate({"ord
      "Wrap a flaky call in a capped retry, and key each send so a re-run never double-sends.",
      ["Retry", "Cap", "Idempotency"])
 def _l8(sol):
+    DEFS = [
+      "import hashlib",
+      "",
+      "def with_retry(fn, max_attempts=3):",
+      '    # call fn(); on failure retry up to max_attempts; raise the last error if all fail',
+      "    last = None",
+      "    for attempt in range(max_attempts):",
+      "        try:",
+      {"s": '            return ___   # TODO: call fn() and return its result',
+       "a": '            return fn()'},
+      "        except Exception as e:",
+      "            last = e",
+      {"s": '    raise ___   # TODO: re-raise the last error after the cap is hit',
+       "a": '    raise last'},
+      "",
+      "def send_key(order_id, draft):",
+      '    # the idempotency key ties the EXACT draft to its order -- re-sending the same one is a no-op',
+      '    h = hashlib.sha256(draft.encode()).hexdigest()[:8]',
+      {"s": '    return ___   # TODO: combine the order id and the draft hash h into one key string',
+       "a": '    return f"{order_id}:{h}"'},
+      "",
+      "def send_once(key, sent):",
+      '    # idempotent: sending the same key twice must NOT double-send',
+      {"s": '    if ___:   # TODO: this key was already sent',
+       "a": '    if key in sent:'},
+      '        return "already_sent"',
+      "    sent.add(key)",
+      '    return "sent"',
+    ]
+    EX = '''print("first try ok   :", with_retry(flaky_lookup("4471", 0))["status"])
+print("after 2 fails  :", with_retry(flaky_lookup("4471", 2), 3)["status"])
+print("exhausted raises:", raises(lambda: with_retry(flaky_lookup("4471", 5), 3)))
+k = send_key("4471", "Hi Priya, your order 4471 is due Friday.")
+print("send key        :", k)
+sent = set()
+print("send (1st)      :", send_once(k, sent))
+print("send (2nd)      :", send_once(k, sent))'''
     return [
       header(8, "Retry & Idempotency", "Intermediate", 30,
         ["Retry a flaky order lookup, but cap the attempts so it can't loop forever",
@@ -594,11 +659,11 @@ def _l8(sol):
          "See why idempotency matters most for money & messages"],
         "Reliability: retry & idempotency"),
       setup(8),
-      md('''## Concept
-Models and tools are flaky, so wrap calls in a **retry** &mdash; but **cap** the attempts (deck slide
+      concept('''Models and tools are flaky, so wrap calls in a **retry** &mdash; but **cap** the attempts (deck slide
 12). And design for **idempotency**: key each action so running the same task twice is **safe** and
 never **double-sends** an email or **double-charges** a card. This is the subtlest and most important
-discipline for anything that touches **money or messages**.'''),
+discipline for anything that touches **money or messages**. (Note: the `with_backoff` in your Setup
+cell is exactly this pattern applied to Groq's rate limits.)'''),
       code('''# A flaky order lookup: the network hiccups n_fail times, then returns the order.
 import hashlib
 def flaky_lookup(order_id, n_fail):
@@ -613,57 +678,15 @@ def raises(fn):
     try: fn(); return False
     except Exception: return True
 print("helpers ready: flaky_lookup(id, n) fails n times, then returns the order dict")'''),
-      md('''## Your Turn
-Complete `with_retry` (capped), `send_key` (the idempotency key from the order id + a draft hash),
+      buildmd('''Complete `with_retry` (capped), `send_key` (the idempotency key from the order id + a draft hash),
 and `send_once` (idempotent via the key set).'''),
-      code(render([
-        "import hashlib",
-        "",
-        "def with_retry(fn, max_attempts=3):",
-        '    # call fn(); on failure retry up to max_attempts; raise the last error if all fail',
-        "    last = None",
-        "    for attempt in range(max_attempts):",
-        "        try:",
-        {"s": '            return ___   # TODO: call fn() and return its result',
-         "a": '            return fn()'},
-        "        except Exception as e:",
-        "            last = e",
-        {"s": '    raise ___   # TODO: re-raise the last error after the cap is hit',
-         "a": '    raise last'},
-        "",
-        "def send_key(order_id, draft):",
-        '    # the idempotency key ties the EXACT draft to its order -- re-sending the same one is a no-op',
-        '    h = hashlib.sha256(draft.encode()).hexdigest()[:8]',
-        {"s": '    return ___   # TODO: combine the order id and the draft hash h into one key string',
-         "a": '    return f"{order_id}:{h}"'},
-        "",
-        "def send_once(key, sent):",
-        '    # idempotent: sending the same key twice must NOT double-send',
-        {"s": '    if ___:   # TODO: this key was already sent',
-         "a": '    if key in sent:'},
-        '        return "already_sent"',
-        "    sent.add(key)",
-        '    return "sent"',
-        "",
-        "try:",
-        '    print("first try ok   :", with_retry(flaky_lookup("4471", 0))["status"])',
-        '    print("after 2 fails  :", with_retry(flaky_lookup("4471", 2), 3)["status"])',
-        '    print("exhausted raises:", raises(lambda: with_retry(flaky_lookup("4471", 5), 3)))',
-        '    k = send_key("4471", "Hi Priya, your order 4471 is due Friday.")',
-        '    print("send key        :", k)',
-        "    sent = set()",
-        '    print("send (1st)      :", send_once(k, sent))',
-        '    print("send (2nd)      :", send_once(k, sent))',
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("returns the order when the lookup succeeds", lambda: with_retry(flaky_lookup("4471", 0))["status"] == "shipped")
-expect_true("succeeds after transient failures", lambda: with_retry(flaky_lookup("4471", 2), 3)["status"] == "shipped")
-expect_true("raises once attempts are exhausted", lambda: raises(lambda: with_retry(flaky_lookup("4471", 5), 3)))
-expect_true("the send key ties the draft to its order id", lambda: send_key("4471", "hello").startswith("4471"))
-expect_true("a different draft yields a different key", lambda: send_key("4471", "hello") != send_key("4471", "goodbye"))
-expect_true("the first send goes out", lambda: send_once(send_key("4471", "hi"), set()) == "sent")
-expect_true("re-sending the SAME order+draft is suppressed (idempotent)", lambda: (lambda s: (send_once(send_key("4471","hi"), s), send_once(send_key("4471","hi"), s))[1])(set()) == "already_sent")'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      noticemd('''- `with_retry` succeeds *after* transient failures but **raises once the cap is hit** &mdash; bounded, never an infinite loop.
+- `send_key` ties the **exact draft** to its order; a different draft yields a different key, so an edited reply is a new send.
+- `send_once` makes the second identical send a **no-op** &mdash; the property that lets an automation re-run safely.'''),
+      yourturn('''Change `send_key` to ignore the draft (key on `order_id` alone) and watch what breaks: a legitimately
+*revised* reply to the same order would now be suppressed. **What good looks like:** you can articulate why
+the key must include the draft hash &mdash; idempotency should block *duplicates*, not *revisions*.'''),
       footer(8, "Retry with a cap, and key every irreversible action so a re-run is safe. Assume every step can fail -- and make failure safe and visible. Idempotency is what lets an automation run unattended."),
     ]
 
@@ -673,6 +696,32 @@ expect_true("re-sending the SAME order+draft is suppressed (idempotent)", lambda
      "Separate drafting from sending: the agent emits a needs-approval draft and never holds a send tool.",
      ["Draft not send", "Approval gate", "Withhold the tool"])
 def _l9(sol):
+    DEFS = [
+      "def make_draft(reply):",
+      '    # the agent\'s output is a DRAFT + a needs-approval flag -- never a sent mail',
+      {"s": '    return {"reply": reply, "status": ___}   # TODO: the needs-approval flag',
+       "a": '    return {"reply": reply, "status": "needs_approval"}'},
+      "",
+      "def gate(draft, approved):",
+      '    # the human-in-the-loop gate: approve -> send, reject -> revise',
+      '    if draft["status"] != "needs_approval":',
+      '        return "invalid"',
+      {"s": '    return ___   # TODO: "send" if approved else "revise"',
+       "a": '    return "send" if approved else "revise"'},
+      "",
+      "def agent_tools():",
+      '    # gather-only: the agent must NOT be given a send tool',
+      {"s": '    return ___   # TODO: the two gather tools, WITHOUT send_email',
+       "a": '    return ["lookup_order", "get_template"]'},
+      "",
+      "def agent_can_send():",
+      '    return "send_email" in agent_tools()',
+    ]
+    EX = '''d = make_draft("Hi Priya, your order 4471 is due Friday.")
+print("draft   :", d)
+print("approve ->", gate(d, True))
+print("reject  ->", gate(d, False))
+print("agent can send?", agent_can_send())'''
     return [
       header(9, "Human-in-the-Loop: Draft ≠ Send", "Intermediate", 30,
         ["Make the agent's output a DRAFT with a needs-approval flag",
@@ -680,52 +729,23 @@ def _l9(sol):
          "Apply the strongest guardrail: withhold the send tool entirely"],
         "Human-in-the-loop: draft ≠ send"),
       setup(9),
-      md('''## Concept
-The golden rule for real-world agents: **separate drafting from sending** (deck slides 13, 16). The
+      concept('''The golden rule for real-world agents: **separate drafting from sending** (deck slides 13, 16). The
 agent gathers, reasons and drafts **autonomously** &mdash; none of that is irreversible &mdash; but the
 **send** pauses for a human. The simplest, strongest guardrail is to **withhold the `send_email`
 tool**: the agent literally **cannot send**, so a human always does that after approving.
-**Draft is not send.**'''),
+**Draft is not send.** (In Lab 11 you'll enforce this on the *real* Groq agent by never binding
+`send_email`.)'''),
       code('''# The agent's toolset -- notice what is deliberately MISSING.
 CANDIDATE_TOOLS = ["lookup_order", "get_template", "send_email"]  # send_email must NOT be given
 print("what the agent COULD be given:", CANDIDATE_TOOLS)'''),
-      md('''## Your Turn
-Complete the draft flag, the approval gate, and the gather-only toolset (no send tool).'''),
-      code(render([
-        "def make_draft(reply):",
-        '    # the agent\'s output is a DRAFT + a needs-approval flag -- never a sent mail',
-        {"s": '    return {"reply": reply, "status": ___}   # TODO: the needs-approval flag',
-         "a": '    return {"reply": reply, "status": "needs_approval"}'},
-        "",
-        "def gate(draft, approved):",
-        '    # the human-in-the-loop gate: approve -> send, reject -> revise',
-        '    if draft["status"] != "needs_approval":',
-        '        return "invalid"',
-        {"s": '    return ___   # TODO: "send" if approved else "revise"',
-         "a": '    return "send" if approved else "revise"'},
-        "",
-        "def agent_tools():",
-        '    # gather-only: the agent must NOT be given a send tool',
-        {"s": '    return ___   # TODO: the two gather tools, WITHOUT send_email',
-         "a": '    return ["lookup_order", "get_template"]'},
-        "",
-        "def agent_can_send():",
-        '    return "send_email" in agent_tools()',
-        "",
-        "try:",
-        '    d = make_draft("Hi Priya, your order 4471 is due Friday.")',
-        "    print('draft   :', d)",
-        "    print('approve ->', gate(d, True))",
-        "    print('reject  ->', gate(d, False))",
-        "    print('agent can send?', agent_can_send())",
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("the draft carries a needs-approval flag", lambda: make_draft("hi")["status"] == "needs_approval")
-expect_true("the draft is never already 'sent'", lambda: make_draft("hi")["status"] != "sent")
-expect_true("approval routes to send", lambda: gate(make_draft("hi"), True) == "send")
-expect_true("rejection routes to revise", lambda: gate(make_draft("hi"), False) == "revise")
-expect_true("the agent is NOT given a send tool", lambda: agent_can_send() is False)'''),
+      buildmd('''Complete the draft flag, the approval gate, and the gather-only toolset (no send tool).'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      noticemd('''- The draft carries **`needs_approval`**, never `sent` &mdash; the output shape itself encodes "a human must look".
+- `gate` routes approve&rarr;send / reject&rarr;revise; the *send* only ever happens on the far side of a human.
+- `agent_can_send()` is **False**: the strongest guardrail is structural &mdash; the tool simply isn't in the list.'''),
+      yourturn('''Add a third state to `gate` &mdash; e.g. `"edit"` when a human tweaks the reply before sending &mdash; and
+decide what `status` an edited draft carries. **What good looks like:** every path still ends with a human
+action for the send, and there is no code path where the agent sends on its own.'''),
       footer(9, "The strongest human-in-the-loop guardrail is the simplest: don't give the agent the send tool. It gathers and drafts all day -- and a human keeps the send. Draft is not send."),
     ]
 
@@ -735,6 +755,30 @@ expect_true("the agent is NOT given a send tool", lambda: agent_can_send() is Fa
      "Log every stage of a run (trigger, tools, draft, validation, decision) and measure the approval rate.",
      ["Observability", "Run log", "Metrics"])
 def _l10(sol):
+    DEFS = [
+      "class RunLog:",
+      "    def __init__(self):",
+      "        self.events = []",
+      "    def record(self, stage, detail):",
+      {"s": '        ___   # TODO: append (stage, detail) to self.events',
+       "a": '        self.events.append((stage, detail))'},
+      "    def stages(self):",
+      {"s": '        return ___   # TODO: just the stage names, in order',
+       "a": '        return [s for s, _ in self.events]'},
+      "",
+      "def approval_rate(decisions):",
+      '    # the fraction of runs a human approved ("send")',
+      {"s": '    return ___   # TODO: count of "send" divided by the number of decisions',
+       "a": '    return sum(1 for d in decisions if d == "send") / len(decisions)'},
+    ]
+    EX = '''log = RunLog()
+log.record("trigger", "email 4471")
+log.record("gather", "lookup_order -> shipped")
+log.record("draft", "due Friday")
+log.record("validate", "ok")
+log.record("approve", "send")
+print("trace stages:", log.stages())
+print("approval rate:", approval_rate(["send", "revise", "send", "send"]))'''
     return [
       header(10, "Observability: Log Every Run", "Advanced", 40,
         ["Record every stage of a run in an auditable log",
@@ -742,85 +786,80 @@ def _l10(sol):
          "Measure quality over a batch (the approval rate)"],
         "Failure modes & observability"),
       setup(10),
-      md('''## Concept
-You can't run unattended what you can't see (deck slide 18). **Observability** means logging every
+      concept('''You can't run unattended what you can't see (deck slide 18). **Observability** means logging every
 run &mdash; the **trigger**, each **tool call &amp; observation**, the **draft**, the **validation**
 result, and the **human decision**. That log lets you **debug** a bad output, **audit** what
 happened, and **measure** quality over time (approval rate, edit rate). Real stacks &mdash;
-**LangSmith / Langfuse** &mdash; capture exactly this; here you build the offline version.'''),
+**LangSmith / Langfuse** &mdash; capture exactly this via LangChain callbacks; here you build the
+minimal offline version, and it drops straight onto the real agent trace from Lab 11.'''),
       code('''# One run produces a sequence of stage events; a batch of runs produces a metric.
 print("we log: trigger -> gather -> draft -> validate -> approve, plus the human decision")'''),
-      md('''## Your Turn
-Complete the `RunLog` (record + read back the stages) and `approval_rate` over a batch.'''),
-      code(render([
-        "class RunLog:",
-        "    def __init__(self):",
-        "        self.events = []",
-        "    def record(self, stage, detail):",
-        {"s": '        ___   # TODO: append (stage, detail) to self.events',
-         "a": '        self.events.append((stage, detail))'},
-        "    def stages(self):",
-        {"s": '        return ___   # TODO: just the stage names, in order',
-         "a": '        return [s for s, _ in self.events]'},
-        "",
-        "def approval_rate(decisions):",
-        '    # the fraction of runs a human approved ("send")',
-        {"s": '    return ___   # TODO: count of "send" divided by the number of decisions',
-         "a": '    return sum(1 for d in decisions if d == "send") / len(decisions)'},
-        "",
-        "try:",
-        "    log = RunLog()",
-        "    log.record('trigger', 'email 4471')",
-        "    log.record('gather', 'lookup_order -> shipped')",
-        "    log.record('draft', 'due Friday')",
-        "    log.record('validate', 'ok')",
-        "    log.record('approve', 'send')",
-        "    print('trace stages:', log.stages())",
-        "    print('approval rate:', approval_rate(['send', 'revise', 'send', 'send']))",
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("record appends an event", lambda: (lambda l: (l.record("trigger", "x"), len(l.events))[1])(RunLog()) == 1)
-expect_true("a full run logs five stages", lambda: (lambda l: [l.record(s, "d") for s in ("trigger","gather","draft","validate","approve")] and len(l.events))(RunLog()) == 5)
-expect_true("stages() returns them in order", lambda: (lambda l: [l.record(s, "d") for s in ("trigger","gather","draft")] and l.stages())(RunLog()) == ["trigger","gather","draft"])
-expect_true("approval_rate is 0.5 on [send, revise]", lambda: approval_rate(["send", "revise"]) == 0.5)
-expect_true("approval_rate is 1.0 when all approve", lambda: approval_rate(["send", "send"]) == 1.0)''')
-      ,
-      *optional_real(
-        "See the REAL callback interface LangChain exposes (LangSmith / Langfuse capture full traces).",
-        '''try:
-    from langchain_core.callbacks import BaseCallbackHandler
-    class PrintHandler(BaseCallbackHandler):
-        def on_tool_end(self, output, **kw):
-            print("tool ->", output)
-    print("Real LangChain calls handlers like PrintHandler on every model/tool event.")
-    print("For full run traces: set LANGCHAIN_TRACING_V2=true + LANGCHAIN_API_KEY (LangSmith),")
-    print("or run Langfuse (this course's stack) and attach its callback handler.")
-except Exception as e:
-    print("Install langchain-core to use real callbacks -- skipping:", type(e).__name__)
-print("The RunLog above already traced every stage offline.")'''),
+      buildmd('''Complete the `RunLog` (record + read back the stages) and `approval_rate` over a batch.'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      noticemd('''- `stages()` reads the run back in order &mdash; the same shape as an agent's message trace, which is your #1 debugging surface.
+- `approval_rate` turns a pile of runs into **one number** you can track; a falling rate means the drafts are getting worse.
+- LangChain's real `BaseCallbackHandler` fires on every tool start/end &mdash; the same events, captured automatically by LangSmith/Langfuse.'''),
+      yourturn('''Extend `RunLog` to also record the *tool arguments* on each `gather` event, then run it over a couple of
+Lab 6 drafts and compute the approval rate you'd assign. **What good looks like:** from the log alone you
+can reconstruct exactly what each run did &mdash; and you have a metric that would tell you if quality slipped.'''),
       footer(10, "Log every run's trigger, tools, draft, validation and decision -- that's how you debug, audit and MEASURE an automation. Once you can measure it (approval rate), you can improve it. Day 5 goes deeper."),
     ]
 
 # ============================================================ LAB 11
 @lab(11, "lab-11-assemble-email-agent", "Advanced",
      "Assemble the Email Agent", 35,
-     "Bind gather-only tools into a real create_agent that can draft a grounded reply but has no way to send.",
+     "Bind gather-only tools into a REAL Groq create_agent that can draft a grounded reply but has no way to send.",
      ["create_agent", "Gather-only", "needs_approval"])
 def _l11(sol):
+    DEFS = [
+      "from langchain.agents import create_agent",
+      "",
+      "def gather_tools():",
+      {"s": '    return ___   # TODO: gather-only -- lookup_order & get_template, NEVER send_email',
+       "a": '    return [lookup_order, get_template]'},
+      "",
+      "def make_email_agent():",
+      '    # bind the REAL Groq model to the gather-only tools',
+      {"s": '    return create_agent(llm, ___)   # TODO: bind the gather-only tools',
+       "a": '    return create_agent(llm, gather_tools())'},
+      "",
+      "def handle_email(draft, tools_used):",
+      '    # never auto-send: wrap the drafted reply as a result a human must approve',
+      {"s": '    return {"draft": draft, "status": ___, "tools_used": tools_used}   # TODO: the needs-approval flag',
+       "a": '    return {"draft": draft, "status": "needs_approval", "tools_used": tools_used}'},
+    ]
+    EX = '''# Structure checks -- no model call needed:
+print("bound tools :", [t.name for t in gather_tools()])
+print("can it send?:", "send_email" in [t.name for t in gather_tools()])
+print("send_email still EXISTS as a capability, just unbound:", send_email.name)
+demo = handle_email("Hi Priya, your order 4471 is due Friday.", ["lookup_order"])
+print("wrapped     :", demo["status"], "| tools:", demo["tools_used"])'''
+    RUN = '''from langchain_core.messages import AIMessage
+def tools_used(messages):
+    return [tc["name"] for m in messages for tc in (getattr(m, "tool_calls", None) or [])]
+
+agent = make_email_agent()
+result = with_backoff(lambda: agent.invoke(
+    {"messages": [("user",
+        "Look up order 4471, then draft a one-line status reply for the customer. Do not send anything.")]},
+    config={"recursion_limit": 8}))
+print_trace(result)
+print("---")
+out = handle_email(result["messages"][-1].content, tools_used(result["messages"]))
+print("tools used:", out["tools_used"])
+print("status    :", out["status"], "(the agent has no send tool, so it cannot auto-send)")'''
     return [
       header(11, "Assemble the Email Agent", "Advanced", 35,
-        ["Bind gather-only tools into an agent with create_agent",
+        ["Bind gather-only tools into a real Groq agent with create_agent",
          "Withhold send_email so the agent cannot auto-send",
-         "Wrap the draft as needs_approval, with its tool trace"],
+         "Run it for real: it gathers & drafts, and you wrap it needs_approval"],
         "The email-drafting agent, end to end"),
       setup(11),
-      md('''## Concept
-Now assemble the email agent from Module 6's pieces (deck slides 14&ndash;16): `@tool` gather tools bound
-with **`create_agent`** (a runnable `CompiledStateGraph`). The agent gathers (`lookup_order`,
-`get_template`) then drafts a reply. The key design choice: the tools list is **gather-only** &mdash;
-`send_email` is **not** bound &mdash; and the run's output is wrapped as a **`needs_approval`** draft.
-The agent did the tedious 90%; the human keeps the send.'''),
+      concept('''Now assemble the email agent (deck slides 14&ndash;16): `@tool` gather tools bound with
+**`create_agent`** (a runnable `CompiledStateGraph`) over a **real Groq model**. The agent gathers
+(`lookup_order`, `get_template`) then drafts a reply. The key design choice: the tools list is
+**gather-only** &mdash; `send_email` is **defined but not bound** &mdash; and the run's output is
+wrapped as a **`needs_approval`** draft. The agent did the tedious 90%; the human keeps the send.'''),
       realcell([TOOL_IMPORT, EMAIL_FIXTURE],
         '''from langchain_core.tools import tool
 
@@ -837,93 +876,74 @@ def send_email(to: str, body: str) -> str:
     """Send an email. (Defined to show the capability -- but DELIBERATELY WITHHELD from the agent.)"""
     return "SENT"
 print("gather tools ready:", lookup_order.name, "&", get_template.name, "| withheld:", send_email.name)'''),
-      md('''## Your Turn
-The guardrail here is what's **missing**: build the agent with **gather-only** tools (no `send_email`),
-and wrap whatever it drafts as a **`needs_approval`** result. The draft text comes from the model at
-run time (the optional cell), so the graded steps check the **wiring and the guardrail**, not the prose.'''),
-      code(render([
-        "from langchain_ollama import ChatOllama",
-        "from langchain.agents import create_agent",
-        "",
-        "def gather_tools():",
-        {"s": '    return ___   # TODO: gather-only -- lookup_order & get_template, NEVER send_email',
-         "a": '    return [lookup_order, get_template]'},
-        "",
-        "def make_email_agent():",
-        '    model = ChatOllama(model="llama3.2:1b")',
-        {"s": '    return create_agent(model, ___)   # TODO: bind the gather-only tools',
-         "a": '    return create_agent(model, gather_tools())'},
-        "",
-        "def handle_email(draft, tools_used):",
-        '    # never auto-send: wrap the drafted reply as a result a human must approve',
-        {"s": '    return {"draft": draft, "status": ___, "tools_used": tools_used}   # TODO: the needs-approval flag',
-         "a": '    return {"draft": draft, "status": "needs_approval", "tools_used": tools_used}'},
-        "",
-        "try:",
-        "    print('bound tools :', [t.name for t in gather_tools()])",
-        "    print('can it send?:', 'send_email' in [t.name for t in gather_tools()])",
-        "    print('agent type  :', type(make_email_agent()).__name__)",
-        '    demo = handle_email("Hi Priya, your order 4471 is due Friday.", ["lookup_order", "get_template"])',
-        "    print('wrapped     :', demo['status'], '| tools:', demo['tools_used'])",
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("the agent is a runnable CompiledStateGraph", lambda: type(make_email_agent()).__name__ == "CompiledStateGraph")
-expect_true("it binds exactly the two gather tools", lambda: [t.name for t in gather_tools()] == ["lookup_order", "get_template"])
-expect_true("the send tool is WITHHELD (the guardrail)", lambda: "send_email" not in [t.name for t in gather_tools()])
-expect_true("send_email still EXISTS as a capability, just unbound", lambda: send_email.name == "send_email")
-expect_true("a draft is wrapped as needs_approval, never sent", lambda: handle_email("d", [])["status"] == "needs_approval")
-expect_true("the wrapper preserves the tool trace", lambda: handle_email("d", ["lookup_order"])["tools_used"] == ["lookup_order"])'''),
-      *live(
-        "Run the gather-only agent for real: it can look up and draft, but it has no way to send.",
-        '''from langchain_core.messages import AIMessage
-def tools_used(messages):
-    return [tc["name"] for m in messages for tc in (getattr(m, "tool_calls", None) or [])]
-try:
-    if ollama_up():
-        agent = make_email_agent()
-        result = agent.invoke({"messages": [{"role": "user",
-                 "content": "Look up order 4471, then draft a one-line status reply. Do not send anything."}]},
-                 config={"recursion_limit": 8})
-        draft = result["messages"][-1].content
-        out = handle_email(draft, tools_used(result["messages"]))
-        print("tools used:", out["tools_used"])
-        print("status    :", out["status"], "(the agent has no send tool, so it cannot auto-send)")
-        print("draft     :", out["draft"])
-    else:
-        print("No Ollama reachable -- skipping the live run. The gather-only wiring above is what matters:")
-        print("send_email is defined but never bound, so the agent gathers & drafts but cannot send.")
-except Exception as e:
-    print("Live run skipped:", type(e).__name__)'''),
-      footer(11, "The guardrail is what's MISSING from the tools list -- send_email is never bound, so the agent gathers and drafts but cannot send. Next: run the whole pipeline over a suite."),
+      buildmd('''The guardrail here is what's **missing**: build the agent with **gather-only** tools (no `send_email`),
+and wrap whatever it drafts as a **`needs_approval`** result.'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      runmd("Run the gather-only agent for real: it looks up the order and drafts a reply &mdash; and it has no send tool, so it cannot auto-send."),
+      code(runguard(RUN)),
+      noticemd('''- The trace shows **`TOOL CALL: lookup_order`** then a drafted reply &mdash; a real Groq agent doing the gather-then-draft job.
+- The bound list is **gather-only**: `send_email` is defined (it exists as a capability) but never passed to `create_agent`, so the agent **cannot send**.
+- The output is wrapped **`needs_approval`** &mdash; the agent did the work; a human still holds the send.'''),
+      yourturn('''Try (carefully) *adding* `send_email` to `gather_tools()` and re-running &mdash; then put it back. **What good
+looks like:** you can see that binding the send tool is the ONLY thing standing between "drafts for a human"
+and "sends on its own", which is exactly why the guardrail is *withhold the tool*. Restore the gather-only list.'''),
+      footer(11, "The guardrail is what's MISSING from the tools list -- send_email is never bound, so the real agent gathers and drafts but cannot send. Next: run the whole pipeline over a suite."),
     ]
 
 # ============================================================ LAB 12
 @lab(12, "lab-12-capstone-email-drafting-agent", "Advanced",
      "Capstone: The Email-Drafting Agent", 45,
-     "Chain extract -> route -> gather -> draft -> validate -> approval over a suite of client emails, and score it.",
+     "Chain extract -> route -> gather -> draft (real Groq) -> validate over a suite of client emails; never auto-send.",
      ["End-to-end pipeline", "Task suite", "Draft-not-send"])
 def _l12(sol):
+    DEFS = [
+      "def process(email):",
+      "    rec    = extract(email)",
+      "    routed = route(rec)",
+      '    # gather via the SAME tool the Lab 7.11 agent is built from (reuse, not re-implement)',
+      '    found  = lookup_order.invoke(rec["order_id"]) if rec["order_id"] else {}',
+      '    order  = found if found.get("id") else {"id": rec["order_id"], "name": "there", "status": "unknown", "eta": "soon"}',
+      {"s": '    reply  = ___   # TODO: draft a grounded reply for this order with the REAL model (draft(order))',
+       "a": '    reply  = draft(order)'},
+      "    ok     = validate(reply, order)",
+      '    # never auto-send: a valid draft awaits approval; an invalid one needs a fix',
+      {"s": '    status = ___   # TODO: "needs_approval" if ok else "needs_fix"',
+       "a": '    status = "needs_approval" if ok else "needs_fix"'},
+      '    return {"team": routed["team"], "escalate": routed["escalate"],',
+      '            "draft": reply, "status": status}',
+      "",
+      "SUITE = [",
+      '    "Where is my order 4471? It\'s late.",',
+      '    "Please refund order 5090",',
+      '    "I want to cancel order 4471, I\'m so frustrated",',
+      "]",
+    ]
+    EX = '''# Structure check (no model call): the capstone reuses the Lab 7.11 gather-only agent.
+print("agent type      :", type(make_email_agent()).__name__)
+print("still withholds send_email:", "send_email" not in [t.name for t in gather_tools()])'''
+    RUN = '''for email in SUITE:
+    r = process(email)
+    print("EMAIL:", email)
+    print("  team:", r["team"], "| escalate:", r["escalate"], "| status:", r["status"])
+    print("  draft:", r["draft"][:140].replace(chr(10), " "))
+    print()
+print("Every result is needs_approval / needs_fix -- the agent NEVER auto-sends.")'''
     return [
       header(12, "Capstone: The Email-Drafting Agent", "Advanced", 45,
-        ["Chain the pipeline: extract, route, gather (via the 7.11 agent's tool), draft, validate",
+        ["Chain the pipeline: extract, route, gather, draft (real Groq), validate",
          "Never auto-send -- every result is a needs_approval draft",
-         "Run it over a SUITE of client emails and score per-row (a partial score is honest)"],
+         "Run it over a SUITE of client emails and read the real drafts"],
         "Now build it — Module 7 labs"),
       setup(12),
-      md('''## Concept
-Capstone: the **email-drafting agent** (the client's Lab 4.1), end to end. It **extracts** the
-query's fields, **routes** it to a team, **gathers** the order via the **gather-only agent you
-assembled in Lab 7.11** (`send_email` is still withheld), **drafts** a grounded reply, **validates**
-it, and returns a **`needs_approval`** draft &mdash; it **never auto-sends**. You run it over a
-**suite of four incoming emails** &mdash; including an **unknown order** and an angry complaint the
-keyword extractor mis-reads &mdash; and score it **per row**. A real eval yields a **partial** score;
-that's honest, and it shows you exactly where the agent needs work. The helpers below are the ones you
-built through the module; you assemble them into `process` and score with `evaluate`.'''),
+      concept('''Capstone: the **email-drafting agent** (the client's Lab 4.1), end to end. It **extracts** the
+query's fields, **routes** it to a team, **gathers** the order via the **gather-only tool** the Lab
+7.11 agent is built from (`send_email` still withheld), **drafts** a grounded reply with the **real
+Groq model**, **validates** it, and returns a **`needs_approval`** draft &mdash; it **never
+auto-sends**. You run it over a **suite of client emails** and read the real drafts. The helpers below
+are the ones you built through the module; you assemble them into `process`.'''),
       realcell([PROMPT_IMPORT, EMAIL_FIXTURE],
         '''from langchain_core.prompts import PromptTemplate
 from langchain_core.tools import tool
-from langchain_ollama import ChatOllama
 from langchain.agents import create_agent
 
 # --- The pipeline pieces you built this module (provided so you can assemble the whole agent) ---
@@ -943,11 +963,14 @@ def route(rec):
     return {"team": TEAMS.get(rec["intent"], "general"),
             "escalate": rec["sentiment"] == "negative" or rec["intent"] not in TEAMS}
 
-TEMPLATE_FOR = {"delivery": "delivery_delay", "refund": "refund"}
-def draft(order, intent):
-    kind = TEMPLATE_FOR.get(intent, "delivery_delay")
-    return PromptTemplate.from_template(TEMPLATES[kind]).format(
-        name=order["name"], id=order["id"], status=order["status"], eta=order["eta"])
+DRAFT_PROMPT = PromptTemplate.from_template(
+    "You are a customer-support agent. Using ONLY these order facts, write a short, polite reply.\\n"
+    "Invent no date or fact that is not given below.\\n"
+    "Customer name: {name}\\nOrder id: {id}\\nStatus: {status}\\nETA: {eta}\\nReply:")
+def draft(order):
+    # the DRAFT step calls the REAL Groq model, grounded in the order
+    return with_backoff(lambda: llm.invoke(DRAFT_PROMPT.format(
+        name=order["name"], id=order["id"], status=order["status"], eta=order["eta"])).content)
 def validate(reply, order):
     return order["eta"] in reply
 
@@ -967,78 +990,21 @@ def send_email(to: str, body: str) -> str:
 def gather_tools():
     return [lookup_order, get_template]                 # gather-only -- send_email is NOT bound
 def make_email_agent():
-    return create_agent(ChatOllama(model="llama3.2:1b"), gather_tools())
-print("helpers ready: extract, route, draft, validate + the gather-only agent (make_email_agent)")'''),
-      md('''## Your Turn
-Assemble `process` (chain the pipeline; gather via the agent's tool; never send) and `evaluate`
-(score the suite per row).'''),
-      code(render([
-        "def process(email):",
-        "    rec    = extract(email)",
-        "    routed = route(rec)",
-        "    # gather via the SAME tool the Lab 7.11 agent is built from (reuse, not re-implement)",
-        '    found  = lookup_order.invoke(rec["order_id"]) if rec["order_id"] else {}',
-        '    order  = found if found.get("id") else {"id": rec["order_id"], "name": "there", "status": "unknown", "eta": "soon"}',
-        {"s": '    reply  = ___   # TODO: draft a grounded reply for this order & intent',
-         "a": '    reply  = draft(order, rec["intent"])'},
-        "    ok     = validate(reply, order)",
-        '    # never auto-send: a valid draft awaits approval; an invalid one needs a fix',
-        {"s": '    status = ___   # TODO: "needs_approval" if ok else "needs_fix"',
-         "a": '    status = "needs_approval" if ok else "needs_fix"'},
-        '    return {"team": routed["team"], "escalate": routed["escalate"],',
-        '            "draft": reply, "status": status}',
-        "",
-        "# Each row carries the human-labelled expected team + escalation for scoring.",
-        "SUITE = [",
-        '    {"email": "Where is my order 4471? It\'s late.",             "team": "logistics", "escalate": True},',
-        '    {"email": "Please refund order 5090",                       "team": "billing",   "escalate": False},',
-        '    {"email": "I want to cancel order 4471, I\'m so frustrated", "team": "billing",   "escalate": True},',
-        '    {"email": "My package never showed up and I\'m furious",     "team": "logistics", "escalate": True},   # the keyword extractor mis-reads this one',
-        "]",
-        "",
-        "def evaluate():",
-        '    # per-row: solved = routed to the expected team, escalation matches, never auto-sent (needs_*)',
-        "    solved = 0",
-        "    for t in SUITE:",
-        '        r = process(t["email"])',
-        {"s": '        if ___:   # TODO: r team == t team AND r escalate == t escalate AND r status starts with "needs_"',
-         "a": '        if r["team"] == t["team"] and r["escalate"] == t["escalate"] and r["status"].startswith("needs_"):'},
-        "            solved += 1",
-        "    return solved, len(SUITE)",
-        "",
-        "try:",
-        "    for t in SUITE:",
-        "        r = process(t['email'])",
-        "        print(t['email'][:34], '->', r['team'], '| esc', r['escalate'], '|', r['status'])",
-        "    print('score:', evaluate())",
-        "except Exception as e:",
-        "    print('Fill the blanks, then re-run.', type(e).__name__)",
-      ], sol)),
-      grader('''expect_true("a delivery email routes to logistics", lambda: process("Where is my order 4471? It's late.")["team"] == "logistics")
-expect_true("a refund email routes to billing", lambda: process("Please refund order 5090")["team"] == "billing")
-expect_true("a frustrated customer is escalated", lambda: process("I want to cancel order 4471, I'm so frustrated")["escalate"] is True)
-expect_true("the delivery draft is grounded (ETA present)", lambda: "Friday" in process("Where is my order 4471? It's late.")["draft"])
-expect_true("NO email is ever auto-sent (always needs_*)", lambda: all(process(t["email"])["status"].startswith("needs_") for t in SUITE))
-expect_true("evaluate yields a PARTIAL score (the keyword extractor misses one)", lambda: evaluate() == (3, 4))
-expect_true("the capstone REUSES the Lab 7.11 gather-only agent", lambda: type(make_email_agent()).__name__ == "CompiledStateGraph")
-expect_true("that agent still withholds send_email (cannot auto-send)", lambda: "send_email" not in [t.name for t in gather_tools()])'''),
-      *live(
-        "Swap the template draft for a REAL model draft (Ollama / Groq) -- the bridge to Module 8.",
-        '''try:
-    if ollama_up():
-        from langchain_ollama import ChatOllama
-        llm = ChatOllama(model="llama3.2:1b")
-        email = "Where is my order 4471? It's late."
-        reply = llm.invoke("You are a support agent. Draft a short, polite reply (do NOT send): " + email).content
-        print("REAL drafted reply:\\n", reply)
-        print("\\nProduction shape: extract -> route -> gather (tools) -> draft (llm) -> validate -> human approves -> send.")
-    else:
-        print("No Ollama reachable -- skipping the live draft. The offline pipeline above already ran the whole suite")
-        print("(extract -> route -> draft -> validate) and returned needs_approval drafts, never auto-sent.")
-    print("Next: Module 8 -- when one agent isn't enough, route to specialist AGENTS (the customer-service chatbot).")
-except Exception as e:
-    print("Live draft skipped:", type(e).__name__)'''),
-      footer(12, "You built the email-drafting agent end to end -- extract, route, gather, draft, validate -- and it never sends on its own. That's an agent that does a job you'd pay for. Next: Module 8 orchestrates a team of them."),
+    return create_agent(llm, gather_tools())
+print("helpers ready: extract, route, draft (real model), validate + the gather-only agent")'''),
+      buildmd('''Assemble `process`: chain the pipeline, gather via the agent's tool, draft with the **real model**, and
+never send &mdash; every result is `needs_approval` or `needs_fix`.'''),
+      code(render(DEFS, sol) + "\n\n" + guard(EX)),
+      runmd("Run the whole pipeline over a suite of client emails. Each `draft` is written by the real Groq model, grounded in the gathered order; nothing is ever sent."),
+      code(runguard(RUN)),
+      noticemd('''- Each row runs the **real pipeline**: keyword extract &rarr; route &rarr; gather (real order) &rarr; **real Groq draft** &rarr; validate.
+- Every `status` is `needs_approval` or `needs_fix` &mdash; **never** `sent`. The agent has no send tool; a human decides.
+- Read the drafts: for a known order they name the real ETA (grounded); for an unknown order the model can only work with what it was given.'''),
+      yourturn('''Add an awkward email the keyword extractor mis-reads (e.g. *"my package never showed up and I'm furious"*,
+which has no id and no delivery keyword) and re-run. **What good looks like:** you can see exactly where the
+*rule-based* extract fails the model &mdash; and you can argue for swapping in an LLM-based extractor (with a
+closed-schema validator) as the fix. That's the honest edge of the system, and the bridge to Module 8.'''),
+      footer(12, "You built the email-drafting agent end to end -- extract, route, gather, draft (real model), validate -- and it never sends on its own. That's an agent that does a job you'd pay for. Next: Module 8 orchestrates a team of them."),
     ]
 
 # ============================================================ WRITE NOTEBOOKS
