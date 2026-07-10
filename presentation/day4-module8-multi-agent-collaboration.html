@@ -710,15 +710,15 @@ reply = graph.<span class="fn">invoke</span>({<span class="str">"message"</span>
 
   <!-- ============ SLIDE 22 — Q1 ============ -->
   <section class="slide" data-title="Quiz Q1 — why multi-agent"
-    data-note="Answer: B. A single agent overloaded with every role and tool degrades; focused specialists are more reliable.">
+    data-note="Answer: D. A single agent overloaded with every role and tool degrades; focused specialists are more reliable.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q1 / 10</div>
     <div class="body center">
       <p class="quiz-q">Why move from a single agent to a multi-agent system?</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>Multiple agents always cost less to run.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>One agent overloaded with every role &amp; tool degrades; focused specialists are more reliable.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>More agents guarantee a correct answer.</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>A single agent cannot call any tools.</span></div>
-        <div class="quiz-opt"><span class="ltr">D</span><span>More agents guarantee a correct answer.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>One agent overloaded with every role &amp; tool degrades; focused specialists are more reliable.</span></div>
       </div>
     </div>
   </section>
@@ -732,9 +732,9 @@ reply = graph.<span class="fn">invoke</span>({<span class="str">"message"</span>
       <p class="quiz-restate">Decomposition applied to agents.</p>
       <div class="quiz-opts">
         <div class="quiz-opt dim"><span class="ltr">A</span><span>Multiple agents always cost less to run.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>One agent overloaded with every role &amp; tool degrades; focused specialists are more reliable. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>More agents guarantee a correct answer.</span></div>
         <div class="quiz-opt dim"><span class="ltr">C</span><span>A single agent cannot call any tools.</span></div>
-        <div class="quiz-opt dim"><span class="ltr">D</span><span>More agents guarantee a correct answer.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">D</span><span>One agent overloaded with every role &amp; tool degrades; focused specialists are more reliable. &#10003;</span></div>
       </div>
       <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Split an overloaded prompt into <b>focused specialists</b> with small tool sets &mdash; each easier to prompt, test &amp; debug. A team actually costs <b>more</b>, so it must earn its keep.</p>
     </div>
@@ -742,14 +742,14 @@ reply = graph.<span class="fn">invoke</span>({<span class="str">"message"</span>
 
   <!-- ============ SLIDE 24 — Q2 ============ -->
   <section class="slide" data-title="Quiz Q2 — supervisor pattern"
-    data-note="Answer: B. The supervisor (router) is a coordinating agent that routes each request to the right specialist worker.">
+    data-note="Answer: C. The supervisor (router) is a coordinating agent that routes each request to the right specialist worker.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q2 / 10</div>
     <div class="body center">
       <p class="quiz-q">What is the supervisor (router) pattern?</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>An agent that never delegates and does everything itself.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>A coordinating agent that routes each request to the right specialist worker agent.</span></div>
-        <div class="quiz-opt"><span class="ltr">C</span><span>A tool that shuts the system down on error.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>A tool that shuts the system down on error.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>A coordinating agent that routes each request to the right specialist worker agent.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>A database that stores conversation logs.</span></div>
       </div>
     </div>
@@ -764,8 +764,8 @@ reply = graph.<span class="fn">invoke</span>({<span class="str">"message"</span>
       <p class="quiz-restate">Route &mdash; but to agents.</p>
       <div class="quiz-opts">
         <div class="quiz-opt dim"><span class="ltr">A</span><span>An agent that never delegates and does everything itself.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>A coordinating agent that routes each request to the right specialist worker agent. &#10003;</span></div>
-        <div class="quiz-opt dim"><span class="ltr">C</span><span>A tool that shuts the system down on error.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>A tool that shuts the system down on error.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">C</span><span>A coordinating agent that routes each request to the right specialist worker agent. &#10003;</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>A database that stores conversation logs.</span></div>
       </div>
       <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;It&rsquo;s Module 7&rsquo;s <b>route</b> pattern &mdash; but the destinations are <b>agents</b>, not code branches. In LangGraph the supervisor &amp; workers are <b>nodes</b>; routing decisions are <b>edges</b>.</p>
@@ -774,13 +774,13 @@ reply = graph.<span class="fn">invoke</span>({<span class="str">"message"</span>
 
   <!-- ============ SLIDE 26 — Q3 ============ -->
   <section class="slide" data-title="Quiz Q3 — specialist roles"
-    data-note="Answer: B. Separation of concerns: a focused prompt + small tool set makes each agent more reliable and easier to debug.">
+    data-note="Answer: A. Separation of concerns: a focused prompt + small tool set makes each agent more reliable and easier to debug.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q3 / 10</div>
     <div class="body center">
       <p class="quiz-q">What&rsquo;s the main benefit of giving each agent a specialist role?</p>
       <div class="quiz-opts">
-        <div class="quiz-opt"><span class="ltr">A</span><span>It lets you use a smaller language model for free.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>Separation of concerns &mdash; a focused prompt &amp; small tool set make each agent reliable &amp; debuggable.</span></div>
+        <div class="quiz-opt"><span class="ltr">A</span><span>Separation of concerns &mdash; a focused prompt &amp; small tool set make each agent reliable &amp; debuggable.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>It lets you use a smaller language model for free.</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>It removes the need for any coordination.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>It guarantees the agents never disagree.</span></div>
       </div>
@@ -795,8 +795,8 @@ reply = graph.<span class="fn">invoke</span>({<span class="str">"message"</span>
     <div class="body center">
       <p class="quiz-restate">Separation of concerns.</p>
       <div class="quiz-opts">
-        <div class="quiz-opt dim"><span class="ltr">A</span><span>It lets you use a smaller language model for free.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>Separation of concerns &mdash; a focused prompt &amp; small tool set make each agent reliable &amp; debuggable. &#10003;</span></div>
+        <div class="quiz-opt correct"><span class="ltr">A</span><span>Separation of concerns &mdash; a focused prompt &amp; small tool set make each agent reliable &amp; debuggable. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>It lets you use a smaller language model for free.</span></div>
         <div class="quiz-opt dim"><span class="ltr">C</span><span>It removes the need for any coordination.</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>It guarantees the agents never disagree.</span></div>
       </div>
@@ -838,14 +838,14 @@ reply = graph.<span class="fn">invoke</span>({<span class="str">"message"</span>
 
   <!-- ============ SLIDE 30 — Q5 ============ -->
   <section class="slide" data-title="Quiz Q5 — orchestration shapes"
-    data-note="Answer: B. The common orchestration shapes are supervisor, sequential (pipeline), parallel (fan-out) and hierarchical.">
+    data-note="Answer: C. The common orchestration shapes are supervisor, sequential (pipeline), parallel (fan-out) and hierarchical.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q5 / 10</div>
     <div class="body center">
       <p class="quiz-q">Which are the common multi-agent orchestration shapes?</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>Train, validate, test, deploy.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>Supervisor, sequential (pipeline), parallel (fan-out), hierarchical.</span></div>
-        <div class="quiz-opt"><span class="ltr">C</span><span>Encode, attend, decode, embed.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Encode, attend, decode, embed.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Supervisor, sequential (pipeline), parallel (fan-out), hierarchical.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>Map, shuffle, reduce, store.</span></div>
       </div>
     </div>
@@ -860,8 +860,8 @@ reply = graph.<span class="fn">invoke</span>({<span class="str">"message"</span>
       <p class="quiz-restate">Four composable primitives.</p>
       <div class="quiz-opts">
         <div class="quiz-opt dim"><span class="ltr">A</span><span>Train, validate, test, deploy.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>Supervisor, sequential (pipeline), parallel (fan-out), hierarchical. &#10003;</span></div>
-        <div class="quiz-opt dim"><span class="ltr">C</span><span>Encode, attend, decode, embed.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Encode, attend, decode, embed.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">C</span><span>Supervisor, sequential (pipeline), parallel (fan-out), hierarchical. &#10003;</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>Map, shuffle, reduce, store.</span></div>
       </div>
       <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;They&rsquo;re <b>composable</b>, not rivals: a supervisor can <b>fan out</b> to reviewers whose critiques feed a <b>sequential</b> synthesise step. Start with the simplest that works.</p>
@@ -870,13 +870,13 @@ reply = graph.<span class="fn">invoke</span>({<span class="str">"message"</span>
 
   <!-- ============ SLIDE 32 — Q6 ============ -->
   <section class="slide" data-title="Quiz Q6 — voting"
-    data-note="Answer: B. Voting converges several comparable answers into one by majority (or scored) agreement; a split vote is a signal to escalate.">
+    data-note="Answer: A. Voting converges several comparable answers into one by majority (or scored) agreement; a split vote is a signal to escalate.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q6 / 10</div>
     <div class="body center">
       <p class="quiz-q">What is voting/consensus used for in a multi-agent system?</p>
       <div class="quiz-opts">
-        <div class="quiz-opt"><span class="ltr">A</span><span>To let agents elect a permanent leader.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>To converge several comparable answers into one by majority (or scored) agreement.</span></div>
+        <div class="quiz-opt"><span class="ltr">A</span><span>To converge several comparable answers into one by majority (or scored) agreement.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>To let agents elect a permanent leader.</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>To delete the least popular agent.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>To increase the model&rsquo;s temperature.</span></div>
       </div>
@@ -891,8 +891,8 @@ reply = graph.<span class="fn">invoke</span>({<span class="str">"message"</span>
     <div class="body center">
       <p class="quiz-restate">Converge comparable answers.</p>
       <div class="quiz-opts">
-        <div class="quiz-opt dim"><span class="ltr">A</span><span>To let agents elect a permanent leader.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>To converge several comparable answers into one by majority (or scored) agreement. &#10003;</span></div>
+        <div class="quiz-opt correct"><span class="ltr">A</span><span>To converge several comparable answers into one by majority (or scored) agreement. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>To let agents elect a permanent leader.</span></div>
         <div class="quiz-opt dim"><span class="ltr">C</span><span>To delete the least popular agent.</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>To increase the model&rsquo;s temperature.</span></div>
       </div>
@@ -902,15 +902,15 @@ reply = graph.<span class="fn">invoke</span>({<span class="str">"message"</span>
 
   <!-- ============ SLIDE 34 — Q7 ============ -->
   <section class="slide" data-title="Quiz Q7 — critique"
-    data-note="Answer: B. A critic/debate step has an independent agent review or challenge another's output to catch errors before acting.">
+    data-note="Answer: D. A critic/debate step has an independent agent review or challenge another's output to catch errors before acting.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q7 / 10</div>
     <div class="body center">
       <p class="quiz-q">What does a critic / debate step add?</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>It makes the answer longer.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>An independent agent reviews or challenges another&rsquo;s output to catch errors before acting.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>It trains the proposing agent on new data.</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>It removes the need to validate anything.</span></div>
-        <div class="quiz-opt"><span class="ltr">D</span><span>It trains the proposing agent on new data.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>An independent agent reviews or challenges another&rsquo;s output to catch errors before acting.</span></div>
       </div>
     </div>
   </section>
@@ -924,9 +924,9 @@ reply = graph.<span class="fn">invoke</span>({<span class="str">"message"</span>
       <p class="quiz-restate">Stress-test, don&rsquo;t average.</p>
       <div class="quiz-opts">
         <div class="quiz-opt dim"><span class="ltr">A</span><span>It makes the answer longer.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>An independent agent reviews or challenges another&rsquo;s output to catch errors before acting. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>It trains the proposing agent on new data.</span></div>
         <div class="quiz-opt dim"><span class="ltr">C</span><span>It removes the need to validate anything.</span></div>
-        <div class="quiz-opt dim"><span class="ltr">D</span><span>It trains the proposing agent on new data.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">D</span><span>An independent agent reviews or challenges another&rsquo;s output to catch errors before acting. &#10003;</span></div>
       </div>
       <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Generating and evaluating are <b>different skills</b>; a separate skeptic catches the author&rsquo;s blind spots &mdash; like <b>code review</b>. Cap the loop so it doesn&rsquo;t argue forever.</p>
     </div>
@@ -934,14 +934,14 @@ reply = graph.<span class="fn">invoke</span>({<span class="str">"message"</span>
 
   <!-- ============ SLIDE 36 — Q8 ============ -->
   <section class="slide" data-title="Quiz Q8 — synthesis"
-    data-note="Answer: B. Synthesis combines several agents' partial results into one coherent answer, resolving conflicts rather than concatenating.">
+    data-note="Answer: C. Synthesis combines several agents' partial results into one coherent answer, resolving conflicts rather than concatenating.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q8 / 10</div>
     <div class="body center">
       <p class="quiz-q">What does a synthesis step do?</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>It picks one agent and ignores the rest at random.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>It combines several agents&rsquo; partial results into one coherent answer, resolving conflicts.</span></div>
-        <div class="quiz-opt"><span class="ltr">C</span><span>It splits the task into more sub-tasks.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>It splits the task into more sub-tasks.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>It combines several agents&rsquo; partial results into one coherent answer, resolving conflicts.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>It compresses the model weights.</span></div>
       </div>
     </div>
@@ -956,8 +956,8 @@ reply = graph.<span class="fn">invoke</span>({<span class="str">"message"</span>
       <p class="quiz-restate">Combine the parts.</p>
       <div class="quiz-opts">
         <div class="quiz-opt dim"><span class="ltr">A</span><span>It picks one agent and ignores the rest at random.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>It combines several agents&rsquo; partial results into one coherent answer, resolving conflicts. &#10003;</span></div>
-        <div class="quiz-opt dim"><span class="ltr">C</span><span>It splits the task into more sub-tasks.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>It splits the task into more sub-tasks.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">C</span><span>It combines several agents&rsquo; partial results into one coherent answer, resolving conflicts. &#10003;</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>It compresses the model weights.</span></div>
       </div>
       <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Voting is for comparable <b>whole</b> answers; synthesis is for complementary <b>parts</b>. A good synthesiser <b>reconciles</b> conflicts, stays <b>grounded</b>, and owns <b>one voice</b>.</p>
@@ -966,13 +966,13 @@ reply = graph.<span class="fn">invoke</span>({<span class="str">"message"</span>
 
   <!-- ============ SLIDE 38 — Q9 ============ -->
   <section class="slide" data-title="Quiz Q9 — when not to"
-    data-note="Answer: B. Don't build a multi-agent system when a single agent or a fixed workflow already solves it -- multi-agent adds cost, latency and failure modes.">
+    data-note="Answer: A. Don't build a multi-agent system when a single agent or a fixed workflow already solves it -- multi-agent adds cost, latency and failure modes.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q9 / 10</div>
     <div class="body center">
       <p class="quiz-q">When should you NOT build a multi-agent system?</p>
       <div class="quiz-opts">
-        <div class="quiz-opt"><span class="ltr">A</span><span>Whenever the task involves more than one tool.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>When a single agent or a fixed workflow already solves it &mdash; a team adds cost, latency &amp; failure modes.</span></div>
+        <div class="quiz-opt"><span class="ltr">A</span><span>When a single agent or a fixed workflow already solves it &mdash; a team adds cost, latency &amp; failure modes.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Whenever the task involves more than one tool.</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>Only when you have fewer than ten agents.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>Never &mdash; more agents are always better.</span></div>
       </div>
@@ -987,8 +987,8 @@ reply = graph.<span class="fn">invoke</span>({<span class="str">"message"</span>
     <div class="body center">
       <p class="quiz-restate">Keep it as simple as the problem allows.</p>
       <div class="quiz-opts">
-        <div class="quiz-opt dim"><span class="ltr">A</span><span>Whenever the task involves more than one tool.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>When a single agent or a fixed workflow already solves it &mdash; a team adds cost, latency &amp; failure modes. &#10003;</span></div>
+        <div class="quiz-opt correct"><span class="ltr">A</span><span>When a single agent or a fixed workflow already solves it &mdash; a team adds cost, latency &amp; failure modes. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Whenever the task involves more than one tool.</span></div>
         <div class="quiz-opt dim"><span class="ltr">C</span><span>Only when you have fewer than ten agents.</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>Never &mdash; more agents are always better.</span></div>
       </div>
@@ -1091,7 +1091,7 @@ reply = graph.<span class="fn">invoke</span>({<span class="str">"message"</span>
 <div class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Day 4 · Module 8 — Multi-Agent Collaboration &amp; Decision Making</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.0</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.1</span>
 </div>
 
 <script>

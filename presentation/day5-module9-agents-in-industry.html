@@ -683,13 +683,13 @@ insight = executor.<span class="fn">invoke</span>({<span class="str">"input"</sp
 
   <!-- ============ SLIDE 22 — Q1 ============ -->
   <section class="slide" data-title="Quiz Q1 — the new bar"
-    data-note="Answer: B. High-stakes domains don't need new AI -- they raise the bar: accuracy, auditability, compliance, privacy and human oversight become mandatory.">
+    data-note="Answer: A. High-stakes domains don't need new AI -- they raise the bar: accuracy, auditability, compliance, privacy and human oversight become mandatory.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q1 / 10</div>
     <div class="body center">
       <p class="quiz-q">What changes when you deploy an agent in a high-stakes domain?</p>
       <div class="quiz-opts">
-        <div class="quiz-opt"><span class="ltr">A</span><span>You need an entirely new kind of AI model.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>The bar rises &mdash; accuracy, auditability, compliance, privacy &amp; oversight become mandatory.</span></div>
+        <div class="quiz-opt"><span class="ltr">A</span><span>The bar rises &mdash; accuracy, auditability, compliance, privacy &amp; oversight become mandatory.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>You need an entirely new kind of AI model.</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>Nothing &mdash; you build it exactly as before.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>You must remove all tools from the agent.</span></div>
       </div>
@@ -704,8 +704,8 @@ insight = executor.<span class="fn">invoke</span>({<span class="str">"input"</sp
     <div class="body center">
       <p class="quiz-restate">A higher floor, not new AI.</p>
       <div class="quiz-opts">
-        <div class="quiz-opt dim"><span class="ltr">A</span><span>You need an entirely new kind of AI model.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>The bar rises &mdash; accuracy, auditability, compliance, privacy &amp; oversight become mandatory. &#10003;</span></div>
+        <div class="quiz-opt correct"><span class="ltr">A</span><span>The bar rises &mdash; accuracy, auditability, compliance, privacy &amp; oversight become mandatory. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>You need an entirely new kind of AI model.</span></div>
         <div class="quiz-opt dim"><span class="ltr">C</span><span>Nothing &mdash; you build it exactly as before.</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>You must remove all tools from the agent.</span></div>
       </div>
@@ -715,15 +715,15 @@ insight = executor.<span class="fn">invoke</span>({<span class="str">"input"</sp
 
   <!-- ============ SLIDE 24 — Q2 ============ -->
   <section class="slide" data-title="Quiz Q2 — the domain-agent pattern"
-    data-note="Answer: B. The domain-agent pattern is ground -> reason -> structure & cite -> guardrail -> human -- the days 3-4 loop, hardened.">
+    data-note="Answer: D. The domain-agent pattern is ground -> reason -> structure & cite -> guardrail -> human -- the days 3-4 loop, hardened.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q2 / 10</div>
     <div class="body center">
       <p class="quiz-q">What is the domain-agent pattern for a high-stakes agent?</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>Guess &rarr; act &rarr; hope no one checks.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>Ground &rarr; reason &rarr; structure &amp; cite &rarr; guardrail &rarr; a human owns the decision.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Route everything to a bigger model.</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>Train a new model on the domain and let it run.</span></div>
-        <div class="quiz-opt"><span class="ltr">D</span><span>Route everything to a bigger model.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Ground &rarr; reason &rarr; structure &amp; cite &rarr; guardrail &rarr; a human owns the decision.</span></div>
       </div>
     </div>
   </section>
@@ -737,9 +737,9 @@ insight = executor.<span class="fn">invoke</span>({<span class="str">"input"</sp
       <p class="quiz-restate">Days 3&ndash;4, hardened.</p>
       <div class="quiz-opts">
         <div class="quiz-opt dim"><span class="ltr">A</span><span>Guess &rarr; act &rarr; hope no one checks.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>Ground &rarr; reason &rarr; structure &amp; cite &rarr; guardrail &rarr; a human owns the decision. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Route everything to a bigger model.</span></div>
         <div class="quiz-opt dim"><span class="ltr">C</span><span>Train a new model on the domain and let it run.</span></div>
-        <div class="quiz-opt dim"><span class="ltr">D</span><span>Route everything to a bigger model.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">D</span><span>Ground &rarr; reason &rarr; structure &amp; cite &rarr; guardrail &rarr; a human owns the decision. &#10003;</span></div>
       </div>
       <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;It&rsquo;s Module 7&rsquo;s pipeline with <b>grounding &amp; citation hardened</b> and the guardrail made domain-specific &mdash; the architecture you already have, applied with discipline.</p>
     </div>
@@ -747,14 +747,14 @@ insight = executor.<span class="fn">invoke</span>({<span class="str">"input"</sp
 
   <!-- ============ SLIDE 26 — Q3 ============ -->
   <section class="slide" data-title="Quiz Q3 — the insight agent"
-    data-note="Answer: B. The financial-report insight agent extracts and grounds the key figures and produces a structured, cited summary for an analyst -- it never gives advice or trades.">
+    data-note="Answer: C. The financial-report insight agent extracts and grounds the key figures and produces a structured, cited summary for an analyst -- it never gives advice or trades.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q3 / 10</div>
     <div class="body center">
       <p class="quiz-q">What does the financial-report insight agent do?</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>Executes trades based on the report.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>Extracts &amp; grounds key figures into a structured, cited summary for an analyst &mdash; no advice, no trades.</span></div>
-        <div class="quiz-opt"><span class="ltr">C</span><span>Gives personalized buy/sell recommendations.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Gives personalized buy/sell recommendations.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Extracts &amp; grounds key figures into a structured, cited summary for an analyst &mdash; no advice, no trades.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>Predicts next quarter&rsquo;s stock price.</span></div>
       </div>
     </div>
@@ -769,8 +769,8 @@ insight = executor.<span class="fn">invoke</span>({<span class="str">"input"</sp
       <p class="quiz-restate">Analysis, not advice.</p>
       <div class="quiz-opts">
         <div class="quiz-opt dim"><span class="ltr">A</span><span>Executes trades based on the report.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>Extracts &amp; grounds key figures into a structured, cited summary for an analyst &mdash; no advice, no trades. &#10003;</span></div>
-        <div class="quiz-opt dim"><span class="ltr">C</span><span>Gives personalized buy/sell recommendations.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Gives personalized buy/sell recommendations.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">C</span><span>Extracts &amp; grounds key figures into a structured, cited summary for an analyst &mdash; no advice, no trades. &#10003;</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>Predicts next quarter&rsquo;s stock price.</span></div>
       </div>
       <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;It grounds every figure with a <b>citation</b>, flags anomalies, and hands a structured summary to a human. <b>No trading tool, no advice</b> &mdash; draft-not-send, in finance.</p>
@@ -811,13 +811,13 @@ insight = executor.<span class="fn">invoke</span>({<span class="str">"input"</sp
 
   <!-- ============ SLIDE 30 — Q5 ============ -->
   <section class="slide" data-title="Quiz Q5 — cybersecurity"
-    data-note="Answer: B. A good cyber use case is triaging and enriching alerts for a human analyst (a copilot) -- not autonomously blocking or isolating.">
+    data-note="Answer: A. A good cyber use case is triaging and enriching alerts for a human analyst (a copilot) -- not autonomously blocking or isolating.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q5 / 10</div>
     <div class="body center">
       <p class="quiz-q">Which is the right role for a cybersecurity agent?</p>
       <div class="quiz-opts">
-        <div class="quiz-opt"><span class="ltr">A</span><span>Autonomously block IPs and isolate hosts on any alert.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>Triage &amp; enrich alerts and recommend actions for a human analyst to approve (a copilot).</span></div>
+        <div class="quiz-opt"><span class="ltr">A</span><span>Triage &amp; enrich alerts and recommend actions for a human analyst to approve (a copilot).</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Autonomously block IPs and isolate hosts on any alert.</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>Delete suspicious files without review.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>Disable user accounts whenever it is unsure.</span></div>
       </div>
@@ -832,8 +832,8 @@ insight = executor.<span class="fn">invoke</span>({<span class="str">"input"</sp
     <div class="body center">
       <p class="quiz-restate">Triage for a human, don&rsquo;t auto-remediate.</p>
       <div class="quiz-opts">
-        <div class="quiz-opt dim"><span class="ltr">A</span><span>Autonomously block IPs and isolate hosts on any alert.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>Triage &amp; enrich alerts and recommend actions for a human analyst to approve (a copilot). &#10003;</span></div>
+        <div class="quiz-opt correct"><span class="ltr">A</span><span>Triage &amp; enrich alerts and recommend actions for a human analyst to approve (a copilot). &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Autonomously block IPs and isolate hosts on any alert.</span></div>
         <div class="quiz-opt dim"><span class="ltr">C</span><span>Delete suspicious files without review.</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>Disable user accounts whenever it is unsure.</span></div>
       </div>
@@ -843,14 +843,14 @@ insight = executor.<span class="fn">invoke</span>({<span class="str">"input"</sp
 
   <!-- ============ SLIDE 32 — Q6 ============ -->
   <section class="slide" data-title="Quiz Q6 — grounding"
-    data-note="Answer: B. Grounding with RAG and citations means the agent answers only from retrieved authoritative sources, with a pointer back to each source -- not from the model's memory.">
+    data-note="Answer: C. Grounding with RAG and citations means the agent answers only from retrieved authoritative sources, with a pointer back to each source -- not from the model's memory.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q6 / 10</div>
     <div class="body center">
       <p class="quiz-q">Why is grounding with citations essential in these domains?</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>It makes the model respond faster.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>The agent answers only from retrieved sources, each claim traceable &mdash; not from unreliable memory.</span></div>
-        <div class="quiz-opt"><span class="ltr">C</span><span>It removes the need for a human reviewer.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>It removes the need for a human reviewer.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>The agent answers only from retrieved sources, each claim traceable &mdash; not from unreliable memory.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>It lets the agent skip validation.</span></div>
       </div>
     </div>
@@ -865,8 +865,8 @@ insight = executor.<span class="fn">invoke</span>({<span class="str">"input"</sp
       <p class="quiz-restate">If it isn&rsquo;t grounded and cited, it doesn&rsquo;t ship.</p>
       <div class="quiz-opts">
         <div class="quiz-opt dim"><span class="ltr">A</span><span>It makes the model respond faster.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>The agent answers only from retrieved sources, each claim traceable &mdash; not from unreliable memory. &#10003;</span></div>
-        <div class="quiz-opt dim"><span class="ltr">C</span><span>It removes the need for a human reviewer.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>It removes the need for a human reviewer.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">C</span><span>The agent answers only from retrieved sources, each claim traceable &mdash; not from unreliable memory. &#10003;</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>It lets the agent skip validation.</span></div>
       </div>
       <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;A hallucinated figure is dangerous here, so the model reasons over retrieved sources (tools + RAG) and <b>cites each claim</b>. Grounded &amp; cited is <b>checkable</b>; ungrounded is a liability.</p>
@@ -875,15 +875,15 @@ insight = executor.<span class="fn">invoke</span>({<span class="str">"input"</sp
 
   <!-- ============ SLIDE 34 — Q7 ============ -->
   <section class="slide" data-title="Quiz Q7 — auditability"
-    data-note="Answer: B. Structured output and an audit trail make every conclusion traceable and the whole run replayable -- required for compliance and for debugging.">
+    data-note="Answer: D. Structured output and an audit trail make every conclusion traceable and the whole run replayable -- required for compliance and for debugging.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q7 / 10</div>
     <div class="body center">
       <p class="quiz-q">Why do these agents need structured output &amp; an audit trail?</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>To make the output look more professional.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>So every conclusion is traceable and the whole run is replayable &mdash; for compliance &amp; debugging.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>So the agent can run without any tools.</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>To reduce the number of tokens used.</span></div>
-        <div class="quiz-opt"><span class="ltr">D</span><span>So the agent can run without any tools.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>So every conclusion is traceable and the whole run is replayable &mdash; for compliance &amp; debugging.</span></div>
       </div>
     </div>
   </section>
@@ -897,9 +897,9 @@ insight = executor.<span class="fn">invoke</span>({<span class="str">"input"</sp
       <p class="quiz-restate">Prove how it got there.</p>
       <div class="quiz-opts">
         <div class="quiz-opt dim"><span class="ltr">A</span><span>To make the output look more professional.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>So every conclusion is traceable and the whole run is replayable &mdash; for compliance &amp; debugging. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>So the agent can run without any tools.</span></div>
         <div class="quiz-opt dim"><span class="ltr">C</span><span>To reduce the number of tokens used.</span></div>
-        <div class="quiz-opt dim"><span class="ltr">D</span><span>So the agent can run without any tools.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">D</span><span>So every conclusion is traceable and the whole run is replayable &mdash; for compliance &amp; debugging. &#10003;</span></div>
       </div>
       <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;A regulator or reviewer needs to know <b>why</b>. Structured output makes each claim <b>inspectable</b>; the audit trail makes the run <b>accountable &amp; replayable</b>.</p>
     </div>
@@ -907,13 +907,13 @@ insight = executor.<span class="fn">invoke</span>({<span class="str">"input"</sp
 
   <!-- ============ SLIDE 36 — Q8 ============ -->
   <section class="slide" data-title="Quiz Q8 — privacy"
-    data-note="Answer: B. Sensitive data (PHI, financial, security) must be minimized, protected, and kept within compliant systems -- not sent to just any external service.">
+    data-note="Answer: A. Sensitive data (PHI, financial, security) must be minimized, protected, and kept within compliant systems -- not sent to just any external service.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q8 / 10</div>
     <div class="body center">
       <p class="quiz-q">How should a high-stakes agent handle sensitive data?</p>
       <div class="quiz-opts">
-        <div class="quiz-opt"><span class="ltr">A</span><span>Send the full record to any public LLM for best results.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>Minimize, protect &amp; keep it in compliant systems &mdash; not sent to just any external service.</span></div>
+        <div class="quiz-opt"><span class="ltr">A</span><span>Minimize, protect &amp; keep it in compliant systems &mdash; not sent to just any external service.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Send the full record to any public LLM for best results.</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>Store it in plain text for easy debugging.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>Ignore privacy rules if the task is urgent.</span></div>
       </div>
@@ -928,8 +928,8 @@ insight = executor.<span class="fn">invoke</span>({<span class="str">"input"</sp
     <div class="body center">
       <p class="quiz-restate">Decide where the data can go &mdash; first.</p>
       <div class="quiz-opts">
-        <div class="quiz-opt dim"><span class="ltr">A</span><span>Send the full record to any public LLM for best results.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>Minimize, protect &amp; keep it in compliant systems &mdash; not sent to just any external service. &#10003;</span></div>
+        <div class="quiz-opt correct"><span class="ltr">A</span><span>Minimize, protect &amp; keep it in compliant systems &mdash; not sent to just any external service. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Send the full record to any public LLM for best results.</span></div>
         <div class="quiz-opt dim"><span class="ltr">C</span><span>Store it in plain text for easy debugging.</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>Ignore privacy rules if the task is urgent.</span></div>
       </div>
@@ -971,14 +971,14 @@ insight = executor.<span class="fn">invoke</span>({<span class="str">"input"</sp
 
   <!-- ============ SLIDE 40 — Q10 ============ -->
   <section class="slide" data-title="Quiz Q10 — automation bias"
-    data-note="Answer: B. Automation bias is humans over-trusting and rubber-stamping a confident machine; the defence is to make the agent show its work (citations, structured evidence) so review is real.">
+    data-note="Answer: C. Automation bias is humans over-trusting and rubber-stamping a confident machine; the defence is to make the agent show its work (citations, structured evidence) so review is real.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q10 / 10</div>
     <div class="body center">
       <p class="quiz-q">What is &ldquo;automation bias,&rdquo; and how do you fight it?</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>The model preferring newer data; fix it by retraining.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>Humans rubber-stamping a confident machine; fight it by making the agent show its work (citations).</span></div>
-        <div class="quiz-opt"><span class="ltr">C</span><span>Agents running too slowly; fix it with more compute.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Agents running too slowly; fix it with more compute.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Humans rubber-stamping a confident machine; fight it by making the agent show its work (citations).</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>A bug in the tool router; fix it with a retry.</span></div>
       </div>
     </div>
@@ -993,8 +993,8 @@ insight = executor.<span class="fn">invoke</span>({<span class="str">"input"</sp
       <p class="quiz-restate">Make the review real.</p>
       <div class="quiz-opts">
         <div class="quiz-opt dim"><span class="ltr">A</span><span>The model preferring newer data; fix it by retraining.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>Humans rubber-stamping a confident machine; fight it by making the agent show its work (citations). &#10003;</span></div>
-        <div class="quiz-opt dim"><span class="ltr">C</span><span>Agents running too slowly; fix it with more compute.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Agents running too slowly; fix it with more compute.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">C</span><span>Humans rubber-stamping a confident machine; fight it by making the agent show its work (citations). &#10003;</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>A bug in the tool router; fix it with a retry.</span></div>
       </div>
       <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;If reviewers just approve whatever the confident agent says, the human-in-the-loop is a formality. Make it <b>show its work</b> (citations, evidence) so review is genuine.</p>
@@ -1064,7 +1064,7 @@ insight = executor.<span class="fn">invoke</span>({<span class="str">"input"</sp
 <div class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Day 5 · Module 9 — Agents in Finance, Healthcare &amp; Cybersecurity</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.0</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.1</span>
 </div>
 
 <script>

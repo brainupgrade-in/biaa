@@ -650,14 +650,14 @@ executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn
 
   <!-- ============ SLIDE 22 — Q1 ============ -->
   <section class="slide" data-title="Quiz Q1 — why it matters for agents"
-    data-note="Answer: B. Responsible AI matters most for agents because they ACT -- autonomy, scale and consequence mean a flaw executes rather than just displaying.">
+    data-note="Answer: C. Responsible AI matters most for agents because they ACT -- autonomy, scale and consequence mean a flaw executes rather than just displaying.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q1 / 10</div>
     <div class="body center">
       <p class="quiz-q">Why is responsible AI especially critical for agents (vs a chatbot)?</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>Agents use more expensive models.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>Agents <b>act</b> &mdash; autonomy, scale &amp; consequence mean a flaw executes, not just displays.</span></div>
-        <div class="quiz-opt"><span class="ltr">C</span><span>Chatbots are always unregulated.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Chatbots are always unregulated.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Agents <b>act</b> &mdash; autonomy, scale &amp; consequence mean a flaw executes, not just displays.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>Agents cannot be tested at all.</span></div>
       </div>
     </div>
@@ -672,8 +672,8 @@ executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn
       <p class="quiz-restate">Agents act.</p>
       <div class="quiz-opts">
         <div class="quiz-opt dim"><span class="ltr">A</span><span>Agents use more expensive models.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>Agents <b>act</b> &mdash; autonomy, scale &amp; consequence mean a flaw executes, not just displays. &#10003;</span></div>
-        <div class="quiz-opt dim"><span class="ltr">C</span><span>Chatbots are always unregulated.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Chatbots are always unregulated.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">C</span><span>Agents <b>act</b> &mdash; autonomy, scale &amp; consequence mean a flaw executes, not just displays. &#10003;</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>Agents cannot be tested at all.</span></div>
       </div>
       <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;A chatbot produces <b>words a human judges</b>; an agent <b>takes actions</b> on real systems, often unattended and at scale &mdash; so responsibility is non-optional.</p>
@@ -714,13 +714,13 @@ executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn
 
   <!-- ============ SLIDE 26 — Q3 ============ -->
   <section class="slide" data-title="Quiz Q3 — bias"
-    data-note="Answer: B. Bias enters through data, design and feedback; you address it by testing across groups, scrutinising data, keeping a human on rights-affecting decisions, and monitoring.">
+    data-note="Answer: A. Bias enters through data, design and feedback; you address it by testing across groups, scrutinising data, keeping a human on rights-affecting decisions, and monitoring.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q3 / 10</div>
     <div class="body center">
       <p class="quiz-q">How should you handle bias in an agent?</p>
       <div class="quiz-opts">
-        <div class="quiz-opt"><span class="ltr">A</span><span>Assume the agent is neutral because it&rsquo;s a machine.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>Make it visible &amp; measured &mdash; test across groups, scrutinise data, keep a human, monitor.</span></div>
+        <div class="quiz-opt"><span class="ltr">A</span><span>Make it visible &amp; measured &mdash; test across groups, scrutinise data, keep a human, monitor.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Assume the agent is neutral because it&rsquo;s a machine.</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>Only measure overall average accuracy.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>Ignore it unless someone complains.</span></div>
       </div>
@@ -735,8 +735,8 @@ executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn
     <div class="body center">
       <p class="quiz-restate">Machines aren&rsquo;t neutral.</p>
       <div class="quiz-opts">
-        <div class="quiz-opt dim"><span class="ltr">A</span><span>Assume the agent is neutral because it&rsquo;s a machine.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>Make it visible &amp; measured &mdash; test across groups, scrutinise data, keep a human, monitor. &#10003;</span></div>
+        <div class="quiz-opt correct"><span class="ltr">A</span><span>Make it visible &amp; measured &mdash; test across groups, scrutinise data, keep a human, monitor. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Assume the agent is neutral because it&rsquo;s a machine.</span></div>
         <div class="quiz-opt dim"><span class="ltr">C</span><span>Only measure overall average accuracy.</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>Ignore it unless someone complains.</span></div>
       </div>
@@ -746,15 +746,15 @@ executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn
 
   <!-- ============ SLIDE 28 — Q4 ============ -->
   <section class="slide" data-title="Quiz Q4 — accountability"
-    data-note="Answer: B. Accountability means a human or organisation owns the agent's actions -- 'the AI did it' is never an acceptable answer.">
+    data-note="Answer: D. Accountability means a human or organisation owns the agent's actions -- 'the AI did it' is never an acceptable answer.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q4 / 10</div>
     <div class="body center">
       <p class="quiz-q">What does accountability require for a deployed agent?</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>The agent takes the blame for its own errors.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>A named human/organisation owns its actions, with governance &amp; an audit trail.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>The model vendor is always solely responsible.</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>No one &mdash; AI decisions can&rsquo;t be owned.</span></div>
-        <div class="quiz-opt"><span class="ltr">D</span><span>The model vendor is always solely responsible.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>A named human/organisation owns its actions, with governance &amp; an audit trail.</span></div>
       </div>
     </div>
   </section>
@@ -768,9 +768,9 @@ executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn
       <p class="quiz-restate">A human is accountable &mdash; never the agent.</p>
       <div class="quiz-opts">
         <div class="quiz-opt dim"><span class="ltr">A</span><span>The agent takes the blame for its own errors.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>A named human/organisation owns its actions, with governance &amp; an audit trail. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>The model vendor is always solely responsible.</span></div>
         <div class="quiz-opt dim"><span class="ltr">C</span><span>No one &mdash; AI decisions can&rsquo;t be owned.</span></div>
-        <div class="quiz-opt dim"><span class="ltr">D</span><span>The model vendor is always solely responsible.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">D</span><span>A named human/organisation owns its actions, with governance &amp; an audit trail. &#10003;</span></div>
       </div>
       <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;A named party, a <b>human decision-maker</b> on consequential actions, a governance process, and the <b>audit trail</b>. &ldquo;The AI did it&rdquo; is never an answer.</p>
     </div>
@@ -778,13 +778,13 @@ executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn
 
   <!-- ============ SLIDE 30 — Q5 ============ -->
   <section class="slide" data-title="Quiz Q5 — prompt injection"
-    data-note="Answer: B. Prompt injection is untrusted content hiding instructions that hijack the agent; defend by treating external content as data, least privilege, and a human gate.">
+    data-note="Answer: A. Prompt injection is untrusted content hiding instructions that hijack the agent; defend by treating external content as data, least privilege, and a human gate.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q5 / 10</div>
     <div class="body center">
       <p class="quiz-q">What is prompt injection, and how do you defend against it?</p>
       <div class="quiz-opts">
-        <div class="quiz-opt"><span class="ltr">A</span><span>A faster prompting technique; use it for speed.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>Untrusted content hiding instructions that hijack the agent &mdash; treat external content as data, least privilege, human gate.</span></div>
+        <div class="quiz-opt"><span class="ltr">A</span><span>Untrusted content hiding instructions that hijack the agent &mdash; treat external content as data, least privilege, human gate.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>A faster prompting technique; use it for speed.</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>A way to compress prompts; no risk.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>A bug only in image models.</span></div>
       </div>
@@ -799,8 +799,8 @@ executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn
     <div class="body center">
       <p class="quiz-restate">Assume an adversary wrote what the agent reads.</p>
       <div class="quiz-opts">
-        <div class="quiz-opt dim"><span class="ltr">A</span><span>A faster prompting technique; use it for speed.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>Untrusted content hiding instructions that hijack the agent &mdash; treat external content as data, least privilege, human gate. &#10003;</span></div>
+        <div class="quiz-opt correct"><span class="ltr">A</span><span>Untrusted content hiding instructions that hijack the agent &mdash; treat external content as data, least privilege, human gate. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>A faster prompting technique; use it for speed.</span></div>
         <div class="quiz-opt dim"><span class="ltr">C</span><span>A way to compress prompts; no risk.</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>A bug only in image models.</span></div>
       </div>
@@ -810,14 +810,14 @@ executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn
 
   <!-- ============ SLIDE 32 — Q6 ============ -->
   <section class="slide" data-title="Quiz Q6 — the debugging surface"
-    data-note="Answer: B. The #1 debugging surface for an agent is the trace -- the verbose thought/action/observation log that shows where and why a run went wrong.">
+    data-note="Answer: C. The #1 debugging surface for an agent is the trace -- the verbose thought/action/observation log that shows where and why a run went wrong.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q6 / 10</div>
     <div class="body center">
       <p class="quiz-q">What is the primary tool for debugging an agent?</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>Reading only the final answer.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>The trace &mdash; the verbose thought/action/observation log showing where &amp; why it went wrong.</span></div>
-        <div class="quiz-opt"><span class="ltr">C</span><span>Increasing the temperature.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Increasing the temperature.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>The trace &mdash; the verbose thought/action/observation log showing where &amp; why it went wrong.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>Adding more tools.</span></div>
       </div>
     </div>
@@ -832,8 +832,8 @@ executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn
       <p class="quiz-restate">The final answer hides the bug; the trace reveals it.</p>
       <div class="quiz-opts">
         <div class="quiz-opt dim"><span class="ltr">A</span><span>Reading only the final answer.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>The trace &mdash; the verbose thought/action/observation log showing where &amp; why it went wrong. &#10003;</span></div>
-        <div class="quiz-opt dim"><span class="ltr">C</span><span>Increasing the temperature.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>Increasing the temperature.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">C</span><span>The trace &mdash; the verbose thought/action/observation log showing where &amp; why it went wrong. &#10003;</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>Adding more tools.</span></div>
       </div>
       <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;<span class="mono">verbose=True</span> + inspecting <span class="mono">intermediate_steps</span> localises the bug &mdash; the wrong tool or the ungrounded argument. <b>Transparency &amp; debuggability are the same thing.</b></p>
@@ -874,15 +874,15 @@ executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn
 
   <!-- ============ SLIDE 36 — Q8 ============ -->
   <section class="slide" data-title="Quiz Q8 — the eval loop"
-    data-note="Answer: B. To know a fix actually improved things (and didn't regress), build an eval set with a pass-rate metric and iterate against it.">
+    data-note="Answer: D. To know a fix actually improved things (and didn't regress), build an eval set with a pass-rate metric and iterate against it.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q8 / 10</div>
     <div class="body center">
       <p class="quiz-q">How do you know an agent fix actually improved things?</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>It worked on the one example you tried.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>Run an eval set with a pass-rate metric; keep the change only if the score rises &amp; nothing regresses.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>It feels better.</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>The code compiles without errors.</span></div>
-        <div class="quiz-opt"><span class="ltr">D</span><span>It feels better.</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Run an eval set with a pass-rate metric; keep the change only if the score rises &amp; nothing regresses.</span></div>
       </div>
     </div>
   </section>
@@ -896,9 +896,9 @@ executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn
       <p class="quiz-restate">Measure, don&rsquo;t vibe.</p>
       <div class="quiz-opts">
         <div class="quiz-opt dim"><span class="ltr">A</span><span>It worked on the one example you tried.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>Run an eval set with a pass-rate metric; keep the change only if the score rises &amp; nothing regresses. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>It feels better.</span></div>
         <div class="quiz-opt dim"><span class="ltr">C</span><span>The code compiles without errors.</span></div>
-        <div class="quiz-opt dim"><span class="ltr">D</span><span>It feels better.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">D</span><span>Run an eval set with a pass-rate metric; keep the change only if the score rises &amp; nothing regresses. &#10003;</span></div>
       </div>
       <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;One passing run is an illusion. An eval set + metric optimises against a <b>measurable target</b> &mdash; and doubles as a <b>safety &amp; fairness regression suite</b>.</p>
     </div>
@@ -906,14 +906,14 @@ executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn
 
   <!-- ============ SLIDE 38 — Q9 ============ -->
   <section class="slide" data-title="Quiz Q9 — least privilege"
-    data-note="Answer: B. The strongest, simplest safety control is least privilege / withholding the dangerous tool -- the agent can't misuse a capability it doesn't have.">
+    data-note="Answer: C. The strongest, simplest safety control is least privilege / withholding the dangerous tool -- the agent can't misuse a capability it doesn't have.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q9 / 10</div>
     <div class="body center">
       <p class="quiz-q">What is the strongest, simplest safety control for an agent?</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>A longer system prompt telling it to be careful.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>Least privilege &mdash; withhold the dangerous tool; it can&rsquo;t misuse what it doesn&rsquo;t have.</span></div>
-        <div class="quiz-opt"><span class="ltr">C</span><span>A bigger model.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>A bigger model.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Least privilege &mdash; withhold the dangerous tool; it can&rsquo;t misuse what it doesn&rsquo;t have.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>Higher temperature for creativity.</span></div>
       </div>
     </div>
@@ -928,8 +928,8 @@ executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn
       <p class="quiz-restate">The tool you don&rsquo;t build.</p>
       <div class="quiz-opts">
         <div class="quiz-opt dim"><span class="ltr">A</span><span>A longer system prompt telling it to be careful.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>Least privilege &mdash; withhold the dangerous tool; it can&rsquo;t misuse what it doesn&rsquo;t have. &#10003;</span></div>
-        <div class="quiz-opt dim"><span class="ltr">C</span><span>A bigger model.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>A bigger model.</span></div>
+        <div class="quiz-opt correct"><span class="ltr">C</span><span>Least privilege &mdash; withhold the dangerous tool; it can&rsquo;t misuse what it doesn&rsquo;t have. &#10003;</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>Higher temperature for creativity.</span></div>
       </div>
       <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;A prompt can be forgotten or overridden by injection; a <b>capability the agent doesn&rsquo;t have cannot be misused</b>. The recurring strongest guardrail of the whole course.</p>
@@ -938,13 +938,13 @@ executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn
 
   <!-- ============ SLIDE 40 — Q10 ============ -->
   <section class="slide" data-title="Quiz Q10 — lifecycle"
-    data-note="Answer: B. Responsible AI is an ongoing lifecycle -- design, deploy, monitor, improve -- not a one-time pre-launch checkbox, because agents drift and attackers adapt.">
+    data-note="Answer: A. Responsible AI is an ongoing lifecycle -- design, deploy, monitor, improve -- not a one-time pre-launch checkbox, because agents drift and attackers adapt.">
     <div class="kicker"><span class="dot"></span> Quick check &middot; Q10 / 10</div>
     <div class="body center">
       <p class="quiz-q">Responsible AI is best understood as&hellip;</p>
       <div class="quiz-opts">
-        <div class="quiz-opt"><span class="ltr">A</span><span>A one-time checklist you complete before launch.</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>An ongoing lifecycle &mdash; design, deploy, monitor, improve &mdash; because agents drift &amp; attackers adapt.</span></div>
+        <div class="quiz-opt"><span class="ltr">A</span><span>An ongoing lifecycle &mdash; design, deploy, monitor, improve &mdash; because agents drift &amp; attackers adapt.</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>A one-time checklist you complete before launch.</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>Something only the legal team handles.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>Optional once the agent works in a demo.</span></div>
       </div>
@@ -959,8 +959,8 @@ executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn
     <div class="body center">
       <p class="quiz-restate">Keep it responsible &mdash; don&rsquo;t just launch it responsibly.</p>
       <div class="quiz-opts">
-        <div class="quiz-opt dim"><span class="ltr">A</span><span>A one-time checklist you complete before launch.</span></div>
-        <div class="quiz-opt correct"><span class="ltr">B</span><span>An ongoing lifecycle &mdash; design, deploy, monitor, improve &mdash; because agents drift &amp; attackers adapt. &#10003;</span></div>
+        <div class="quiz-opt correct"><span class="ltr">A</span><span>An ongoing lifecycle &mdash; design, deploy, monitor, improve &mdash; because agents drift &amp; attackers adapt. &#10003;</span></div>
+        <div class="quiz-opt dim"><span class="ltr">B</span><span>A one-time checklist you complete before launch.</span></div>
         <div class="quiz-opt dim"><span class="ltr">C</span><span>Something only the legal team handles.</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>Optional once the agent works in a demo.</span></div>
       </div>
@@ -1031,7 +1031,7 @@ executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn
 <div class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Day 5 · Module 10 — Ethics &amp; Responsible AI in Agentic Systems</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.0</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.1</span>
 </div>
 
 <script>
