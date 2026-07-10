@@ -54,26 +54,28 @@
       <span class="k">12 labs</span> |
       <span>6 Beginner &middot; 3 Intermediate &middot; 3 Advanced</span> |
       <span class="k">~6h 15m total</span> |
-      <span>Experiential: concept &rarr; demo &rarr; practice</span>
+      <span>Near-real: build &rarr; run real models &rarr; observe</span>
     </div>
   </header>
 
   <div class="container">
     <div class="callout">
-      <strong>How these labs work.</strong> Each notebook follows the same rhythm &mdash; read the
-      <strong>Concept</strong>, run the <strong>Demo</strong>, then complete <strong>Your Turn</strong> by
-      replacing every <code>___</code> placeholder. Run the <strong>grader</strong> cell at the bottom: it
-      prints <code>[PASS]</code> / <code>[FAIL]</code> / <code>[TODO]</code> and a final <code>Score</code>.
-      Each lab writes to its own <code>/tmp/biaa-lab-03-NN/</code> working dir. Stuck? Every lab has a full
-      answer key under <a href="solutions/"><code>solutions/</code></a> &mdash; try first, then check.
+      <strong>How these labs work (near-real).</strong> Each notebook runs <strong>real Hugging Face
+      Transformers</strong> locally on CPU. Read the <strong>Concept</strong>, fill the real <code>___</code>
+      blanks in <strong>Build it</strong> (real tokenizer / model / decoding calls), <strong>Run it for
+      real</strong> to see the actual model output, note <strong>What to notice</strong>, then finish with an
+      open <strong>Your turn</strong>. There is <strong>no auto-grader</strong> &mdash; the goal is real model
+      output you can read. Each lab writes to its own <code>/tmp/biaa-lab-03-NN/</code> working dir. Every lab
+      has a full answer key under <a href="solutions/"><code>solutions/</code></a> &mdash; try first, then check.
     </div>
     <div class="callout warn">
-      <strong>Setup (once).</strong> Python 3.10+ with: <code>pip install numpy scikit-learn matplotlib</code>.
-      Every graded step runs <strong>offline</strong> on NumPy / scikit-learn &mdash; no API keys, no model
-      downloads. Each Advanced lab also ends with an <em>optional</em>, non-graded
-      <strong>Hugging Face</strong> cell (<code>pip install transformers torch</code>) that runs a real tiny
-      transformer (e.g. <code>bert-tiny</code>, <code>tiny-gpt2</code>) so you can see the production tool;
-      it skips cleanly if transformers is not installed. In the managed lab sandbox everything is pre-installed.
+      <strong>Setup.</strong> Use the course <code>biaa-venv</code> (has <code>transformers</code>,
+      <code>torch</code>, <code>scikit-learn</code>, <code>matplotlib</code>, <code>langchain-groq</code>).
+      Labs load small CPU-friendly models from the HF hub &mdash; <code>distilbert-base-uncased</code>,
+      <code>all-MiniLM-L6-v2</code>, <code>prajjwal1/bert-tiny</code>, <code>distilgpt2</code>; the first use
+      of each downloads the weights (needs network), then they are cached. The hosted &ldquo;GPT API&rdquo;
+      cell in Lab 3.10 uses <code>ChatGroq</code> (<code>GROQ_API_KEY</code> in <code>.env</code>). If a blank
+      is unfilled or the first download has no network, cells print a friendly note instead of crashing.
     </div>
 
     <section>
@@ -84,9 +86,9 @@
           <span class="num">Lab 3.1</span>
           <span class="time">&#9201; 20 min</span>
         </div>
-        <h4>Tokenization: Turning Text into Tokens</h4>
-        <p>Split raw text into tokens, build a vocabulary, and encode tokens to integer IDs -- step one for every transformer.</p>
-        <div class="chips"><span class="chip">Tokenization</span><span class="chip">Vocabulary</span><span class="chip">Encoding to IDs</span></div>
+        <h4>Tokenization: Text into Tokens & IDs</h4>
+        <p>Use a REAL transformer tokenizer (distilbert) to split text into subword tokens and encode them to the integer IDs a model actually consumes.</p>
+        <div class="chips"><span class="chip">Real tokenizer</span><span class="chip">Subword pieces</span><span class="chip">Token IDs</span></div>
         <div class="links">
           <a class="open" href="lab-01-tokenization.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-01-tokenization.ipynb">Solution</a>
@@ -97,9 +99,9 @@
           <span class="num">Lab 3.2</span>
           <span class="time">&#9201; 20 min</span>
         </div>
-        <h4>Word Embeddings & Cosine Similarity</h4>
-        <p>Represent words as vectors and measure how similar two words are with cosine similarity.</p>
-        <div class="chips"><span class="chip">Embeddings</span><span class="chip">Cosine similarity</span><span class="chip">Semantic distance</span></div>
+        <h4>Real Embeddings & Cosine Similarity</h4>
+        <p>Turn words into REAL vectors with a sentence-embedding model, then measure similarity with cosine computed by hand -- real geometry of meaning.</p>
+        <div class="chips"><span class="chip">Real embeddings</span><span class="chip">Cosine by hand</span><span class="chip">Nearest neighbour</span></div>
         <div class="links">
           <a class="open" href="lab-02-embeddings-cosine.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-02-embeddings-cosine.ipynb">Solution</a>
@@ -111,7 +113,7 @@
           <span class="time">&#9201; 25 min</span>
         </div>
         <h4>Self-Attention by Hand</h4>
-        <p>Implement scaled dot-product attention in NumPy -- the single idea at the heart of every transformer.</p>
+        <p>Implement scaled dot-product attention in NumPy -- the single idea at the heart of every transformer (real mechanics, computed by hand).</p>
         <div class="chips"><span class="chip">Query/Key/Value</span><span class="chip">Softmax</span><span class="chip">Scaled dot-product attention</span></div>
         <div class="links">
           <a class="open" href="lab-03-attention-by-hand.ipynb">&#9654; Open lab</a>
@@ -124,7 +126,7 @@
           <span class="time">&#9201; 25 min</span>
         </div>
         <h4>Positional Encoding</h4>
-        <p>Give a transformer a sense of word order with sinusoidal positional encodings.</p>
+        <p>Give a transformer a sense of word order with sinusoidal positional encodings -- the real formula, computed and plotted by hand.</p>
         <div class="chips"><span class="chip">Word order</span><span class="chip">Sinusoidal encoding</span><span class="chip">Position vectors</span></div>
         <div class="links">
           <a class="open" href="lab-04-positional-encoding.ipynb">&#9654; Open lab</a>
@@ -137,8 +139,8 @@
           <span class="time">&#9201; 25 min</span>
         </div>
         <h4>What a Pretrained Model Knows: Fill-in-the-Blank</h4>
-        <p>Predict a masked word from its context with a tiny language model -- the idea BERT is pretrained on.</p>
-        <div class="chips"><span class="chip">Masked language modelling</span><span class="chip">Context prediction</span><span class="chip">Bigram model</span></div>
+        <p>Predict a masked word from context with a REAL pretrained BERT (distilbert) -- the masked-language-modelling task BERT is trained on.</p>
+        <div class="chips"><span class="chip">Masked language modelling</span><span class="chip">Real BERT</span><span class="chip">fill-mask pipeline</span></div>
         <div class="links">
           <a class="open" href="lab-05-fill-mask.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-05-fill-mask.ipynb">Solution</a>
@@ -149,9 +151,9 @@
           <span class="num">Lab 3.6</span>
           <span class="time">&#9201; 25 min</span>
         </div>
-        <h4>Why Subwords? A Greedy Subword Tokenizer</h4>
-        <p>Build a greedy subword tokenizer and see how it handles words a word-level vocabulary would miss.</p>
-        <div class="chips"><span class="chip">Subword tokenization</span><span class="chip">Out-of-vocabulary</span><span class="chip">Greedy matching</span></div>
+        <h4>Why Subwords? Watch a Real Tokenizer</h4>
+        <p>Watch a REAL subword tokenizer (distilbert WordPiece) handle words it never saw -- splitting them into known pieces so nothing is ever 'unknown'.</p>
+        <div class="chips"><span class="chip">Subword tokenization</span><span class="chip">Out-of-vocabulary</span><span class="chip">## continuation</span></div>
         <div class="links">
           <a class="open" href="lab-06-subword-tokenizer.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-06-subword-tokenizer.ipynb">Solution</a>
@@ -168,9 +170,9 @@
           <span class="num">Lab 3.7</span>
           <span class="time">&#9201; 35 min</span>
         </div>
-        <h4>Semantic Search with Embeddings</h4>
-        <p>Turn a small corpus into vectors and rank documents by similarity to a query -- the core of search and RAG.</p>
-        <div class="chips"><span class="chip">TF-IDF embeddings</span><span class="chip">Cosine ranking</span><span class="chip">Top-k retrieval</span></div>
+        <h4>Semantic Search with Real Embeddings</h4>
+        <p>Embed a small corpus with a REAL model and rank documents by cosine similarity to a query -- the core of search and RAG, on real vectors.</p>
+        <div class="chips"><span class="chip">Real embeddings</span><span class="chip">Cosine ranking</span><span class="chip">Top-k retrieval</span></div>
         <div class="links">
           <a class="open" href="lab-07-semantic-search.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-07-semantic-search.ipynb">Solution</a>
@@ -182,7 +184,7 @@
           <span class="time">&#9201; 40 min</span>
         </div>
         <h4>Self-Attention Over a Sequence</h4>
-        <p>Project a sequence into Q/K/V and run self-attention over every position, checking the shapes at each step.</p>
+        <p>Project a sequence into Q/K/V and run self-attention over every position, checking shapes at each step -- the real block maths, by hand.</p>
         <div class="chips"><span class="chip">Q/K/V projections</span><span class="chip">Attention matrix</span><span class="chip">Shape discipline</span></div>
         <div class="links">
           <a class="open" href="lab-08-self-attention-sequence.ipynb">&#9654; Open lab</a>
@@ -194,9 +196,9 @@
           <span class="num">Lab 3.9</span>
           <span class="time">&#9201; 35 min</span>
         </div>
-        <h4>Visualising an Attention Matrix</h4>
-        <p>Compute and plot the attention weights for a short sentence to see which words attend to which.</p>
-        <div class="chips"><span class="chip">Attention weights</span><span class="chip">Heatmap</span><span class="chip">Interpretability</span></div>
+        <h4>Real Attention from a Real Model</h4>
+        <p>Extract the ACTUAL attention weights from a real model (bert-tiny, output_attentions=True) and plot them over the real tokens -- interpretability for real.</p>
+        <div class="chips"><span class="chip">Real attention weights</span><span class="chip">output_attentions</span><span class="chip">Heatmap</span></div>
         <div class="links">
           <a class="open" href="lab-09-attention-heatmap.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-09-attention-heatmap.ipynb">Solution</a>
@@ -214,8 +216,8 @@
           <span class="time">&#9201; 40 min</span>
         </div>
         <h4>Text Generation: Greedy vs Sampling</h4>
-        <p>Generate text by predicting the next token -- with greedy decoding and temperature sampling -- the way GPT works.</p>
-        <div class="chips"><span class="chip">Next-token prediction</span><span class="chip">Greedy decoding</span><span class="chip">Temperature sampling</span></div>
+        <p>Generate text with a REAL GPT-style model (distilgpt2) -- greedy vs temperature sampling -- then the same task on a hosted 'GPT API' via ChatGroq.</p>
+        <div class="chips"><span class="chip">Real text generation</span><span class="chip">Greedy vs temperature</span><span class="chip">Hosted GPT API</span></div>
         <div class="links">
           <a class="open" href="lab-10-text-generation.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-10-text-generation.ipynb">Solution</a>
@@ -227,8 +229,8 @@
           <span class="time">&#9201; 40 min</span>
         </div>
         <h4>Feature Extraction + a Classifier Head</h4>
-        <p>Use a model as a feature extractor, then train a small classifier head on top -- the essence of transfer learning.</p>
-        <div class="chips"><span class="chip">Feature extraction</span><span class="chip">Classifier head</span><span class="chip">Transfer learning</span></div>
+        <p>Use a REAL model as a frozen feature extractor (MiniLM embeddings), then train a small classifier head on top -- the essence of transfer learning.</p>
+        <div class="chips"><span class="chip">Real feature extraction</span><span class="chip">Classifier head</span><span class="chip">Transfer learning</span></div>
         <div class="links">
           <a class="open" href="lab-11-feature-extraction-head.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-11-feature-extraction-head.ipynb">Solution</a>
@@ -239,9 +241,9 @@
           <span class="num">Lab 3.12</span>
           <span class="time">&#9201; 45 min</span>
         </div>
-        <h4>Capstone: A Mini Transformer Pipeline</h4>
-        <p>Assemble the whole Module-3 toolkit -- tokenize, embed, add positions, self-attend, pool -- into one pipeline.</p>
-        <div class="chips"><span class="chip">End-to-end pipeline</span><span class="chip">Self-attention</span><span class="chip">Sequence pooling</span></div>
+        <h4>Capstone: A Real Sentence-Encoder Pipeline</h4>
+        <p>Assemble the Module-3 pipeline on a REAL model -- tokenize, run the model, mean-pool to a sentence vector, and use it for real semantic matching.</p>
+        <div class="chips"><span class="chip">End-to-end pipeline</span><span class="chip">Real model</span><span class="chip">Sentence pooling</span></div>
         <div class="links">
           <a class="open" href="lab-12-capstone-mini-transformer.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-12-capstone-mini-transformer.ipynb">Solution</a>
@@ -263,7 +265,7 @@
     &copy; 2026 Gheware DevOps &amp; Agentic AI |
     <a href="https://devops.gheware.com">devops.gheware.com</a> |
     Trainer: Rajesh Gheware |
-    Building Intelligent AI Agents &middot; Day 2 Module 3 Labs v1.0
+    Building Intelligent AI Agents &middot; Day 2 Module 3 Labs v1.1
   </footer>
 </body>
 </html>

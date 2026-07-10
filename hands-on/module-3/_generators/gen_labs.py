@@ -1,11 +1,26 @@
 # -*- coding: utf-8 -*-
-"""Generator for Day 2 Module 3 hands-on labs (12 notebooks).
+"""Generator for Day 2 Module 3 hands-on labs (12 notebooks) -- NEAR-REAL design.
 Emits STUDENT notebooks to OUT_DIR and SOLUTION notebooks to SOL_DIR.
 
-Design: every GRADED cell is offline (NumPy / scikit-learn) so the labs run and
-verify with no network and no heavy installs. The "use a real transformer" steps
-are OPTIONAL, guarded Hugging Face cells (not graded) that degrade gracefully if
-`transformers` is absent -- and they never require a paid API key."""
+This is the "Why Transformers?" module. Participants run REAL Hugging Face Transformers
+locally on CPU -- a real tokenizer, real embeddings, real fill-mask, real attention extracted
+from a real model, real text generation -- plus a hosted "GPT API" path via ChatGroq. There is
+NO auto-grader: every lab ends "Build it -> Run it for real -> What to notice -> Your turn".
+
+What stays hand-computed (REAL mechanics, not stubs): scaled dot-product attention, sinusoidal
+positional encoding, and cosine similarity -- these teach the maths a transformer runs. Wherever
+a lab *invokes a model*, it is a REAL HF model, never a fake.
+
+Models used (small, CPU-friendly, cached after first download):
+  distilbert-base-uncased ............ tokenizer / fill-mask / subwords (labs 1, 5, 6)
+  sentence-transformers/all-MiniLM-L6-v2 . sentence embeddings (labs 2, 7, 11, 12)
+  prajjwal1/bert-tiny ................ real attention weights, output_attentions=True (lab 9)
+  distilgpt2 ......................... text generation (lab 10) + ChatGroq hosted "GPT API"
+
+Student robustness (no grader): cells that exercise the blanks or load a model are wrapped by
+guard()/hfrun() so an unfilled `___` -- or a missing network on first download -- prints a
+friendly note instead of crashing. A student notebook runs top-to-bottom; a solution notebook
+runs the real thing and prints real model output."""
 import json, os, sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -17,6 +32,7 @@ if SOL_DIR: os.makedirs(SOL_DIR, exist_ok=True)
 
 DECK = "../../presentation/day2-module3-why-transformers.html"
 OUTLINE = "../../course-outline-building-intelligent-ai-agents.html"
+REPO = "/home/rajesh/Training/courses/building-intelligents-ai-agents"
 
 def _lines(text):
     parts = text.split("\n")
@@ -34,31 +50,36 @@ def render(lines, sol):
         out.append((ln["a"] if sol else ln["s"]) if isinstance(ln, dict) else ln)
     return "\n".join(out)
 
-GRADER_HEAD = '''# === Auto-grader: run after filling the blanks above ===
-_results = []
-def _rec(label, status, extra=""):
-    _results.append(status); print(f"[{status}] {label}" + (f" -- {extra}" if extra else ""))
-def expect(label, got, want):
-    if got == "___" or got is None: _rec(label, "TODO")
-    elif got == want: _rec(label, "PASS")
-    else: _rec(label, "FAIL", f"got {got!r}")
-def expect_true(label, fn):
-    try: _rec(label, "PASS" if fn() else "FAIL")
-    except Exception as e: _rec(label, "TODO", type(e).__name__)
-'''
-GRADER_TAIL = '''_p = _results.count("PASS")
-print(f"\\nScore: {_p}/{len(_results)}")
-print("All checks passed -- lab complete!" if _p == len(_results) else "Keep going: fill the blanks marked ___ and re-run.")'''
+def _indent(text, n):
+    pad = " " * n
+    return "\n".join((pad + ln) if ln.strip() else ln for ln in text.split("\n"))
 
-def grader(body):
-    return code(GRADER_HEAD + "\n" + body.strip() + "\n\n" + GRADER_TAIL)
+def guard(exercise):
+    """Wrap a cell that calls blanked code so an unfilled ___ prints a note, not a crash."""
+    return ("try:\n" + _indent(exercise, 4) +
+            '\nexcept Exception as e:\n    print("(Fill the ___ blanks above, then re-run.)", type(e).__name__, "--", e)')
 
-def setup(nn, extra=""):
+def hfrun(exercise):
+    """Wrap a 'run a real model' cell: friendly note if a blank is unfilled OR the first
+    download has no network -- never crash Run All."""
+    return ("try:\n" + _indent(exercise, 4) +
+            '\nexcept Exception as e:\n'
+            '    print("(If a ___ is still unfilled, fill it above. On first run the model downloads")\n'
+            '    print(" from the Hugging Face hub -- that needs network; re-run once it finishes.)")\n'
+            '    print("  reason:", type(e).__name__, "--", e)')
+
+def setup(nn):
     return code(f'''# Setup -- run me first
-import os
+import os, pathlib
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
+from dotenv import load_dotenv
+load_dotenv(pathlib.Path("{REPO}/.env"), override=True)   # GROQ_API_KEY etc. (used by the text-gen lab)
+
 WORK = "/tmp/biaa-lab-03-{nn:02d}"
 os.makedirs(WORK, exist_ok=True)
-print("Working dir:", WORK){extra}''')
+print("WORK:", WORK)
+print("Real Hugging Face models load from the hub on first use (one-time download, then cached).")''')
 
 def header(nn, title, level, mins, goals, concept_slide):
     g = "\n".join(f"- {x}" for x in goals)
@@ -69,7 +90,9 @@ def header(nn, title, level, mins, goals, concept_slide):
 ### What you'll do
 {g}
 
-> **How this lab works (experiential flow):** read the **Concept**, run the **Demo** to see it work, then complete **Your Turn** by replacing every `___` placeholder. Run the **grader** cell at the end &mdash; it prints `[PASS]` / `[FAIL]` / `[TODO]` and a final `Score`. Aim for a full score.
+> **How this lab works (near-real):** these labs run **real Hugging Face Transformers** locally on CPU. Read the **Concept**, fill the real `___` blanks in **Build it** (real tokenizer / model / decoding calls), **Run it for real** to see the **actual model output**, note **What to notice**, then finish with an open **Your turn**. There is **no auto-grader** &mdash; the goal is real model output you can read. The genuine maths (attention, positional encoding, cosine) you still compute **by hand** &mdash; that is real mechanics, not a stub.
+
+> **Models:** small, CPU-friendly models from the HF hub &mdash; `distilbert-base-uncased` (tokenizer / fill-mask), `sentence-transformers/all-MiniLM-L6-v2` (embeddings), `prajjwal1/bert-tiny` (attention), `distilgpt2` (generation). First use downloads the weights (needs network), then they are cached. The hosted "GPT API" path uses `ChatGroq` (`GROQ_API_KEY` in `.env`).
 
 **Reference:** [Module 3 slides &mdash; {concept_slide}]({DECK}) &nbsp;&middot;&nbsp; [Course outline]({OUTLINE}) &nbsp;&middot;&nbsp; [All Module 3 labs](./index.html)''')
 
@@ -82,12 +105,31 @@ def footer(nn, nxt):
 
 <sub>&copy; 2026 Gheware DevOps &amp; Agentic AI &middot; Building Intelligent AI Agents &middot; devops.gheware.com &middot; Trainer: Rajesh Gheware</sub>''')
 
-def optional_hf(intro, body):
-    """An OPTIONAL, non-graded Hugging Face cell that degrades gracefully."""
-    return [md(f'''## Optional &mdash; the real thing with Hugging Face (not graded)
-{intro} Safe to skip &mdash; it needs `pip install transformers torch` and a one-time model
-download. If `transformers` is not installed, the cell simply prints a note and moves on.'''),
-            code(body)]
+def concept(text):  return md("## Concept\n" + text)
+def buildmd(text):  return md("## Build it\n" + text)
+def runmd(text):    return md("## Run it for real\n" + text)
+def noticemd(text): return md("## What to notice\n" + text)
+def yourturn(text): return md("## Your turn (open task &mdash; no grader)\n" + text)
+
+# A REAL sentence-embedding function: run a real model, then mean-pool token vectors (the
+# standard sentence-transformers pooling) into one unit vector. Lazy-loads + caches the model on
+# first call so the *build* cell never touches the network -- only the guarded run cell does.
+EMBED_DEF = '''import numpy as np
+_EMB = {}
+def embed(texts):
+    """Real sentence embeddings from all-MiniLM-L6-v2: model forward pass -> mean-pool -> unit vector."""
+    import torch
+    from transformers import AutoTokenizer, AutoModel
+    if not _EMB:
+        name = "sentence-transformers/all-MiniLM-L6-v2"
+        _EMB["tok"] = AutoTokenizer.from_pretrained(name)
+        _EMB["mdl"] = AutoModel.from_pretrained(name); _EMB["mdl"].eval()
+    if isinstance(texts, str): texts = [texts]
+    enc = _EMB["tok"](texts, padding=True, truncation=True, return_tensors="pt")
+    with torch.no_grad(): out = _EMB["mdl"](**enc)
+    mask = enc["attention_mask"].unsqueeze(-1).float()
+    pooled = (out.last_hidden_state * mask).sum(1) / mask.sum(1)     # mean over REAL tokens
+    return torch.nn.functional.normalize(pooled, dim=1).numpy()      # unit vectors -> dot == cosine'''
 
 NB = {}
 def lab(nn, slug, level, title, mins, summary, concepts):
@@ -99,116 +141,112 @@ def lab(nn, slug, level, title, mins, summary, concepts):
 
 # ============================================================ LAB 01
 @lab(1, "lab-01-tokenization", "Beginner",
-     "Tokenization: Turning Text into Tokens", 20,
-     "Split raw text into tokens, build a vocabulary, and encode tokens to integer IDs -- step one for every transformer.",
-     ["Tokenization", "Vocabulary", "Encoding to IDs"])
+     "Tokenization: Text into Tokens & IDs", 20,
+     "Use a REAL transformer tokenizer (distilbert) to split text into subword tokens and encode them to the integer IDs a model actually consumes.",
+     ["Real tokenizer", "Subword pieces", "Token IDs"])
 def _l1(sol):
     return [
-      header(1, "Tokenization: Turning Text into Tokens", "Beginner", 20,
-        ["Split text into tokens with a simple rule",
-         "Build a vocabulary mapping tokens to integer IDs",
-         "Encode a sentence into the IDs a model consumes"],
+      header(1, "Tokenization: Text into Tokens & IDs", "Beginner", 20,
+        ["Split text into subword tokens with a real tokenizer",
+         "Convert tokens into the integer IDs a model reads",
+         "See the special tokens ([CLS]/[SEP]) a model adds"],
         "Tokens & embeddings"),
       setup(1),
-      md('''## Concept
-A transformer never sees text &mdash; it sees **token IDs**. First we **tokenize** (split text into
-pieces), then map each unique token to an integer via a **vocabulary**, then **encode**. Real models
-use *subword* tokenizers (Lab 3.6); here we start with words.'''),
-      code('''# DEMO -- the simplest tokenizer: lowercase + split on whitespace
-text = "The cat sat on the mat"
-print(text.lower().split())'''),
-      md('''## Your Turn
-Implement a slightly smarter tokenizer (splits off punctuation), a **vocabulary** builder, and an **encoder**.'''),
+      concept('''A transformer never sees text &mdash; it sees **token IDs**. Real models use a **subword**
+tokenizer: a fixed vocabulary of word-pieces so any word (even a typo) can be spelled from known
+pieces. We use **distilbert-base-uncased**'s real WordPiece tokenizer: `tokenize` splits text into
+pieces, `convert_tokens_to_ids` maps pieces to integers, and calling `tok(text)` returns the exact
+dict a model consumes (adding the special `[CLS]` / `[SEP]` markers).'''),
+      buildmd("Fill in the three real tokenizer calls."),
       code(render([
-        "import re",
-        "def tokenize(text):",
-        {"s": '    return ___   # TODO: lowercase, split on non-alphanumeric, drop empties',
-         "a": '    return [t for t in re.split(r"[^a-z0-9]+", text.lower()) if t]'},
-        "",
-        "def build_vocab(tokens):",
-        {"s": '    return ___   # TODO: {token: id} over the SORTED unique tokens (use enumerate)',
-         "a": '    return {tok: i for i, tok in enumerate(sorted(set(tokens)))}'},
-        "",
-        "def encode(tokens, vocab):",
-        {"s": '    return ___   # TODO: list of vocab[t] for each token',
-         "a": '    return [vocab[t] for t in tokens]'},
-        "",
-        "try:",
-        '    toks = tokenize("The cat, the CAT! sat.")',
-        "    vocab = build_vocab(toks)",
-        '    print("tokens:", toks); print("vocab:", vocab); print("ids:", encode(toks, vocab))',
-        "except Exception as e: print('Fill the blanks, then re-run.', type(e).__name__)",
+        "def tokenize_encode(text, tok):",
+        {"s": '    pieces = ___   # TODO: tok.tokenize(text) -- split into subword tokens',
+         "a": '    pieces = tok.tokenize(text)'},
+        {"s": '    ids = ___      # TODO: tok.convert_tokens_to_ids(pieces)',
+         "a": '    ids = tok.convert_tokens_to_ids(pieces)'},
+        {"s": '    full = ___     # TODO: tok(text) -- the dict the model consumes (adds [CLS]/[SEP])',
+         "a": '    full = tok(text)'},
+        "    return pieces, ids, full",
       ], sol)),
-      grader('''expect_true("tokenize lowercases & strips punctuation", lambda: tokenize("The cat, CAT!") == ["the", "cat", "cat"])
-expect_true("build_vocab maps sorted unique tokens", lambda: build_vocab(["b", "a", "a"]) == {"a": 0, "b": 1})
-expect_true("encode maps tokens to their ids", lambda: encode(["a", "b"], {"a": 0, "b": 1}) == [0, 1])'''),
-      *optional_hf("See how a real transformer tokenizer (BERT's WordPiece) splits the same text into subwords.",
-'''try:
-    from transformers import AutoTokenizer
-    tok = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny")
-    print(tok.tokenize("Tokenization is unbelievably powerful!"))
-except Exception as e:
-    print("Optional real-model demo skipped (the graded cells above already covered this).")
-    print("  reason:", type(e).__name__, "--", e)'''),
-      footer(1, "Every model pipeline starts here: text -> tokens -> IDs. Next we give those tokens *meaning* as vectors."),
+      runmd("Load the real tokenizer and encode a few sentences."),
+      code(hfrun('''from transformers import AutoTokenizer
+tok = AutoTokenizer.from_pretrained("distilbert-base-uncased")   # a REAL subword tokenizer
+for text in ["Transformers are unbelievably powerful!", "tokenization"]:
+    pieces, ids, full = tokenize_encode(text, tok)
+    print(repr(text))
+    print("  tokens            :", pieces)
+    print("  ids               :", ids)
+    print("  input_ids (+specials):", full["input_ids"])''')),
+      noticemd('''- `unbelievably` splits into **several subword pieces** &mdash; that is how a finite vocabulary spells any word.
+- `##` prefixes mark a piece that **continues** the previous token (no space before it).
+- `tok(text)` adds `[CLS]` (id `101`) at the front and `[SEP]` (id `102`) at the end &mdash; markers every BERT-family model expects.
+- The `ids` are exactly what the model's embedding layer looks up next (Lab 3.2).'''),
+      yourturn('''Feed `tokenize_encode` your own tricky inputs &mdash; a rare word, a URL, an emoji, a number like
+`3.14159`. How many pieces does each become? Then load a **different** tokenizer
+(`AutoTokenizer.from_pretrained("bert-base-cased")`) and compare: does casing change the split? A
+"good" answer: you can predict roughly how many tokens a string will cost before you send it.'''),
+      footer(1, "Every model pipeline starts here: text -> subword tokens -> IDs. Next we give those IDs *meaning* as real embedding vectors."),
     ]
 
 # ============================================================ LAB 02
 @lab(2, "lab-02-embeddings-cosine", "Beginner",
-     "Word Embeddings & Cosine Similarity", 20,
-     "Represent words as vectors and measure how similar two words are with cosine similarity.",
-     ["Embeddings", "Cosine similarity", "Semantic distance"])
+     "Real Embeddings & Cosine Similarity", 20,
+     "Turn words into REAL vectors with a sentence-embedding model, then measure similarity with cosine computed by hand -- real geometry of meaning.",
+     ["Real embeddings", "Cosine by hand", "Nearest neighbour"])
 def _l2(sol):
     return [
-      header(2, "Word Embeddings & Cosine Similarity", "Beginner", 20,
-        ["Represent words as vectors (embeddings)",
-         "Implement cosine similarity in NumPy",
-         "Find the most similar word to a query"],
+      header(2, "Real Embeddings & Cosine Similarity", "Beginner", 20,
+        ["Turn words into real vectors with a sentence-embedding model",
+         "Implement cosine similarity by hand in NumPy",
+         "Find each word's nearest neighbour in embedding space"],
         "Tokens & embeddings"),
       setup(2),
-      md('''## Concept
-After tokenizing, each token becomes a vector &mdash; an **embedding** &mdash; chosen so that words
-with similar meaning point in similar directions. **Cosine similarity** measures the angle between
-two vectors: `1.0` = identical direction, `0` = unrelated.'''),
-      code('''# DEMO -- toy 3-D embeddings; royalty vs fruit
-import numpy as np
-EMB = {"king":  np.array([0.9, 0.8, 0.1]), "queen": np.array([0.8, 0.9, 0.1]),
-       "apple": np.array([0.1, 0.2, 0.9]), "orange":np.array([0.2, 0.1, 0.85])}
-print("king dot queen:", float(np.dot(EMB["king"], EMB["queen"])))'''),
-      md('''## Your Turn
-Implement `cosine` and use it to find each word's nearest neighbour.'''),
+      concept('''Each token becomes a vector &mdash; an **embedding** &mdash; learned so that words with similar
+meaning point in similar directions. We get **real** embeddings from
+`sentence-transformers/all-MiniLM-L6-v2` (a real model forward pass, mean-pooled to one vector per
+word), then measure similarity ourselves with **cosine similarity** &mdash; the angle between two
+vectors: `1.0` = same direction, `0` = unrelated. The `embed()` helper is real; the cosine maths is
+yours (that is real mechanics worth knowing).'''),
+      buildmd("`embed()` (given) is a real model. You implement **cosine** and the nearest-neighbour search."),
       code(render([
-        "import numpy as np",
-        'EMB = {"king":  np.array([0.9, 0.8, 0.1]), "queen": np.array([0.8, 0.9, 0.1]),',
-        '       "apple": np.array([0.1, 0.2, 0.9]), "orange":np.array([0.2, 0.1, 0.85])}',
+        EMBED_DEF,
         "",
         "def cosine(a, b):",
         {"s": '    return ___   # TODO: (a . b) / (||a|| * ||b||)   use np.dot, np.linalg.norm',
          "a": '    return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))'},
         "",
-        "def most_similar(word):",
+        "def most_similar(word, words, E):",
+        "    i = words.index(word)",
         "    best, best_sim = None, -2.0",
-        "    for other in EMB:",
-        "        if other == word: continue",
-        {"s": '        s = ___   # TODO: cosine between word and other',
-         "a": '        s = cosine(EMB[word], EMB[other])'},
+        "    for j, other in enumerate(words):",
+        "        if j == i: continue",
+        {"s": '        s = ___   # TODO: cosine between embedding E[i] and E[j]',
+         "a": '        s = cosine(E[i], E[j])'},
         "        if s > best_sim: best_sim, best = s, other",
         "    return best",
-        "",
-        "try: print('nearest to king:', most_similar('king'))",
-        "except Exception as e: print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''import numpy as np
-expect_true("cosine of a vector with itself is 1.0", lambda: abs(cosine(EMB["king"], EMB["king"]) - 1.0) < 1e-9)
-expect_true("king is closer to queen than to apple", lambda: cosine(EMB["king"], EMB["queen"]) > cosine(EMB["king"], EMB["apple"]))
-expect_true("most_similar('king') == 'queen'", lambda: most_similar("king") == "queen")'''),
-      footer(2, "Embeddings turn meaning into geometry, and cosine similarity measures it. This is the engine behind search, RAG and recommendations."),
+      runmd("Embed real words and inspect the geometry."),
+      code(hfrun('''WORDS = ["king", "queen", "man", "woman", "apple", "orange"]
+E = embed(WORDS)                       # real model -> one unit vector per word
+print("embedding dim:", E.shape[1])
+for w in WORDS:
+    print(f"  {w:8s} nearest -> {most_similar(w, WORDS, E)}")
+print("cos(king,queen) =", round(cosine(E[0], E[1]), 3),
+      "| cos(king,apple) =", round(cosine(E[0], E[4]), 3))''')),
+      noticemd('''- The vectors are **384-dimensional** &mdash; real learned features, not toy numbers.
+- `king` and `queen` sit close (**high cosine**); `king` and `apple` sit far apart (**low cosine**). Meaning became geometry.
+- Because `embed()` returns **unit** vectors, the dot product already *is* the cosine &mdash; that is why fast vector search uses dot products.'''),
+      yourturn('''Add your own words to `WORDS` (try `paris`, `france`, `tokyo`, `japan`) and re-run. Do
+countries cluster near their capitals? Try short sentences instead of single words &mdash; `embed`
+handles those too. A "good" answer: nearest-neighbour matches your intuition about meaning, and you
+can explain one case where it surprises you.'''),
+      footer(2, "Embeddings turn meaning into geometry, and cosine measures it. This is the engine behind search, RAG and recommendations -- and Lab 3.7 turns it into real semantic search."),
     ]
 
 # ============================================================ LAB 03
 @lab(3, "lab-03-attention-by-hand", "Beginner",
      "Self-Attention by Hand", 25,
-     "Implement scaled dot-product attention in NumPy -- the single idea at the heart of every transformer.",
+     "Implement scaled dot-product attention in NumPy -- the single idea at the heart of every transformer (real mechanics, computed by hand).",
      ["Query/Key/Value", "Softmax", "Scaled dot-product attention"])
 def _l3(sol):
     return [
@@ -218,17 +256,13 @@ def _l3(sol):
          "See a query 'attend' to the matching key"],
         "Self-attention (Q/K/V)"),
       setup(3),
-      md('''## Concept
-**Attention** lets each token look at every other token and pull in what's relevant. For queries
+      concept('''**Attention** lets each token look at every other token and pull in what's relevant. For queries
 **Q**, keys **K** and values **V**:
 `attention(Q, K, V) = softmax( Q . Kt / sqrt(d) ) . V`.
-The `softmax` turns similarity scores into weights that sum to 1; the scaling by `sqrt(d)` keeps them stable.'''),
-      code('''# DEMO -- the shapes
-import numpy as np
-Q = np.array([[1.0, 0.0]]); K = np.array([[1.0, 0.0], [0.0, 1.0]]); V = np.array([[10.0, 0.0], [0.0, 10.0]])
-print("Q", Q.shape, "K", K.shape, "V", V.shape)'''),
-      md('''## Your Turn
-Implement `softmax` and `attention`.'''),
+The `softmax` turns similarity scores into weights that sum to 1; the scaling by `sqrt(d)` keeps them
+stable. This is the exact maths a real model runs &mdash; here we compute it by hand so the mechanism
+is unambiguous (Lab 3.9 pulls the same weights out of a real model).'''),
+      buildmd("Implement `softmax` and `attention`."),
       code(render([
         "import numpy as np",
         "def softmax(x, axis=-1):",
@@ -244,24 +278,28 @@ Implement `softmax` and `attention`.'''),
         "    weights = softmax(scores, axis=-1)",
         {"s": '    return ___   # TODO: weights . V',
          "a": '    return weights @ V'},
-        "",
-        "Q = np.array([[10.0, 0.0], [0.0, 10.0]]); K = np.array([[1.0, 0.0], [0.0, 1.0]]); V = np.array([[1.0, 0.0], [0.0, 1.0]])",
-        "try: print('attention output:\\n', np.round(attention(Q, K, V), 3))",
-        "except Exception as e: print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''import numpy as np
-expect_true("softmax of [1,1] is [0.5,0.5]", lambda: np.allclose(softmax(np.array([1.0, 1.0])), [0.5, 0.5]))
-expect_true("softmax rows sum to 1", lambda: abs(float(softmax(np.array([2.0, 1.0, 0.0])).sum()) - 1.0) < 1e-9)
-Q = np.array([[10.0,0.0],[0.0,10.0]]); K = np.array([[1.0,0.0],[0.0,1.0]]); V = np.array([[1.0,0.0],[0.0,1.0]])
-expect_true("output has shape (queries, value_dim)", lambda: attention(Q, K, V).shape == (2, 2))
-expect_true("a strong query attends to its matching value", lambda: np.allclose(attention(Q, K, V), np.eye(2), atol=1e-2))'''),
+      runmd("Run attention on a tiny example where the answer is obvious."),
+      code(guard('''import numpy as np
+Q = np.array([[10.0, 0.0], [0.0, 10.0]])   # two strong queries
+K = np.array([[1.0, 0.0], [0.0, 1.0]])     # two orthogonal keys
+V = np.array([[1.0, 0.0], [0.0, 1.0]])     # values to fetch
+print("attention output:\\n", np.round(attention(Q, K, V), 3))
+print("softmax([2,1,0]) =", np.round(softmax(np.array([2.0, 1.0, 0.0])), 3), "(sums to 1)")''')),
+      noticemd('''- The output is (almost) the identity: query 1 pulls value 1, query 2 pulls value 2 &mdash; each **strong query attended to its matching key**.
+- Softmax weights are a **probability distribution** &mdash; they sum to 1, so attention is a weighted average of the values.
+- Drop the `/ sqrt(d)` scaling and, for large `d`, the softmax saturates (one weight ~1, the rest ~0) &mdash; that is the vanishing-gradient problem the scaling fixes.'''),
+      yourturn('''Make the two queries **similar** instead of orthogonal (e.g. `[[5,5],[5,5]]`) &mdash; what
+happens to the attention weights and the output? Then grow `d` and add the scaling back and forth to
+feel its effect. A "good" answer: you can predict the output shape and roughly where the weight mass
+lands before you run it.'''),
       footer(3, "That is the whole mechanism. A transformer stacks many of these attention steps -- and that is what 'Attention Is All You Need' meant."),
     ]
 
 # ============================================================ LAB 04
 @lab(4, "lab-04-positional-encoding", "Beginner",
      "Positional Encoding", 25,
-     "Give a transformer a sense of word order with sinusoidal positional encodings.",
+     "Give a transformer a sense of word order with sinusoidal positional encodings -- the real formula, computed and plotted by hand.",
      ["Word order", "Sinusoidal encoding", "Position vectors"])
 def _l4(sol):
     return [
@@ -271,19 +309,14 @@ def _l4(sol):
          "Confirm each position gets a distinct vector"],
         "Positional encoding"),
       setup(4),
-      md('''## Concept
-Attention treats a sentence as a **set** &mdash; it has no built-in sense of order. So we **add** a
+      concept('''Attention treats a sentence as a **set** &mdash; it has no built-in sense of order. So we **add** a
 **positional encoding** to each token's embedding. The classic recipe uses sines and cosines of
 different frequencies:
 `PE(pos, 2i) = sin(pos / 10000^(2i/d))`, `PE(pos, 2i+1) = cos(pos / 10000^(2i/d))`.
+This is the real formula from the original transformer paper.
 
-> The plot needs `matplotlib`.'''),
-      code('''# DEMO -- positions and dimensions
-import numpy as np
-seq_len, d_model = 5, 8
-print("we will build a", (seq_len, d_model), "matrix: one row per position")'''),
-      md('''## Your Turn
-Fill in the **angle** and the **sin/cos** assignments.'''),
+> The plot needs `matplotlib` (already in the lab venv).'''),
+      buildmd("Fill in the **angle** and the **sin/cos** assignments."),
       code(render([
         "import numpy as np",
         "def positional_encoding(seq_len, d_model):",
@@ -297,195 +330,173 @@ Fill in the **angle** and the **sin/cos** assignments.'''),
         {"s": '    pe[:, 1::2] = ___   # TODO: cos of the odd-index angles',
          "a": '    pe[:, 1::2] = np.cos(angle[:, 1::2])'},
         "    return pe",
-        "",
-        "try:",
-        "    PE = positional_encoding(5, 8)",
-        "    print('shape:', PE.shape); print('position 0:', np.round(PE[0], 2))",
-        "    import matplotlib.pyplot as plt",
-        "    plt.imshow(PE, cmap='RdBu', aspect='auto'); plt.xlabel('dimension'); plt.ylabel('position')",
-        "    plt.title('Positional encoding'); plt.colorbar(); plt.tight_layout()",
-        "    plt.savefig(WORK + '/positional_encoding.png', dpi=90); plt.show()",
-        "except Exception as e: print('Fill the blanks (plot needs matplotlib).', type(e).__name__)",
       ], sol)),
-      grader('''import numpy as np
-expect_true("shape is (seq_len, d_model)", lambda: positional_encoding(5, 8).shape == (5, 8))
-expect_true("all values are within [-1, 1]", lambda: np.all(np.abs(positional_encoding(5, 8)) <= 1.0 + 1e-9))
-expect_true("position 0 starts sin=0, cos=1", lambda: abs(positional_encoding(5, 8)[0, 0]) < 1e-9 and abs(positional_encoding(5, 8)[0, 1] - 1.0) < 1e-9)
-expect_true("different positions get different vectors", lambda: not np.allclose(positional_encoding(5, 8)[1], positional_encoding(5, 8)[2]))'''),
+      runmd("Build a positional-encoding matrix and plot it."),
+      code(guard('''import numpy as np
+PE = positional_encoding(10, 16)
+print("shape:", PE.shape)
+print("position 0:", np.round(PE[0], 2))
+print("position 1:", np.round(PE[1], 2))
+import matplotlib.pyplot as plt
+plt.imshow(PE, cmap="RdBu", aspect="auto"); plt.xlabel("dimension"); plt.ylabel("position")
+plt.title("Sinusoidal positional encoding"); plt.colorbar(); plt.tight_layout()
+plt.savefig(WORK + "/positional_encoding.png", dpi=90); plt.show()
+print("saved:", WORK + "/positional_encoding.png")''')),
+      noticemd('''- Position 0 starts `sin=0, cos=1` &mdash; every position gets a **distinct** vector.
+- The plot shows **stripes**: low dimensions oscillate fast, high dimensions slow &mdash; a multi-scale "clock" the model reads as position.
+- Every value is in `[-1, 1]`, so it can be **added** to token embeddings without dominating them.'''),
+      yourturn('''Change `seq_len` and `d_model` and re-plot. Then compute the cosine similarity between the
+encodings of positions 0&1 vs 0&9 &mdash; does "closer in the sentence" mean "more similar encoding"?
+A "good" answer: you can point to the plot and explain how the model could recover *distance* between
+two positions from these vectors.'''),
       footer(4, "Embedding + positional encoding is what actually enters a transformer block. Now the model knows both *what* and *where*."),
     ]
 
 # ============================================================ LAB 05
 @lab(5, "lab-05-fill-mask", "Beginner",
      "What a Pretrained Model Knows: Fill-in-the-Blank", 25,
-     "Predict a masked word from its context with a tiny language model -- the idea BERT is pretrained on.",
-     ["Masked language modelling", "Context prediction", "Bigram model"])
+     "Predict a masked word from context with a REAL pretrained BERT (distilbert) -- the masked-language-modelling task BERT is trained on.",
+     ["Masked language modelling", "Real BERT", "fill-mask pipeline"])
 def _l5(sol):
     return [
       header(5, "What a Pretrained Model Knows: Fill-in-the-Blank", "Beginner", 25,
         ["Understand masked language modelling (predicting a hidden word)",
-         "Build a tiny next-word model from a corpus",
-         "Predict the most likely word to fill a blank"],
+         "Run a real pretrained model on a fill-mask task",
+         "Read the model's ranked predictions with confidences"],
         "Encoder vs decoder (BERT vs GPT)"),
       setup(5),
-      md('''## Concept
-BERT is **pretrained** by hiding words and predicting them from context (**masked language
-modelling**). We build the tiniest version: count which word follows which, then fill a `[MASK]`
-with the most likely next word.'''),
-      code('''# DEMO -- our toy corpus
-CORPUS = "the cat sat on the mat the cat sat on the rug the cat ran fast".split()
-print("tokens:", len(CORPUS))'''),
-      md('''## Your Turn
-Build the bigram counts and a `fill_mask` that returns the most likely word after a given word.'''),
+      concept('''BERT is **pretrained** by hiding words and predicting them from context (**masked language
+modelling**). No toy this time: we load the real **distilbert-base-uncased** and ask it to fill a
+`[MASK]`. The model returns a **ranked list** of candidate words, each with a confidence score &mdash;
+knowledge distilled from millions of sentences.'''),
+      buildmd("Fill in the real model name and complete `top_fills`."),
       code(render([
-        "from collections import defaultdict, Counter",
-        'CORPUS = "the cat sat on the mat the cat sat on the rug the cat ran fast".split()',
+        "from transformers import pipeline",
+        "def build_fillmask():",
+        {"s": '    return pipeline("fill-mask", model=___)   # TODO: "distilbert-base-uncased"',
+         "a": '    return pipeline("fill-mask", model="distilbert-base-uncased")'},
         "",
-        "def build_bigrams(tokens):",
-        "    b = defaultdict(Counter)",
-        "    for prev, nxt in zip(tokens, tokens[1:]):",
-        {"s": '        ___   # TODO: count nxt as following prev:  b[prev][nxt] += 1',
-         "a": '        b[prev][nxt] += 1'},
-        "    return b",
-        "",
-        "def fill_mask(prev_word, bigrams):",
-        {"s": '    return ___   # TODO: the most common word after prev_word (Counter.most_common)',
-         "a": '    return bigrams[prev_word].most_common(1)[0][0]'},
-        "",
-        "try:",
-        "    bg = build_bigrams(CORPUS)",
-        "    print('the [MASK] ->', fill_mask('the', bg))",
-        "    print('sat [MASK] ->', fill_mask('sat', bg))",
-        "except Exception as e: print('Fill the blanks, then re-run.', type(e).__name__)",
+        "def top_fills(fm, sentence, k=5):",
+        {"s": '    return [(round(r["score"], 3), r["token_str"]) for r in ___[:k]]   # TODO: fm(sentence)',
+         "a": '    return [(round(r["score"], 3), r["token_str"]) for r in fm(sentence)[:k]]'},
       ], sol)),
-      grader('''expect_true("'the' is most often followed by 'cat'", lambda: fill_mask("the", build_bigrams(CORPUS)) == "cat")
-expect_true("'sat' is most often followed by 'on'", lambda: fill_mask("sat", build_bigrams(CORPUS)) == "on")
-expect_true("'on' is most often followed by 'the'", lambda: fill_mask("on", build_bigrams(CORPUS)) == "the")'''),
-      *optional_hf("Watch a real pretrained BERT fill the same kind of blank from its vast training.",
-'''try:
-    from transformers import pipeline
-    fm = pipeline("fill-mask", model="prajjwal1/bert-tiny")
-    for r in fm("the cat sat on the [MASK].")[:3]:
-        print(round(r["score"], 3), r["token_str"])
-except Exception as e:
-    print("Optional real-model demo skipped (the graded cells above already covered this).")
-    print("  reason:", type(e).__name__, "--", e)'''),
-      footer(5, "Scale this idea to billions of words and a transformer, and you get a model with real language knowledge -- which we *use* on Day 2's pretrained labs (Module 4)."),
+      runmd("Load the real model and let it fill some blanks. `[MASK]` is distilbert's mask token."),
+      code(hfrun('''fm = build_fillmask()
+for sentence in ["The capital of France is [MASK].",
+                 "A transformer processes text using [MASK].",
+                 "The doctor picked up the [MASK]."]:
+    print(sentence)
+    for score, word in top_fills(fm, sentence):
+        print("   ", score, word)
+    print()''')),
+      noticemd('''- The predictions are **real** &mdash; sometimes obvious, sometimes surprising (a small distilled model is not perfect). That honesty is the point.
+- Each candidate has a **confidence**; the list is ranked. Low top-scores mean the model is unsure.
+- The model uses **both sides** of the blank (it is an *encoder* / bidirectional) &mdash; unlike GPT, which only sees the left context (Lab 3.10).'''),
+      yourturn('''Write blanks that probe what the model knows: factual (`"Water is made of hydrogen and [MASK]."`),
+grammatical, or biased (`"The nurse said [MASK] would help."`). Where does it succeed, fail, or reveal
+a bias? A "good" answer: you have at least one prompt that exposes a limitation and you can explain
+why a small model gets it wrong.'''),
+      footer(5, "This is a real pretrained model *using* its knowledge -- which is exactly what Module 4 fine-tunes for a specific task."),
     ]
 
 # ============================================================ LAB 06
 @lab(6, "lab-06-subword-tokenizer", "Beginner",
-     "Why Subwords? A Greedy Subword Tokenizer", 25,
-     "Build a greedy subword tokenizer and see how it handles words a word-level vocabulary would miss.",
-     ["Subword tokenization", "Out-of-vocabulary", "Greedy matching"])
+     "Why Subwords? Watch a Real Tokenizer", 25,
+     "Watch a REAL subword tokenizer (distilbert WordPiece) handle words it never saw -- splitting them into known pieces so nothing is ever 'unknown'.",
+     ["Subword tokenization", "Out-of-vocabulary", "## continuation"])
 def _l6(sol):
     return [
-      header(6, "Why Subwords? A Greedy Subword Tokenizer", "Beginner", 25,
-        ["See the out-of-vocabulary problem with word tokenizers",
-         "Implement greedy longest-match subword tokenization",
-         "Tokenize an unseen word from known pieces"],
+      header(6, "Why Subwords? Watch a Real Tokenizer", "Beginner", 25,
+        ["See how a word tokenizer fails on unseen words",
+         "Watch a real WordPiece tokenizer split any word into known pieces",
+         "Read the '##' continuation marks and confirm nothing is [UNK]"],
         "Tokens & embeddings"),
       setup(6),
-      md('''## Concept
-Word tokenizers choke on unseen words (every typo or rare word is 'unknown'). Real transformers use
-**subword** tokenizers: a fixed vocabulary of word-pieces, assembled greedily, with single characters
-as the always-available fallback. So `"tokenization"` becomes `["token", "iz", "ation"]` &mdash; no
-'unknown' needed.'''),
-      code('''# DEMO -- a tiny subword vocabulary
-SUBWORDS = {"un", "happy", "ly", "token", "iz", "ation", "ing", "play", "ful"}
-print("known pieces:", sorted(SUBWORDS))'''),
-      md('''## Your Turn
-Complete the greedy matcher: at each position take the **longest** piece that is in the vocab
-(or a single character).'''),
+      concept('''Word tokenizers choke on unseen words &mdash; every typo or rare word becomes `[UNK]`. Real
+transformers use **subword** tokenizers: a fixed vocabulary of word-pieces, matched greedily
+(longest-first), with single characters as the always-available fallback. So a made-up word can still
+be spelled from known pieces. We watch the **real** distilbert WordPiece tokenizer do it &mdash; the
+`##` prefix marks a piece that continues the previous one.'''),
+      buildmd("Complete the one call that returns a word's subword pieces."),
       code(render([
-        'SUBWORDS = {"un", "happy", "ly", "token", "iz", "ation", "ing", "play", "ful"}',
-        "",
-        "def subword_tokenize(word):",
-        "    pieces, i = [], 0",
-        "    while i < len(word):",
-        "        matched = None",
-        "        for L in range(len(word) - i, 0, -1):   # longest first",
-        "            cand = word[i:i + L]",
-        {"s": '            if ___ or L == 1:   # TODO: accept cand if it is a known subword',
-         "a": '            if cand in SUBWORDS or L == 1:'},
-        "                matched = cand; break",
-        "        pieces.append(matched)",
-        {"s": '        i += ___   # TODO: advance by the length of the matched piece',
-         "a": '        i += len(matched)'},
-        "    return pieces",
-        "",
-        "try:",
-        "    for w in ['unhappy', 'tokenization', 'xyz']:",
-        "        print(w, '->', subword_tokenize(w))",
-        "except Exception as e: print('Fill the blanks, then re-run.', type(e).__name__)",
+        "def pieces(word, tok):",
+        {"s": '    return ___   # TODO: tok.tokenize(word) -- the real subword split',
+         "a": '    return tok.tokenize(word)'},
       ], sol)),
-      grader('''expect_true("'unhappy' -> ['un','happy']", lambda: subword_tokenize("unhappy") == ["un", "happy"])
-expect_true("'tokenization' -> ['token','iz','ation']", lambda: subword_tokenize("tokenization") == ["token", "iz", "ation"])
-expect_true("unknown letters fall back to single chars", lambda: subword_tokenize("xy") == ["x", "y"])'''),
+      runmd("Throw rare and invented words at the real tokenizer."),
+      code(hfrun('''from transformers import AutoTokenizer
+tok = AutoTokenizer.from_pretrained("distilbert-base-uncased")
+for word in ["tokenization", "unbelievable", "antidisestablishmentarianism",
+             "cryptocurrency", "gyroscopically", "zzxyq"]:
+    p = pieces(word, tok)
+    print(f"{word:32s} -> {p}   ({len(p)} pieces)")''')),
+      noticemd('''- Every word &mdash; even the invented `zzxyq` &mdash; is spelled from known pieces. **Nothing is `[UNK]`.**
+- `##` marks a **continuation** piece (glued to the one before, no space).
+- Rare/long words cost **more tokens**; common words are a single piece. That is why token counts (and API bills) vary by wording.'''),
+      yourturn('''Tokenize words from another language, code identifiers like `getUserById`, or a long chemical
+name. How does the tokenizer cope? Then load `AutoTokenizer.from_pretrained("gpt2")` (a **BPE**
+tokenizer, not WordPiece) and compare its splits on the same words. A "good" answer: you can describe
+one concrete difference between WordPiece and BPE output.'''),
       footer(6, "Subwords give a finite vocabulary that can still spell *any* word -- which is why every modern transformer uses them. That ends the Beginner set."),
     ]
 
 # ============================================================ LAB 07
 @lab(7, "lab-07-semantic-search", "Intermediate",
-     "Semantic Search with Embeddings", 35,
-     "Turn a small corpus into vectors and rank documents by similarity to a query -- the core of search and RAG.",
-     ["TF-IDF embeddings", "Cosine ranking", "Top-k retrieval"])
+     "Semantic Search with Real Embeddings", 35,
+     "Embed a small corpus with a REAL model and rank documents by cosine similarity to a query -- the core of search and RAG, on real vectors.",
+     ["Real embeddings", "Cosine ranking", "Top-k retrieval"])
 def _l7(sol):
     return [
-      header(7, "Semantic Search with Embeddings", "Intermediate", 35,
-        ["Vectorise a corpus of documents",
+      header(7, "Semantic Search with Real Embeddings", "Intermediate", 35,
+        ["Vectorise a corpus with a real sentence-embedding model",
          "Rank documents by cosine similarity to a query",
-         "Return the top-k most relevant documents"],
+         "Return the top-k most relevant documents with scores"],
         "Tokens & embeddings"),
       setup(7),
-      md('''## Concept
-**Retrieval** powers search and RAG (Day 3): embed every document, embed the query, and return the
-closest documents by cosine similarity. We use TF-IDF vectors as a lightweight, offline stand-in for
-transformer embeddings &mdash; the *mechanics* are identical.
-
-> Needs `scikit-learn`.'''),
-      code('''# DEMO -- a tiny document collection
-DOCS = ["the cat is a small pet animal", "dogs are loyal pets that bark",
-        "python is a programming language", "neural networks learn from data",
-        "transformers use attention for language", "kittens are baby cats"]
-from sklearn.feature_extraction.text import TfidfVectorizer
-vec = TfidfVectorizer().fit(DOCS)
-print("vocabulary size:", len(vec.vocabulary_))'''),
-      md('''## Your Turn
-Embed the query, score all documents, and return the **top-k** indices.'''),
+      concept('''**Retrieval** powers search and RAG (Day 3): embed every document, embed the query, and return the
+closest documents by cosine similarity. Unlike keyword search, this matches **meaning** &mdash; a query
+about "a cute kitten" finds a doc about cats even with no shared words. We use **real**
+all-MiniLM-L6-v2 embeddings (unit vectors, so a dot product *is* the cosine).'''),
+      buildmd("`embed()` (given) is real. Complete the query embedding, scoring, and top-k selection."),
       code(render([
-        "from sklearn.feature_extraction.text import TfidfVectorizer",
-        "from sklearn.metrics.pairwise import cosine_similarity",
-        "import numpy as np",
-        'DOCS = ["the cat is a small pet animal", "dogs are loyal pets that bark",',
-        '        "python is a programming language", "neural networks learn from data",',
-        '        "transformers use attention for language", "kittens are baby cats"]',
-        "vec = TfidfVectorizer().fit(DOCS)",
-        "doc_vecs = vec.transform(DOCS)",
+        EMBED_DEF,
         "",
-        "def search(query, k=2):",
-        {"s": '    qv = ___   # TODO: transform [query] into a vector',
-         "a": '    qv = vec.transform([query])'},
-        {"s": '    sims = ___   # TODO: cosine_similarity(qv, doc_vecs)[0]',
-         "a": '    sims = cosine_similarity(qv, doc_vecs)[0]'},
-        {"s": '    return list(___)   # TODO: indices of the top-k scores (highest first)',
-         "a": '    return list(np.argsort(sims)[::-1][:k])'},
+        'DOCS = ["the cat is a small furry pet animal",',
+        '        "dogs are loyal pets that bark",',
+        '        "python is a popular programming language",',
+        '        "neural networks learn patterns from data",',
+        '        "transformers use attention to model language",',
+        '        "kittens are playful baby cats"]',
         "",
-        "try:",
-        "    hits = search('a cute kitten pet', k=2)",
-        "    for idx in hits: print(idx, '->', DOCS[idx])",
-        "except Exception as e: print('Fill the blanks, then re-run.', type(e).__name__)",
+        "def search(query, DOC_E, k=2):",
+        {"s": '    qv = ___     # TODO: embed([query])[0]  -- the query as a unit vector',
+         "a": '    qv = embed([query])[0]'},
+        {"s": '    sims = ___   # TODO: DOC_E @ qv  -- cosine of each doc with the query (unit vectors)',
+         "a": '    sims = DOC_E @ qv'},
+        {"s": '    order = ___  # TODO: np.argsort(sims)[::-1][:k]  -- indices of the top-k, highest first',
+         "a": '    order = np.argsort(sims)[::-1][:k]'},
+        "    return [(round(float(sims[i]), 3), DOCS[i]) for i in order]",
       ], sol)),
-      grader('''expect_true("search returns k indices", lambda: len(search("a cute kitten pet", k=2)) == 2)
-expect_true("a pet query retrieves a cat/kitten doc first", lambda: search("a cute kitten pet", k=1)[0] in (0, 5))
-expect_true("a coding query retrieves the python doc", lambda: 2 in search("software programming code", k=2))'''),
-      footer(7, "Swap TF-IDF for transformer embeddings and you have modern semantic search -- and the retrieval half of RAG, which returns on Day 3."),
+      runmd("Embed the corpus once, then run real queries against it."),
+      code(hfrun('''DOC_E = embed(DOCS)                     # real model -> one unit vector per document
+for query in ["a cute little kitten", "writing software code", "how do transformers work"]:
+    print("QUERY:", query)
+    for score, doc in search(query, DOC_E, k=2):
+        print(f"   {score}  {doc}")
+    print()''')),
+      noticemd('''- "a cute little kitten" retrieves the **cat / kitten** docs first &mdash; with **zero shared words**. That is semantic (not keyword) matching.
+- Scores are real cosines: a clear top hit scores high; an off-topic query scores low across the board.
+- Embed the corpus **once**, reuse for every query &mdash; exactly how a vector database / RAG index works.'''),
+      yourturn('''Add your own documents and queries. Find a query where semantic search **beats** keyword search
+(no shared words but the right hit) and one where it **struggles** (needs an exact term). Try `k=3`.
+A "good" answer: you can explain, from the scores, why a particular doc ranked where it did.'''),
+      footer(7, "Real embeddings + cosine ranking = modern semantic search, and the retrieval half of RAG (which returns on Day 3)."),
     ]
 
 # ============================================================ LAB 08
 @lab(8, "lab-08-self-attention-sequence", "Intermediate",
      "Self-Attention Over a Sequence", 40,
-     "Project a sequence into Q/K/V and run self-attention over every position, checking the shapes at each step.",
+     "Project a sequence into Q/K/V and run self-attention over every position, checking shapes at each step -- the real block maths, by hand.",
      ["Q/K/V projections", "Attention matrix", "Shape discipline"])
 def _l8(sol):
     return [
@@ -495,17 +506,11 @@ def _l8(sol):
          "Confirm the attention matrix is row-normalised"],
         "The transformer block"),
       setup(8),
-      md('''## Concept
-In a real block, each token embedding **X** is projected by learned matrices into **Q = X.Wq**,
+      concept('''In a real block, each token embedding **X** is projected by learned matrices into **Q = X.Wq**,
 **K = X.Wk**, **V = X.Wv**, then attention runs over the sequence. The **attention matrix** A is
-`seq x seq`: row *i* says how much token *i* attends to each token. Each row sums to 1.'''),
-      code('''# DEMO -- a 3-token sequence, 4-d embeddings
-import numpy as np
-rng = np.random.default_rng(0)
-X = rng.normal(size=(3, 4))
-print("sequence X shape:", X.shape)'''),
-      md('''## Your Turn
-Build the projections and the attention matrix.'''),
+`seq x seq`: row *i* says how much token *i* attends to each token; each row sums to 1. We build it by
+hand here so the shapes are unambiguous &mdash; Lab 3.9 extracts exactly this matrix from a real model.'''),
+      buildmd("Build the projections and the attention matrix."),
       code(render([
         "import numpy as np",
         "def softmax(x, axis=-1):",
@@ -519,298 +524,272 @@ Build the projections and the attention matrix.'''),
         {"s": '    A = ___   # TODO: softmax(Q @ K^T / sqrt(d), axis=-1)',
          "a": '    A = softmax(Q @ K.T / np.sqrt(d), axis=-1)'},
         "    return A @ V, A",
-        "",
-        "rng = np.random.default_rng(0)",
-        "X = rng.normal(size=(3, 4))",
-        "Wq = rng.normal(size=(4, 4)); Wk = rng.normal(size=(4, 4)); Wv = rng.normal(size=(4, 4))",
-        "try:",
-        "    out, A = self_attention(X, Wq, Wk, Wv)",
-        "    print('output shape:', out.shape, '| attention matrix shape:', A.shape)",
-        "    print('row sums:', np.round(A.sum(axis=1), 3))",
-        "except Exception as e: print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''import numpy as np
+      runmd("Run one head of self-attention over a 3-token sequence."),
+      code(guard('''import numpy as np
 rng = np.random.default_rng(0)
-X = rng.normal(size=(3, 4)); Wq = rng.normal(size=(4, 4)); Wk = rng.normal(size=(4, 4)); Wv = rng.normal(size=(4, 4))
-expect_true("output has shape (seq_len, value_dim)", lambda: self_attention(X, Wq, Wk, Wv)[0].shape == (3, 4))
-expect_true("attention matrix is seq x seq", lambda: self_attention(X, Wq, Wk, Wv)[1].shape == (3, 3))
-expect_true("every attention row sums to 1", lambda: np.allclose(self_attention(X, Wq, Wk, Wv)[1].sum(axis=1), 1.0))'''),
+X = rng.normal(size=(3, 4))                        # 3 tokens, 4-d embeddings
+Wq = rng.normal(size=(4, 4)); Wk = rng.normal(size=(4, 4)); Wv = rng.normal(size=(4, 4))
+out, A = self_attention(X, Wq, Wk, Wv)
+print("output shape:", out.shape, "| attention matrix shape:", A.shape)
+print("attention matrix (each row sums to 1):\\n", np.round(A, 3))
+print("row sums:", np.round(A.sum(axis=1), 3))''')),
+      noticemd('''- The **output** is `(seq_len, value_dim)` &mdash; one new vector per token, mixed from the whole sequence.
+- The **attention matrix** is `seq x seq` and every **row sums to 1** &mdash; a per-token distribution over what it looked at.
+- The learned `Wq/Wk/Wv` are what training actually optimises; the attention operation itself has **no parameters**.'''),
+      yourturn('''Give two tokens **identical** embeddings and watch their rows in `A`. Then add more heads:
+run `self_attention` a few times with different random `Wq/Wk/Wv` and average the outputs &mdash; that
+is multi-head attention in miniature. A "good" answer: you can state the shape of every intermediate
+(`Q`, `K`, `A`, output) without running the cell.'''),
       footer(8, "You just ran one head of self-attention over a sequence. Stack a few heads and a feed-forward layer and you have a transformer block."),
     ]
 
 # ============================================================ LAB 09
 @lab(9, "lab-09-attention-heatmap", "Intermediate",
-     "Visualising an Attention Matrix", 35,
-     "Compute and plot the attention weights for a short sentence to see which words attend to which.",
-     ["Attention weights", "Heatmap", "Interpretability"])
+     "Real Attention from a Real Model", 35,
+     "Extract the ACTUAL attention weights from a real model (bert-tiny, output_attentions=True) and plot them over the real tokens -- interpretability for real.",
+     ["Real attention weights", "output_attentions", "Heatmap"])
 def _l9(sol):
     return [
-      header(9, "Visualising an Attention Matrix", "Intermediate", 35,
-        ["Compute self-attention weights for a toy sentence",
-         "Plot the attention matrix as a heatmap",
-         "Read which tokens attend most strongly to which"],
+      header(9, "Real Attention from a Real Model", "Intermediate", 35,
+        ["Run a real model and ask it for its attention weights",
+         "Extract one head's attention matrix over the real tokens",
+         "Plot it as a heatmap and read which tokens attend to which"],
         "Self-attention (Q/K/V)"),
       setup(9),
-      md('''## Concept
-Attention is **interpretable**: the `seq x seq` weight matrix shows, for each word, where it looked.
-We compute simple self-similarity attention (`X . Xt`) for a tiny sentence and plot it.
+      concept('''Attention is **interpretable**: for each token the model records where it looked. We load the real
+**prajjwal1/bert-tiny**, ask for `output_attentions=True`, run a sentence through it, and pull out one
+layer/head's `seq x seq` weight matrix &mdash; the *actual* attention the model computed, over its
+*actual* subword tokens. Then we plot it.
 
-> The heatmap needs `matplotlib`.'''),
-      code('''# DEMO -- a 4-word sentence with hand-made embeddings
-import numpy as np
-WORDS = ["the", "cat", "sat", "down"]
-X = np.array([[1,0.1,0.1],[0.1,1,0.3],[0.1,0.3,1],[0.2,0.1,0.95]], dtype=float)
-X = X / np.linalg.norm(X, axis=1, keepdims=True)   # unit embeddings
-print("words:", WORDS, "| embedding matrix:", X.shape)'''),
-      md('''## Your Turn
-Compute the attention-weight matrix (row-normalised self-similarity).'''),
+> The heatmap needs `matplotlib` (already in the lab venv).'''),
+      buildmd("Turn on attention output and extract one head's matrix."),
       code(render([
-        "import numpy as np",
-        "def softmax(x, axis=-1):",
-        "    x = x - x.max(axis=axis, keepdims=True); e = np.exp(x)",
-        "    return e / e.sum(axis=axis, keepdims=True)",
+        "import torch, numpy as np",
+        "from transformers import AutoTokenizer, AutoModel",
         "",
-        'WORDS = ["the", "cat", "sat", "down"]',
-        "X = np.array([[1,0.1,0.1],[0.1,1,0.3],[0.1,0.3,1],[0.2,0.1,0.95]], dtype=float)",
-        "X = X / np.linalg.norm(X, axis=1, keepdims=True)   # unit embeddings",
+        "def load_attn_model():",
+        '    name = "prajjwal1/bert-tiny"',
+        "    tok = AutoTokenizer.from_pretrained(name)",
+        {"s": '    model = AutoModel.from_pretrained(name, attn_implementation="eager", output_attentions=___)   # TODO: True',
+         "a": '    model = AutoModel.from_pretrained(name, attn_implementation="eager", output_attentions=True)'},
+        "    model.eval()",
+        "    return tok, model",
         "",
-        "def attention_weights(X):",
-        "    d = X.shape[-1]",
-        {"s": '    return ___   # TODO: softmax(X @ X^T / sqrt(d), axis=-1)',
-         "a": '    return softmax(X @ X.T / np.sqrt(d), axis=-1)'},
-        "",
-        "try:",
-        "    A = attention_weights(X)",
-        "    print(np.round(A, 2))",
-        "    import matplotlib.pyplot as plt",
-        "    plt.imshow(A, cmap='viridis'); plt.xticks(range(4), WORDS); plt.yticks(range(4), WORDS)",
-        "    plt.title('attention weights'); plt.colorbar(); plt.tight_layout()",
-        "    plt.savefig(WORK + '/attention_heatmap.png', dpi=90); plt.show()",
-        "except Exception as e: print('Fill the blank (plot needs matplotlib).', type(e).__name__)",
+        "def real_attention(sentence, tok, model, layer=-1, head=0):",
+        '    enc = tok(sentence, return_tensors="pt")',
+        "    with torch.no_grad(): out = model(**enc)",
+        "    tokens = tok.convert_ids_to_tokens(enc['input_ids'][0])",
+        {"s": '    A = ___   # TODO: out.attentions[layer][0, head].numpy()  -- one head, batch item 0',
+         "a": '    A = out.attentions[layer][0, head].numpy()'},
+        "    return tokens, A",
       ], sol)),
-      grader('''import numpy as np
-expect_true("attention matrix is 4x4", lambda: attention_weights(X).shape == (4, 4))
-expect_true("rows are valid distributions (sum to 1)", lambda: np.allclose(attention_weights(X).sum(axis=1), 1.0))
-expect_true("each token attends most to itself here", lambda: np.all(attention_weights(X).argmax(axis=1) == np.arange(4)))'''),
-      footer(9, "Attention maps are how researchers peek inside transformers. The same plot on a real model reveals grammar and coreference being learned."),
+      runmd("Run a real sentence and plot its real attention."),
+      code(hfrun('''tok, model = load_attn_model()
+tokens, A = real_attention("the cat sat on the mat", tok, model)
+print("tokens:", tokens)
+print("attention matrix shape:", A.shape, "| row sums:", np.round(A.sum(axis=1), 2))
+import matplotlib.pyplot as plt
+plt.figure(figsize=(5, 4))
+plt.imshow(A, cmap="viridis")
+plt.xticks(range(len(tokens)), tokens, rotation=45, ha="right"); plt.yticks(range(len(tokens)), tokens)
+plt.title("real attention (bert-tiny, last layer, head 0)"); plt.colorbar(); plt.tight_layout()
+plt.savefig(WORK + "/real_attention.png", dpi=90); plt.show()
+print("saved:", WORK + "/real_attention.png")''')),
+      noticemd('''- The tokens include `[CLS]` and `[SEP]` &mdash; the model's real inputs, not just the words you typed.
+- Each **row still sums to 1** (it is a softmax) &mdash; the same maths you built by hand in Labs 3.3 and 3.8.
+- Many tokens attend heavily to `[CLS]`/`[SEP]` &mdash; a real, well-documented behaviour. Different heads (`head=1,2,...`) and layers show different patterns.'''),
+      yourturn('''Change the sentence and the `head` / `layer` arguments. Find a head whose pattern looks
+**meaningful** (e.g. a word attending to a related word) and one that looks like a "junk" / `[SEP]`
+head. A "good" answer: you can point to one cell of the heatmap and say what it means in plain English.'''),
+      footer(9, "Attention maps are how researchers peek inside transformers. You just read them off a real model -- the by-hand maths from Labs 3.3/3.8 made concrete."),
     ]
 
 # ============================================================ LAB 10
 @lab(10, "lab-10-text-generation", "Advanced",
      "Text Generation: Greedy vs Sampling", 40,
-     "Generate text by predicting the next token -- with greedy decoding and temperature sampling -- the way GPT works.",
-     ["Next-token prediction", "Greedy decoding", "Temperature sampling"])
+     "Generate text with a REAL GPT-style model (distilgpt2) -- greedy vs temperature sampling -- then the same task on a hosted 'GPT API' via ChatGroq.",
+     ["Real text generation", "Greedy vs temperature", "Hosted GPT API"])
 def _l10(sol):
     return [
       header(10, "Text Generation: Greedy vs Sampling", "Advanced", 40,
-        ["Build a tiny next-word model and generate from it",
-         "Implement greedy decoding (always the top token)",
-         "Implement temperature-controlled softmax sampling"],
+        ["Generate text with a real GPT-style model",
+         "Compare greedy decoding vs temperature sampling",
+         "Run the same task on a hosted 'GPT API' (ChatGroq)"],
         "Encoder vs decoder (BERT vs GPT)"),
       setup(10),
-      md('''## Concept
-GPT-style models **generate** by repeatedly predicting the **next token** and feeding it back in. Two
-decoding strategies: **greedy** (always take the most likely token) and **sampling** with a
-**temperature** (lower = safer/sharper, higher = more random/creative). We build a tiny word-level
-model so the mechanics are crystal clear. The client's GPT-API generation is the same loop at scale &mdash;
-the optional cell at the end shows the real thing.'''),
-      code('''# DEMO -- build a tiny next-word model from a corpus
-from collections import defaultdict, Counter
-CORPUS = "the cat sat on the mat the cat sat on the rug the cat ran fast".split()
-MODEL = defaultdict(Counter)
-for a, b in zip(CORPUS, CORPUS[1:]): MODEL[a][b] += 1
-print("after 'the':", dict(MODEL["the"]))'''),
-      md('''## Your Turn
-Implement temperature **softmax**, **greedy** next-token, and the **generate** loop.'''),
+      concept('''GPT-style models **generate** by repeatedly predicting the **next token** and feeding it back in. Two
+decoding strategies: **greedy** (always the most likely token &mdash; deterministic, can get repetitive)
+and **sampling** with a **temperature** (lower = safer/sharper, higher = more random/creative). We run
+the real **distilgpt2** locally, then the client's "GPT API" framing for real via **ChatGroq**
+(`openai/gpt-oss-20b`). Same loop &mdash; local tiny model vs a large hosted one.'''),
+      buildmd("Fill in the model and the two decoding knobs."),
       code(render([
-        "import numpy as np",
-        "from collections import defaultdict, Counter",
-        'CORPUS = "the cat sat on the mat the cat sat on the rug the cat ran fast".split()',
-        "MODEL = defaultdict(Counter)",
-        "for a, b in zip(CORPUS, CORPUS[1:]): MODEL[a][b] += 1",
+        "from transformers import pipeline, set_seed",
+        "def build_gen():",
+        "    set_seed(0)",
+        {"s": '    return pipeline("text-generation", model=___)   # TODO: "distilgpt2"',
+         "a": '    return pipeline("text-generation", model="distilgpt2")'},
         "",
-        "def softmax_temp(logits, temp=1.0):",
-        "    z = np.array(logits, dtype=float) / temp",
-        {"s": '    e = ___   # TODO: exp of (z - z.max()) for stability',
-         "a": '    e = np.exp(z - z.max())'},
-        "    return e / e.sum()",
+        "def greedy(gen, prompt, n=25):",
+        {"s": '    out = gen(prompt, max_new_tokens=n, do_sample=___)   # TODO: False -- always the top token',
+         "a": '    out = gen(prompt, max_new_tokens=n, do_sample=False)'},
+        '    return out[0]["generated_text"]',
         "",
-        "def greedy_next(word):",
-        {"s": '    return ___   # TODO: the most common next word after `word` (Counter.most_common)',
-         "a": '    return MODEL[word].most_common(1)[0][0]'},
-        "",
-        "def generate(start, steps=4):",
-        "    out = [start]",
-        "    for _ in range(steps):",
-        {"s": '        out.append(___)   # TODO: greedy next word after the last token',
-         "a": '        out.append(greedy_next(out[-1]))'},
-        "    return out",
-        "",
-        "try:",
-        "    print('greedy:', ' '.join(generate('the', 4)))",
-        "    print('temp 0.5 vs 2.0 max prob:', round(softmax_temp([2,1,0],0.5).max(),3), round(softmax_temp([2,1,0],2.0).max(),3))",
-        "except Exception as e: print('Fill the blanks, then re-run.', type(e).__name__)",
+        "def sampled(gen, prompt, n=25, temp=1.0):",
+        {"s": '    out = gen(prompt, max_new_tokens=n, do_sample=True, top_k=50, temperature=___)   # TODO: temp',
+         "a": '    out = gen(prompt, max_new_tokens=n, do_sample=True, top_k=50, temperature=temp)'},
+        '    return out[0]["generated_text"]',
       ], sol)),
-      grader('''import numpy as np
-expect_true("softmax_temp sums to 1", lambda: abs(float(softmax_temp([2.0,1.0,0.0]).sum()) - 1.0) < 1e-9)
-expect_true("lower temperature is sharper (higher max prob)", lambda: softmax_temp([2,1,0], 0.5).max() > softmax_temp([2,1,0], 2.0).max())
-expect_true("greedy_next('the') == 'cat'", lambda: greedy_next("the") == "cat")
-expect_true("generate('the', 4) starts the cat sat on", lambda: generate("the", 4)[:4] == ["the", "cat", "sat", "on"])'''),
-      *optional_hf("Generate text with a real (tiny) GPT-style model. To instead use the OpenAI/Groq API, set your key in the marked spot &mdash; never commit keys.",
-'''try:
-    from transformers import pipeline, set_seed
-    set_seed(0)
-    gen = pipeline("text-generation", model="sshleifer/tiny-gpt2")
-    print(gen("The future of AI is", max_new_tokens=15)[0]["generated_text"])
-except Exception as e:
-    print("Optional real-model demo skipped (the graded cells above already covered this).")
-    print("  reason:", type(e).__name__, "--", e)
-
-# --- OPTIONAL: real GPT API (needs your own key; not graded) ---
-# import os; from openai import OpenAI
-# client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))   # set OPENAI_API_KEY yourself
-# print(client.chat.completions.create(model="gpt-4o-mini",
-#       messages=[{"role":"user","content":"Write one sentence about transformers."}]).choices[0].message.content)'''),
-      footer(10, "Greedy + temperature are the decoding knobs behind every chat model. You now understand what 'temperature' on the GPT API actually does."),
+      runmd("Generate locally with distilgpt2 &mdash; greedy vs low vs high temperature."),
+      code(hfrun('''gen = build_gen()
+prompt = "The future of artificial intelligence is"
+print("GREEDY      :", greedy(gen, prompt))
+print()
+print("TEMP 0.7    :", sampled(gen, prompt, temp=0.7))
+print()
+print("TEMP 1.5    :", sampled(gen, prompt, temp=1.5))''')),
+      runmd("The same task on a hosted 'GPT API' via ChatGroq. (One-line swap to OpenAI shown in a comment.)"),
+      code(guard('''import os
+if not os.environ.get("GROQ_API_KEY"):
+    print("Set GROQ_API_KEY in .env to run the hosted model (this cell is optional).")
+else:
+    from langchain_groq import ChatGroq
+    llm = ChatGroq(model="openai/gpt-oss-20b", temperature=0.7)
+    reply = llm.invoke("Continue in one vivid sentence: The future of artificial intelligence is")
+    print("GROQ (gpt-oss-20b):", reply.content)
+# One-line swap to OpenAI instead of Groq:
+#   from langchain_openai import ChatOpenAI
+#   llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)   # needs OPENAI_API_KEY''')),
+      noticemd('''- **Greedy** is deterministic and can loop / repeat; **temperature 0.7** is coherent-but-varied; **1.5** is wilder and less grammatical.
+- distilgpt2 is tiny, so its local text is rough &mdash; that is honest. The **hosted** model (Groq) is far more fluent: **same decoding loop, far more scale**.
+- `temperature` on any chat API is exactly this softmax-sharpness knob you are now setting.'''),
+      yourturn('''Sweep temperature from `0.2` to `2.0` on your own prompt. Where does it stop being coherent?
+Then compare distilgpt2's local output to the Groq output on the *same* prompt. A "good" answer: you
+can describe, in one sentence each, what low vs high temperature does and where scale matters most.'''),
+      footer(10, "Greedy + temperature are the decoding knobs behind every chat model -- local or hosted. You now know what 'temperature' on the GPT API actually does."),
     ]
 
 # ============================================================ LAB 11
 @lab(11, "lab-11-feature-extraction-head", "Advanced",
      "Feature Extraction + a Classifier Head", 40,
-     "Use a model as a feature extractor, then train a small classifier head on top -- the essence of transfer learning.",
-     ["Feature extraction", "Classifier head", "Transfer learning"])
+     "Use a REAL model as a frozen feature extractor (MiniLM embeddings), then train a small classifier head on top -- the essence of transfer learning.",
+     ["Real feature extraction", "Classifier head", "Transfer learning"])
 def _l11(sol):
     return [
       header(11, "Feature Extraction + a Classifier Head", "Advanced", 40,
-        ["Turn text into feature vectors (embeddings)",
+        ["Turn text into real feature vectors with a frozen model",
          "Train a lightweight classifier head on those features",
          "Predict sentiment on unseen sentences"],
         "The model landscape"),
       setup(11),
-      md('''## Concept
-A powerful pattern: let a model turn text into **features**, then train a small **head** on top for
-your task &mdash; **transfer learning** (the heart of Module 4). We use TF-IDF as an offline stand-in
-for transformer embeddings, then fit a logistic-regression head for sentiment.
+      concept('''A powerful pattern: let a big model turn text into **features** (embeddings), freeze it, then train a
+tiny **head** on top for your task &mdash; **transfer learning** (the heart of Module 4). We use the
+**real** all-MiniLM-L6-v2 as the frozen feature extractor and fit a logistic-regression head for
+sentiment. A handful of examples is enough because the features already carry meaning.
 
-> Needs `scikit-learn`.'''),
-      code('''# DEMO -- a tiny labelled sentiment set (1 = positive, 0 = negative)
-TRAIN = [("i love this movie", 1), ("what a great film", 1), ("wonderful and amazing", 1),
-         ("brilliant acting throughout", 1), ("i hate this movie", 0), ("what an awful film", 0),
-         ("terrible and boring", 0), ("bad acting throughout", 0)]
-print("examples:", len(TRAIN))'''),
-      md('''## Your Turn
-Fit the classifier **head** on the features, and implement **predict** for new text.'''),
+> Needs `scikit-learn` (already in the lab venv).'''),
+      buildmd("`embed()` (given) is the real feature extractor. Train the head and complete `predict`."),
       code(render([
-        "from sklearn.feature_extraction.text import TfidfVectorizer",
+        EMBED_DEF,
+        "",
         "from sklearn.linear_model import LogisticRegression",
         'TRAIN = [("i love this movie", 1), ("what a great film", 1), ("wonderful and amazing", 1),',
-        '         ("brilliant acting throughout", 1), ("i hate this movie", 0), ("what an awful film", 0),',
-        '         ("terrible and boring", 0), ("bad acting throughout", 0)]',
-        "texts = [t for t, _ in TRAIN]; labels = [y for _, y in TRAIN]",
-        "vec = TfidfVectorizer().fit(texts)            # the 'feature extractor'",
-        "X = vec.transform(texts)",
+        '         ("brilliant acting throughout", 1), ("an absolute delight to watch", 1),',
+        '         ("i hate this movie", 0), ("what an awful film", 0), ("terrible and boring", 0),',
+        '         ("bad acting throughout", 0), ("a complete waste of time", 0)]',
         "",
-        "def train_head():",
-        {"s": '    return ___   # TODO: LogisticRegression().fit(X, labels)',
-         "a": '    return LogisticRegression().fit(X, labels)'},
+        "def train_head(X, y):",
+        {"s": '    return ___   # TODO: LogisticRegression(max_iter=1000).fit(X, y)',
+         "a": '    return LogisticRegression(max_iter=1000).fit(X, y)'},
         "",
-        "clf = train_head()",
-        "def predict(text):",
-        {"s": '    return int(___)   # TODO: clf.predict(vec.transform([text]))[0]',
-         "a": '    return int(clf.predict(vec.transform([text]))[0])'},
-        "",
-        "try:",
-        "    for s in ['i love it', 'absolutely terrible']: print(predict(s), '<-', s)",
-        "except Exception as e: print('Fill the blanks, then re-run.', type(e).__name__)",
+        "def predict(clf, text):",
+        {"s": '    return int(___)   # TODO: clf.predict(embed([text]))[0]',
+         "a": '    return int(clf.predict(embed([text]))[0])'},
       ], sol)),
-      grader('''expect_true("head fits and exposes predict", lambda: hasattr(train_head(), "predict"))
-expect_true("positive sentence -> 1", lambda: predict("i love this great film") == 1)
-expect_true("negative sentence -> 0", lambda: predict("an awful and terrible movie") == 0)'''),
-      *optional_hf("Use a real transformer as the feature extractor (embeddings) instead of TF-IDF.",
-'''try:
-    from transformers import pipeline
-    fx = pipeline("feature-extraction", model="prajjwal1/bert-tiny")
-    vecs = fx("transformers turn text into vectors")
-    import numpy as np
-    print("embedding shape (tokens x dims):", np.array(vecs[0]).shape)
-except Exception as e:
-    print("Optional real-model demo skipped (the graded cells above already covered this).")
-    print("  reason:", type(e).__name__, "--", e)'''),
-      footer(11, "Features from a big model + a tiny trained head = transfer learning. Module 4 does exactly this, fine-tuning a real BERT for sentiment."),
+      runmd("Extract real features, train the head, and classify unseen sentences."),
+      code(hfrun('''texts = [t for t, _ in TRAIN]; labels = [y for _, y in TRAIN]
+X = embed(texts)                       # real frozen feature extractor -> (n, 384)
+print("feature matrix shape:", X.shape)
+clf = train_head(X, labels)            # train ONLY the small head
+for s in ["i really enjoyed it", "an absolute disaster", "the plot was dull and lifeless",
+          "a heartwarming and beautiful story"]:
+    print(f"  pred={predict(clf, s)}  <-  {s}")''')),
+      noticemd('''- The head trains on **10 examples** and still generalises &mdash; because the **frozen model's features** already encode sentiment.
+- You never touched the transformer's weights: **feature extraction = frozen backbone + a trained head**. Cheap, fast, no GPU.
+- Swap the head (SVM, small MLP) or the task (topic, spam) &mdash; the same embeddings power all of them.'''),
+      yourturn('''Add your own labelled sentences (try a **neutral** class for 3-way). Find a test sentence the
+head gets **wrong** &mdash; is it a feature limitation or too little training data? A "good" answer:
+you can articulate why transfer learning needs so few examples here.'''),
+      footer(11, "Frozen features from a real model + a tiny trained head = transfer learning. Module 4 goes one step further and fine-tunes the backbone itself."),
     ]
 
 # ============================================================ LAB 12
 @lab(12, "lab-12-capstone-mini-transformer", "Advanced",
-     "Capstone: A Mini Transformer Pipeline", 45,
-     "Assemble the whole Module-3 toolkit -- tokenize, embed, add positions, self-attend, pool -- into one pipeline.",
-     ["End-to-end pipeline", "Self-attention", "Sequence pooling"])
+     "Capstone: A Real Sentence-Encoder Pipeline", 45,
+     "Assemble the Module-3 pipeline on a REAL model -- tokenize, run the model, mean-pool to a sentence vector, and use it for real semantic matching.",
+     ["End-to-end pipeline", "Real model", "Sentence pooling"])
 def _l12(sol):
     return [
-      header(12, "Capstone: A Mini Transformer Pipeline", "Advanced", 45,
-        ["Chain tokenize -> embed -> positional-encode -> self-attend -> pool",
-         "Produce a single vector that represents a whole sentence",
-         "Confirm different sentences get different representations"],
+      header(12, "Capstone: A Real Sentence-Encoder Pipeline", "Advanced", 45,
+        ["Chain tokenize -> real model -> mean-pool -> sentence vector",
+         "Produce one vector that represents a whole sentence",
+         "Use those vectors for real semantic matching"],
         "The transformer block"),
       setup(12),
-      md('''## Concept &mdash; the module's payoff
-Everything you built now snaps together into a **mini transformer encoder**: tokenize a sentence,
-look up **embeddings**, add **positional encodings**, run **self-attention**, and **mean-pool** the
-result into one sentence vector &mdash; the representation a classifier or search index would use.'''),
-      code('''# DEMO -- the shared pieces (given)
-import numpy as np
-def softmax(x, axis=-1):
-    x = x - x.max(axis=axis, keepdims=True); e = np.exp(x)
-    return e / e.sum(axis=axis, keepdims=True)
-def positional_encoding(seq_len, d):
-    pos = np.arange(seq_len)[:, None]; i = np.arange(d)[None, :]
-    ang = pos / np.power(10000, (2 * (i // 2)) / d)
-    pe = np.zeros((seq_len, d)); pe[:, 0::2] = np.sin(ang[:, 0::2]); pe[:, 1::2] = np.cos(ang[:, 1::2])
-    return pe
-rng = np.random.default_rng(0)
-VOCAB = {w: i for i, w in enumerate("the cat sat on mat dog ran fast".split())}
-TABLE = rng.normal(size=(len(VOCAB), 4))   # an embedding per vocab word, d=4
-print("vocab:", VOCAB)'''),
-      md('''## Your Turn
-Complete the four pipeline steps.'''),
+      concept('''Everything in Module 3 now snaps together on a **real** model: **tokenize** a sentence, run it
+through the transformer to get **contextual token vectors** (`last_hidden_state`), **mean-pool** them
+into one **sentence vector**, and use those vectors for **semantic matching**. This is exactly what a
+real sentence-encoder / retrieval system does &mdash; you are building it from the parts you learned.'''),
+      buildmd("Complete the pooling step and the nearest-match selection."),
       code(render([
-        "import numpy as np",
-        "def embed(tokens):",
-        {"s": '    return np.array([___ for t in tokens])   # TODO: look up TABLE[VOCAB[t]]',
-         "a": '    return np.array([TABLE[VOCAB[t]] for t in tokens])'},
+        "import torch, numpy as np",
+        "from transformers import AutoTokenizer, AutoModel",
+        "_M = {}",
+        "def _load():",
+        "    if not _M:",
+        '        name = "sentence-transformers/all-MiniLM-L6-v2"',
+        "        _M['tok'] = AutoTokenizer.from_pretrained(name)",
+        "        _M['mdl'] = AutoModel.from_pretrained(name); _M['mdl'].eval()",
+        "    return _M['tok'], _M['mdl']",
         "",
-        "def encode_sentence(sentence):",
-        "    tokens = sentence.split()",
-        "    X = embed(tokens)",
-        "    d = X.shape[-1]",
-        {"s": '    X = X + ___   # TODO: add positional_encoding(len(tokens), d)',
-         "a": '    X = X + positional_encoding(len(tokens), d)'},
-        {"s": '    A = ___   # TODO: softmax(X @ X^T / sqrt(d), axis=-1)',
-         "a": '    A = softmax(X @ X.T / np.sqrt(d), axis=-1)'},
-        "    context = A @ X",
-        {"s": '    return ___   # TODO: mean-pool the context over the tokens (axis=0)',
-         "a": '    return context.mean(axis=0)'},
+        "def encode(sentence):",
+        "    tok, mdl = _load()",
+        '    enc = tok(sentence, return_tensors="pt")',
+        "    with torch.no_grad(): out = mdl(**enc)",
+        "    H = out.last_hidden_state[0]                 # (tokens, dim) real contextual vectors",
+        {"s": '    v = ___   # TODO: mean-pool H over the token axis (dim=0) -> one sentence vector',
+         "a": '    v = H.mean(dim=0)'},
+        "    v = v / v.norm()                             # unit vector",
+        "    return v.numpy()",
         "",
-        "try:",
-        "    v = encode_sentence('the cat ran')",
-        "    print('sentence vector (dim', len(v), '):', np.round(v, 3))",
-        "except Exception as e: print('Fill the blanks, then re-run.', type(e).__name__)",
+        "def best_match(query, corpus):",
+        "    qv = encode(query)",
+        "    sims = [float(np.dot(qv, encode(s))) for s in corpus]",
+        {"s": '    i = ___   # TODO: int(np.argmax(sims)) -- the most similar sentence',
+         "a": '    i = int(np.argmax(sims))'},
+        "    return corpus[i], round(sims[i], 3)",
       ], sol)),
-      grader('''import numpy as np
-expect_true("embed returns one row per token", lambda: embed(["the", "cat"]).shape == (2, 4))
-expect_true("encode_sentence returns a single d-dim vector", lambda: encode_sentence("the cat ran").shape == (4,))
-expect_true("the pipeline is deterministic", lambda: np.allclose(encode_sentence("the cat ran"), encode_sentence("the cat ran")))
-expect_true("different sentences -> different vectors", lambda: not np.allclose(encode_sentence("the cat ran"), encode_sentence("the dog sat")))'''),
-      *optional_hf("Compare your hand-built sentence vector to a real transformer's sentence embedding.",
-'''try:
-    from transformers import pipeline
-    import numpy as np
-    fx = pipeline("feature-extraction", model="prajjwal1/bert-tiny")
-    emb = np.array(fx("the cat ran")[0]).mean(axis=0)
-    print("real transformer sentence vector dim:", emb.shape)
-except Exception as e:
-    print("Optional real-model demo skipped (the graded cells above already covered this).")
-    print("  reason:", type(e).__name__, "--", e)'''),
-      footer(12, "You built a working transformer encoder from parts you wrote yourself. Day 2 Module 4 takes the real, pretrained versions and fine-tunes them. That completes Module 3."),
+      runmd("Run the full real pipeline and match queries to a small corpus."),
+      code(hfrun('''# see the tokenize step for one sentence, then use the whole pipeline
+tok, _ = _load()
+print("tokens for 'a small furry pet':", tok.tokenize("a small furry pet"))
+
+CORPUS = ["cats and kittens are small furry pets",
+          "the stock market fell sharply today",
+          "transformers use attention to understand language",
+          "he cooked a delicious italian pasta dinner"]
+for query in ["a cute little kitten", "how do neural networks read text", "what should i eat tonight"]:
+    match, score = best_match(query, CORPUS)
+    print(f"\\nQUERY: {query}\\n  best -> {match}  (cos={score})")''')),
+      noticemd('''- One real pipeline: **tokenize -> model -> mean-pool -> unit vector**, every stage from Module 3 in order.
+- Each query lands on the **right** corpus sentence by meaning &mdash; with no shared keywords.
+- `last_hidden_state` holds **contextual** token vectors (a word's vector depends on its neighbours); mean-pooling collapses them to a fixed-size sentence vector a classifier or index can use.'''),
+      yourturn('''Extend the corpus, add paraphrase queries, or swap the model for `distilbert-base-uncased`
+inside `_load()` &mdash; do the matches change? Then try **max-pooling** or **CLS-token** pooling
+(`H[0]`) instead of mean and compare. A "good" answer: you can name each stage of your pipeline and
+say what would break if you removed it.'''),
+      footer(12, "You built a real sentence encoder from the parts you learned -- tokenize, embed, attend, pool. Module 4 takes real pretrained models and fine-tunes them for specific tasks. That completes Module 3."),
     ]
 
 # ============================================================ WRITE

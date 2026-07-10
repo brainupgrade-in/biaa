@@ -97,26 +97,28 @@ html = f'''<!DOCTYPE html>
       <span class="k">{len(order)} labs</span> |
       <span>{len(by["Beginner"])} Beginner &middot; {len(by["Intermediate"])} Intermediate &middot; {len(by["Advanced"])} Advanced</span> |
       <span class="k">~{total_min//60}h {total_min%60}m total</span> |
-      <span>Experiential: concept &rarr; demo &rarr; practice</span>
+      <span>Near-real: build &rarr; run real models &rarr; observe</span>
     </div>
   </header>
 
   <div class="container">
     <div class="callout">
-      <strong>How these labs work.</strong> Each notebook follows the same rhythm &mdash; read the
-      <strong>Concept</strong>, run the <strong>Demo</strong>, then complete <strong>Your Turn</strong> by
-      replacing every <code>___</code> placeholder. Run the <strong>grader</strong> cell at the bottom: it
-      prints <code>[PASS]</code> / <code>[FAIL]</code> / <code>[TODO]</code> and a final <code>Score</code>.
-      Each lab writes to its own <code>/tmp/biaa-lab-03-NN/</code> working dir. Stuck? Every lab has a full
-      answer key under <a href="solutions/"><code>solutions/</code></a> &mdash; try first, then check.
+      <strong>How these labs work (near-real).</strong> Each notebook runs <strong>real Hugging Face
+      Transformers</strong> locally on CPU. Read the <strong>Concept</strong>, fill the real <code>___</code>
+      blanks in <strong>Build it</strong> (real tokenizer / model / decoding calls), <strong>Run it for
+      real</strong> to see the actual model output, note <strong>What to notice</strong>, then finish with an
+      open <strong>Your turn</strong>. There is <strong>no auto-grader</strong> &mdash; the goal is real model
+      output you can read. Each lab writes to its own <code>/tmp/biaa-lab-03-NN/</code> working dir. Every lab
+      has a full answer key under <a href="solutions/"><code>solutions/</code></a> &mdash; try first, then check.
     </div>
     <div class="callout warn">
-      <strong>Setup (once).</strong> Python 3.10+ with: <code>pip install numpy scikit-learn matplotlib</code>.
-      Every graded step runs <strong>offline</strong> on NumPy / scikit-learn &mdash; no API keys, no model
-      downloads. Each Advanced lab also ends with an <em>optional</em>, non-graded
-      <strong>Hugging Face</strong> cell (<code>pip install transformers torch</code>) that runs a real tiny
-      transformer (e.g. <code>bert-tiny</code>, <code>tiny-gpt2</code>) so you can see the production tool;
-      it skips cleanly if transformers is not installed. In the managed lab sandbox everything is pre-installed.
+      <strong>Setup.</strong> Use the course <code>biaa-venv</code> (has <code>transformers</code>,
+      <code>torch</code>, <code>scikit-learn</code>, <code>matplotlib</code>, <code>langchain-groq</code>).
+      Labs load small CPU-friendly models from the HF hub &mdash; <code>distilbert-base-uncased</code>,
+      <code>all-MiniLM-L6-v2</code>, <code>prajjwal1/bert-tiny</code>, <code>distilgpt2</code>; the first use
+      of each downloads the weights (needs network), then they are cached. The hosted &ldquo;GPT API&rdquo;
+      cell in Lab 3.10 uses <code>ChatGroq</code> (<code>GROQ_API_KEY</code> in <code>.env</code>). If a blank
+      is unfilled or the first download has no network, cells print a friendly note instead of crashing.
     </div>
 
 {section("Beginner")}
@@ -138,7 +140,7 @@ html = f'''<!DOCTYPE html>
     &copy; 2026 Gheware DevOps &amp; Agentic AI |
     <a href="https://devops.gheware.com">devops.gheware.com</a> |
     Trainer: Rajesh Gheware |
-    Building Intelligent AI Agents &middot; Day 2 Module 3 Labs v1.0
+    Building Intelligent AI Agents &middot; Day 2 Module 3 Labs v1.1
   </footer>
 </body>
 </html>'''
