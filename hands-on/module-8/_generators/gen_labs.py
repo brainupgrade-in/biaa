@@ -313,7 +313,7 @@ expect_true("context stays small (only recorded agents)", lambda: (lambda s: (s.
 # ============================================================ LAB 04
 @lab(4, "lab-04-sequential-pipeline", "Beginner",
      "Sequential Pipeline of Specialists", 25,
-     "Chain agents in a fixed order so each transforms the previous one's output -- research, write, edit.",
+     "Chain specialists in a fixed order so each adds to a customer case -- triage, then billing, then tech.",
      ["Sequential", "Pipeline", "Stages"])
 def _l4(sol):
     return [
@@ -369,7 +369,7 @@ expect_true("the final trail entry is the final case", lambda: run_pipeline("t",
 # ============================================================ LAB 05
 @lab(5, "lab-05-parallel-fanout", "Beginner",
      "Parallel Fan-Out", 20,
-     "Run several agents on the SAME input for coverage, and collect all their results together.",
+     "Fan one ticket out to several specialists at once, collect results by agent, and survive one that fails.",
      ["Parallel", "Fan-out", "Coverage"])
 def _l5(sol):
     return [
