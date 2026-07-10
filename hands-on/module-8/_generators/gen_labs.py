@@ -318,49 +318,52 @@ expect_true("context stays small (only recorded agents)", lambda: (lambda s: (s.
 def _l4(sol):
     return [
       header(4, "Sequential Pipeline of Specialists", "Beginner", 25,
-        ["Run a list of stage-agents in a fixed order",
-         "Feed each stage the previous stage's output",
-         "See why a clean, focused input makes each stage reliable"],
+        ["Run the CS specialists in a fixed order over one customer ticket",
+         "Feed each stage the previous stage's accumulated case",
+         "See why a clean, ordered hand-off keeps each stage reliable"],
         "Sequential — a pipeline of specialists"),
       setup(4),
       md('''## Concept
 The simplest collaboration is the **sequential pipeline** (deck slide 9): agents run in a **fixed
-order**, each transforming the previous output &mdash; researcher &rarr; writer &rarr; editor. It's a
-relay where the baton is the growing state. Each agent gets a **clean, focused input** (the prior
-stage's output), so each does its narrow job well &mdash; and you can swap any stage independently.
-(Watch out: errors **propagate**, and it's **serial**, so latency adds up.)'''),
-      code('''# Each stage is an agent that takes the running text and returns it, extended.
-print("pipeline: research -> write -> edit")'''),
+order**, each transforming the running case &mdash; for a support ticket that is **triage &rarr;
+billing &rarr; tech**. It's a relay where the baton is the growing case. Each stage gets a **clean,
+focused input** (the prior stage's output), so each does its narrow job well &mdash; and you can swap
+any stage independently. (Watch out: errors **propagate** downstream, and it's **serial**, so latency
+adds up.)'''),
+      code('''# Each stage is a specialist that takes the running case and returns it, extended with its note.
+print("pipeline: triage -> billing -> tech")'''),
       md('''## Your Turn
 Complete `run_pipeline` so each stage receives the previous stage's output.'''),
       code(render([
-        "def run_pipeline(text, stages):",
-        "    steps = []",
+        "def run_pipeline(ticket, stages):",
+        "    case = ticket",
+        "    trail = []",
         "    for stage in stages:",
-        {"s": '        text = ___   # TODO: run this stage on the CURRENT text (its input is the prior output)',
-         "a": '        text = stage(text)'},
-        "        steps.append(text)",
-        '    return {"result": text, "steps": steps}',
+        {"s": '        case = ___   # TODO: run this stage on the CURRENT case (its input is the previous stage output)',
+         "a": '        case = stage(case)'},
+        "        trail.append(case)",
+        '    return {"case": case, "trail": trail}',
         "",
         "STAGES = [",
-        '    lambda t: t + " -> researched",',
-        '    lambda t: t + " -> written",',
-        '    lambda t: t + " -> edited",',
+        '    lambda c: c + " | triage -> billing+tech",',
+        '    lambda c: c + " | billing: duplicate charge on 4471",',
+        '    lambda c: c + " | tech: matches BUG-231",',
         "]",
         "",
         "try:",
-        "    out = run_pipeline('topic: refunds', STAGES)",
-        "    print('result:', out['result'])",
-        "    print('steps :', out['steps'])",
+        "    out = run_pipeline('ticket: charged twice, app crashing', STAGES)",
+        "    print('final case:', out['case'])",
+        "    for step in out['trail']:",
+        "        print('  step:', step)",
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''expect_true("the text passes through all three stages", lambda: run_pipeline("x", STAGES)["result"] == "x -> researched -> written -> edited")
-expect_true("one step is recorded per stage", lambda: len(run_pipeline("x", STAGES)["steps"]) == 3)
-expect_true("each stage builds on the previous output", lambda: run_pipeline("x", STAGES)["steps"][1].startswith(run_pipeline("x", STAGES)["steps"][0]))
-expect_true("the final step is the result", lambda: run_pipeline("x", STAGES)["steps"][-1] == run_pipeline("x", STAGES)["result"])
-expect_true("a single-stage pipeline works", lambda: run_pipeline("x", [lambda t: t + "!"])["result"] == "x!")'''),
-      footer(4, "A pipeline is the multi-agent version of Module 7's automation pipeline -- each stage a specialist. Clean hand-offs make each stage reliable; just remember errors propagate downstream."),
+      grader('''expect_true("the ticket passes through every stage in order", lambda: run_pipeline("t", STAGES)["case"].endswith("| tech: matches BUG-231"))
+expect_true("one trail entry is recorded per stage", lambda: len(run_pipeline("t", STAGES)["trail"]) == 3)
+expect_true("each stage builds on the previous stage's output", lambda: run_pipeline("t", STAGES)["trail"][1].startswith(run_pipeline("t", STAGES)["trail"][0]))
+expect_true("triage runs before the specialists", lambda: "triage" in run_pipeline("t", STAGES)["trail"][0] and "billing" in run_pipeline("t", STAGES)["trail"][1])
+expect_true("the final trail entry is the final case", lambda: run_pipeline("t", STAGES)["trail"][-1] == run_pipeline("t", STAGES)["case"])'''),
+      footer(4, "A pipeline is the multi-agent version of Module 7's automation pipeline -- each stage a specialist over the same ticket. Clean, ordered hand-offs make each stage reliable; just remember errors propagate downstream."),
     ]
 
 # ============================================================ LAB 05
@@ -371,44 +374,56 @@ expect_true("a single-stage pipeline works", lambda: run_pipeline("x", [lambda t
 def _l5(sol):
     return [
       header(5, "Parallel Fan-Out", "Beginner", 20,
-        ["Give the same input to several agents at once",
-         "Collect one result per agent for coverage",
-         "See how independent lenses catch what one would miss"],
+        ["Run every specialist on the SAME customer ticket at once",
+         "Collect each result tagged with the agent that produced it",
+         "Survive one agent failing -- fault tolerance in a fan-out"],
         "Parallel — fan-out for coverage & speed"),
       setup(5),
       md('''## Concept
 In the **parallel** (fan-out) shape, several agents work the **same input** at once and their outputs
-are combined (deck slide 10). Two uses: **coverage** (different lenses on one question &mdash; security,
-performance, style reviewers) and **diverse attempts** (several solutions, pick the best). Independent
-views don't share a blind spot. But fan-out creates a new problem &mdash; you now have **several
-outputs and need one** &mdash; which is the decision-making you'll build next.'''),
-      code('''# Three reviewers, each a different lens on the same code snippet.
-print("fan-out: run every reviewer on the same input")'''),
+are combined (deck slide 10). For a support ticket you fan it out to the **billing, tech and policy**
+specialists together &mdash; each an independent lens, so between them they catch what one alone would
+miss. Two practical rules: keep each result **tagged with the agent** that produced it (you must know
+who said what), and make the fan-out **fault-tolerant** &mdash; if one specialist is down, the others
+still return. But fan-out creates a new problem &mdash; you now have **several outputs and need one**
+&mdash; which is the decision-making you'll build next.'''),
+      code('''# Three specialists, each a different lens on the SAME ticket -- and one of them is currently DOWN.
+def billing_agent(t):
+    return "duplicate charge on 4471" if "charg" in t.lower() else "no billing issue"
+def tech_agent(t):
+    return "matches BUG-231" if "crash" in t.lower() else "no tech issue"
+def policy_agent(t):
+    raise RuntimeError("policy service unavailable")   # this specialist is DOWN -> the fan-out must survive it
+SPECIALISTS = {"billing": billing_agent, "tech": tech_agent, "policy": policy_agent}
+print("fan-out targets:", list(SPECIALISTS))'''),
       md('''## Your Turn
-Complete `fan_out` so every agent runs on the same input and you collect all results.'''),
+Complete `fan_out`: run every specialist on the **same** ticket, tag each result by agent, and keep
+going when one raises.'''),
       code(render([
-        "def fan_out(text, agents):",
-        {"s": '    return ___   # TODO: a list with each agent\'s result on the SAME text',
-         "a": '    return [agent(text) for agent in agents]'},
-        "",
-        "REVIEWERS = [",
-        '    lambda t: "security: " + ("risk" if "eval" in t else "ok"),',
-        '    lambda t: "perf: " + ("slow" if "loop" in t else "ok"),',
-        '    lambda t: "style: ok",',
-        "]",
+        "def fan_out(ticket, specialists):",
+        "    results = {}",
+        "    for name, agent in specialists.items():",
+        "        try:",
+        {"s": '            results[name] = ___   # TODO: run THIS agent on the ticket (same input for all)',
+         "a": '            results[name] = agent(ticket)'},
+        "        except Exception as e:",
+        {"s": '            results[name] = ___   # TODO: this agent is down -- record a marker string beginning "ERROR: " (include type(e).__name__) so the fan-out survives',
+         "a": '            results[name] = f"ERROR: {type(e).__name__}"'},
+        "    return results",
         "",
         "try:",
-        "    print(fan_out('for x in loop: eval(x)', REVIEWERS))",
-        "    print(fan_out('clean code', REVIEWERS))",
+        "    out = fan_out('charged twice and the app keeps crashing', SPECIALISTS)",
+        "    for name, res in out.items():",
+        "        print(f'{name:8}: {res}')",
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''expect_true("fan_out runs every agent", lambda: len(fan_out("x", REVIEWERS)) == 3)
-expect_true("one result per agent", lambda: len(fan_out("x", REVIEWERS)) == len(REVIEWERS))
-expect_true("every agent saw the same input", lambda: fan_out("eval loop", REVIEWERS)[0] == "security: risk" and fan_out("eval loop", REVIEWERS)[1] == "perf: slow")
-expect_true("a clean input flags nothing", lambda: fan_out("clean", REVIEWERS) == ["security: ok", "perf: ok", "style: ok"])
-expect_true("different input, different results", lambda: fan_out("eval", REVIEWERS) != fan_out("clean", REVIEWERS))'''),
-      footer(5, "Fan-out buys coverage and speed -- latency is the slowest agent, not the sum. But now you have several outputs and need one: that convergence is decision making, coming up."),
+      grader('''expect_true("fan-out returns one result per specialist", lambda: len(fan_out("charged twice and crash", SPECIALISTS)) == 3)
+expect_true("each result is tagged by agent identity", lambda: set(fan_out("x", SPECIALISTS)) == {"billing", "tech", "policy"})
+expect_true("every specialist saw the same ticket", lambda: fan_out("charged twice and crash", SPECIALISTS)["billing"] == "duplicate charge on 4471" and fan_out("charged twice and crash", SPECIALISTS)["tech"] == "matches BUG-231")
+expect_true("a failing specialist does NOT crash the fan-out", lambda: fan_out("x", SPECIALISTS)["policy"].startswith("ERROR"))
+expect_true("the surviving specialists still returned findings", lambda: not fan_out("charged twice and crash", SPECIALISTS)["billing"].startswith("ERROR"))'''),
+      footer(5, "Fan-out buys coverage and speed -- latency is the slowest agent, not the sum -- and staying tagged + fault-tolerant means one agent going down doesn't take the team with it. But now you have several outputs and need one: that convergence is decision making, coming up."),
     ]
 
 # ============================================================ LAB 06
@@ -816,93 +831,142 @@ except Exception as e:
 def _l12(sol):
     return [
       header(12, "Capstone: The Multi-Agent Chatbot", "Advanced", 45,
-        ["Chain route -> specialists -> synthesise into one handler",
-         "Gate any irreversible action (a refund) on human approval",
-         "Run the chatbot over a SUITE of messages and score it"],
+        ["Chain route -> real create_agent specialists -> synthesise into one handler",
+         "Run a VOTE when two specialists conflict; gate any refund on a human",
+         "Run the chatbot over a SUITE (general fallback + a conflict case) and score it"],
         "The multi-agent customer-service chatbot"),
       setup(12),
       md('''## Concept
 Capstone: the **multi-agent customer-service chatbot** (the client's Lab 4.2), end to end. A
-**supervisor** routes each message to the matching **specialists**; each returns a grounded finding; a
-**synthesiser** composes one reply; and anything **irreversible** (a refund) is flagged
-**`needs_approval`** for a human &mdash; never auto-done. You run it over a **suite** of messages and
-score the outcomes. The pieces below are the ones you built through the module; you assemble them.'''),
-      realcell([],
-        '''# The pieces you built this module, provided here so you can assemble the whole chatbot.
-SPECIALISTS = {
-    "billing": ["charge", "refund", "invoice", "billed"],
-    "tech":    ["crash", "bug", "login", "broken"],
-}
+**supervisor** routes each message to the matching **specialists** (the **real `create_agent`** agents
+from Lab 8.11); each returns a grounded finding; a **synthesiser** composes one reply. When two
+specialists **conflict** on a sensitive call (a disputed refund), you don't paste the contradiction
+&mdash; you run the **vote** from Lab 8.7 and **escalate a split** to a human. And anything
+**irreversible** (a refund) is flagged **`needs_approval`** &mdash; never auto-done. You run it over a
+**suite** (including a general fallback and a conflict) and score the outcomes. The routing, vote,
+synthesis and refund gate are deterministic (graded); the real specialists run in the optional cell.'''),
+      realcell([TOOL_IMPORT, CS_FIXTURE],
+        '''from langchain_core.tools import tool
+from collections import Counter
+
+@tool
+def lookup_invoice(order_id: str) -> list:
+    """Look up the charges on an order by id."""
+    return INVOICES.get(order_id, [])
+@tool
+def known_issues(symptom: str) -> dict:
+    """Look up a known technical issue by symptom keyword."""
+    for k, v in KNOWN_ISSUES.items():
+        if k in symptom.lower():
+            return v
+    return {}
+
 def route(message):
     m = message.lower()
-    hits = [name for name, kws in SPECIALISTS.items() if any(k in m for k in kws)]
+    kws = {"billing": ("charg", "refund", "invoice", "billed"), "tech": ("crash", "bug", "login", "broken")}
+    hits = [name for name, ks in kws.items() if any(k in m for k in ks)]
     return hits if hits else ["general"]
 
-def billing_agent(message):  return "On billing: duplicate charge -> refund warranted."
-def tech_agent(message):     return "On the app: matches BUG-231 -> update to v4.2."
-def general_agent(message):  return "On your query: forwarded to a human agent."
-AGENTS = {"billing": billing_agent, "tech": tech_agent, "general": general_agent}
+# The grounded findings each specialist produces (the offline stand-in for the REAL agents built below).
+def billing_finding(message):
+    return "order 5090 has one valid charge -> no refund" if "5090" in message.lower() else "duplicate charge on 4471 -> refund warranted"
+def tech_finding(message):    return "matches BUG-231 -> update to v4.2"
+def general_finding(message): return "forwarded to a human agent"
+FINDINGS = {"billing": billing_finding, "tech": tech_finding, "general": general_finding}
 
 def synthesize(findings):
     return " ".join(findings[k] for k in sorted(findings)) if findings else "No findings."
-print("route, agents & synthesise ready")'''),
+
+# Decision skills from earlier in the module, wired into the product here:
+def is_dispute(message):   return "dispute" in message.lower()
+def review_panel(message): return ["refund", "deny"]   # a disputed charge -> reviewers SPLIT (no clear majority)
+def decide(verdicts, threshold=0.5):                    # Lab 8.7's vote
+    top, n = Counter(verdicts).most_common(1)[0]
+    if n / len(verdicts) > threshold: return {"decision": top, "escalate": False}
+    return {"decision": None, "escalate": True}
+print("tools, route, findings, synthesise & the vote are ready")'''),
       md('''## Your Turn
-Assemble `process` (route -> run each specialist -> synthesise -> gate the refund) and `evaluate`.'''),
+Build the real `create_agent` specialists, then assemble `process` (route &rarr; run each specialist
+&rarr; run the vote on a conflict &rarr; synthesise &rarr; gate the refund) and `evaluate`.'''),
       code(render([
+        "from langchain_ollama import ChatOllama",
+        "from langchain.agents import create_agent",
+        "",
+        "def build_specialist(tools, role):",
+        '    model = ChatOllama(model="llama3.2:1b")',
+        {"s": '    return create_agent(model, ___, system_prompt=f"You are the {role} specialist. Use only your tools.")   # TODO: bind this role own tools',
+         "a": '    return create_agent(model, tools, system_prompt=f"You are the {role} specialist. Use only your tools.")'},
+        "",
+        "billing_agent = build_specialist([lookup_invoice], 'billing')",
+        "tech_agent    = build_specialist([known_issues], 'tech')",
+        "",
         "def process(message):",
         "    involved = route(message)",
-        {"s": '    findings = ___   # TODO: {name: AGENTS[name](message) for each involved specialist}',
-         "a": '    findings = {name: AGENTS[name](message) for name in involved}'},
+        {"s": '    findings = ___   # TODO: a dict mapping each involved specialist name to its finding for this message',
+         "a": '    findings = {name: FINDINGS[name](message) for name in involved}'},
+        "    conflict = None",
+        "    if 'billing' in involved and is_dispute(message):",
+        "        verdicts = review_panel(message)",
+        {"s": '        conflict = ___   # TODO: run the vote over the verdicts (reuse decide from Lab 8.7)',
+         "a": '        conflict = decide(verdicts)'},
+        '        findings["billing"] = "reviewers split -> escalate to a human" if conflict["escalate"] else f"reviewers agree: {conflict[\'decision\']}"',
         "    reply = synthesize(findings)",
-        '    # irreversible action? a refund needs a human before anything happens',
-        {"s": '    needs_human = ___   # TODO: True if any finding mentions "refund"',
-         "a": '    needs_human = any("refund" in f.lower() for f in findings.values())'},
+        '    # a human decides if any finding warrants a refund OR the conflict vote escalated',
+        {"s": '    needs_human = ___   # TODO: True if any finding mentions "refund warranted" or "escalate"',
+         "a": '    needs_human = any("refund warranted" in f.lower() or "escalate" in f.lower() for f in findings.values())'},
         '    status = "needs_approval" if needs_human else "auto_ok"',
-        '    return {"agents": sorted(findings), "reply": reply, "status": status}',
+        '    return {"agents": sorted(findings), "reply": reply, "status": status, "conflict": bool(conflict)}',
         "",
         "SUITE = [",
         '    {"message": "charged twice for 4471 and the app keeps crashing", "agents": ["billing", "tech"], "status": "needs_approval"},',
         '    {"message": "the app keeps crashing on login",                  "agents": ["tech"],            "status": "auto_ok"},',
         '    {"message": "please refund my invoice",                         "agents": ["billing"],         "status": "needs_approval"},',
+        '    {"message": "what are your hours?",                             "agents": ["general"],         "status": "auto_ok"},',
+        '    {"message": "why was I billed 30 on order 5090?",               "agents": ["billing"],         "status": "auto_ok"},',
+        '    {"message": "I want to dispute the charge on 4471",             "agents": ["billing"],         "status": "needs_approval"},',
         "]",
         "",
         "def evaluate():",
-        {"s": '    solved = ___   # TODO: count suite items where agents AND status both match',
+        {"s": '    solved = ___   # TODO: count SUITE items where BOTH agents and status match the expected',
          "a": '    solved = sum(1 for t in SUITE if process(t["message"])["agents"] == t["agents"] and process(t["message"])["status"] == t["status"])'},
         "    return solved, len(SUITE)",
         "",
         "try:",
         "    for t in SUITE:",
         "        r = process(t['message'])",
-        "        print(r['agents'], '|', r['status'], '->', r['reply'][:48])",
+        "        print(r['agents'], '|', r['status'], '| conflict:', r['conflict'], '->', r['reply'][:44])",
         "    print('score:', evaluate())",
         "except Exception as e:",
         "    print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''expect_true("a two-intent message engages both specialists", lambda: process("charged twice and the app keeps crashing")["agents"] == ["billing", "tech"])
+      grader('''expect_true("each specialist is a real create_agent (CompiledStateGraph)", lambda: type(billing_agent).__name__ == "CompiledStateGraph" and type(tech_agent).__name__ == "CompiledStateGraph")
+expect_true("a two-intent message engages both specialists", lambda: process("charged twice and the app keeps crashing")["agents"] == ["billing", "tech"])
 expect_true("a pure tech message engages only tech", lambda: process("the app keeps crashing")["agents"] == ["tech"])
-expect_true("the reply is synthesised from the findings", lambda: (lambda r: "refund" in r.lower() and "bug-231" in r.lower())(process("charged twice and crashing")["reply"]))
+expect_true("an unknown query falls back to the general agent", lambda: process("what are your hours?")["agents"] == ["general"])
+expect_true("the reply is synthesised from the findings", lambda: (lambda r: "refund" in r.lower() and "bug-231" in r.lower())(process("charged twice and the app keeps crashing")["reply"]))
 expect_true("a refund is gated on human approval", lambda: process("please refund my invoice")["status"] == "needs_approval")
-expect_true("a non-irreversible case is auto_ok", lambda: process("the app keeps crashing")["status"] == "auto_ok")
-expect_true("the chatbot solves the whole suite", lambda: evaluate() == (3, 3))'''),
+expect_true("a valid (non-duplicate) charge is auto_ok", lambda: process("why was I billed 30 on order 5090?")["status"] == "auto_ok")
+expect_true("a CONFLICT (dispute) runs a vote and escalates to a human", lambda: process("I want to dispute the charge on 4471")["conflict"] is True and process("I want to dispute the charge on 4471")["status"] == "needs_approval")
+expect_true("the chatbot solves the whole suite", lambda: evaluate() == (len(SUITE), len(SUITE)))'''),
       *live(
-        "See a REAL model do the supervisor's intent-routing (Ollama / Groq) -- the bridge to Day 5.",
-        '''try:
+        "Run the REAL create_agent specialists behind the supervisor: route, invoke each matching agent, then apply the conflict vote and refund gate you built.",
+        '''def specialist_reply(agent, message):
+    result = agent.invoke({"messages": [{"role": "user", "content": message}]}, config={"recursion_limit": 8})
+    return result["messages"][-1].content
+try:
     if ollama_up():
-        from langchain_ollama import ChatOllama
-        llm = ChatOllama(model="llama3.2:1b")
-        msg = "I was charged twice and the app keeps crashing."
-        intents = llm.invoke("List the intents (billing/tech) in one line: " + msg).content
-        print("REAL supervisor intents:", intents)
-        print("\\nProduction shape (LangGraph): supervisor node routes to billing & tech agent nodes,")
-        print("findings flow through shared state to a synthesise node, and the refund waits on human approval.")
+        msg = "I was charged twice for order 4471 and the app keeps crashing."
+        agents = {"billing": billing_agent, "tech": tech_agent}
+        live_findings = {name: specialist_reply(agents[name], msg) for name in route(msg) if name in agents}
+        print("live findings:", live_findings)
+        print("(offline, process() already scored the whole suite -- routing, the conflict vote, synthesis and the refund gate.)")
     else:
-        print("No Ollama reachable -- skipping the live routing. The offline multi-agent chatbot above already ran")
-        print("the whole suite -- routed, synthesised, and gated every refund on human approval.")
+        print("No Ollama reachable -- skipping the live run. The offline chatbot above already ran the whole suite:")
+        print("routed every ticket, voted on the conflict case, synthesised one reply, and gated every refund on a human.")
     print("Next: Day 5 -- agents in industry (finance / health / cyber) and responsible AI.")
 except Exception as e:
-    print("Live routing skipped:", type(e).__name__)'''),
-      footer(12, "You built a multi-agent customer-service chatbot end to end -- specialists coordinated by a supervisor, findings synthesised into one reply, refunds gated on a human. That completes Day 4. Next: Day 5 -- agents in the real world, responsibly."),
+    print("Live run skipped:", type(e).__name__)'''),
+      footer(12, "You built a multi-agent customer-service chatbot end to end -- specialists coordinated by a supervisor, a vote when they conflict, findings synthesised into one reply, refunds gated on a human. That completes Day 4. Next: Day 5 -- agents in the real world, responsibly."),
     ]
 
 # ============================================================ WRITE NOTEBOOKS
