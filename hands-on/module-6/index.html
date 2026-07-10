@@ -92,8 +92,8 @@
           <span class="time">&#9201; 20 min</span>
         </div>
         <h4>Your First Tool with @tool</h4>
-        <p>Turn a plain function into a real LangChain tool with @tool and read its name, description and args.</p>
-        <div class="chips"><span class="chip">@tool</span><span class="chip">Tool schema</span><span class="chip">tool.invoke</span></div>
+        <p>Turn plain functions into real LangChain @tools, then watch a real llama3.1:8b agent call YOUR tools.</p>
+        <div class="chips"><span class="chip">@tool</span><span class="chip">Tool schema</span><span class="chip">Real agent run</span></div>
         <div class="links">
           <a class="open" href="lab-01-your-first-tool.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-01-your-first-tool.ipynb">Solution</a>
@@ -105,8 +105,8 @@
           <span class="time">&#9201; 20 min</span>
         </div>
         <h4>The Docstring Is the Tool's API</h4>
-        <p>Give tools clear descriptions, render the catalog the model reads, and route a query to the right tool.</p>
-        <div class="chips"><span class="chip">Descriptions</span><span class="chip">Tool catalog</span><span class="chip">Selection</span></div>
+        <p>Prove the docstring drives tool choice: give a real agent well- vs poorly-described tools and watch what it picks.</p>
+        <div class="chips"><span class="chip">Descriptions</span><span class="chip">Tool selection</span><span class="chip">Real trace</span></div>
         <div class="links">
           <a class="open" href="lab-02-tool-descriptions.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-02-tool-descriptions.ipynb">Solution</a>
@@ -118,8 +118,8 @@
           <span class="time">&#9201; 20 min</span>
         </div>
         <h4>The Model Interface: Prompts & .invoke()</h4>
-        <p>Build a PromptTemplate, format it, and configure a ChatOllama model -- the one interface every provider shares.</p>
-        <div class="chips"><span class="chip">ChatModel</span><span class="chip">PromptTemplate</span><span class="chip">.invoke</span></div>
+        <p>Build a real PromptTemplate, call ChatOllama with .invoke(), and read .content -- the interface every provider shares.</p>
+        <div class="chips"><span class="chip">ChatModel</span><span class="chip">PromptTemplate</span><span class="chip">Real .invoke</span></div>
         <div class="links">
           <a class="open" href="lab-03-model-and-prompt.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-03-model-and-prompt.ipynb">Solution</a>
@@ -131,8 +131,8 @@
           <span class="time">&#9201; 20 min</span>
         </div>
         <h4>Assemble an Agent with create_agent</h4>
-        <p>Bind a model + tools into a runnable agent with langchain.agents.create_agent and inspect its structure.</p>
-        <div class="chips"><span class="chip">create_agent</span><span class="chip">Binding tools</span><span class="chip">CompiledStateGraph</span></div>
+        <p>Bind the real model + tools into a runnable agent with create_agent, run it, and read the final answer.</p>
+        <div class="chips"><span class="chip">create_agent</span><span class="chip">Binding tools</span><span class="chip">Real run</span></div>
         <div class="links">
           <a class="open" href="lab-04-assemble-agent.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-04-assemble-agent.ipynb">Solution</a>
@@ -144,7 +144,7 @@
           <span class="time">&#9201; 25 min</span>
         </div>
         <h4>Run the Agent & Read the Trace</h4>
-        <p>Cap the loop with recursion_limit and read an agent's message trace: which tools ran, and the final answer.</p>
+        <p>Run a real agent, extract which tools fired and the final answer from the REAL message trace, and cap the loop.</p>
         <div class="chips"><span class="chip">recursion_limit</span><span class="chip">Message trace</span><span class="chip">tool_calls</span></div>
         <div class="links">
           <a class="open" href="lab-05-run-and-trace.ipynb">&#9654; Open lab</a>
@@ -157,8 +157,8 @@
           <span class="time">&#9201; 20 min</span>
         </div>
         <h4>Routing an Action to a Tool (safely)</h4>
-        <p>Dispatch a chosen action to the right tool with .invoke(), and handle unknown tools & errors without crashing.</p>
-        <div class="chips"><span class="chip">Routing</span><span class="chip">Observation</span><span class="chip">Safe dispatch</span></div>
+        <p>Build the safe dispatch create_agent does internally -- look up a tool, run it, survive unknown/failing tools -- then run the real agent.</p>
+        <div class="chips"><span class="chip">Routing</span><span class="chip">Safe dispatch</span><span class="chip">Real agent</span></div>
         <div class="links">
           <a class="open" href="lab-06-tool-routing.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-06-tool-routing.ipynb">Solution</a>
@@ -176,7 +176,7 @@
           <span class="time">&#9201; 30 min</span>
         </div>
         <h4>Memory: Conversation History</h4>
-        <p>Give the agent conversation memory so a follow-up like 'and Osaka?' resolves against earlier turns.</p>
+        <p>Give the model conversation memory so a real follow-up ('is it bigger than Osaka?') resolves against earlier turns.</p>
         <div class="chips"><span class="chip">Memory</span><span class="chip">Chat history</span><span class="chip">Follow-ups</span></div>
         <div class="links">
           <a class="open" href="lab-07-conversation-memory.ipynb">&#9654; Open lab</a>
@@ -189,7 +189,7 @@
           <span class="time">&#9201; 30 min</span>
         </div>
         <h4>LangGraph: a State Graph with Human Approval</h4>
-        <p>Model a branching agent as a real LangGraph StateGraph with a human-approval node for risky actions.</p>
+        <p>Wire a REAL LangGraph StateGraph with conditional edges and a human-approval node for risky actions, then run it.</p>
         <div class="chips"><span class="chip">StateGraph</span><span class="chip">Conditional edges</span><span class="chip">Human-in-the-loop</span></div>
         <div class="links">
           <a class="open" href="lab-08-langgraph-state-machine.ipynb">&#9654; Open lab</a>
@@ -202,8 +202,8 @@
           <span class="time">&#9201; 30 min</span>
         </div>
         <h4>Multi-Tool Orchestration (day in the life)</h4>
-        <p>Give an agent a search tool and a calculator, and read a trace that chains them to answer a compound question.</p>
-        <div class="chips"><span class="chip">Tool chaining</span><span class="chip">Orchestration</span><span class="chip">Trace</span></div>
+        <p>Give a real agent a search tool AND a calculator and read the trace where it chains them -- then check the chain was grounded.</p>
+        <div class="chips"><span class="chip">Tool chaining</span><span class="chip">Orchestration</span><span class="chip">Grounding check</span></div>
         <div class="links">
           <a class="open" href="lab-09-multi-tool.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-09-multi-tool.ipynb">Solution</a>
@@ -220,9 +220,9 @@
           <span class="num">Lab 6.10</span>
           <span class="time">&#9201; 40 min</span>
         </div>
-        <h4>Connect to External APIs (Search + Wolfram)</h4>
-        <p>Wrap a web-search tool and a Wolfram-style compute tool, bind them to an agent, and (optionally) call the REAL APIs.</p>
-        <div class="chips"><span class="chip">External APIs</span><span class="chip">Search tool</span><span class="chip">Compute tool</span></div>
+        <h4>Connect to External APIs (Google + Wolfram)</h4>
+        <p>Wrap the REAL Google Serper and Wolfram APIs as guarded @tools, call them live, and bind them to a real agent.</p>
+        <div class="chips"><span class="chip">External APIs</span><span class="chip">Serper search</span><span class="chip">Wolfram compute</span></div>
         <div class="links">
           <a class="open" href="lab-10-external-apis.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-10-external-apis.ipynb">Solution</a>
@@ -234,8 +234,8 @@
           <span class="time">&#9201; 35 min</span>
         </div>
         <h4>Guardrails & Observability</h4>
-        <p>Add a tool allow-list, input validation, and a tracing callback that records every step.</p>
-        <div class="chips"><span class="chip">Allow-list</span><span class="chip">Validation</span><span class="chip">Tracing</span></div>
+        <p>Learn why a tool must never raise, then attach a REAL LangChain callback to a real agent run and read every tool event.</p>
+        <div class="chips"><span class="chip">Tools never raise</span><span class="chip">Callbacks</span><span class="chip">Allow-list</span></div>
         <div class="links">
           <a class="open" href="lab-11-guardrails-observability.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-11-guardrails-observability.ipynb">Solution</a>
@@ -247,8 +247,8 @@
           <span class="time">&#9201; 45 min</span>
         </div>
         <h4>Capstone: A Guardrailed LangChain Agent</h4>
-        <p>Assemble allow-listed tools + a system prompt + a recursion cap into a real create_agent, and run it live.</p>
-        <div class="chips"><span class="chip">End-to-end agent</span><span class="chip">Guardrails</span><span class="chip">create_agent</span></div>
+        <p>Assemble allow-listed tools + a system prompt + a recursion cap into a real create_agent, and run it over a task suite.</p>
+        <div class="chips"><span class="chip">End-to-end agent</span><span class="chip">Guardrails</span><span class="chip">Real suite</span></div>
         <div class="links">
           <a class="open" href="lab-12-capstone-langchain-agent.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-12-capstone-langchain-agent.ipynb">Solution</a>
