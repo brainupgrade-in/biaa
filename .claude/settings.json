@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "env": {
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUNBUFFERED": "1",
+    "MPLBACKEND": "Agg"
+  },
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+
+      "Bash(python3 *)",
+      "Bash(biaa-venv/bin/python *)",
+      "Bash(./biaa-venv/bin/python *)",
+      "Bash(biaa-venv/bin/pip list*)",
+      "Bash(biaa-venv/bin/pip show *)",
+
+      "Bash(./regenerate.sh)",
+      "Bash(./_generators/regenerate.sh)",
+      "Bash(bash regenerate.sh)",
+      "Bash(bash hands-on/*)",
+      "Bash(bash scripts/smoke-test.sh)",
+      "Bash(bash -n *)",
+
+      "Bash(curl -s http://127.0.0.1:11434*)",
+      "Bash(curl -s http://localhost:11434*)",
+      "Bash(ollama list)",
+      "Bash(ollama ps)",
+
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git ls-files*)",
+      "Bash(git check-ignore*)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git restore *)",
+
+      "Bash(ls *)",
+      "Bash(wc *)",
+      "Bash(diff *)",
+      "Bash(md5sum *)",
+      "Bash(jq *)",
+      "Bash(mkdir -p *)",
+      "Bash(chmod +x *)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./**/.env)",
+      "Bash(rm -rf *)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean *)"
+    ],
+    "ask": [
+      "Bash(git push*)",
+      "Bash(gh *)",
+      "Bash(biaa-venv/bin/pip install*)",
+      "Bash(pip install*)"
+    ]
+  }
+}
