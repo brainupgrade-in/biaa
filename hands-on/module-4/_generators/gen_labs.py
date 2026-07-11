@@ -76,6 +76,8 @@ def setup(nn):
 import os, pathlib
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
+os.environ.setdefault("USE_TF", "0")                 # these labs are torch-only; skip the TF backend
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")   # mute TensorFlow's C++ INFO/WARNING startup noise
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv(usecwd=True), override=True)   # GROQ_API_KEY etc. (optional hosted compare)
 
