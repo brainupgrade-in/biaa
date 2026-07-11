@@ -23,28 +23,34 @@
 - **Python 3.12** &mdash; **please use this exact version.** It has mature, well-tested wheels for every workshop package (incl. TensorFlow), which avoids environment/install troubleshooting. *(Other versions may work but are not supported for this workshop.)*
 - **A virtual environment** (`biaa-venv`) · **Jupyter** (JupyterLab / Notebook, or VS Code + Jupyter extension) · **Editor:** VS Code recommended
 
-### ✅ Recommended: one-command setup with `uv`
-The **easiest and fastest** way to get set up is the provided scripts, which use
-[`uv`](https://docs.astral.sh/uv/). uv **creates the `biaa-venv` on Python 3.12 and
-installs every package** for you — and it **provisions a standalone Python 3.12
-automatically**, so you don't even have to install Python yourself (this is the fix
-for the `apt install python3.12` failure on newer distros like **Ubuntu 25.10+**,
-which ship only 3.13/3.14).
+### ✅ Recommended: one-command setup
+Just run the setup script for your OS — **you don't need to install anything first**
+(not even Python, `uv`, or `curl`):
 
 ```bash
-# 1. install uv once, then reopen your shell
-curl -LsSf https://astral.sh/uv/install.sh | sh          # Linux / macOS
-# Windows (PowerShell):  irm https://astral.sh/uv/install.ps1 | iex
-
-# 2. from the course folder, run the setup script for your OS
+# from the course folder:
 bash scripts/setup-linux.sh              # Linux / macOS
 bash scripts/setup-windows.sh            # Windows (Git Bash)
 #   installs everything the labs need, including transformers + CPU-only torch
 ```
-The script also registers a **"Python 3.12 (biaa)"** Jupyter kernel and runs a smoke
-test. See [`scripts/README.md`](scripts/README.md) for details. *(If `uv` isn't
-installed, the same scripts fall back to a system Python 3.12 + `pip` — install
-Python 3.12 yourself first in that case.)*
+The script uses [`uv`](https://docs.astral.sh/uv/) to **create the `biaa-venv` on
+Python 3.12 and install every package** — and **provisions a standalone Python 3.12
+automatically**, so you don't install Python yourself (this also fixes the
+`apt install python3.12` failure on newer distros like **Ubuntu 25.10+**, which ship
+only 3.13/3.14). **If `uv` itself isn't installed, the script downloads it for you** —
+on Windows via PowerShell (no `curl` required), on Linux/macOS via curl/wget/python —
+and adds it to your `PATH`. The script also registers a **"Python 3.12 (biaa)"**
+Jupyter kernel, points every lab notebook at it, and — on Windows — **sets Git Bash as
+the VS Code default terminal**, then runs a smoke test. See
+[`scripts/README.md`](scripts/README.md) for details.
+
+> **🪟 Windows:** run the setup in the **Git Bash** shell bundled with
+> [Git for Windows](https://git-scm.com/download/win). After setup, every terminal
+> you open in VS Code is Git Bash automatically — nothing else to configure. (If you
+> ever need to set it by hand: `Ctrl+Shift+P` &rarr; **Terminal: Select Default
+> Profile** &rarr; **Git Bash**.) The notebooks themselves are **OS-agnostic** — each
+> lab's scratch folder resolves to a writable temp dir on Windows, macOS, and Linux
+> with no per-machine step.
 
 ### Manual alternative (no scripts)
 ```bash
@@ -82,9 +88,7 @@ Pick **either** (both free, no paid account):
 pip install langchain langchain-community langchain-ollama langchain-groq langgraph
 ```
 
-> **💡 BYOK — OpenAI (bring your own key):** the LLM labs run on **Groq / Ollama by default**. OpenAI is supported on a **Bring-Your-Own-Key** basis — create an OpenAI account and set **`OPENAI_API_KEY`**, then install its client for the use you want: `pip install openai` for the **Day-2 GPT text-generation** snippet (shown as a commented reference in that lab), or `pip install langchain-openai` to use **OpenAI as the LLM in the Day 3–5 agent labs** (swap for `ChatGroq`). *(OpenAI is paid/metered; Groq and Ollama are free — hence the default.)*
-
-> **⚠️ If you use OpenAI's free daily-token tier:** it is granted only in exchange for **opting into OpenAI training on your API traffic**. That is fine for these labs — all lab data is synthetic — but the opt-in is an **org-level** setting, so enabling it on an **employer's** OpenAI org shares that org's API traffic, not just the workshop's. **Opt in on a personal account**, or simply use Groq / Ollama and skip the question entirely.
+> **💡 BYOK — OpenAI (bring your own key):** the LLM labs run on **Groq / Ollama by default**. OpenAI is supported on a **Bring-Your-Own-Key** basis — create an OpenAI account, set **`OPENAI_API_KEY`**, and install its client for the use you want: `pip install openai` for the **Day-2 GPT text-generation** snippet (a commented reference in that lab), or `pip install langchain-openai` to use **OpenAI as the LLM in the Day 3–5 agent labs** (swap for `ChatGroq`). OpenAI is paid/metered (Groq and Ollama are free — hence the default); if you use its free token tier, heed the **personal-account** warning in §7.
 
 ### 3c. External APIs — Google Search & Wolfram Alpha (Day 3, Module 6)
 The Day-3 "connect agents to external APIs" lab uses both. Create the free keys **before** the workshop:
@@ -109,12 +113,14 @@ pip install torch --index-url https://download.pytorch.org/whl/cpu
 ## 4. TIER 3 — Genuinely optional (BYOK only)
 - **OpenAI** is the only genuinely-optional add-on — the LLM labs default to **Groq / Ollama**. Bring your own key (`OPENAI_API_KEY`) and `pip install openai` / `langchain-openai` only if you prefer OpenAI. *(See the BYOK note under 3b.)*
 
-## 5. Built-in resilience (safety net — NOT a reason to skip setup)
-Every lab degrades gracefully if a service is unreachable, so a blocked key or port never halts the session:
-- **MNIST** blocked → falls back to an offline 8×8 digits dataset (same exercise, smaller data)
-- **Google Serper / Wolfram** unavailable → a deterministic local stand-in runs the graded steps
-- **LLM key/model** absent → a deterministic mock model runs the graded steps
-> Set up the real services for the **full intended experience**; the fallback just keeps everyone unblocked.
+## 5. If a service is down, labs still open (safety net — NOT a reason to skip setup)
+The notebooks **run top-to-bottom without crashing** even if a key or port is
+unreachable, so a blocked service never halts a session:
+- **MNIST** blocked → falls back to an offline 8×8 digits dataset (same exercise, smaller data).
+- **LLM / Serper / Wolfram** unreachable → the "run it for real" cells **detect it and print a note instead of erroring** (the Ollama cells self-skip via a reachability check; real tools catch errors and return a message).
+> The labs are **built around the real services** — set them up for the full
+> experience. The safety net only keeps "Run All" from breaking; it does **not**
+> reproduce the real model output.
 
 ## 6. Network / firewall allowlist (for participants' IT teams)
 Needed for package install + the Tier-2 services:
@@ -172,7 +178,7 @@ python -c "import os; [print(k, bool(os.getenv(k))) for k in ('GROQ_API_KEY','SE
 ## 9. What participants do NOT need
 - No GPU · No cloud/VM · No admin server · No paid subscription **by default** (Groq, Ollama, Serper, Wolfram all have free tiers)
 - OpenAI is **optional (BYOK)**, not required
-- No internet is needed to **complete or pass** any graded exercise (offline fallbacks) — but the Tier-2 services are required to perform the labs **as designed**
+- The notebooks won't **crash** if a service is down (they self-skip and print a note), but the Tier-2 services are required to run the labs **as designed** — there is no offline substitute for real model output
 
 ---
 

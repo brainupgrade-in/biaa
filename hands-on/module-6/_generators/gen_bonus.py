@@ -74,7 +74,7 @@ def cells(sol):
 'from dotenv import load_dotenv, find_dotenv\n'
 f'load_dotenv(find_dotenv(usecwd=True))   # GROQ_API_KEY for Part B (Groq is the Day 4-5 provider)\n'
 '\n'
-'WORK = "/tmp/biaa-lab-06-13"\n'
+'WORK = os.path.join(os.environ.get("TEMP") or os.environ.get("TMP") or "/tmp", "biaa-lab-06-13")\n'
 'os.makedirs(WORK, exist_ok=True)\n'
 '\n'
 'def ollama_up(host="127.0.0.1", port=11434):\n'

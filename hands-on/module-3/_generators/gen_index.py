@@ -108,7 +108,7 @@ html = f'''<!DOCTYPE html>
       blanks in <strong>Build it</strong> (real tokenizer / model / decoding calls), <strong>Run it for
       real</strong> to see the actual model output, note <strong>What to notice</strong>, then finish with an
       open <strong>Your turn</strong>. There is <strong>no auto-grader</strong> &mdash; the goal is real model
-      output you can read. Each lab writes to its own <code>/tmp/biaa-lab-03-NN/</code> working dir. Every lab
+      output you can read. Each lab writes to its own temp working dir (<code>biaa-lab-03-NN/</code>). Every lab
       has a full answer key under <a href="solutions/"><code>solutions/</code></a> &mdash; try first, then check.
     </div>
     <div class="callout warn">

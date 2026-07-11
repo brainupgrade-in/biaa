@@ -57,7 +57,7 @@ def grader(body):
 def setup(nn, extra=""):
     return code(f'''# Setup -- run me first
 import os
-WORK = "/tmp/biaa-lab-01-{nn:02d}"
+WORK = os.path.join(os.environ.get("TEMP") or os.environ.get("TMP") or "/tmp", "biaa-lab-01-{nn:02d}")
 os.makedirs(WORK, exist_ok=True)
 print("Working dir:", WORK){extra}''')
 

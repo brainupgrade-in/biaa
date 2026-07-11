@@ -108,7 +108,7 @@ html = f'''<!DOCTYPE html>
       grounding / citation / compute logic, or the real <code>create_agent</code> wiring), then
       <strong>Run it</strong> and read the output &mdash; and, for the agent labs, the real <strong>message
       trace</strong>. Finish with an open <strong>Your turn</strong>. There is <strong>no auto-grader</strong>.
-      Each lab writes to its own <code>/tmp/biaa-lab-09-NN/</code> working dir. Stuck? Every lab has a full
+      Each lab writes to its own temp working dir (<code>biaa-lab-09-NN/</code>). Stuck? Every lab has a full
       answer key under <a href="solutions/"><code>solutions/</code></a> &mdash; try first, then check.
     </div>
     <div class="callout warn">

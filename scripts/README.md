@@ -58,9 +58,9 @@ We pin 3.12 because it has mature, well-tested wheels for every workshop package
 | `setup-windows.sh` | Setup for Windows (Git Bash) |
 | `smoke-test.sh` | Cross-platform verification (setup runs it automatically; also runnable on its own). `--day N` runs just what **Day N** needs — see below |
 | `set-notebook-kernel.py` | Points every lab notebook at the **`biaa`** kernel so nobody has to pick a kernel by hand (setup runs it automatically; `--reset` restores the generic `python3`) |
+| `set-vscode-terminal.py` | Makes **Git Bash** the VS Code default terminal on Windows so participants never pick a shell (Windows setup runs it automatically; best-effort and non-destructive — skips a settings.json that has comments). No-op on macOS/Linux |
 | `RUNBOOK.md` | **Delivery-day** operations sheet — per-day pre-flight, ports, and an in-room error-recovery table (Windows-first) |
 | `requirements-core.txt` | Tier 1 + 2 — everything the 120 labs need (incl. Hugging Face `transformers`; CPU `torch` is installed by the setup scripts) |
-| `requirements-optional.txt` | Back-compat placeholder — now empty (transformers moved to core) |
 
 ## Options
 

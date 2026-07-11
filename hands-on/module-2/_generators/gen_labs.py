@@ -55,7 +55,7 @@ def setup(nn, extra=""):
     return code(f'''# Setup -- run me first
 import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"   # quiet TensorFlow logs (used in the advanced labs)
-WORK = "/tmp/biaa-lab-02-{nn:02d}"
+WORK = os.path.join(os.environ.get("TEMP") or os.environ.get("TMP") or "/tmp", "biaa-lab-02-{nn:02d}")
 os.makedirs(WORK, exist_ok=True)
 print("Working dir:", WORK){extra}''')
 

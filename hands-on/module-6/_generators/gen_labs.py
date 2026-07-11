@@ -69,7 +69,7 @@ import os, socket, pathlib
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv(usecwd=True))   # SERPER_API_KEY, WOLFRAM_ALPHA_APPID, GROQ/OPENAI keys
 
-WORK = "/tmp/biaa-lab-06-{nn:02d}"
+WORK = os.path.join(os.environ.get("TEMP") or os.environ.get("TMP") or "/tmp", "biaa-lab-06-{nn:02d}")
 os.makedirs(WORK, exist_ok=True)
 
 def ollama_up(host="127.0.0.1", port=11434):

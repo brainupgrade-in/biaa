@@ -72,7 +72,7 @@ import os, pathlib
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv(usecwd=True), override=True)   # GROQ_API_KEY (Day-4 provider)
 
-WORK = "/tmp/biaa-lab-08-{nn:02d}"
+WORK = os.path.join(os.environ.get("TEMP") or os.environ.get("TMP") or "/tmp", "biaa-lab-08-{nn:02d}")
 os.makedirs(WORK, exist_ok=True)
 
 def groq_ready():

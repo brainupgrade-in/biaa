@@ -76,7 +76,7 @@ os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv(usecwd=True), override=True)   # GROQ_API_KEY etc. (used by the text-gen lab)
 
-WORK = "/tmp/biaa-lab-03-{nn:02d}"
+WORK = os.path.join(os.environ.get("TEMP") or os.environ.get("TMP") or "/tmp", "biaa-lab-03-{nn:02d}")
 os.makedirs(WORK, exist_ok=True)
 print("WORK:", WORK)
 print("Real Hugging Face models load from the hub on first use (one-time download, then cached).")''')

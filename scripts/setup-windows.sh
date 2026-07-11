@@ -4,9 +4,11 @@
 # Creates the biaa-venv virtual env and installs everything the 120 labs need.
 # Source of truth: SETUP.md (Python 3.12, Tier 1-3 packages).
 #
-# Uses uv (https://docs.astral.sh/uv/) when it is installed: uv creates the
-# venv on Python 3.12 (fetching a standalone 3.12 automatically if none is
-# installed) and installs packages far faster than pip. Without uv it falls
+# Uses uv (https://docs.astral.sh/uv/): uv creates the venv on Python 3.12
+# (fetching a standalone 3.12 automatically if none is installed) and installs
+# packages far faster than pip. If uv is missing it is DOWNLOADED automatically
+# via PowerShell (no curl needed) and put on PATH -- so a machine with none of
+# uv/curl/Python can still run this. Only if that download fails does it fall
 # back to a system Python 3.12 (via the 'py -3.12' launcher) + venv + pip.
 #
 # Usage (in Git Bash, from the course folder):
@@ -36,6 +38,52 @@ echo "=============================================="
 
 if command -v uv >/dev/null 2>&1; then USE_UV=1; else USE_UV=0; fi
 is312() { "$@" -c 'import sys; sys.exit(0 if sys.version_info[:2]==(3,12) else 1)' 2>/dev/null; }
+
+# Candidate dirs where the uv installer drops the binary (current + older
+# layouts). A bash array so paths with spaces (e.g. C:\Users\John Doe) survive.
+build_uv_dirs() {
+  uv_dirs=("$HOME/.local/bin" "$HOME/.cargo/bin")
+  if command -v cygpath >/dev/null 2>&1 && [ -n "${USERPROFILE:-}" ]; then
+    local up; up="$(cygpath -u "$USERPROFILE")"
+    uv_dirs+=("$up/.local/bin" "$up/.cargo/bin")
+  fi
+}
+
+# Ensure uv is available, installing it if missing. Participants may not have
+# curl (or any Python), so we download uv with PowerShell -- always present on
+# Windows -- via the official installer, then put it on PATH for THIS session
+# (the installer also updates the user PATH for future shells). uv then fetches
+# a standalone Python 3.12 itself, so nothing else needs to be pre-installed.
+bootstrap_uv() {
+  build_uv_dirs
+  # Already installed but not on this shell's PATH? Just add it.
+  for d in "${uv_dirs[@]}"; do
+    if [ -x "$d/uv.exe" ] || [ -x "$d/uv" ]; then export PATH="$d:$PATH"; fi
+  done
+  command -v uv >/dev/null 2>&1 && return 0
+
+  echo "==> uv not found; downloading it (no admin rights needed)..."
+  if command -v powershell.exe >/dev/null 2>&1 || command -v powershell >/dev/null 2>&1; then
+    PS="powershell.exe"; command -v powershell.exe >/dev/null 2>&1 || PS="powershell"
+    "$PS" -NoProfile -ExecutionPolicy Bypass -Command \
+      "irm https://astral.sh/uv/install.ps1 | iex" || return 1
+  elif command -v curl >/dev/null 2>&1; then
+    curl -LsSf https://astral.sh/uv/install.sh | sh || return 1
+  else
+    echo "    Could not find PowerShell or curl to download uv."
+    return 1
+  fi
+
+  build_uv_dirs
+  for d in "${uv_dirs[@]}"; do [ -d "$d" ] && export PATH="$d:$PATH"; done
+  command -v uv >/dev/null 2>&1
+}
+
+if [ "$USE_UV" -eq 0 ]; then
+  if bootstrap_uv; then USE_UV=1; else
+    echo "==> Could not auto-install uv; will look for a system Python 3.12 instead."
+  fi
+fi
 
 # Install into the active venv: uv (fast) when available, else pip.
 venv_install() {
@@ -135,8 +183,6 @@ venv_install -r "$ROOT/scripts/requirements-core.txt"
 # consistent and guaranteed small.
 echo "==> Installing CPU-only torch (for the transformer labs)"
 venv_install torch --index-url https://download.pytorch.org/whl/cpu
-# Back-compat placeholder (now empty; transformers moved to core).
-venv_install -r "$ROOT/scripts/requirements-optional.txt"
 [ "$WITH_HF" -eq 1 ] && echo "==> (--with-hf is now the default; transformers is core)"
 
 # --- 2b. optional: install Ollama + Day-3 model -------------------------
@@ -157,6 +203,14 @@ python -m ipykernel install --user --name biaa --display-name "Python 3.12 (biaa
 echo "==> Pointing all lab notebooks at the 'biaa' kernel"
 python "$ROOT/scripts/set-notebook-kernel.py" || \
   echo "    (skipped - you can run 'python scripts/set-notebook-kernel.py' later)"
+
+# --- 3c. make Git Bash the VS Code default terminal ---------------------
+# So every terminal a participant opens in VS Code is Git Bash (the shell this
+# course's setup and `bash`/`source` commands assume) - no manual step needed.
+# Best-effort and non-destructive: only writes if VS Code settings parse cleanly.
+echo "==> Setting Git Bash as the VS Code default terminal"
+python "$ROOT/scripts/set-vscode-terminal.py" || \
+  echo "    (skipped - set it via Ctrl+Shift+P -> 'Terminal: Select Default Profile' -> Git Bash)"
 
 # --- 4. smoke test -------------------------------------------------------
 echo

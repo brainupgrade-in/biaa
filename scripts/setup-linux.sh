@@ -3,10 +3,12 @@
 # Creates the biaa-venv virtual env and installs everything the 120 labs need.
 # Source of truth: SETUP.md (Python 3.12, Tier 1-3 packages).
 #
-# Uses uv (https://docs.astral.sh/uv/) when it is installed: uv creates the
-# venv on Python 3.12 (fetching a standalone 3.12 automatically if the system
-# has none) and installs packages far faster than pip. Without uv it falls
-# back to a system Python 3.12 + the stdlib venv + pip.
+# Uses uv (https://docs.astral.sh/uv/): uv creates the venv on Python 3.12
+# (fetching a standalone 3.12 automatically if the system has none) and installs
+# packages far faster than pip. If uv is missing it is DOWNLOADED automatically
+# (curl, then wget, then python's urllib) and put on PATH -- so a machine with
+# none of uv/curl/Python can still run this. Only if that download fails does it
+# fall back to a system Python 3.12 + the stdlib venv + pip.
 #
 # Usage:
 #   bash scripts/setup-linux.sh                 # full install (all labs, incl. transformers + CPU torch)
@@ -35,6 +37,45 @@ echo "=============================================="
 
 if command -v uv >/dev/null 2>&1; then USE_UV=1; else USE_UV=0; fi
 is312() { "$@" -c 'import sys; sys.exit(0 if sys.version_info[:2]==(3,12) else 1)' 2>/dev/null; }
+
+# Ensure uv is available, installing it if missing. Participants may not have uv
+# -- nor curl, nor even a system Python -- so we download the official installer
+# with whatever is present (curl, then wget, then python's urllib) and put uv on
+# PATH for THIS session (the installer also updates the shell profile for future
+# ones). uv then fetches a standalone Python 3.12 itself, so nothing else needs
+# to be pre-installed.
+bootstrap_uv() {
+  # Already installed but not on this shell's PATH? Just add it.
+  for d in "$HOME/.local/bin" "$HOME/.cargo/bin"; do
+    [ -x "$d/uv" ] && export PATH="$d:$PATH"
+  done
+  command -v uv >/dev/null 2>&1 && return 0
+
+  echo "==> uv not found; downloading it (no sudo needed)..."
+  if command -v curl >/dev/null 2>&1; then
+    curl -LsSf https://astral.sh/uv/install.sh | sh || return 1
+  elif command -v wget >/dev/null 2>&1; then
+    wget -qO- https://astral.sh/uv/install.sh | sh || return 1
+  elif command -v python3 >/dev/null 2>&1 || command -v python >/dev/null 2>&1; then
+    PY=python3; command -v python3 >/dev/null 2>&1 || PY=python
+    "$PY" -c 'import urllib.request,sys; sys.stdout.buffer.write(urllib.request.urlopen("https://astral.sh/uv/install.sh").read())' \
+      | sh || return 1
+  else
+    echo "    Could not find curl, wget, or python to download uv."
+    return 1
+  fi
+
+  for d in "$HOME/.local/bin" "$HOME/.cargo/bin"; do
+    [ -d "$d" ] && export PATH="$d:$PATH"
+  done
+  command -v uv >/dev/null 2>&1
+}
+
+if [ "$USE_UV" -eq 0 ]; then
+  if bootstrap_uv; then USE_UV=1; else
+    echo "==> Could not auto-install uv; will look for a system Python 3.12 instead."
+  fi
+fi
 
 # Install into the active venv: uv (fast) when available, else pip.
 venv_install() {
@@ -138,8 +179,6 @@ if [ "$(uname -s)" = "Linux" ]; then
 else
   venv_install torch
 fi
-# Back-compat placeholder (now empty; transformers moved to core).
-venv_install -r "$ROOT/scripts/requirements-optional.txt"
 [ "$WITH_HF" -eq 1 ] && echo "==> (--with-hf is now the default; transformers is core)"
 
 # --- 2b. optional: install Ollama + Day-1 model -------------------------
