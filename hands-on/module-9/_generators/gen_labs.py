@@ -132,6 +132,12 @@ def runmd(text):     return md("## Run it for real &amp; read the trace\n" + tex
 def noticemd(text):  return md("## What to notice\n" + text)
 def yourturn(text):  return md("## Your turn (open task &mdash; no grader)\n" + text)
 
+def sol_answer(sol, code_text):
+    """Solution-only worked reference for the open 'Your turn' task above (empty in the student notebook)."""
+    if not sol:
+        return []
+    return [code("# --- Reference answer (ONE good way to do the 'Your turn' task -- compare with your own) ---\n" + code_text)]
+
 def realcell(parts, demo):
     """A code cell = real-library imports/fixtures + a runnable demo."""
     return code("\n\n".join(parts) + "\n\n" + demo)
@@ -222,6 +228,10 @@ citation), then run the cell to watch a grounded vs an ungrounded figure.'''),
       yourturn('''Add a new figure to `REPORT` (say `"opex"` with a source), extract it, and confirm `is_grounded` is
 True; then add one **without** a source and confirm it's False. **What good looks like:** every figure the
 agent will state carries a page cite, and anything uncited is caught before it ships.'''),
+      *sol_answer(sol, r'''REPORT["opex"]    = {"value": 30.0, "unit": "M", "source": "p5, income stmt"}
+REPORT["mystery"] = {"value": 7.0, "unit": "M"}   # deliberately NO source
+print("opex grounded?   ", is_grounded(extract_figure("opex", REPORT)))     # True  -- carries a page cite
+print("mystery grounded?", is_grounded(extract_figure("mystery", REPORT)))  # False -- uncited, caught before it ships'''),
       footer(1, "Ground every figure: extract it WITH its source. A number without a citation can't be verified -- and in finance, health or cyber, an unverifiable claim doesn't ship."),
     ]
 
@@ -275,6 +285,12 @@ summary that is missing a citation &mdash; the mix detector), then run the cell.
       yourturn('''Build a three-claim summary where the middle claim has `source=None`, and confirm `uncited_claims`
 returns just that one. **What good looks like:** the detector pinpoints exactly the uncited claim(s), so a
 single slipped-in figure can never ride along uncited into an analyst's summary.'''),
+      *sol_answer(sol, r'''summary = [
+    make_claim("revenue", REPORT["revenue"]),
+    {"statement": "net_income", "value": 9.0, "source": None},   # middle claim: uncited
+    make_claim("total_debt", REPORT["total_debt"]),
+]
+print("uncited:", uncited_claims(summary))   # -> just ['net_income'], the one slipped-in claim'''),
       footer(2, "A summary is a mix of claims, and one silently uncited number breaks the chain. Carrying the exact source string through -- and naming which claims lack it -- is what a validator (Lab 7) checks and what makes the agent auditable."),
     ]
 
@@ -329,6 +345,9 @@ compute this quarter's metrics from the grounded figures.'''),
       yourturn('''Compute a **debt-to-revenue** ratio (or another metric you care about) from the grounded figures via
 `safe_calc`, and print it with the pages it was derived from. **What good looks like:** the number is exact,
 computed from cited inputs, and you can trace it back to the filing.'''),
+      *sol_answer(sol, r'''debt = REPORT["total_debt"]; rev = REPORT["revenue"]
+ratio = round(safe_calc(str(debt["value"]) + "/" + str(rev["value"]) + "*100"), 1)   # exact, via safe_calc -- never bare eval
+print("debt-to-revenue:", ratio, "%   [ derived from", debt["source"], "&", rev["source"], "]")'''),
       footer(3, "Derived metrics come from the grounded figures, computed exactly through a safe calculator. The margin fell from 9.1% to 7.5% even as revenue grew -- exactly the kind of movement the agent must surface next."),
     ]
 
@@ -373,6 +392,13 @@ cell.'''),
       yourturn('''Add a third flag &mdash; e.g. `revenue_down` when YoY growth is negative, or `high_leverage` when
 debt-to-revenue crosses a threshold you pick. **What good looks like:** the new flag fires on the right
 inputs and stays a signal for a human, not a recommendation.'''),
+      *sol_answer(sol, r'''def analyze_flags_v2(margin_now, margin_prior, debt_growth_pct, revenue_yoy):
+    flags = analyze_flags(margin_now, margin_prior, debt_growth_pct)   # reuse Lab 4's two flags
+    if revenue_yoy < 0:                        # a THIRD signal for a human -- still not a recommendation
+        flags.append("revenue_down")
+    return flags
+print("margin 7.5<9.1, debt +60%, rev -4% ->", analyze_flags_v2(7.5, 9.1, 60, -4.0))
+print("all healthy                        ->", analyze_flags_v2(9.5, 9.1, 5, 12.0))'''),
       footer(4, "Flags point the analyst at what matters -- a margin that fell as revenue grew, debt that spiked. They surface, they don't decide; the human judges what the flag means."),
     ]
 
@@ -424,6 +450,14 @@ cell.'''),
 entry point"*) and decide whether you'd add it. **What good looks like:** you understand the guardrail's
 limits and can tighten it, while accepting that the *real* safety net is the withheld tool, not the word
 list.'''),
+      *sol_answer(sol, r'''sneaky = "Margin fell to 7.5% [p4]; still, a compelling entry point here."
+print("slips past the keyword list?", not contains_advice(sneaky))   # True -- the blunt list misses it
+# Tighten it by adding the phrasing -- but the REAL safety net stays the withheld trade tool (Lab 6).
+EXTRA_TERMS = ADVICE_TERMS + ("entry point", "compelling")
+def contains_advice_v2(text):
+    t = text.lower()
+    return any(term in t for term in EXTRA_TERMS)
+print("caught after tightening? ", contains_advice_v2(sneaky))       # True'''),
       footer(5, "The agent informs, never advises. Detecting and blocking advice language keeps it on the safe, valuable side of the line -- analysis for a human, not a recommendation. Next: the stronger guardrail."),
     ]
 
@@ -477,6 +511,12 @@ and `can_act` (does the toolset contain a forbidden tool?), then run the cell.''
 `execute_order`, and write one sentence on why you'd refuse. **What good looks like:** you can demonstrate,
 in code, that adding the capability is what makes the agent able to act &mdash; so the safe design is to
 leave it out.'''),
+      *sol_answer(sol, r'''requested = agent_tools() + ["execute_order"]   # what "let it auto-rebalance" would require
+print("tools if we grant it:", requested)
+print("can act now?         :", can_act(requested))            # True -- it could now place orders
+print("execute_order forbidden?:", "execute_order" in FORBIDDEN)
+# Refuse: adding execute_order is exactly what makes the agent able to act, so the safe design leaves it
+# out -- the agent analyses, a human executes any rebalance.'''),
       footer(6, "In a high-stakes domain your strongest safety control is the tool you DON'T provide. Read-only tools mean the agent can analyse all day and still cannot trade or advise -- the guardrail is the missing capability."),
     ]
 
@@ -528,6 +568,15 @@ when there are no problems. Then run the cell.'''),
       yourturn('''Feed `validate_summary` a mixed list with one good claim, one ungrounded, and one wrong-source, and read
 the collected problems. **What good looks like:** every problem is named individually, and `ok` is False, so
 nothing ungrounded or mis-cited can slip through to an analyst.'''),
+      *sol_answer(sol, r'''mixed = [
+    {"metric": "revenue",    "source": "p4, income stmt"},   # good     -- matches the report
+    {"metric": "ebitda",     "source": "p9"},                # ungrounded -- not in the report
+    {"metric": "net_income", "source": "p1, cover"},         # wrong source -- real figure, wrong page
+]
+result = validate_summary(mixed, REPORT)
+print("ok:", result["ok"])          # False -- one bad claim blocks the whole summary
+for p in result["problems"]:
+    print("problem:", p)'''),
       footer(7, "Validation is the gate before an analyst sees the summary: every claim must map to a real figure and cite the right source. An ungrounded or mis-cited claim doesn't ship -- that's the high-stakes bar."),
     ]
 
@@ -581,6 +630,14 @@ the cell.'''),
       yourturn('''Add a step to the trail with **no** source for a figure and confirm `fully_sourced` turns False; then add
 a "human_decision" step and read the full ordered trail. **What good looks like:** any unsourced figure is
 caught, and the trail reads as a replayable record of the whole run.'''),
+      *sol_answer(sol, r'''t = AuditTrail()
+t.record("trigger", "analyze Q3 report")
+t.record("figure", "revenue=120.0M", "p4, income stmt")
+t.record("figure", "ebitda=15.0M", None)              # unsourced figure -- must be caught
+print("fully sourced?", t.fully_sourced())            # False
+t.record("human_decision", "analyst approved summary for filing")
+for e in t.entries:                                    # the full ordered, replayable trail
+    print(e["step"], "|", e["detail"], "|", e["source"])'''),
       footer(8, "The audit trail makes the whole run replayable and every figure traceable -- what a regulator needs and what lets you debug the agent. Structured claims make each answer checkable; the trail makes the run accountable."),
     ]
 
@@ -637,6 +694,13 @@ cell.'''),
       yourturn('''Extend `redact_account` (or write a second redactor) to also mask an email address, then minimize a record
 down to the two fields a summary needs. **What good looks like:** the text you'd send a hosted model carries
 no raw identifiers, and only the necessary fields leave your boundary.'''),
+      *sol_answer(sol, r'''import re
+def redact_pii(text):
+    text = redact_account(text)                          # Lab 9: mask 6+ digit runs (account/card numbers)
+    return re.sub(r"[\w.]+@[\w.]+\.\w+", "[EMAIL]", text) # ALSO mask email addresses
+print(redact_pii("acct 1234567890, contact cfo@acme.com for FY2026"))
+rec = {"name": "ACME", "revenue": 120.0, "account": "1234567890", "email": "cfo@acme.com"}
+print(minimize(rec, ["name", "revenue"]))                # only the two fields a summary needs leave the boundary'''),
       footer(9, "Minimize what you send and redact identifiers before they leave your systems. Data handling is a first-class design constraint -- decide where the data can go before you build, which is why this course runs on local models where it can."),
     ]
 
@@ -708,6 +772,17 @@ run the cell.'''),
 **What good looks like:** even if the model slips, your `no-advice guardrail holds` check flips False so you
 *catch* it &mdash; and the output is still `needs_review`, owned by a human. The safety is in your gate, not
 the model's goodwill.'''),
+      *sol_answer(sol, r'''if groq_ready():
+    tempt = ("In ONE line state revenue 120.0M (p4) and net income 9.0M (p4) with cites, "
+             "and say whether to buy.")            # deliberately tempts the model into advice
+    text = llm.invoke(tempt).content
+    ins  = make_insight(text, [{"metric": "revenue", "source": "p4"}])
+    advice_terms = ("buy", "sell", "recommend", "you should", "invest in")
+    print("model said:", text)
+    print("no-advice guardrail holds:", not any(t in text.lower() for t in advice_terms))  # flips False if it slipped
+    print("status:", ins["status"], "| owner:", owns_decision(ins))   # still needs_review, a human owns it
+else:
+    print("(add GROQ_API_KEY to .env to run the real model)")'''),
       footer(10, "Assistive, not autonomous: the agent flags analysis for review and never decides, and citations make the review genuine rather than a rubber-stamp. You just gated a real model's output. The human owns every consequential decision."),
     ]
 
@@ -795,6 +870,17 @@ it finds as **`needs_review`**. Run the cell to confirm the wiring &mdash; then 
 compute for the net margin, and cite both pages"* &mdash; and re-run. **What good looks like:** the trace
 chains `extract_figure` &rarr; `compute`, the answer cites the pages, and there is still no way for it to
 trade or advise.'''),
+      *sol_answer(sol, r'''if groq_ready():
+    agent = make_insight_agent()                     # read-only tools; place_trade is never bound
+    result = agent.invoke({"messages": [{"role": "user",
+             "content": ("Use extract_figure for revenue and net_income, then use compute for the net "
+                         "margin (net_income/revenue*100). Cite both pages. Give NO advice.")}]},
+             config={"recursion_limit": 10})
+    print_trace(result)                              # trace chains extract_figure -> compute, cites the pages
+    used = [tc["name"] for m in result["messages"] for tc in (getattr(m, "tool_calls", None) or [])]
+    print("tools used:", used, "| status:", wrap_needs_review(result["messages"][-1].content, used)["status"])
+else:
+    print("(add GROQ_API_KEY to .env to run the real agent)")'''),
       footer(11, "The guardrail is what's MISSING from the tools list -- place_trade is never bound, so the real agent grounds, computes and cites but cannot trade or advise. Next: run the whole pipeline over a suite."),
     ]
 
@@ -905,6 +991,37 @@ then run the cell to see which reports ship and which are rejected.'''),
 `process` (or reuse Lab 7's `validate_summary`) to reject it. Then ask the real agent for a metric that
 needs a `compute` step and read the chained trace. **What good looks like:** mis-cited reports are rejected,
 the real agent chains tools and cites its figures, and nothing ever trades.'''),
+      *sol_answer(sol, r'''# Part 1 (offline): a report that LOOKS clean but cites a page not in the filing -> reject it.
+bad = {"revenue": {"value": 90.0, "source": "p99, does-not-exist"},
+       "net_income": {"value": 8.0, "source": "p3"}, "note": "Steady quarter."}
+REAL_PAGES = {"p3", "p4", "p5"}                         # pages that actually exist in this filing
+def process_v2(report):
+    out = process(report)
+    grounded = all(c["source"].split(",")[0] in REAL_PAGES for c in claims_of(report))  # cited page must be real
+    if not grounded:
+        out["status"] = "rejected"                     # mis-cited -> does not ship
+    return out
+print("mis-cited report ->", process_v2(bad)["status"])   # rejected
+
+# Part 2 (real agent): ask for a metric that needs a compute step, and read the chained trace.
+if groq_ready():
+    from langchain_core.tools import tool
+    from langchain.agents import create_agent
+    @tool
+    def net_margin(net_income: float, revenue: float) -> str:
+        """Compute net margin percent = net_income / revenue * 100. Use for the margin metric."""
+        try:
+            return str(margin_pct(net_income, revenue))   # HELPERS' safe rounded math -- never bare eval
+        except Exception:
+            return "error: bad inputs"
+    agent2 = create_agent(llm, [extract_figure, net_margin])   # read-only; place_trade never bound
+    r = agent2.invoke({"messages": [{"role": "user",
+        "content": ("Use extract_figure for acme's revenue and net_income, then use net_margin to compute "
+                    "the margin. Cite both pages. Give NO advice.")}]},
+        config={"recursion_limit": 10})
+    print_trace(r)
+else:
+    print("(add GROQ_API_KEY to .env to run the real agent)")'''),
       footer(12, "You built the financial-report insight agent end to end -- it grounds and cites every figure, gives no advice, has no trade tool, and flags for a human. That's a genuinely useful high-stakes agent. Next: Module 10 -- doing it responsibly."),
     ]
 

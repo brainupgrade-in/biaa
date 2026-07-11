@@ -111,6 +111,14 @@ def runmd(text):    return md("## Run it for real\n" + text)
 def noticemd(text): return md("## What to notice\n" + text)
 def yourturn(text): return md("## Your turn (open task &mdash; no grader)\n" + text)
 
+def sol_answer(sol, code_text):
+    """Solution-only: a worked reference for the open 'Your turn' task above.
+    Returns nothing in the student notebook (the task stays open); in the SOLUTION
+    it appends one runnable cell so participants have something to compare against."""
+    if not sol:
+        return []
+    return [code("# --- Reference answer (ONE good way to do the 'Your turn' task -- compare with your own) ---\n" + code_text)]
+
 # A REAL sentence-embedding function: run a real model, then mean-pool token vectors (the
 # standard sentence-transformers pooling) into one unit vector. Lazy-loads + caches the model on
 # first call so the *build* cell never touches the network -- only the guarded run cell does.
@@ -185,6 +193,13 @@ for text in ["Transformers are unbelievably powerful!", "tokenization"]:
 `3.14159`. How many pieces does each become? Then load a **different** tokenizer
 (`AutoTokenizer.from_pretrained("bert-base-cased")`) and compare: does casing change the split? A
 "good" answer: you can predict roughly how many tokens a string will cost before you send it.'''),
+      *sol_answer(sol, hfrun(r'''from transformers import AutoTokenizer
+for text in ["3.14159", "https://gheware.com/agents", "naive"]:   # tricky inputs
+    pieces, ids, full = tokenize_encode(text, tok)
+    print(f"{text!r:32s} -> {len(pieces)} pieces: {pieces}")
+cased = AutoTokenizer.from_pretrained("bert-base-cased")           # a cased tokenizer
+print("uncased 'Hello World':", tok.tokenize("Hello World"))
+print("cased   'Hello World':", cased.tokenize("Hello World"))    # casing IS preserved here''')),
       footer(1, "Every model pipeline starts here: text -> subword tokens -> IDs. Next we give those IDs *meaning* as real embedding vectors."),
     ]
 
@@ -240,6 +255,12 @@ print("cos(king,queen) =", round(cosine(E[0], E[1]), 3),
 countries cluster near their capitals? Try short sentences instead of single words &mdash; `embed`
 handles those too. A "good" answer: nearest-neighbour matches your intuition about meaning, and you
 can explain one case where it surprises you.'''),
+      *sol_answer(sol, hfrun(r'''W2 = ["paris", "france", "tokyo", "japan", "berlin", "germany"]
+E2 = embed(W2)                                    # real model -> one unit vector per word
+for w in W2:
+    print(f"  {w:8s} nearest -> {most_similar(w, W2, E2)}")
+print("cos(paris,france) =", round(cosine(E2[0], E2[1]), 3),
+      "| cos(paris,japan) =", round(cosine(E2[0], E2[3]), 3))   # capitals sit near their country''')),
       footer(2, "Embeddings turn meaning into geometry, and cosine measures it. This is the engine behind search, RAG and recommendations -- and Lab 3.7 turns it into real semantic search."),
     ]
 
@@ -293,6 +314,13 @@ print("softmax([2,1,0]) =", np.round(softmax(np.array([2.0, 1.0, 0.0])), 3), "(s
 happens to the attention weights and the output? Then grow `d` and add the scaling back and forth to
 feel its effect. A "good" answer: you can predict the output shape and roughly where the weight mass
 lands before you run it.'''),
+      *sol_answer(sol, r'''import numpy as np
+Q = np.array([[5.0, 5.0], [5.0, 5.0]])     # two IDENTICAL queries
+K = np.array([[1.0, 0.0], [0.0, 1.0]])
+V = np.array([[1.0, 0.0], [0.0, 1.0]])
+weights = softmax(Q @ K.T / np.sqrt(2), axis=-1)
+print("weights (both rows equal, split ~50/50):\n", np.round(weights, 3))
+print("output (both rows average the values):\n", np.round(attention(Q, K, V), 3))'''),
       footer(3, "That is the whole mechanism. A transformer stacks many of these attention steps -- and that is what 'Attention Is All You Need' meant."),
     ]
 
@@ -349,6 +377,12 @@ print("saved:", WORK + "/positional_encoding.png")''')),
 encodings of positions 0&1 vs 0&9 &mdash; does "closer in the sentence" mean "more similar encoding"?
 A "good" answer: you can point to the plot and explain how the model could recover *distance* between
 two positions from these vectors.'''),
+      *sol_answer(sol, r'''import numpy as np
+PE = positional_encoding(10, 16)
+def cos(a, b): return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))
+print("cos(pos0, pos1) =", round(cos(PE[0], PE[1]), 3), "  (adjacent -> high)")
+print("cos(pos0, pos9) =", round(cos(PE[0], PE[9]), 3), "  (far apart -> lower)")
+print("-> closer positions have more similar encodings, so the model can read distance")'''),
       footer(4, "Embedding + positional encoding is what actually enters a transformer block. Now the model knows both *what* and *where*."),
     ]
 
@@ -396,6 +430,12 @@ for sentence in ["The capital of France is [MASK].",
 grammatical, or biased (`"The nurse said [MASK] would help."`). Where does it succeed, fail, or reveal
 a bias? A "good" answer: you have at least one prompt that exposes a limitation and you can explain
 why a small model gets it wrong.'''),
+      *sol_answer(sol, hfrun(r'''for sentence in ["Water is made of hydrogen and [MASK].",   # factual
+                 "The nurse said [MASK] would help."]:      # probes gendered bias
+    print(sentence)
+    for score, word in top_fills(fm, sentence):
+        print("   ", score, word)
+    print()''')),
       footer(5, "This is a real pretrained model *using* its knowledge -- which is exactly what Module 4 fine-tunes for a specific task."),
     ]
 
@@ -437,6 +477,12 @@ for word in ["tokenization", "unbelievable", "antidisestablishmentarianism",
 name. How does the tokenizer cope? Then load `AutoTokenizer.from_pretrained("gpt2")` (a **BPE**
 tokenizer, not WordPiece) and compare its splits on the same words. A "good" answer: you can describe
 one concrete difference between WordPiece and BPE output.'''),
+      *sol_answer(sol, hfrun(r'''from transformers import AutoTokenizer
+bpe = AutoTokenizer.from_pretrained("gpt2")    # a BPE tokenizer, not WordPiece
+for w in ["getUserById", "acetylsalicylic", "cryptocurrency"]:
+    print(f"{w:18s}  WordPiece -> {pieces(w, tok)}")
+    print(f"{'':18s}  BPE(gpt2) -> {bpe.tokenize(w)}")   # note the leading-space marks vs ## marks
+    print()''')),
       footer(6, "Subwords give a finite vocabulary that can still spell *any* word -- which is why every modern transformer uses them. That ends the Beginner set."),
     ]
 
@@ -490,6 +536,15 @@ for query in ["a cute little kitten", "writing software code", "how do transform
       yourturn('''Add your own documents and queries. Find a query where semantic search **beats** keyword search
 (no shared words but the right hit) and one where it **struggles** (needs an exact term). Try `k=3`.
 A "good" answer: you can explain, from the scores, why a particular doc ranked where it did.'''),
+      *sol_answer(sol, hfrun(r'''# search() looks up its results in the module-global DOCS, so extend that same list:
+DOCS = DOCS + ["the ocean is deep and full of fish",
+               "i baked fresh bread this morning"]
+DOC_E = embed(DOCS)                                # re-embed the enlarged corpus
+for query in ["something to eat for dinner", "creatures of the sea"]:
+    print("QUERY:", query)
+    for score, doc in search(query, DOC_E, k=3):   # top-3 this time
+        print(f"   {score}  {doc}")
+    print()''')),
       footer(7, "Real embeddings + cosine ranking = modern semantic search, and the retrieval half of RAG (which returns on Day 3)."),
     ]
 
@@ -541,6 +596,16 @@ print("row sums:", np.round(A.sum(axis=1), 3))''')),
 run `self_attention` a few times with different random `Wq/Wk/Wv` and average the outputs &mdash; that
 is multi-head attention in miniature. A "good" answer: you can state the shape of every intermediate
 (`Q`, `K`, `A`, output) without running the cell.'''),
+      *sol_answer(sol, r'''import numpy as np
+rng = np.random.default_rng(1)
+X = rng.normal(size=(3, 4)); X[1] = X[0]          # tokens 0 and 1 have IDENTICAL embeddings
+Wq = rng.normal(size=(4, 4)); Wk = rng.normal(size=(4, 4)); Wv = rng.normal(size=(4, 4))
+_, A = self_attention(X, Wq, Wk, Wv)
+print("rows 0 and 1 of A are identical:\n", np.round(A[:2], 3))
+# multi-head in miniature: average a few heads with different random projections
+outs = [self_attention(X, rng.normal(size=(4, 4)), rng.normal(size=(4, 4)), rng.normal(size=(4, 4)))[0]
+        for _ in range(4)]
+print("averaged 4-head output shape:", np.mean(outs, axis=0).shape)'''),
       footer(8, "You just ran one head of self-attention over a sequence. Stack a few heads and a feed-forward layer and you have a transformer block."),
     ]
 
@@ -602,6 +667,13 @@ print("saved:", WORK + "/real_attention.png")''')),
       yourturn('''Change the sentence and the `head` / `layer` arguments. Find a head whose pattern looks
 **meaningful** (e.g. a word attending to a related word) and one that looks like a "junk" / `[SEP]`
 head. A "good" answer: you can point to one cell of the heatmap and say what it means in plain English.'''),
+      *sol_answer(sol, hfrun(r'''import numpy as np
+tokens, A = real_attention("the quick brown fox", tok, model, layer=-1, head=1)   # try head 1
+print("tokens:", tokens)
+print("row sums:", np.round(A.sum(axis=1), 2))
+print("each token's most-attended token (head 1):")
+for i, t in enumerate(tokens):
+    print(f"   {t:8s} -> {tokens[int(A[i].argmax())]}")''')),
       footer(9, "Attention maps are how researchers peek inside transformers. You just read them off a real model -- the by-hand maths from Labs 3.3/3.8 made concrete."),
     ]
 
@@ -667,6 +739,11 @@ else:
       yourturn('''Sweep temperature from `0.2` to `2.0` on your own prompt. Where does it stop being coherent?
 Then compare distilgpt2's local output to the Groq output on the *same* prompt. A "good" answer: you
 can describe, in one sentence each, what low vs high temperature does and where scale matters most.'''),
+      *sol_answer(sol, hfrun(r'''prompt = "In the year 2050, everyday life will"
+print("GREEDY   :", greedy(gen, prompt))
+for t in [0.2, 0.7, 1.2, 2.0]:              # sweep temperature low -> high
+    print(f"TEMP {t}:", sampled(gen, prompt, temp=t))
+# low temp stays safe/repetitive; high temp gets creative then incoherent''')),
       footer(10, "Greedy + temperature are the decoding knobs behind every chat model -- local or hosted. You now know what 'temperature' on the GPT API actually does."),
     ]
 
@@ -721,6 +798,12 @@ for s in ["i really enjoyed it", "an absolute disaster", "the plot was dull and 
       yourturn('''Add your own labelled sentences (try a **neutral** class for 3-way). Find a test sentence the
 head gets **wrong** &mdash; is it a feature limitation or too little training data? A "good" answer:
 you can articulate why transfer learning needs so few examples here.'''),
+      *sol_answer(sol, hfrun(r'''extra = [("it was okay nothing special", 0), ("a masterpiece i will rewatch", 1),
+         ("mediocre but watchable", 0), ("stunning from start to finish", 1)]
+texts = [t for t, _ in TRAIN + extra]; labels = [y for _, y in TRAIN + extra]
+clf2 = train_head(embed(texts), labels)       # retrain the head on more examples
+for s in ["surprisingly enjoyable", "painfully boring", "a real triumph"]:
+    print(f"  pred={predict(clf2, s)}  <-  {s}")   # few examples suffice: features already carry meaning''')),
       footer(11, "Frozen features from a real model + a tiny trained head = transfer learning. Module 4 goes one step further and fine-tunes the backbone itself."),
     ]
 
@@ -789,6 +872,11 @@ for query in ["a cute little kitten", "how do neural networks read text", "what 
 inside `_load()` &mdash; do the matches change? Then try **max-pooling** or **CLS-token** pooling
 (`H[0]`) instead of mean and compare. A "good" answer: you can name each stage of your pipeline and
 say what would break if you removed it.'''),
+      *sol_answer(sol, hfrun(r'''CORPUS2 = CORPUS + ["the puppy chased a ball across the park",
+                    "she solved the equation on the whiteboard"]
+for query in ["a tiny meowing feline", "teaching a computer to read", "outdoor play with a pet"]:
+    match, score = best_match(query, CORPUS2)      # paraphrase queries, extended corpus
+    print(f"QUERY: {query}\n  best -> {match}  (cos={score})")''')),
       footer(12, "You built a real sentence encoder from the parts you learned -- tokenize, embed, attend, pool. Module 4 takes real pretrained models and fine-tunes them for specific tasks. That completes Module 3."),
     ]
 

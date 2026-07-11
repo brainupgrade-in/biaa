@@ -114,6 +114,14 @@ def runmd(text):    return md("## Run it for real\n" + text)
 def noticemd(text): return md("## What to notice\n" + text)
 def yourturn(text): return md("## Your turn (open task &mdash; no grader)\n" + text)
 
+def sol_answer(sol, code_text):
+    """Solution-only: a worked reference for the open 'Your turn' task above.
+    Returns nothing in the student notebook (the task stays open); in the SOLUTION
+    it appends one runnable cell so participants have something to compare against."""
+    if not sol:
+        return []
+    return [code("# --- Reference answer (ONE good way to do the 'Your turn' task -- compare with your own) ---\n" + code_text)]
+
 # A tiny labelled sentiment dataset (1 = positive, 0 = negative). Strong sentiment words RECUR
 # across examples so a model trained on one split generalises to the held-out split -- essential
 # on tiny data and what makes a real CPU fine-tune converge in seconds.
@@ -213,6 +221,15 @@ print("\\naccuracy on the labelled samples:", acc)''')),
 (`"not bad at all"`), or mixed sentiment. Where does the real model slip? Build a small labelled list
 of your own and compute its accuracy. A "good" answer: you have at least one example the model gets
 wrong and a hypothesis for why.'''),
+      *sol_answer(sol, hfrun(r'''clf = build_sentiment()
+# a small labelled set of deliberately tricky inputs
+MINE = [("oh great, another bug", 0), ("not bad at all", 1),
+        ("i don't hate it", 1), ("well that was just perfect", 0)]  # last two are sarcasm/litotes
+for t, y in MINE:
+    print(clf(t)[0], " true:", y, " <-", t)
+acc = sum(1 for t, y in MINE if predict(clf, t) == y) / len(MINE)
+print("accuracy on my tricky set:", acc)
+print("Hypothesis: sarcasm ('oh great...') has positive words but negative intent -- the model reads surface words.")''')),
       footer(1, "A pre-trained model delivers value with **zero training** &mdash; you just run inference. Next: read the **confidence** behind that label, straight from the real logits."),
     ]
 
@@ -274,6 +291,17 @@ for text in ["a brilliant and moving masterpiece", "not bad at all", "it was fin
 mixed sentiment, or off-topic text. Confidence is vital when a human reviews the model's output: a
 "good" answer names a threshold below which you would route a prediction to a human, and one real
 sentence that falls under it.'''),
+      *sol_answer(sol, hfrun(r'''import torch
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+name = "distilbert-base-uncased-finetuned-sst-2-english"
+tok = AutoTokenizer.from_pretrained(name); model = AutoModelForSequenceClassification.from_pretrained(name); model.eval()
+THRESHOLD = 0.90   # below this, route the prediction to a human reviewer
+for text in ["it was fine i guess", "not the worst thing ever", "it is a movie that exists"]:
+    enc = tok(text, return_tensors="pt")
+    with torch.no_grad(): logits = model(**enc).logits[0].numpy()
+    label, conf = label_and_confidence(logits)
+    route = "-> HUMAN" if conf < THRESHOLD else "auto-accept"
+    print(f"{text!r}: {model.config.id2label[label]} conf={conf:.3f} {route}")''')),
       footer(2, "Softmax over real logits *is* the confidence score. It tells you *how sure* the model is &mdash; the number a human-in-the-loop system watches."),
     ]
 
@@ -330,6 +358,16 @@ print("general model    :", gen, " correct:", sum(p==t for p,t in zip(gen, TRUE)
 tagline; (b) classify 50k tickets into your 8 fixed categories; (c) answer staff questions from
 internal policy PDFs; (d) always reply in your brand voice. No grader &mdash; a "good" answer explains
 *why*, and names which one you would try **first** and how you would know it was enough.'''),
+      *sol_answer(sol, r'''DECISION = {
+    "(a) draft a one-off tagline":            ("prompt",    "one-shot, no labels; flexibility beats training"),
+    "(b) 50k tickets into 8 fixed categories": ("fine-tune", "fixed high-volume task WITH labels -> specialise once, cheap at inference"),
+    "(c) answer from internal policy PDFs":    ("rag",       "answers must come from your own changing documents at query time"),
+    "(d) always reply in brand voice":         ("fine-tune", "a persistent learned style, not per-query facts"),
+}
+for scenario, (choice, why) in DECISION.items():
+    print(f"{choice:10s} <- {scenario}")
+    print(f"           ({why})")
+print("Try FIRST: prompt -- it is free to test. Escalate to fine-tune/RAG only when a plain prompt is not good enough.")'''),
       footer(3, "Default to **prompting**; **fine-tune** for a fixed specialised task (this module); reach for **RAG** when answers must come from your own changing data (Day 3)."),
     ]
 
@@ -371,6 +409,13 @@ print("row 0 decoded:", tok.convert_ids_to_tokens(enc["input_ids"][0]))''')),
       yourturn('''Add a very long sentence and a one-word sentence to `batch` and re-run &mdash; watch the padded
 length grow. Try `tok(batch, padding="max_length", max_length=12, truncation=True, ...)` and see how
 truncation clips long inputs. A "good" answer: you can predict the `input_ids` shape before you run it.'''),
+      *sol_answer(sol, hfrun(r'''from transformers import AutoTokenizer
+tok = AutoTokenizer.from_pretrained("distilbert-base-uncased")
+batch = ["great", "an absolutely wonderful moving brilliant and unforgettable masterpiece of a film"]
+enc = encode_batch(tok, batch)           # padding=True -> pad to the LONGEST row
+print("dynamic padding shape:", tuple(enc["input_ids"].shape), "(batch, longest+specials)")
+enc2 = tok(batch, padding="max_length", max_length=12, truncation=True, return_tensors="pt")
+print("fixed max_length=12 shape:", tuple(enc2["input_ids"].shape), "-- every row clipped/padded to exactly 12")''')),
       footer(4, "`input_ids` + `attention_mask` is the real input a transformer eats. The tokenizer hands you exactly this &mdash; now you know what each field means before you fine-tune on it."),
     ]
 
@@ -422,6 +467,14 @@ print("class balance  :", dict(Counter(y.tolist())), " (0=neg, 1=pos)")''')),
       yourturn('''Add a few of your own rows (keep the balance even). Add a third class (e.g. a neutral label)
 and extend `label2id` &mdash; does everything downstream still line up? A "good" answer: you can point
 to the `(examples, length)` shape and say why every row must share the same length.'''),
+      *sol_answer(sol, hfrun(r'''from collections import Counter
+tok = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny")
+# add a few balanced rows of your own, then re-run the SAME prepare()
+RAW.extend([("Superb work", "pos"), ("A total waste", "neg"),
+            ("Loved every second", "pos"), ("Painfully dull", "neg")])
+enc, y = prepare(tok)
+print("new input_ids shape:", tuple(enc["input_ids"].shape), "| balance:", dict(Counter(y.tolist())))
+print("A 3rd 'neutral' class needs label2id['neu']=2 AND num_labels=3 on the model head downstream (Lab 4.10).")''')),
       footer(5, "Clean text + integer labels + a tokenized tensor batch is exactly what a fine-tune loop eats. Garbage in, garbage out &mdash; prep earns the accuracy."),
     ]
 
@@ -466,6 +519,14 @@ print("no leakage (train/val disjoint)?", set(Xtr).isdisjoint(set(Xval)))''')),
 both classes? Remove `stratify` and split a few times with different `random_state`s: how often does a
 class go missing? A "good" answer: you can explain, on this 28-row set, why stratification is not
 optional.'''),
+      *sol_answer(sol, r'''from sklearn.model_selection import train_test_split
+# smallest stratified val set that still holds both classes:
+for tf in [0.1, 0.15, 0.2, 0.3]:
+    _, Xv, _, yv = train_test_split(texts, labels, test_size=tf, random_state=0, stratify=labels)
+    print(f"test_frac={tf}: val={len(Xv):2d}  both classes? {set(yv) == {0, 1}}")
+# WITHOUT stratify, how often does a class vanish on this tiny set?
+missing = sum(set(train_test_split(texts, labels, test_size=0.2, random_state=s)[3]) != {0, 1} for s in range(10))
+print("un-stratified splits missing a whole class:", missing, "/ 10  -> why stratify is not optional here")'''),
       footer(6, "The validation set is sacred: it is your honest estimate of real-world accuracy, and the yardstick for every before/after fine-tune number to come."),
     ]
 
@@ -517,6 +578,14 @@ print("val accuracy (frozen features + trained head):", round(acc, 3))''')),
       yourturn('''Swap the head for an SVM (`from sklearn.svm import SVC`) or change the backbone in
 `extract_features` to `distilbert-base-uncased` &mdash; does accuracy change? Add your own labelled
 sentences. A "good" answer: you can explain why frozen-feature transfer learning needs so few labels.'''),
+      *sol_answer(sol, hfrun(r'''from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+Xtr_t, Xval_t, ytr, yval = train_test_split(texts, labels, test_size=0.3, random_state=0, stratify=labels)
+Xtr = extract_features(Xtr_t); Xval = extract_features(Xval_t)   # SAME frozen real features
+svm = SVC().fit(Xtr, ytr)                                        # only the head changed
+print("SVM head val accuracy:", round(accuracy_score(yval, svm.predict(Xval)), 3))
+print("Few labels suffice: the frozen backbone already encodes meaning, so the head just draws a boundary.")''')),
       footer(7, "Frozen backbone + trainable head = transfer learning at its cheapest. Next we unfreeze the backbone and **fine-tune the whole model** &mdash; the client's headline."),
     ]
 
@@ -582,6 +651,17 @@ print(confusion_matrix(y_true, y_pred))''')),
 precision and recall apart (make one high, the other low)? On a high-stakes task, which matters more &mdash;
 catching every positive (recall) or being right when you flag one (precision)? A "good" answer names a
 real task for each.'''),
+      *sol_answer(sol, hfrun(r'''from transformers import pipeline
+clf = pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
+# hard cases (sarcasm / negation) that tend to create FP and FN
+HARD = [("i just love waiting forever for bugs", 0), ("not terrible actually", 1),
+        ("a masterpiece of pure tedium", 0), ("could honestly be worse", 1)]
+yt = [y for _, y in HARD]
+yp = [1 if clf(t)[0]["label"] == "POSITIVE" else 0 for t, _ in HARD]
+print("y_true:", yt, "\ny_pred:", yp)
+print("precision:", round(precision(yt, yp), 3), "| recall:", round(recall(yt, yp), 3))
+print("Precision matters most when a false alarm is costly (e.g. auto-blocking accounts);")
+print("recall matters most when a MISS is costly (e.g. flagging fraud or safety issues).")''')),
       footer(8, "On imbalanced or high-stakes tasks, precision and recall matter more than accuracy. Always read the confusion matrix of **real** predictions before you trust a score."),
     ]
 
@@ -638,6 +718,15 @@ print("saved:", WORK + "/learning_curve.png")''')),
       yourturn('''Add more fractions (e.g. `0.1, 0.75`) or more data to `SENT`. Where does the curve
 **plateau** &mdash; the point where extra labels stop helping? That plateau is where you would **stop
 labelling**. A "good" answer: you can estimate, from the curve, how many labels this task really needs.'''),
+      *sol_answer(sol, hfrun(r'''from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+# reuse the frozen features Xtr/Xval extracted above; sweep MORE fractions to find the plateau
+n = Xtr.shape[0]
+for frac in [0.1, 0.25, 0.5, 0.75, 1.0]:
+    k = max(2, int(n * frac))
+    head = LogisticRegression(max_iter=1000).fit(Xtr[:k], ytr[:k])
+    print(f"frac={frac:>4}: k={k:2d} train examples -> val acc={round(accuracy_score(yval, head.predict(Xval)), 3)}")
+print("The curve flattens where extra labels stop moving val accuracy -- that plateau is where you stop labelling.")''')),
       footer(9, "Transfer learning is **data-efficient**: good frozen features mean a small head learns from few labels. Next we stop freezing and fine-tune the whole model."),
     ]
 
@@ -717,6 +806,16 @@ for s in ["a wonderful brilliant film", "a boring awful mess", "i really loved e
       yourturn('''Change `steps` and `lr` in `fine_tune` &mdash; can you make it converge faster, or break it
 (too-high `lr` diverges)? Add your own labelled sentences and re-run. A "good" answer: you can state
 what `loss.backward()` and `opt.step()` each do, and show one setting that trains and one that doesn't.'''),
+      *sol_answer(sol, hfrun(r'''from sklearn.model_selection import train_test_split
+Xtr, Xval, ytr, yval = train_test_split(texts, labels, test_size=0.3, random_state=0, stratify=labels)
+# same steps, two learning rates: a moderate one trains, a too-high one diverges
+for lr in [5e-3, 5e-1]:
+    torch.manual_seed(0)
+    tok, model = load_model()
+    fine_tune(model, tok, Xtr, ytr, steps=40, lr=lr)
+    print(f"lr={lr}: val acc = {evaluate(model, tok, Xval, yval):.3f}")
+print("backward() computes the gradients; step() applies them to every weight.")
+print("Moderate lr converges; too-high lr overshoots the minimum and accuracy falls back toward chance.")''')),
       footer(10, "You fine-tuned a **real** model end-to-end: random head &rarr; a trained model that beats its old self on unseen data. That is the client's headline, done for real."),
     ]
 
@@ -787,6 +886,14 @@ print("saved:", WORK + "/confusion.png")''')),
       yourturn('''Sweep `steps` (2, 5, 10, 20, 40) and plot accuracy &mdash; where does it plateau? Push `lr`
 too high (e.g. `1e-1`) and watch it destabilise. A "good" answer: you can name the training budget
 where accuracy stops improving, and describe one sign of over- vs under-training.'''),
+      *sol_answer(sol, hfrun(r'''from sklearn.model_selection import train_test_split
+Xtr, Xval, ytr, yval = train_test_split(texts, labels, test_size=0.3, random_state=0, stratify=labels)
+# sweep the training budget and watch accuracy climb then plateau
+for steps in [2, 5, 10, 20, 40]:
+    acc, _ = train_eval(Xtr, ytr, Xval, yval, steps=steps)
+    print(f"steps={steps:2d}: val acc = {round(acc, 3)}")
+hi, _ = train_eval(Xtr, ytr, Xval, yval, steps=40, lr=1e-1)   # lr too high -> destabilises
+print("lr=1e-1 (too high) val acc:", round(hi, 3), "-- underfitting sign: acc stuck near chance; overfitting sign: train perfect but val drops.")''')),
       footer(11, "Iterate: change the training budget, re-measure on held-out data, read the confusion matrix. That is the real fine-tuning loop &mdash; and 'more steps' is not always better."),
     ]
 
@@ -868,6 +975,24 @@ for s in ["the striker scored a header for the team", "the gpu accelerates the s
 dozen labelled sentences and run the exact same pipeline. Does it converge? A "good" answer: you can
 name every stage &mdash; tokenize, split, fine-tune, evaluate &mdash; and say what would break if you
 skipped the held-out split.'''),
+      *sol_answer(sol, hfrun(r'''# YOUR OWN new two-class task: spam (1) vs ham (0). Keywords recur so it generalises.
+from sklearn.model_selection import train_test_split
+MINE = [
+    ("win a free prize now click here", 1), ("claim your free cash prize today", 1),
+    ("free money click this link right now", 1), ("you won a free gift claim it now", 1),
+    ("congrats free voucher click now to win", 1), ("free free free click to win cash", 1),
+    ("lunch meeting moved to noon today", 0), ("can you review the report today", 0),
+    ("the meeting notes are attached here", 0), ("please send me the project report", 0),
+    ("see you at the team meeting today", 0), ("the report review is due tomorrow", 0),
+]
+X = [t for t, y in MINE]; Y = [y for t, y in MINE]
+Xtr, Xval, ytr, yval = train_test_split(X, Y, test_size=0.3, random_state=0, stratify=Y)
+tok, model = load()                    # tokenize + fresh head
+before, _ = evaluate(model, tok, Xval, yval)
+fine_tune(model, tok, Xtr, ytr)        # real training loop
+after, _ = evaluate(model, tok, Xval, yval)
+print(f"spam-vs-ham | before={before:.3f} -> after={after:.3f}  ({after-before:+.3f})")
+print("Stages: tokenize -> split -> fine-tune -> evaluate. Skip the held-out split and you'd measure memorisation, not learning.")''')),
       footer(12, "You adapted a **real** pre-trained model to a brand-new task end-to-end. That is Module 4 in one move: stand on a pretrained model, fine-tune a small head-and-body, measure honestly, ship. Next: Day 3 &mdash; agents."),
     ]
 

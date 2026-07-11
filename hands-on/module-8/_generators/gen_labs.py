@@ -132,6 +132,12 @@ def runmd(text):     return md("## Run it for real &amp; read the trace\n" + tex
 def noticemd(text):  return md("## What to notice\n" + text)
 def yourturn(text):  return md("## Your turn (open task &mdash; no grader)\n" + text)
 
+def sol_answer(sol, code_text):
+    """Solution-only worked reference for the open 'Your turn' task above (empty in the student notebook)."""
+    if not sol:
+        return []
+    return [code("# --- Reference answer (ONE good way to do the 'Your turn' task -- compare with your own) ---\n" + code_text)]
+
 # Real-LangChain import snippets (dropped into the cells that need them).
 TOOL_IMPORT = "from langchain_core.tools import tool"
 
@@ -228,6 +234,14 @@ The two `@tool`s are already written for you (they catch their own errors and re
 it calls `known_issues`, not a billing tool. Then give one specialist the *other's* tool and re-run: **what
 good looks like** is that a focused specialist stays in its lane, and blurring the tool sets makes tool
 selection worse. Sharpen a docstring if a specialist ignores its tool.'''),
+      *sol_answer(sol, r'''if groq_ready():
+    tech_agent = build_specialist([known_issues], "tech")   # a focused tech specialist
+    result = tech_agent.invoke(
+        {"messages": [("user", "the app keeps crashing on login")]},
+        config={"recursion_limit": 8})
+    print_trace(result)          # it calls known_issues (its own tool), not a billing tool
+else:
+    print("(add GROQ_API_KEY to .env)")'''),
       footer(1, "Each specialist is a real create_agent with a focused role, a small tool set, and clear boundaries. That separation of concerns is the whole payoff of multi-agent -- next, a supervisor decides who handles what."),
     ]
 
@@ -281,6 +295,11 @@ print("we will route to whichever specialists a message is in scope for -- possi
 `SPECIALISTS` and re-run over a message that hits it. **What good looks like:** the router now sends
 account-related tickets to `account`, two-intent messages reach both owners, and anything unmatched still
 falls back to `general`. That is the supervisor whose destinations you'll wire to real agents later.'''),
+      *sol_answer(sol, r'''account = Specialist("account", ["password", "email", "cancel"])
+SPECIALISTS3 = [billing, tech, account]
+print("account :", route("please cancel my account", SPECIALISTS3))
+print("two     :", route("charged twice and I forgot my password", SPECIALISTS3))
+print("unknown :", route("what are your hours?", SPECIALISTS3))'''),
       footer(2, "The supervisor is Module 7's route pattern -- but routing to AGENTS. Returning a list lets one message reach several specialists; the general fallback keeps it safe. Next: how those agents share what they find."),
     ]
 
@@ -333,6 +352,14 @@ context.'''),
 `"billing: ...; tech: ..."`), and call it after recording two findings. **What good looks like:** the summary
 reads back in a stable order and contains every recorded finding &mdash; the raw material a **synthesiser**
 (Lab 8.9) will turn into one reply.'''),
+      *sol_answer(sol, r'''def summary(st):
+    # one-line, stable order, every recorded finding present
+    return "; ".join(f"{a}: {f}" for a, f in sorted(st.findings.items()))
+
+st = SharedState("charged twice and the app crashes")
+st.record("billing", "duplicate charge on 4471")
+st.record("tech", "matches BUG-231")
+print("summary:", summary(st))'''),
       footer(3, "Shared state is how a team stays coherent -- each agent writes its finding, the next reads the context. Keep it small and let handoffs be explicit, or agents talk past each other."),
     ]
 
@@ -384,6 +411,16 @@ print("pipeline: triage -> billing -> tech")'''),
       yourturn('''Insert a new **`policy`** stage between billing and tech (e.g. `lambda c: c + " | policy: refund within 30 days"`)
 and re-run. **What good looks like:** the new stage appears in order in the trail, the final case carries every
 stage's note, and removing a stage cleanly shortens the pipeline &mdash; no other stage needs to change.'''),
+      *sol_answer(sol, r'''STAGES2 = [
+    STAGES[0],                                              # triage
+    STAGES[1],                                              # billing
+    lambda c: c + " | policy: refund within 30 days",       # NEW policy stage
+    STAGES[2],                                              # tech
+]
+out = run_pipeline("ticket: charged twice, app crashing", STAGES2)
+print("final case:", out["case"])
+for step in out["trail"]:
+    print("  step:", step)'''),
       footer(4, "A pipeline is the multi-agent version of Module 7's automation pipeline -- each stage a specialist over the same ticket. Clean, ordered hand-offs make each stage reliable; just remember errors propagate downstream."),
     ]
 
@@ -440,6 +477,13 @@ when one raises.'''),
       yourturn('''Add a fourth specialist that returns a *contradicting* billing verdict (e.g. `"no refund due"`), then re-run
 the fan-out. **What good looks like:** all four run, each tagged, the down agent still degrades to a marker &mdash;
 and you now have a genuine **conflict** to resolve with a vote (Lab 8.7) or synthesis (Lab 8.9).'''),
+      *sol_answer(sol, r'''def billing_review(t):
+    return "no refund due" if "charg" in t.lower() else "no billing issue"   # CONTRADICTS billing_agent
+
+SPECIALISTS["billing_review"] = billing_review
+out = fan_out("charged twice and the app keeps crashing", SPECIALISTS)
+for name, res in out.items():
+    print(f"{name:14}: {res}")            # all run, each tagged; policy still degrades to an ERROR marker'''),
       footer(5, "Fan-out buys coverage and speed -- latency is the slowest agent, not the sum -- and staying tagged + fault-tolerant means one agent going down doesn't take the team with it. But now you have several outputs and need one: that convergence is decision making, coming up."),
     ]
 
@@ -489,6 +533,12 @@ print("handoff: supervisor -> billing -> tech -> done")'''),
 a few runs. **What good looks like:** normal runs terminate at `"done"` well under the cap, while a
 deliberately looping set is always stopped by the cap &mdash; no polite pair of agents can hand back and forth
 forever.'''),
+      *sol_answer(sol, r'''import itertools
+flip = itertools.cycle(["tech", "done"])                 # sometimes hands to tech, sometimes finishes
+COND = {"supervisor": lambda: "billing", "billing": lambda: next(flip), "tech": lambda: "done"}
+print("run 1 :", run_handoffs("supervisor", COND))       # terminates at "done", under the cap
+print("run 2 :", run_handoffs("supervisor", COND))
+print("loop  :", run_handoffs("a", LOOP, max_handoffs=4)) # a looping pair is always stopped by the cap'''),
       footer(6, "Explicit handoffs plus a cap are the multi-agent version of the agent loop with max_iterations. Without the cap, two polite agents hand back and forth forever."),
     ]
 
@@ -539,6 +589,8 @@ print("three agents voted:", ["refund", "refund", "deny"], "-> majority?")'''),
       yourturn('''Raise the `threshold` to `0.66` and re-run over `["refund", "refund", "deny"]`. **What good looks like:** a
 2/3 majority now *fails* the stricter bar and escalates &mdash; showing the threshold is your dial between
 *trust the majority* and *only act on strong consensus*. Pick the bar to match how costly a wrong call is.'''),
+      *sol_answer(sol, r'''print("strict 2/3:", decide(["refund", "refund", "deny"], threshold=0.66))   # fails the bar -> escalate
+print("unanimous :", decide(["refund", "refund", "refund"], threshold=0.66)) # clears it -> decided'''),
       footer(7, "Voting converges comparable answers, and a split vote is information -- escalate, don't force it. Use it for checkable answers; watch for a shared blind spot that makes agents agree on the same mistake."),
     ]
 
@@ -592,6 +644,14 @@ print("proposer & critics ready")'''),
 **What good looks like:** approval now takes an extra round (and a higher `max_rounds` to reach it), proving the
 critic &mdash; not the proposer &mdash; sets the quality bar. Drop the cap too low and a good answer never
 lands: tune the cap to the task.'''),
+      *sol_answer(sol, r'''def proposer_cite(prev):
+    if prev is None: return "draft v1"
+    if "v1" in prev: return "draft v2 grounded"
+    return "draft v3 grounded cited"                      # only adds "cited" on the 3rd round
+def critic_cite(answer):
+    return "approve" if ("grounded" in answer and "cited" in answer) else "revise"
+print("reaches cited:", critique_loop(proposer_cite, critic_cite, max_rounds=4))  # approves in round 3
+print("cap too low  :", critique_loop(proposer_cite, critic_cite, max_rounds=2))  # good answer never lands'''),
       footer(8, "A separate critic raises quality because evaluating is a different skill from generating -- and the cap keeps the debate from running forever. Use it when being right beats being fast."),
     ]
 
@@ -643,6 +703,14 @@ print("synthesise:", {"billing": "duplicate charge -> refund", "tech": "BUG-231 
       yourturn('''Extend `synthesize` to **prefix each finding with its agent name** (e.g. `"billing: ..."`). **What good looks
 like:** the reply still passes `is_grounded` (the finding text is intact), and now a reader can see *which*
 specialist said *what* &mdash; the one-voice reply that the customer-service chatbot (Lab 8.11) will return.'''),
+      *sol_answer(sol, r'''def synthesize_tagged(findings):
+    ordered = [f"{k}: {findings[k]}" for k in sorted(findings)]   # prefix each with its agent name
+    return "Here is what we found: " + "; ".join(ordered) + "."
+
+F = {"billing": "duplicate charge -> refund", "tech": "BUG-231 -> update to v4.2"}
+reply = synthesize_tagged(F)
+print(reply)
+print("grounded?", is_grounded(reply, F))    # finding text intact -> still grounded'''),
       footer(9, "Synthesis reconciles complementary parts into one grounded reply in a single voice -- the last step before the customer sees an answer. Vote to converge, critique to harden, synthesise to combine."),
     ]
 
@@ -727,6 +795,20 @@ print("we log (agent, action, detail) events and watch for loops")'''),
       yourturn('''Extend `AgentTrace` with a `cost` field per event (e.g. a token estimate) and a `total_cost()` method, then log a
 few events. **What good looks like:** you can now answer *"which agent cost the most?"* from the trace &mdash; the
 accountability a multi-agent system needs. Feed `detect_loop` a hand-built looping path to confirm it fires.'''),
+      *sol_answer(sol, r'''class CostTrace(AgentTrace):
+    def log(self, agent, action, detail, cost=0):
+        self.events.append((agent, action, detail, cost))     # add a per-event cost
+    def agents_involved(self):
+        return [e[0] for e in self.events]
+    def total_cost(self):
+        return sum(e[3] for e in self.events)
+
+ct = CostTrace()
+ct.log("supervisor", "route", "billing+tech", cost=5)
+ct.log("billing", "tool", "lookup_invoice", cost=12)
+ct.log("tech", "tool", "known_issues", cost=9)
+print("total cost:", ct.total_cost(), "| involved:", ct.agents_involved())
+print("loop?     :", detect_loop(["a", "b", "a", "b", "a"]))   # hand-built runaway -> True'''),
       footer(10, "Log every agent, message, handoff and decision so you can replay the conversation, find the faulty agent and watch cost. A multi-agent system is only as trustworthy as it is observable."),
     ]
 
@@ -828,6 +910,17 @@ print("assembling: supervisor -> {billing, tech} specialists -> synthesise -> hu
 only `tech` is engaged, its trace calls `known_issues`, the reply is `auto_ok` (no refund, no human needed).
 Then send a refund ticket and confirm it flips to `needs_approval`. (Each live ticket makes a few model calls &mdash;
 run a couple, not the whole world, on the free tier.)'''),
+      *sol_answer(sol, r'''if groq_ready():
+    AGENTS = {"billing": build_specialist([lookup_invoice], "billing"),
+              "tech":    build_specialist([known_issues], "tech")}
+    for msg in ["the app keeps crashing on login",              # pure tech -> auto_ok
+                "please refund the duplicate charge on 4471"]:   # refund -> needs_approval
+        involved = route(msg)
+        findings = {n: specialist_reply(AGENTS[n], msg) for n in involved if n in AGENTS}
+        out = assemble_reply(findings, involved, msg)
+        print(msg[:36], "->", out["status"], "| agents:", out["agents"])
+else:
+    print("(add GROQ_API_KEY to .env)")'''),
       footer(11, "A TEAM: a supervisor routes, real specialists (each a create_agent with its own tools) gather, a synthesiser makes one reply -- and the refund waits for a human. Next: run it over a whole suite."),
     ]
 
@@ -936,6 +1029,17 @@ and run `process()` over each &mdash; then check every outcome: only-tech is `au
 dispute both `conflict` and escalates to `needs_approval`. **What good looks like:** every ticket is routed to the
 right specialists, refunds and splits are gated on a human, and no reply invents a fact its specialists didn't
 find. (Each two-intent ticket makes several live calls &mdash; run the suite a few tickets at a time on the free tier.)'''),
+      *sol_answer(sol, r'''if groq_ready():
+    AGENTS = {"billing": build_specialist([lookup_invoice], "billing"),
+              "tech":    build_specialist([known_issues], "tech")}
+    suite = ["the app keeps crashing on login",         # only tech -> auto_ok
+             "what are your hours?",                     # general fallback
+             "I want to dispute the charge on 4471"]     # dispute -> vote splits -> needs_approval
+    for msg in suite:
+        out = process(msg, AGENTS)
+        print(f"{msg[:34]:36} -> status={out['status']:14} conflict={out['conflict']} agents={out['agents']}")
+else:
+    print("(add GROQ_API_KEY to .env)")'''),
       footer(12, "You built a multi-agent customer-service chatbot end to end -- real specialists coordinated by a supervisor, a vote when they conflict, findings synthesised into one reply, refunds gated on a human. That completes Day 4. Next: Day 5 -- agents in the real world, responsibly."),
     ]
 

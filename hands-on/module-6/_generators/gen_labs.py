@@ -130,6 +130,12 @@ def runmd(text):     return md("## Run it for real &amp; read the trace\n" + tex
 def noticemd(text):  return md("## What to notice\n" + text)
 def yourturn(text):  return md("## Your turn (open task &mdash; no grader)\n" + text)
 
+def sol_answer(sol, code_text):
+    """Solution-only worked reference for the open 'Your turn' task above (empty in the student notebook)."""
+    if not sol:
+        return []
+    return [code("# --- Reference answer (ONE good way to do the 'Your turn' task -- compare with your own) ---\n" + code_text)]
+
 # AST-based safe arithmetic -- never bare eval() on free text. Tools wrap this in try/except.
 SAFE_CALC = '''import ast, operator
 # safe arithmetic: walk a parsed AST of numbers + (+ - * / ** unary-minus) -- never bare eval()
@@ -225,6 +231,21 @@ print("greet.invoke('Ada') ->", greet.invoke("Ada"))'''),
 in the `tools=[...]` list, and re-run the agent with a question that needs it.
 **What good looks like:** the trace shows your new tool being called with sensible args, and the final
 answer uses its result. If the model ignores your tool, sharpen the docstring (that's the tool's real API).'''),
+      *sol_answer(sol, r'''from langchain_core.tools import tool
+from langchain.agents import create_agent
+
+@tool
+def word_count(text: str) -> str:
+    """Count the number of words in a piece of text. Use when asked how many words something has."""
+    return str(len(text.split()))
+
+agent3 = create_agent(llm, tools=[calculator, lookup, word_count])
+if ollama_up():
+    result = agent3.invoke({"messages": [("user", "How many words are in the phrase 'the quick brown fox'?")]},
+                           config={"recursion_limit": 8})
+    print_trace(result)
+else:
+    print("(start Ollama: ollama run llama3.1:8b)")'''),
       footer(1, "`@tool` turns a function into a real Tool the agent can call, and the docstring is the API the model reads. You just watched llama3.1:8b call your own Python -- next we make descriptions drive which tool it picks."),
     ]
 
@@ -295,6 +316,22 @@ run). The bodies are simple; the **docstring** is what matters.'''),
 on the same question. **What good looks like:** with a vague description the model often stops calling
 `weather` (or calls the wrong tool). Restore a clear description and it comes back. You've just proven the
 docstring is the API &mdash; write it for the model.'''),
+      *sol_answer(sol, r'''from langchain_core.tools import tool
+from langchain.agents import create_agent
+
+@tool
+def weather_vague(city: str) -> str:
+    """Does stuff with a place."""
+    return city.title() + ": sunny, 24C"
+
+vague_agent = create_agent(llm, tools=[weather_vague, dictionary, translate])
+if ollama_up():
+    print("VAGUE weather description:")
+    print_trace(vague_agent.invoke({"messages": [("user", "What's the weather like in Tokyo right now?")]},
+                                   config={"recursion_limit": 6}))
+    print("With a vague docstring the model often skips the weather tool -- the docstring is the API.")
+else:
+    print("(start Ollama: ollama run llama3.1:8b)")'''),
       footer(2, "The description is what the model reads to choose a tool -- write it for the model. You watched a real agent route by your words, and watched a vague docstring break it."),
     ]
 
@@ -353,6 +390,13 @@ print("the setup cell already built `llm` =", llm.model)'''),
 re-run `ask()`. Then (optional) build a second model `groq = ChatGroq(model="llama-3.3-70b-versatile")`
 and call `groq.invoke(build_prompt(...)).content`. **What good looks like:** the answer's *style* changes
 with the template, and the *same* `.invoke().content` call works across models.'''),
+      *sol_answer(sol, r'''from langchain_core.prompts import PromptTemplate
+
+bullets = PromptTemplate.from_template("Answer as exactly three short bullet points.\nQuestion: {input}")
+if ollama_up():
+    print(llm.invoke(bullets.format(input="What is an AI agent?")).content)
+else:
+    print("(start Ollama: ollama run llama3.1:8b)")'''),
       footer(3, "One interface -- .invoke(prompt).content -- over every provider. The PromptTemplate shapes the request; swapping the model is one line."),
     ]
 
@@ -409,6 +453,22 @@ print("one tool ready:", lookup.name)'''),
       yourturn('''Add a second tool (a calculator, or a second fact source) to `build_agent`'s list and re-run with a
 question that needs both. **What good looks like:** the trace shows two different `TOOL CALL`s and the
 final answer combines them &mdash; a real multi-tool agent, assembled in three lines.'''),
+      *sol_answer(sol, r'''from langchain_core.tools import tool
+from langchain.agents import create_agent
+
+@tool
+def population(place: str) -> str:
+    """Look up the population of a place, e.g. 'japan'."""
+    return {"japan": "125000000", "france": "68000000"}.get(place.lower().strip(), "unknown")
+
+multi_agent = create_agent(llm, tools=[lookup, population])
+if ollama_up():
+    result = multi_agent.invoke(
+        {"messages": [("user", "What is the capital of Japan, and what is the population of Japan?")]},
+        config={"recursion_limit": 8})
+    print_trace(result)
+else:
+    print("(start Ollama: ollama run llama3.1:8b)")'''),
       footer(4, "model + tools -> create_agent = a runnable CompiledStateGraph that loops decide<->act until it answers. Next: read the full trace and cap the loop."),
     ]
 
@@ -490,6 +550,18 @@ print("two tools ready:", web_search.name, "&", calculator.name)'''),
       yourturn('''Drop the cap to `run_config(2)` and re-run. **What good looks like:** on a task that needs two tool
 steps, a cap of 2 can cut the agent off before it finishes &mdash; you'll see it in the trace. Raise the cap
 and it completes. That's the safety/completeness trade-off you tune per task.'''),
+      *sol_answer(sol, r'''if ollama_up():
+    q = "Use web_search for the population of France, then halve it with the calculator."
+    try:
+        result = agent.invoke({"messages": [("user", q)]}, config=run_config(2))   # a cap of 2 is too small for a 2-tool task
+        print("cap=2 finished:", tools_used(result["messages"]), "->", final_answer(result["messages"]))
+    except Exception as e:
+        # hitting the cap RAISES GraphRecursionError -- that IS the recursion_limit guardrail firing.
+        print("cap=2 ->", type(e).__name__, "- the guardrail STOPPED the agent before it could finish.")
+    result = agent.invoke({"messages": [("user", q)]}, config=run_config(8))        # room to run both tools
+    print("cap=8 finished:", tools_used(result["messages"]), "->", final_answer(result["messages"]))
+else:
+    print("(start Ollama: ollama run llama3.1:8b)")'''),
       footer(5, "The agent's loop is now visible: tool_calls show what it did; recursion_limit is your one-line guardrail. The message trace is the truth of what happened."),
     ]
 
@@ -570,6 +642,23 @@ handle the unknown/failing cases without crashing.'''),
       yourturn('''Add a third tool to `REGISTRY`, rebuild the agent with `list(REGISTRY.values())`, and ask a question that
 routes to it. **What good looks like:** the trace shows the agent routing to your new tool by name, and an
 intentionally wrong tool name (in `dispatch`) still returns a clean "unknown tool" message.'''),
+      *sol_answer(sol, r'''from langchain_core.tools import tool
+from langchain.agents import create_agent
+
+@tool
+def weather(city: str) -> str:
+    """Get the current weather for a city."""
+    return city.title() + ": sunny, 24C"
+
+REGISTRY["weather"] = weather
+print("by-hand dispatch:", dispatch(REGISTRY, "weather", "tokyo"))
+print("bad tool name   :", dispatch(REGISTRY, "nope", "x"))   # clean 'unknown tool' message, no crash
+agent2 = create_agent(llm, tools=list(REGISTRY.values()))
+if ollama_up():
+    print_trace(agent2.invoke({"messages": [("user", "What's the weather in Tokyo?")]},
+                              config={"recursion_limit": 6}))
+else:
+    print("(start Ollama: ollama run llama3.1:8b)")'''),
       footer(6, "Routing turns a chosen action into a real observation -- safely. You built the dispatch create_agent does for you, and saw both survive a bad tool name."),
     ]
 
@@ -639,6 +728,18 @@ print("a turn:", (history[0].type, history[0].content))'''),
       yourturn('''Extend the conversation to a third turn (e.g. *"And what language do they speak there?"*) &mdash; add each
 answer to `mem` and re-run. **What good looks like:** each new answer stays on-topic across turns; remove
 memory and the follow-ups fall apart.'''),
+      *sol_answer(sol, r'''mem = ConversationMemory()
+turns = ["What is the capital of France?",
+         "Is it bigger than Osaka?",
+         "And what language do they speak there?"]
+if ollama_up():
+    for q in turns:
+        a = llm.invoke(build_prompt(mem, q)).content
+        print("Q:", q); print("A:", a)
+        mem.add("user", q); mem.add("assistant", a)   # feed each answer back into memory
+    print("Each follow-up stayed on-topic because memory carried the earlier turns.")
+else:
+    print("(start Ollama: ollama run llama3.1:8b)")'''),
       footer(7, "Memory carries context across turns so 'is it bigger than Osaka?' just works. In a framework it's a component you attach -- and you just proved it with a real model."),
     ]
 
@@ -720,6 +821,10 @@ real graph. A risky step lands on the human node before anything happens.'''),
       yourturn('''Add a new risky action name to `RISKY` (e.g. `"wire_transfer"`) and a sequence that uses it, then re-run.
 **What good looks like:** your new risky action routes to `human` while safe actions go straight to `tool`.
 (Advanced: add a real `llm`-backed node that decides the next action &mdash; the graph will call it.)'''),
+      *sol_answer(sol, r'''RISKY.add("wire_transfer")
+print("wire_transfer ->", route({"actions": ["wire_transfer"], "path": []}))   # now gated to human
+print("safe then wire :", run_graph(["search", "wire_transfer", "done"]))
+print("all safe        :", run_graph(["search", "search", "done"]))'''),
       footer(8, "LangChain gets an agent running; LangGraph puts its flow under control -- explicit nodes, branching, and a first-class human-approval pause. Start simple; graduate when you need it."),
     ]
 
@@ -811,6 +916,15 @@ calculator step's argument was **derived from** the search result (real validati
       yourturn('''Ask a different compound question (e.g. *"population of france, times 3"*) and re-run. **What good looks
 like:** the trace chains `web_search` -> `calculator`, and `chain_is_grounded` is True because the compute
 used the searched figure. If it's False, read the trace to see where the model went off the rails.'''),
+      *sol_answer(sol, r'''if ollama_up():
+    result = agent.invoke(
+        {"messages": [("user", "Use web_search for the population of france, then use the calculator to multiply it by 3.")]},
+        config={"recursion_limit": 8})
+    print_trace(result)
+    print("data dependency:", chained_arg(result["messages"]))
+    print("grounded?      :", chain_is_grounded(result["messages"]))
+else:
+    print("(start Ollama: ollama run llama3.1:8b)")'''),
       footer(9, "Chaining search + compute in one run is where agents beat a single call. Same create_agent, two tools -- plus a grounding check that catches a hallucinated chain."),
     ]
 
@@ -897,6 +1011,19 @@ to a real agent with `create_agent`.'''),
 compare the traces. **What good looks like:** the agent calls `google_search` for live facts and `wolfram`
 for exact math, and a temporarily-broken key (rename it in `.env`) yields a graceful "unavailable" string
 rather than a stack trace.'''),
+      *sol_answer(sol, r'''agent = build_agent()
+questions = [
+    "What is the population of France?",                                        # search only
+    "Use wolfram to compute 2400 * 2.",                                          # compute only
+    "Search the height of the Eiffel Tower in metres, then use wolfram to convert it to feet.",  # both
+]
+if ollama_up():
+    for q in questions:
+        print("Q:", q)
+        print_trace(agent.invoke({"messages": [("user", q)]}, config={"recursion_limit": 8}))
+        print()
+else:
+    print("(start Ollama: ollama run llama3.1:8b)")'''),
       footer(10, "Get a key -> wrap the service as a guarded @tool -> add it to the list. That is how an agent reaches live Google facts and exact Wolfram computation -- the client's Day-3 external-API lab, for real."),
     ]
 
@@ -987,6 +1114,27 @@ and a **real** callback handler that records each tool result.'''),
 watch how a raising tool derails the run. Then switch back to the safe `calculator`. Add an
 `on_tool_start(self, serialized, input_str, **kw)` method to your handler to log inputs too. **What good
 looks like:** the safe agent recovers and answers; your callback logs every tool start and end.'''),
+      *sol_answer(sol, r'''from langchain.agents import create_agent
+
+class FullTraceHandler(TraceHandler):
+    def on_tool_start(self, serialized, input_str, **kw):
+        self.events.append(("tool_start", str(input_str)[:80]))   # log inputs too
+
+if ollama_up():
+    handler = FullTraceHandler()
+    unsafe_agent = create_agent(llm, tools=[unsafe_divide])   # the raising tool
+    try:
+        r = unsafe_agent.invoke({"messages": [("user", "What is 10 divided by 0?")]},
+                                config={"recursion_limit": 6, "callbacks": [handler]})
+        print("unsafe final:", r["messages"][-1].content)
+    except Exception as e:
+        print("the raising tool derailed the run:", type(e).__name__)
+    print("events:", handler.events)
+    safe_agent = create_agent(llm, tools=[calculator])         # switch back to the safe tool
+    print("safe final:", safe_agent.invoke({"messages": [("user", "What is 10 divided by 0?")]},
+                                            config={"recursion_limit": 6})["messages"][-1].content)
+else:
+    print("(start Ollama: ollama run llama3.1:8b)")'''),
       footer(11, "Tools that return strings (never raise) + allow-list + validation + a real callback turn an autonomous agent from a liability into something you can trust and debug. Day 5 goes deeper."),
     ]
 
@@ -1087,6 +1235,25 @@ prompt), and `run_config` (the recursion cap).'''),
 that needs it, and re-run. **What good looks like:** your new tool is vetted in, the agent calls it on the
 right task, the recursion cap holds, and the callback logs every step. That's a shippable, guardrailed
 agent &mdash; the foundation for Day 4.'''),
+      *sol_answer(sol, r'''from langchain_core.tools import tool
+from langchain.agents import create_agent
+
+@tool
+def word_count(text: str) -> str:
+    """Count the words in a piece of text. Use when asked how many words something has."""
+    return str(len(text.split()))
+
+ALLOWED.add("word_count")                                     # respect the allow-list
+agent2 = create_agent(llm, tools=vet_tools([lookup, calculator, word_count]), system_prompt=SYSTEM)
+if ollama_up():
+    handler = TraceHandler()
+    q = "How many words are in 'the quick brown fox jumps'?"
+    result = agent2.invoke({"messages": [("user", q)]}, config=run_config(8, handler))
+    print("Q:", q)
+    print("  final:", result["messages"][-1].content)
+    print("  tools:", handler.events)
+else:
+    print("(start Ollama: ollama run llama3.1:8b)")'''),
       footer(12, "You assembled a guardrailed LangChain agent -- vetted tools, a system prompt, create_agent and a recursion cap -- and ran it over a real suite. That is a shippable agent; next, Day 4 puts agents to work."),
     ]
 

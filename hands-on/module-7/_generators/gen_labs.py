@@ -147,6 +147,12 @@ def runmd(text):     return md("## Run it for real &amp; read the trace\n" + tex
 def noticemd(text):  return md("## What to notice\n" + text)
 def yourturn(text):  return md("## Your turn (open task &mdash; no grader)\n" + text)
 
+def sol_answer(sol, code_text):
+    """Solution-only worked reference for the open 'Your turn' task above (empty in the student notebook)."""
+    if not sol:
+        return []
+    return [code("# --- Reference answer (ONE good way to do the 'Your turn' task -- compare with your own) ---\n" + code_text)]
+
 # ---- shared building blocks -----------------------------------------------------------------
 
 # AST-based safe arithmetic -- never bare eval() on free text.
@@ -247,6 +253,11 @@ irreversible act); `run_pipeline` then walks the whole thing.'''),
       yourturn('''Add a seventh stage &mdash; e.g. `"log"` after `act` &mdash; and re-run `run_pipeline()`. **What good looks
 like:** the walk includes your new stage in the right place and `next_stage` still terminates at `"done"`.
 Then ask yourself: which of your stages are reversible, and which one truly needs the human gate?'''),
+      *sol_answer(sol, r'''PIPELINE.append("log")                      # a 7th stage, after "act"
+print("after act ->", next_stage("act"))    # now "log", not "done"
+print("full run:", run_pipeline())          # includes "log" and still terminates at "done"
+print("checkpoint at approve?", is_checkpoint("approve"))
+print("reversible: log yes / act no -- only the pre-act 'approve' stage truly needs the human gate")'''),
       footer(1, "Trigger -> gather -> draft -> validate -> approve -> act. The outer stages are what turn a demo agent into an automation. Next: the gather stage -- grounding the task in real data with real tools."),
     ]
 
@@ -310,6 +321,15 @@ print("templates on file:", list(TEMPLATES))'''),
       yourturn('''Ask the agent about an order that isn't on file (e.g. `9999`), or add a third gather tool (say
 `order_history(order_id)`), bind it, and re-run. **What good looks like:** for the unknown order the tool
 returns `{"status": "unknown"}` and the agent says so honestly instead of inventing an ETA.'''),
+      *sol_answer(sol, r'''if groq_ready():
+    from langchain.agents import create_agent
+    agent = create_agent(llm, tools=[lookup_order, get_template])
+    result = with_backoff(lambda: agent.invoke(
+        {"messages": [("user", "What is the status of order 9999? Do not send anything.")]},
+        config={"recursion_limit": 8}))
+    print_trace(result)   # lookup_order returns {"status": "unknown"}; the agent says so honestly
+else:
+    print("(add GROQ_API_KEY to .env)")'''),
       footer(2, "Gather first, draft second. These are just tools pointed at a real job -- and a real Groq agent calls them to ground itself before it writes a word."),
     ]
 
@@ -382,6 +402,10 @@ print("we want a COMPLETE, correctly-typed record out.")'''),
       yourturn('''Add a new field to `SCHEMA` (e.g. `"channel": {"type": str, "default": "email"}`) and feed `coerce`
 records that omit it or give it the wrong type. **What good looks like:** the coerced record always has
 your field, correctly typed, and `is_valid` still guards the required set.'''),
+      *sol_answer(sol, r'''SCHEMA["channel"] = {"type": str, "default": "email"}   # a new typed field with a default
+print("omitted   :", coerce({"order_id": "4471", "intent": "refund"}))                 # channel -> "email"
+print("wrong type:", coerce({"order_id": "4471", "intent": "refund", "channel": 5}))   # 5 -> "5"
+print("valid?    :", is_valid(coerce({"order_id": "4471", "intent": "refund"})))        # required set still guarded'''),
       footer(3, "A schema of typed fields with defaults turns a messy, half-filled record into something the pipeline can trust. Coerce first, validate second -- next we produce records by extraction."),
     ]
 
@@ -446,6 +470,10 @@ rough sentiment.'''),
       yourturn('''Feed `extract` a few of your own emails &mdash; especially awkward ones like *"my parcel never showed up"*
 (no keyword hit) &mdash; and see where it mislabels. **What good looks like:** you can name exactly which
 phrasings slip past the keywords, which tells you where a model-based extractor would earn its keep.'''),
+      *sol_answer(sol, r'''for e in ["my parcel never showed up", "order 5090 arrived late", "refund please, ref 4471"]:
+    print(repr(e), "->", extract(e))
+# "never showed up" hits no delivery keyword, so intent falls to "other" --
+# a real, visible miss where a model-based extractor (with a closed-schema validator) would earn its keep.'''),
       footer(4, "Extract is the workhorse: it turns email, chat and forms into rows your systems can process. A tight schema plus missing-data handling is what makes it reliable enough to build on."),
     ]
 
@@ -492,6 +520,10 @@ print("closed label set -> team:", TEAMS)'''),
       yourturn('''Add a new intent/team pair (e.g. `"billing_query": "billing"`) or a stricter escalation rule (escalate
 any `refund` over a threshold). **What good looks like:** known intents route deterministically, unknowns
 fall to `general`, and the cases you'd want a human to see are the ones that get `escalate=True`.'''),
+      *sol_answer(sol, r'''TEAMS["billing_query"] = "billing"      # a new known intent -> team pair
+print("known   ->", route({"intent": "billing_query", "sentiment": "neutral"}))  # -> billing, no escalate
+print("unknown ->", route({"intent": "mystery", "sentiment": "neutral"}))        # -> general, escalate (not in TEAMS)
+print("unhappy ->", route({"intent": "refund", "sentiment": "negative"}))        # known team but escalate=True'''),
       footer(5, "Routing makes one agent the front door to a whole system. Routing to the right specialist AGENT is the bridge to Module 8 -- for now it's the label that drives the branch."),
     ]
 
@@ -553,6 +585,19 @@ order fields you pass in.'''),
 or draft in another language &mdash; and re-run `draft_reply()`. **What good looks like:** the style changes
 with your prompt while the **facts stay grounded** (id and ETA still correct). Try feeding `ORDERS["5090"]`
 (a different order) and confirm the draft tracks *its* fields.'''),
+      *sol_answer(sol, r'''from langchain_core.prompts import PromptTemplate
+WARM = PromptTemplate.from_template(
+    "You are a warm, friendly support agent. Using ONLY these facts, reply in at most two sentences with a sign-off.\n"
+    "Invent no date that is not given below.\n"
+    "Customer name: {name}\nOrder id: {id}\nStatus: {status}\nETA: {eta}\nReply:")
+if groq_ready():
+    order = ORDERS["5090"]                                   # a DIFFERENT order (ETA: next week)
+    reply = with_backoff(lambda: llm.invoke(WARM.format(
+        name=order["name"], id=order["id"], status=order["status"], eta=order["eta"])).content)
+    print(reply)
+    print("--- grounded on 5090's ETA?", order["eta"] in reply)   # voice changed; facts stay grounded
+else:
+    print("(add GROQ_API_KEY to .env)")'''),
       footer(6, "A grounded draft is specific and correct; an ungrounded one invents facts. Draft agents are high-value and low-risk because the human still holds the pen -- which is why the email agent is the canonical first real-world lab."),
     ]
 
@@ -606,6 +651,17 @@ print("we will check records like:", good)'''),
       yourturn('''Take a real reply from Lab 6's `draft_reply` and validate it against the order. Then deliberately corrupt
 it (swap the ETA) and re-validate. **What good looks like:** the honest draft passes; the tampered one is
 caught as `ungrounded eta`. Add one more check of your own &mdash; e.g. reject a reply that's suspiciously long.'''),
+      *sol_answer(sol, r'''ORDER    = {"id": "4471", "eta": "Friday"}
+honest   = {"order_id": "4471", "intent": "delivery", "reply": "Hi Priya, your order 4471 is due Friday."}
+tampered = {**honest, "reply": honest["reply"].replace("Friday", "Monday")}   # swap the ETA
+print("honest   ->", validate(honest, ORDER))     # ok: True
+print("tampered ->", validate(tampered, ORDER))   # ungrounded eta
+def validate_plus(rec, order, max_len=500):       # one extra check: reject a suspiciously long reply
+    res = validate(rec, order)
+    if len(rec.get("reply", "")) > max_len:
+        res["ok"] = False; res["problems"].append("too long")
+    return res
+print("too long ->", validate_plus({**honest, "reply": "x" * 600}, ORDER))'''),
       footer(7, "Validate parses, fields, ranges, and grounding BEFORE you act. An automation that acts on unchecked output is a liability; one that validates first is something you can trust to run."),
     ]
 
@@ -687,6 +743,12 @@ and `send_once` (idempotent via the key set).'''),
       yourturn('''Change `send_key` to ignore the draft (key on `order_id` alone) and watch what breaks: a legitimately
 *revised* reply to the same order would now be suppressed. **What good looks like:** you can articulate why
 the key must include the draft hash &mdash; idempotency should block *duplicates*, not *revisions*.'''),
+      *sol_answer(sol, r'''def send_key_bad(order_id, draft):
+    return f"{order_id}"                      # keyed on the order ALONE -- ignores the draft
+sent = set()
+print("send v1      :", send_once(send_key_bad("4471", "due Friday"), sent))   # sent
+print("send v2 (rev):", send_once(send_key_bad("4471", "due Monday"), sent))   # already_sent -- a REVISION got suppressed!
+print("vs good key  :", send_key("4471", "due Monday"), "-- the draft hash distinguishes a revision from a duplicate")'''),
       footer(8, "Retry with a cap, and key every irreversible action so a re-run is safe. Assume every step can fail -- and make failure safe and visible. Idempotency is what lets an automation run unattended."),
     ]
 
@@ -746,6 +808,15 @@ print("what the agent COULD be given:", CANDIDATE_TOOLS)'''),
       yourturn('''Add a third state to `gate` &mdash; e.g. `"edit"` when a human tweaks the reply before sending &mdash; and
 decide what `status` an edited draft carries. **What good looks like:** every path still ends with a human
 action for the send, and there is no code path where the agent sends on its own.'''),
+      *sol_answer(sol, r'''def gate3(draft, decision):                 # decision: "approve" | "reject" | "edit"
+    if draft["status"] != "needs_approval":
+        return "invalid"
+    # an edited draft re-enters as a fresh needs_approval draft -- a human still approves the send
+    return {"approve": "send", "reject": "revise", "edit": "edit"}.get(decision, "revise")
+d = make_draft("Hi Priya, your order 4471 is due Friday.")
+print("approve ->", gate3(d, "approve"))    # send
+print("edit    ->", gate3(d, "edit"))       # edit (then re-review), never a direct send
+print("agent can send?", agent_can_send())  # still False -- the send tool is never given'''),
       footer(9, "The strongest human-in-the-loop guardrail is the simplest: don't give the agent the send tool. It gathers and drafts all day -- and a human keeps the send. Draft is not send."),
     ]
 
@@ -802,6 +873,15 @@ print("we log: trigger -> gather -> draft -> validate -> approve, plus the human
       yourturn('''Extend `RunLog` to also record the *tool arguments* on each `gather` event, then run it over a couple of
 Lab 6 drafts and compute the approval rate you'd assign. **What good looks like:** from the log alone you
 can reconstruct exactly what each run did &mdash; and you have a metric that would tell you if quality slipped.'''),
+      *sol_answer(sol, r'''log = RunLog()
+log.record("trigger", "email 4471")
+log.record("gather", {"tool": "lookup_order", "args": {"order_id": "4471"}})   # detail carries the tool ARGS
+log.record("draft", "due Friday")
+log.record("validate", "ok")
+log.record("approve", "send")
+print("stages    :", log.stages())
+print("gather args:", [d for s, d in log.events if s == "gather"])   # auditable from the log alone
+print("approval  :", approval_rate(["send", "send", "revise"]))'''),
       footer(10, "Log every run's trigger, tools, draft, validation and decision -- that's how you debug, audit and MEASURE an automation. Once you can measure it (approval rate), you can improve it. Day 5 goes deeper."),
     ]
 
@@ -887,6 +967,11 @@ and wrap whatever it drafts as a **`needs_approval`** result.'''),
       yourturn('''Try (carefully) *adding* `send_email` to `gather_tools()` and re-running &mdash; then put it back. **What good
 looks like:** you can see that binding the send tool is the ONLY thing standing between "drafts for a human"
 and "sends on its own", which is exactly why the guardrail is *withhold the tool*. Restore the gather-only list.'''),
+      *sol_answer(sol, r'''# The ONLY thing between "drafts for a human" and "sends on its own" is binding send_email:
+risky_tools = [lookup_order, get_template, send_email]      # send tool ADDED -- do NOT ship this
+print("risky can send? ", "send_email" in [t.name for t in risky_tools])    # True
+print("gather-only     :", [t.name for t in gather_tools()])                # restored -- send absent
+print("safe can send?  ", "send_email" in [t.name for t in gather_tools()]) # False -- the guardrail'''),
       footer(11, "The guardrail is what's MISSING from the tools list -- send_email is never bound, so the real agent gathers and drafts but cannot send. Next: run the whole pipeline over a suite."),
     ]
 
@@ -1004,6 +1089,14 @@ never send &mdash; every result is `needs_approval` or `needs_fix`.'''),
 which has no id and no delivery keyword) and re-run. **What good looks like:** you can see exactly where the
 *rule-based* extract fails the model &mdash; and you can argue for swapping in an LLM-based extractor (with a
 closed-schema validator) as the fix. That's the honest edge of the system, and the bridge to Module 8.'''),
+      *sol_answer(sol, r'''awkward = "my package never showed up and I'm furious"   # no digits, no delivery keyword
+print("extract sees:", extract(awkward))   # order_id None, intent "other" -- a real rule-based miss
+if groq_ready():
+    r = process(awkward)
+    print("  team:", r["team"], "| escalate:", r["escalate"], "| status:", r["status"])
+    print("  draft:", r["draft"][:140].replace(chr(10), " "))
+else:
+    print("(add GROQ_API_KEY to .env to see the real drafted reply)")'''),
       footer(12, "You built the email-drafting agent end to end -- extract, route, gather, draft (real model), validate -- and it never sends on its own. That's an agent that does a job you'd pay for. Next: Module 8 orchestrates a team of them."),
     ]
 

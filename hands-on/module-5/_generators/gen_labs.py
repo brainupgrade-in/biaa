@@ -129,6 +129,14 @@ def runmd(text):     return md("## Run it for real &amp; read the trace\n" + tex
 def noticemd(text):  return md("## What to notice\n" + text)
 def yourturn(text):  return md("## Your turn (open task &mdash; no grader)\n" + text)
 
+def sol_answer(sol, code_text):
+    """Solution-only: a worked reference for the open 'Your turn' task above.
+    Returns nothing in the student notebook (the task stays open); in the SOLUTION
+    it appends one runnable cell so participants have something to compare against."""
+    if not sol:
+        return []
+    return [code("# --- Reference answer (ONE good way to do the 'Your turn' task -- compare with your own) ---\n" + code_text)]
+
 # A small AST-based safe arithmetic evaluator, reused by labs that expose a calculator tool.
 # It NEVER calls bare eval() on free text -- it walks a parsed tree of numbers + operators only.
 SAFE_CALC = '''import ast, operator
@@ -273,6 +281,11 @@ steps &mdash; the thing a bare model can't do.'''),
       yourturn('''Ask the real model a follow-up that needs memory &mdash; e.g. call `llm_text("what did I just ask you?")` &mdash;
 and watch it have no clue. Then change `run`'s target and confirm the loop still tracks its state to the goal.
 **What good looks like:** the model can't remember across calls; your loop can.'''),
+      *sol_answer(sol, r'''if ollama_up():
+    print("follow-up (needs memory):", llm_text("What did I just ask you?"))   # the model has no clue
+else:
+    print("(start Ollama to see the stateless model reply)")
+print("run(target=7) ->", run(7))   # the loop still tracks its own state to the NEW goal'''),
       footer(1, "A model **answers**; an agent **acts toward a goal in a loop with state**. You just proved a real model is stateless -- now you'll give the loop tools, parsing, memory and guardrails."),
     ]
 
@@ -345,6 +358,20 @@ print("safe_calc('2+2') =", safe_calc("2+2"), "| safe_calc('3*(4+1)') =", safe_c
       yourturn('''Add a **third** tool (e.g. a `weather` tool) with a clear description, rebuild the registry, and re-ask the
 model with a weather question. **What good looks like:** the model picks your new tool from its description.
 Make the description vague and watch it pick worse &mdash; proof that you write descriptions *for the model*.'''),
+      *sol_answer(sol, r'''def weather_fn(city):
+    return "sunny, 24C in " + str(city).strip()          # a stub; a real tool would call an API
+weather = {"name": "weather", "description": "Current weather for a city, e.g. 'tokyo'.", "fn": weather_fn}
+REGISTRY = build_registry([calculator, lookup, weather])
+print("tools:", list(REGISTRY))
+if ollama_up():
+    catalog = "\n".join("- " + t["name"] + ": " + t["description"] for t in REGISTRY.values())
+    q = "what's the weather in tokyo?"
+    pick = llm_text("You can use these tools:\n" + catalog +
+                    "\n\nWhich ONE tool answers: '" + q + "'?\nReply with ONLY the tool name.").strip().lower()
+    name = next((n for n in REGISTRY if n in pick), None)
+    print("model picked:", repr(pick), "->", REGISTRY[name]["fn"]("tokyo") if name else "(no known tool)")
+else:
+    print("(start Ollama to watch the model pick your new tool from its description)")'''),
       footer(2, "A tool is `{name, description, fn}` in a registry, and the description is what a REAL model reads to choose it. Next: give the agent a loop that calls the tool the model picks."),
     ]
 
@@ -409,6 +436,14 @@ here.)'''),
       yourturn('''Change the task (e.g. *"what is the capital of france?"*, which needs only `lookup`) or add a tool to `TOOLS`
 and mention it in `REACT_SYS`, then re-run. **What good looks like:** the trace shows the model calling the
 right tool(s) and a sensible Final Answer; a task it can't do stops cleanly at the cap.'''),
+      *sol_answer(sol, r'''if ollama_up():
+    out = run_loop("What is the capital of france?")   # a ONE-tool task -> only lookup is needed
+    print("TRACE (real model + your loop):")
+    for name, inp, obs in out["trace"]:
+        print("  ACTION:", name, "| INPUT:", inp, "-> OBS:", obs)
+    print("steps:", out["steps"], "| ANSWER:", out["answer"])
+else:
+    print("(start Ollama:  ollama run llama3.1:8b)")'''),
       footer(3, "Reason -> act -> observe, repeat, with a stop condition and a step cap. That loop IS the agent -- and a REAL model is now the reasoner driving your tools."),
     ]
 
@@ -482,6 +517,15 @@ Test them on the fixed strings first.'''),
       yourturn('''Change `spec` to nudge the model toward a **Final Answer** (e.g. *"you already know it is 120000"*) and
 re-run. **What good looks like:** `is_final` flips to `True` and `field(text, "Final Answer")` returns the
 number. Try a deliberately messy instruction and confirm your parser still doesn't crash.'''),
+      *sol_answer(sol, r'''if ollama_up():
+    spec = ("Reply in EXACTLY this format and nothing else:\n"
+            "Thought: <one line>\nFinal Answer: <the number>\n\n"
+            "Task: the population of metropolis is 120000 -- report it.")
+    text = llm_text(spec)                 # nudged toward a Final Answer
+    print("MODEL EMITTED:\n" + text)
+    print("is_final?", is_final(text), "| Final Answer:", field(text, "Final Answer"))
+else:
+    print("(start Ollama to parse a real Final Answer)")'''),
       footer(4, "The orchestrator turns the model's text into structured steps. You parsed REAL llama3.1:8b output -- now you know exactly what LangChain's output parsers are reading."),
     ]
 
@@ -556,6 +600,11 @@ tool that **raises**. Test it on all three hazards first.'''),
       yourturn('''Change `question` so the model should route to `calculator` or `lookup`, and re-run. Then force a failure:
 call `route(REGISTRY, "delete_db", "x")` and `route(REGISTRY, "calculator", "hello")` directly. **What good
 looks like:** every case returns a clean `{"ok": ..., "observation": ...}` dict &mdash; never a stack trace.'''),
+      *sol_answer(sol, r'''print("math task ->", route(REGISTRY, "calculator", "15*3"))          # routes and runs
+print("fact task ->", route(REGISTRY, "lookup", "capital of france"))
+print("unknown   ->", route(REGISTRY, "delete_db", "x"))              # hallucinated name -> clean dict
+print("bad input ->", route(REGISTRY, "calculator", "hello"))        # tool RAISES -> caught, clean dict
+# every case is a {"ok": ..., "observation": ...} dict -- never a stack trace'''),
       footer(5, "Routing turns a chosen action into a real observation -- safely. You fed a REAL model's choice through the dispatcher and it survived an unknown or failing tool."),
     ]
 
@@ -621,6 +670,16 @@ print(step)'''),
       yourturn('''Add a second step to memory (the calculator result), re-format the scratchpad, and ask the model for a
 **Final Answer**. **What good looks like:** with the fuller scratchpad the model closes out the task; strip
 memory and its follow-ups fall apart.'''),
+      *sol_answer(sol, r'''m = make_memory()
+remember(m, "I need the population first", "lookup", "120000")
+remember(m, "Now double it", "calculator", "240000")     # the SECOND step
+print(scratchpad(m))
+if ollama_up():
+    prompt = ("Scratchpad so far:\n" + scratchpad(m) +
+              "\n\nThe goal is TWICE the population. Give the Final Answer in one short line.")
+    print("MODEL'S FINAL ANSWER (it read the fuller scratchpad):\n" + llm_text(prompt))
+else:
+    print("(start Ollama to watch the model close out the task from memory)")'''),
       footer(6, "The scratchpad is the agent's working memory for one task, and a REAL model reads it to continue. Long-term memory (a vector store) arrives with RAG later."),
     ]
 
@@ -685,6 +744,14 @@ it in memory. This is the same loop as Lab 3, now assembled as a named agent wit
       yourturn('''Give it a different two-step task (add a fact to `KNOWLEDGE` and mention it, or ask *"three times the
 population"*) and re-run. **What good looks like:** the agent chains lookup -> calculator with the searched
 number, and the answer reflects both steps. A task it can't do stops cleanly at the cap.'''),
+      *sol_answer(sol, r'''if ollama_up():
+    out = run_agent("What is three times the population of metropolis?")   # a different two-step task
+    print("actions used:", [s["action"] for s in out["memory"]])
+    for s in out["memory"]:
+        print("  ", s["action"], "(", s["input"], ") ->", s["observation"])
+    print("ANSWER:", out["answer"])
+else:
+    print("(start Ollama:  ollama run llama3.1:8b)")'''),
       footer(7, "Tools + memory + loop + a REAL model policy = a working ReAct agent that chains two tools. That policy used to be a mock; now it's a real model -- and Module 6 hands the loop to LangChain."),
     ]
 
@@ -750,6 +817,19 @@ print("'delete_all' allowed as a tool?", "delete_all" in ALLOWED)'''),
       yourturn('''Wrap your Lab-7 `run_agent` loop with `is_allowed` (refuse any action not on the list) and `detect_loop`
 (bail if the last 3 actions repeat), then run it. **What good looks like:** a normal task completes, but a
 disallowed or looping action is stopped &mdash; an autonomous agent you can actually trust.'''),
+      *sol_answer(sol, r'''# Wrap a loop with the two guards you built: is_allowed + detect_loop.
+def guarded_run(actions):
+    seen = []
+    for a in actions:
+        if not is_allowed(a):
+            return {"stopped": "blocked", "on": a, "trace": seen}   # allow-list refuses it
+        seen.append(a)
+        if detect_loop(seen):
+            return {"stopped": "loop", "trace": seen}               # runaway loop caught
+    return {"stopped": "done", "trace": seen}
+print("normal    ->", guarded_run(["lookup", "calculator"]))            # completes
+print("disallowed->", guarded_run(["lookup", "delete_all"]))           # allow-list stops it
+print("looping   ->", guarded_run(["lookup", "lookup", "lookup"]))     # detect_loop stops it'''),
       footer(8, "Allow-list, loop detection and input validation are deterministic guards around a nondeterministic model. They turn an autonomous agent from a liability into something you can trust. Day 5 goes deeper."),
     ]
 
@@ -821,6 +901,23 @@ the suite). Descriptions are the lever &mdash; the model reads *them*, not your 
       yourturn('''Improve a tool's description to fix a misroute (e.g. clarify calculator is for *arithmetic expressions*,
 not any number), and re-run. **What good looks like:** accuracy climbs as your descriptions get clearer.
 Add a fifth tool and a task for it and see if the model picks it.'''),
+      *sol_answer(sol, r'''# Sharpen the calculator description (the misroute lever) and add a 5th tool + task, then re-measure.
+CATALOG2 = ("- calculator: arithmetic EXPRESSIONS only, like 12*8 (NOT questions that merely contain a number)\n"
+            "- weather: current weather for a city\n"
+            "- translate: translate English text to French\n"
+            "- lookup: look up a known fact, including history and people\n"
+            "- define: give the dictionary definition of a single word")
+TOOLSET2 = TOOLSET + ["define"]
+def select2(text):
+    reply = llm_text("Tools:\n" + CATALOG2 + "\n\nWhich ONE tool answers: '" + text +
+                     "'?\nReply with ONLY the tool name.").lower()
+    return next((t for t in TOOLSET2 if t in reply), "lookup")
+if ollama_up():
+    for t in TASKS + [{"text": "define serendipity", "tool": "define"}]:
+        pick = select2(t["text"])
+        print(("ok " if pick == t["tool"] else "XX "), t["text"], "-> model:", pick, "| expected:", t["tool"])
+else:
+    print("(start Ollama to re-measure with the sharper descriptions)")'''),
       footer(9, "Selecting the right tool per sub-goal is the core skill of tool use -- and a REAL model selects from descriptions, imperfectly. With no grader, you read the misses and sharpen the words the model reads."),
     ]
 
@@ -904,6 +1001,16 @@ step, substituting the previous `RESULT`).'''),
       yourturn('''Change the goal (e.g. *"the population of Metropolis plus 10000"*) and re-run. **What good looks like:**
 the model writes a 2-step plan and the executor threads the looked-up number into the arithmetic step. Compare
 the plan-first shape here to the interleaved ReAct trace from Lab 7 &mdash; which fits which task?'''),
+      *sol_answer(sol, r'''if ollama_up():
+    plan = make_plan("the population of metropolis plus 10000")   # a different goal
+    print("MODEL'S PLAN:", plan)
+    if not plan:
+        plan = [{"tool": "lookup", "input": "population of metropolis"}, {"tool": "calculator", "input": "RESULT+10000"}]
+        print("(model plan unparseable -- using fallback)")
+    final, trace = executor(plan)
+    print("TRACE:", trace, "| FINAL:", final)
+else:
+    print("(start Ollama:  ollama run llama3.1:8b)")'''),
       footer(10, "Plan-and-execute front-loads the thinking; ReAct interleaves it. A REAL model wrote the plan; your deterministic executor ran it -- same tools, different control pattern."),
     ]
 
@@ -981,6 +1088,16 @@ the draft). `draft`/`revise` call the real model; `extract_number` reads a numbe
       yourturn('''Make the critic itself an **LLM critic**: ask the model *"is this answer twice 120000? reply yes/no"* and
 compare to your grounded check. **What good looks like:** the grounded (deterministic) critic is reliable;
 the LLM critic is flexible but can be wrong &mdash; a real trade-off you'll weigh when designing agents.'''),
+      *sol_answer(sol, r'''def llm_critic(answer_text):
+    verdict = llm_text("Is this answer exactly twice 120000 (i.e. 240000)? Reply only yes or no: " + str(answer_text))
+    return verdict.strip().lower().startswith("y")
+if ollama_up():
+    ans = draft("What is twice the population of metropolis (120000)?")
+    print("answer under review:", ans)
+    print("grounded critic ->", critic(ans))       # deterministic, always right
+    print("LLM critic       ->", llm_critic(ans))  # flexible, but can be wrong -- the trade-off
+else:
+    print("(start Ollama to compare the grounded critic vs an LLM critic)")'''),
       footer(11, "Reflection = answer, critique, revise. A REAL model drafts and revises; a deterministic grounded critic keeps it honest. Extra calls, higher quality."),
     ]
 
@@ -1056,6 +1173,16 @@ the **stop** on a Final Answer. Then run it over the whole `SUITE`.'''),
       yourturn('''Add a new tool to `TOOLS` (and mention it in `REACT_SYS`) plus a suite task that needs it, and add another
 dangerous verb to `DANGEROUS`. Re-run. **What good looks like:** the model uses your new tool on the right
 task, the guardrail refuses the new dangerous phrasing, and the step cap always holds.'''),
+      *sol_answer(sol, r'''# Add a tool + a task that needs it, and a new dangerous verb -- then re-run.
+TOOLS["weather"] = lambda city: "sunny 24C in " + str(city).strip()
+DANGEROUS = DANGEROUS + ("erase",)
+print("new dangerous verb refused ->", run_agent("erase the audit log")["answer"])   # guardrail fires (no model call)
+if ollama_up():
+    REACT_SYS = REACT_SYS + "\n- weather: current weather for a city, e.g. tokyo."   # tell the model about it
+    out = run_agent("What is the weather in tokyo?")
+    print("tools used:", [s["action"] for s in out["memory"]], "| answer:", out["answer"])
+else:
+    print("(start Ollama to watch the model use your new weather tool)")'''),
       footer(12, "You built a guardrailed mini-agent from scratch -- tools, memory, a loop -- and a REAL model drove it over a suite. That IS agentic AI; next, Module 6 hands the loop to LangChain's create_agent."),
     ]
 
