@@ -720,14 +720,19 @@ print("saved:", WORK + "/learning_curve.png")''')),
       yourturn('''Add more fractions (e.g. `0.1, 0.75`) or more data to `SENT`. Where does the curve
 **plateau** &mdash; the point where extra labels stop helping? That plateau is where you would **stop
 labelling**. A "good" answer: you can estimate, from the curve, how many labels this task really needs.'''),
-      *sol_answer(sol, hfrun(r'''from sklearn.linear_model import LogisticRegression
+      *sol_answer(sol, hfrun(r'''import numpy as np
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
-# reuse the frozen features Xtr/Xval extracted above; sweep MORE fractions to find the plateau
+# reuse the frozen features Xtr/Xval extracted above; sweep MORE fractions to find the plateau.
+# take a class-BALANCED prefix so even the tiniest slice still has both labels -- a raw Xtr[:k]
+# on a shuffled split can land on a single class, and LogisticRegression needs at least two.
+yt = np.asarray(ytr); pos = np.where(yt == 1)[0]; neg = np.where(yt == 0)[0]
 n = Xtr.shape[0]
 for frac in [0.1, 0.25, 0.5, 0.75, 1.0]:
     k = max(2, int(n * frac))
-    head = LogisticRegression(max_iter=1000).fit(Xtr[:k], ytr[:k])
-    print(f"frac={frac:>4}: k={k:2d} train examples -> val acc={round(accuracy_score(yval, head.predict(Xval)), 3)}")
+    idx = np.concatenate([pos[:k // 2], neg[:k - k // 2]])   # half from each class
+    head = LogisticRegression(max_iter=1000).fit(Xtr[idx], yt[idx])
+    print(f"frac={frac:>4}: k={len(idx):2d} train examples -> val acc={round(accuracy_score(yval, head.predict(Xval)), 3)}")
 print("The curve flattens where extra labels stop moving val accuracy -- that plateau is where you stop labelling.")''')),
       footer(9, "Transfer learning is **data-efficient**: good frozen features mean a small head learns from few labels. Next we stop freezing and fine-tune the whole model."),
     ]
