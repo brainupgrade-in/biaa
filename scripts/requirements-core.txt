@@ -5,6 +5,7 @@
 # --- Tier 1: run & grade every notebook (Days 1-2) ---
 jupyterlab
 ipykernel
+ipywidgets              # tqdm.auto looks for it; without it every lab prints a noisy "IProgress not found" TqdmWarning
 nbformat
 numpy
 scikit-learn

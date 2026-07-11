@@ -73,8 +73,8 @@ def setup(nn):
 import os, pathlib
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
-from dotenv import load_dotenv
-load_dotenv(pathlib.Path("{REPO}/.env"), override=True)   # GROQ_API_KEY etc. (used by the text-gen lab)
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv(usecwd=True), override=True)   # GROQ_API_KEY etc. (used by the text-gen lab)
 
 WORK = "/tmp/biaa-lab-03-{nn:02d}"
 os.makedirs(WORK, exist_ok=True)

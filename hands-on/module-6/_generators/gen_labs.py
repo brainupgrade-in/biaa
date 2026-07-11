@@ -66,8 +66,8 @@ def runguard(exercise):
 def setup(nn):
     return code(f'''# Setup -- run me first
 import os, socket, pathlib
-from dotenv import load_dotenv
-load_dotenv(pathlib.Path("{REPO}/.env"))   # SERPER_API_KEY, WOLFRAM_ALPHA_APPID, GROQ/OPENAI keys
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv(usecwd=True))   # SERPER_API_KEY, WOLFRAM_ALPHA_APPID, GROQ/OPENAI keys
 
 WORK = "/tmp/biaa-lab-06-{nn:02d}"
 os.makedirs(WORK, exist_ok=True)

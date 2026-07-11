@@ -71,8 +71,8 @@ def cells(sol):
     code(
 '# Setup -- run me first\n'
 'import os, socket, ast, operator, pathlib\n'
-'from dotenv import load_dotenv\n'
-f'load_dotenv(pathlib.Path("{REPO}/.env"))   # GROQ_API_KEY for Part B (Groq is the Day 4-5 provider)\n'
+'from dotenv import load_dotenv, find_dotenv\n'
+f'load_dotenv(find_dotenv(usecwd=True))   # GROQ_API_KEY for Part B (Groq is the Day 4-5 provider)\n'
 '\n'
 'WORK = "/tmp/biaa-lab-06-13"\n'
 'os.makedirs(WORK, exist_ok=True)\n'

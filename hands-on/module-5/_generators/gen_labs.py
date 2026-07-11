@@ -70,8 +70,8 @@ def runguard(exercise):
 def setup(nn):
     return code(f'''# Setup -- run me first
 import os, socket, pathlib
-from dotenv import load_dotenv
-load_dotenv(pathlib.Path("{REPO}/.env"))   # GROQ/OPENAI keys, if you ever want a hosted alternative
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv(usecwd=True))   # GROQ/OPENAI keys, if you ever want a hosted alternative
 
 WORK = "/tmp/biaa-lab-05-{nn:02d}"
 os.makedirs(WORK, exist_ok=True)

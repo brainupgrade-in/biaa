@@ -15,7 +15,7 @@ Students read the REAL message trace. There is NO auto-grader -- each lab ends w
 "Build it -> Run it / observe -> Your turn (open task)".
 
 Provider: Groq (Day 4). `ChatGroq(model="openai/gpt-oss-20b", temperature=0)` -- verified reliable
-tool-calling via create_agent. Key loaded with `load_dotenv(REPO/.env, override=True)`; if
+tool-calling via create_agent. Key loaded with `load_dotenv(find_dotenv(usecwd=True), override=True)`; if
 GROQ_API_KEY is missing the live specialist cells print how to set it instead of crashing.
 Student robustness (no grader): exercise cells are wrapped by guard()/runguard() so an unfilled
 `___` prints a friendly note instead of crashing -- a student notebook runs top-to-bottom, and a
@@ -69,8 +69,8 @@ def runguard(exercise):
 def setup(nn):
     return code(f'''# Setup -- run me first
 import os, pathlib
-from dotenv import load_dotenv
-load_dotenv(pathlib.Path("{REPO}/.env"), override=True)   # GROQ_API_KEY (Day-4 provider)
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv(usecwd=True), override=True)   # GROQ_API_KEY (Day-4 provider)
 
 WORK = "/tmp/biaa-lab-08-{nn:02d}"
 os.makedirs(WORK, exist_ok=True)
