@@ -90,6 +90,16 @@
   .pill.cyan{background:var(--cyan);color:var(--ink-900);}
   .pill.ghost{background:#fff;border:1px solid var(--line);color:var(--muted);}
 
+  /* ---------- Hands-on lab cue (right-aligned badge in the kicker) ---------- */
+  .kicker{flex-wrap:wrap;}
+  .kicker .lab-cue{display:inline-flex;align-items:center;gap:6px;
+    background:var(--amber);color:var(--ink-900);font-weight:800;text-transform:none;
+    padding:3px 12px;border-radius:12px;letter-spacing:.02em;
+    box-shadow:0 1px 4px rgba(245,158,11,.45);}
+  .kicker .lab-cue.bridge{background:#fff;color:var(--blue);border:1px solid var(--blue);box-shadow:none;}
+  .kicker .lab-cue .tri{font-size:.85em;line-height:1;}
+  @media print{.kicker .lab-cue{box-shadow:none;border:1px solid var(--amber-d);}}
+
   .callout{background:var(--ind-50);border:1px solid var(--ind-300);border-radius:8px;
     padding:14px 18px;font-size:clamp(.9rem,1.4vw,1.1rem);color:#262248;}
   .callout.warn{background:#fffbeb;border-color:var(--amber);}
@@ -306,8 +316,8 @@
 
   <!-- ============ SLIDE 5 — NESTED RINGS ============ -->
   <section class="slide" data-title="AI ⊃ ML ⊃ DL ⊃ GenAI"
-    data-note="The single most useful diagram of the day — print it on their brains. These are NESTED, not separate. AI is the whole field. Machine Learning is the subset that learns from data. Deep Learning is the subset of ML using neural networks. Generative AI / LLMs are a kind of deep learning that creates content. And Agentic AI wraps an LLM with tools and goals. When someone says 'AI' this week, ask: which ring? It removes 80% of the confusion.">
-    <div class="kicker"><span class="dot"></span> The landscape · 2 of 5</div>
+    data-note="[PAUSE -> Lab 02 (ai-family-tree) after this slide.] The single most useful diagram of the day — print it on their brains. These are NESTED, not separate. AI is the whole field. Machine Learning is the subset that learns from data. Deep Learning is the subset of ML using neural networks. Generative AI / LLMs are a kind of deep learning that creates content. And Agentic AI wraps an LLM with tools and goals. When someone says 'AI' this week, ask: which ring? It removes 80% of the confusion.">
+    <div class="kicker"><span class="dot"></span> The landscape · 2 of 5<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 02</span></div>
     <h2 class="title">AI &sup; Machine Learning &sup; Deep Learning &sup; Generative AI</h2>
     <div class="body center">
       <figure>
@@ -391,8 +401,8 @@
 
   <!-- ============ SLIDE 7 — RULES VS LEARNING (CODE) ============ -->
   <section class="slide" data-title="Rules vs learning (code)"
-    data-note="This is a code course, so make the paradigm shift concrete in code. Left idea: the old way — you try to hand-write rules to recognise a digit. It's hopeless: thousands of edge cases. Right idea: the ML way — you don't write the rules, you show labelled examples and the model fits itself. This is EXACTLY what they'll do this afternoon with MNIST. You won't run this now; just read it and feel the difference in effort and generality.">
-    <div class="kicker"><span class="dot"></span> The landscape · the shift, in code</div>
+    data-note="[PAUSE -> Lab 01 (rules-vs-learning) after this slide.] This is a code course, so make the paradigm shift concrete in code. Left idea: the old way — you try to hand-write rules to recognise a digit. It's hopeless: thousands of edge cases. Right idea: the ML way — you don't write the rules, you show labelled examples and the model fits itself. This is EXACTLY what they'll do this afternoon with MNIST. You won't run this now; just read it and feel the difference in effort and generality.">
+    <div class="kicker"><span class="dot"></span> The landscape · the shift, in code<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 01</span></div>
     <h2 class="title">The shift, in code: writing rules vs. learning them</h2>
     <div class="body center">
       <div class="grid2">
@@ -425,8 +435,8 @@ model.<span class="fn">fit</span>(images, labels, epochs=<span class="str">5</sp
 
   <!-- ============ SLIDE 8 — HISTORY TIMELINE ============ -->
   <section class="slide" data-title="A short history of AI"
-    data-note="Tell the story — people remember stories. Hit the beats: 1950 Turing's question 'can machines think?'; 1956 Dartmouth workshop coins 'Artificial Intelligence'; 1960s-70s optimism & expert systems; two 'AI winters' when promises outran results & funding dried up; 1997 Deep Blue beats Kasparov; 2012 AlexNet — deep learning wins ImageNet, the dam breaks; 2017 'Attention Is All You Need' — transformers; 2022 ChatGPT — AI goes mainstream; 2023+ the agent era. The winters matter: AI has hype cycles. Be the calm guide.">
-    <div class="kicker"><span class="dot"></span> The evolution &middot; 70 years in one line</div>
+    data-note="[PAUSE -> Lab 03 (timeline) after this slide.] Tell the story — people remember stories. Hit the beats: 1950 Turing's question 'can machines think?'; 1956 Dartmouth workshop coins 'Artificial Intelligence'; 1960s-70s optimism & expert systems; two 'AI winters' when promises outran results & funding dried up; 1997 Deep Blue beats Kasparov; 2012 AlexNet — deep learning wins ImageNet, the dam breaks; 2017 'Attention Is All You Need' — transformers; 2022 ChatGPT — AI goes mainstream; 2023+ the agent era. The winters matter: AI has hype cycles. Be the calm guide.">
+    <div class="kicker"><span class="dot"></span> The evolution &middot; 70 years in one line<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 03</span></div>
     <h2 class="title">A short history of AI</h2>
     <div class="body center">
       <figure>
@@ -504,8 +514,8 @@ model.<span class="fn">fit</span>(images, labels, epochs=<span class="str">5</sp
 
   <!-- ============ SLIDE 10 — TYPES OF AI (NARROW/GENERAL/SUPER) ============ -->
   <section class="slide" data-title="Narrow / General / Super"
-    data-note="Clear up a common confusion fed by sci-fi. Everything in production today — including ChatGPT — is NARROW AI: superhuman at specific tasks, no general understanding or autonomy of its own goals. AGI (human-level across the board) does not exist; ASI (beyond human) is speculative. Why this matters for an AGENTS course: our 'agents' are narrow tools we point at tasks and supervise — not autonomous beings. That framing keeps expectations and ethics grounded (Day 5).">
-    <div class="kicker"><span class="dot"></span> The landscape · 4 of 5</div>
+    data-note="[PAUSE -> Lab 04 (narrow-general-super) after this slide.] Clear up a common confusion fed by sci-fi. Everything in production today — including ChatGPT — is NARROW AI: superhuman at specific tasks, no general understanding or autonomy of its own goals. AGI (human-level across the board) does not exist; ASI (beyond human) is speculative. Why this matters for an AGENTS course: our 'agents' are narrow tools we point at tasks and supervise — not autonomous beings. That framing keeps expectations and ethics grounded (Day 5).">
+    <div class="kicker"><span class="dot"></span> The landscape · 4 of 5<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 04</span></div>
     <h2 class="title">Narrow, General &amp; Super AI &mdash; where we actually are</h2>
     <div class="body center">
       <figure>
@@ -537,8 +547,8 @@ model.<span class="fn">fit</span>(images, labels, epochs=<span class="str">5</sp
 
   <!-- ============ SLIDE 11 — HOW MACHINES LEARN ============ -->
   <section class="slide" data-title="How machines learn"
-    data-note="Three flavours of learning — they'll meet all three this week. Supervised: learn from labelled examples (input + right answer) — MNIST today, BERT sentiment Day 2. Unsupervised: find structure with no labels — clustering, and the embeddings behind RAG/search. Reinforcement: learn by trial, reward & error — game-playing, and the RLHF that made ChatGPT helpful. Keep each to one crisp sentence + a finance/everyday example. Tell them which days each reappears.">
-    <div class="kicker"><span class="dot"></span> The landscape · 5 of 5 &nbsp;·&nbsp; how learning actually happens</div>
+    data-note="[PAUSE -> Lab 05 (how-machines-learn) then Lab 06 (data-is-the-new-code) after this slide.] Three flavours of learning — they'll meet all three this week. Supervised: learn from labelled examples (input + right answer) — MNIST today, BERT sentiment Day 2. Unsupervised: find structure with no labels — clustering, and the embeddings behind RAG/search. Reinforcement: learn by trial, reward & error — game-playing, and the RLHF that made ChatGPT helpful. Keep each to one crisp sentence + a finance/everyday example. Tell them which days each reappears.">
+    <div class="kicker"><span class="dot"></span> The landscape · 5 of 5 &nbsp;·&nbsp; how learning actually happens<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 05&ndash;06</span></div>
     <h2 class="title">Three ways machines learn</h2>
     <div class="body">
       <div class="grid3">
@@ -573,8 +583,8 @@ model.<span class="fn">fit</span>(images, labels, epochs=<span class="str">5</sp
 
   <!-- ============ SLIDE 12 — THE ML PIPELINE ============ -->
   <section class="slide" data-title="The ML pipeline"
-    data-note="Demystify 'training a model' as a simple pipeline they'll literally run this afternoon. Data → split → train (model adjusts to reduce error) → evaluate on UNSEEN data → use to predict. Emphasise the train/test split — the model must be judged on data it never saw, or you're fooling yourself (overfitting, covered in Module 2). The loop arrow: training is iterative — many passes (epochs) nudging the model closer. This is the backbone of every lab.">
-    <div class="kicker"><span class="dot"></span> Under the hood · the workflow you&rsquo;ll run today</div>
+    data-note="[PAUSE -> Intermediate block: Lab 07 (first-ml-pipeline), Lab 08 (overfitting), Lab 09 (supervised-vs-unsupervised, which pays off slide 5's paradigms). Run paired.] Demystify 'training a model' as a simple pipeline they'll literally run this afternoon. Data → split → train (model adjusts to reduce error) → evaluate on UNSEEN data → use to predict. Emphasise the train/test split — the model must be judged on data it never saw, or you're fooling yourself (overfitting, covered in Module 2). The loop arrow: training is iterative — many passes (epochs) nudging the model closer. This is the backbone of every lab.">
+    <div class="kicker"><span class="dot"></span> Under the hood · the workflow you&rsquo;ll run today<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 07&ndash;09</span></div>
     <h2 class="title">How a model is built: the ML pipeline</h2>
     <div class="body center">
       <figure>
@@ -621,8 +631,8 @@ model.<span class="fn">fit</span>(images, labels, epochs=<span class="str">5</sp
 
   <!-- ============ SLIDE 13 — DEEP LEARNING PREVIEW ============ -->
   <section class="slide" data-title="Deep learning preview"
-    data-note="The bridge to Module 2 — keep it light, just plant the picture. A neural network is layers of simple units ('neurons'). Each connection has a weight; training adjusts the weights so the right output lights up. 'Deep' just means many layers. Early layers learn simple features (edges), later layers combine them into complex ones (shapes, then digits). Don't go into backprop math — that's Module 2. Goal: when they see the network this afternoon, it isn't a black box.">
-    <div class="kicker"><span class="dot"></span> The deep-learning leap &nbsp;·&nbsp; <span class="sub">bridge to Module 2</span></div>
+    data-note="[DON'T break here. Labs 10 (perceptron) & 11 (digits) ARE Module 2 - run Lab 10 lab-first as you OPEN M2, Lab 11 in M2. Here: 60-sec teaser only.] The bridge to Module 2 — keep it light, just plant the picture. A neural network is layers of simple units ('neurons'). Each connection has a weight; training adjusts the weights so the right output lights up. 'Deep' just means many layers. Early layers learn simple features (edges), later layers combine them into complex ones (shapes, then digits). Don't go into backprop math — that's Module 2. Goal: when they see the network this afternoon, it isn't a black box.">
+    <div class="kicker"><span class="dot"></span> The deep-learning leap &nbsp;·&nbsp; <span class="sub">bridge to Module 2</span><span class="lab-cue bridge"><span class="tri">&rarr;</span> IN MODULE 2 &middot; Labs 10&ndash;11</span></div>
     <h2 class="title">A peek inside a neural network</h2>
     <div class="body center">
       <figure>
@@ -688,8 +698,8 @@ model.<span class="fn">fit</span>(images, labels, epochs=<span class="str">5</sp
 
   <!-- ============ SLIDE 15 — FROM MODELS TO AGENTS ============ -->
   <section class="slide" data-title="From models to agents"
-    data-note="The destination of the whole course, in one diagram. Take the LLM (the brain) and add three things: TOOLS (APIs, search, databases, code), a GOAL stated in plain language, and a LOOP (act → observe → adjust until done). That combination — LLM + tools + goal + loop — is an agent. It fixes the LLM's two weaknesses: tools give it live data and the ability to act; the loop lets it self-correct. Everything from Day 3 onward builds exactly this. Today we just need to see the shape.">
-    <div class="kicker"><span class="dot"></span> The destination &middot; where this course is headed</div>
+    data-note="[PAUSE -> Lab 12 (capstone-model-to-agent) - the M1 finale; run after this slide or as end-of-morning wrap.] The destination of the whole course, in one diagram. Take the LLM (the brain) and add three things: TOOLS (APIs, search, databases, code), a GOAL stated in plain language, and a LOOP (act → observe → adjust until done). That combination — LLM + tools + goal + loop — is an agent. It fixes the LLM's two weaknesses: tools give it live data and the ability to act; the loop lets it self-correct. Everything from Day 3 onward builds exactly this. Today we just need to see the shape.">
+    <div class="kicker"><span class="dot"></span> The destination &middot; where this course is headed<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 12 (capstone)</span></div>
     <h2 class="title">From a model that <i>answers</i> to an agent that <i>acts</i></h2>
     <div class="body center">
       <figure>
@@ -1032,7 +1042,7 @@ model.<span class="fn">fit</span>(images, labels, epochs=<span class="str">5</sp
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>Only sort inputs into fixed categories</span></div>
         <div class="quiz-opt"><span class="ltr">B</span><span>Remove the need for training data</span></div>
-        <div class="quiz-opt"><span class="ltr">C</span><span><b>Create</b> new content &mdash; text, images, code</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Create new content &mdash; text, images, code</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>Guarantee a correct answer every time</span></div>
       </div>
     </div>
@@ -1065,7 +1075,7 @@ model.<span class="fn">fit</span>(images, labels, epochs=<span class="str">5</sp
         <div class="quiz-opt"><span class="ltr">A</span><span>Simpler algorithms and less maths</span></div>
         <div class="quiz-opt"><span class="ltr">B</span><span>Fewer researchers in the field</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>Deliberately smaller datasets</span></div>
-        <div class="quiz-opt"><span class="ltr">D</span><span>Big <b>data</b>, more <b>compute</b> (GPUs), and better <b>algorithms</b></span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Big data, more compute (GPUs), and better algorithms</span></div>
       </div>
     </div>
   </section>
@@ -1128,7 +1138,7 @@ model.<span class="fn">fit</span>(images, labels, epochs=<span class="str">5</sp
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>Truly understands meaning like a human</span></div>
         <div class="quiz-opt"><span class="ltr">B</span><span>Is always objective and unbiased</span></div>
-        <div class="quiz-opt"><span class="ltr">C</span><span>Can be <b>confidently wrong</b> and mirrors biases in its training data</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Can be confidently wrong and mirrors biases in its training data</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>Never needs human oversight</span></div>
       </div>
     </div>
@@ -1159,7 +1169,7 @@ model.<span class="fn">fit</span>(images, labels, epochs=<span class="str">5</sp
       <p class="quiz-q">How does an AI <b>agent</b> differ from a plain model?</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>It is simply a larger neural network</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span>It can <b>plan, use tools, and take actions</b> toward a goal &mdash; not just return one output</span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>It can plan, use tools, and take actions toward a goal &mdash; not just return one output</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>It removes the need for a model underneath</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>It can only classify images</span></div>
       </div>
@@ -1247,7 +1257,7 @@ model.<span class="fn">fit</span>(images, labels, epochs=<span class="str">5</sp
 <div class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Day 1 · Module 1 — Understanding AI &amp; its Evolution</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.2</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.4</span>
 </div>
 
 <script>

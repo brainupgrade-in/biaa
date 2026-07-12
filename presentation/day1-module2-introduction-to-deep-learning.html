@@ -90,6 +90,16 @@
   .pill.cyan{background:var(--cyan);color:var(--ink-900);}
   .pill.ghost{background:#fff;border:1px solid var(--line);color:var(--muted);}
 
+  /* ---------- Hands-on lab cue (inline badge in the kicker) ---------- */
+  .kicker{flex-wrap:wrap;}
+  .kicker .lab-cue{display:inline-flex;align-items:center;gap:6px;
+    background:var(--amber);color:var(--ink-900);font-weight:800;text-transform:none;
+    padding:3px 12px;border-radius:12px;letter-spacing:.02em;
+    box-shadow:0 1px 4px rgba(245,158,11,.45);}
+  .kicker .lab-cue.bridge{background:#fff;color:var(--blue);border:1px solid var(--blue);box-shadow:none;}
+  .kicker .lab-cue .tri{font-size:.85em;line-height:1;}
+  @media print{.kicker .lab-cue{box-shadow:none;border:1px solid var(--amber-d);}}
+
   .callout{background:var(--ind-50);border:1px solid var(--ind-300);border-radius:8px;
     padding:14px 18px;font-size:clamp(.9rem,1.4vw,1.1rem);color:#262248;}
   .callout.warn{background:#fffbeb;border-color:var(--amber);}
@@ -287,8 +297,8 @@
 
   <!-- ============ SLIDE 4 — THE NEURON ============ -->
   <section class="slide" data-title="The artificial neuron"
-    data-note="The atom of deep learning. Walk left to right: inputs (numbers) each get multiplied by a WEIGHT (how much that input matters), all summed, a BIAS is added (a tunable offset), and the result is passed through an ACTIVATION to produce the output. The weights and bias are the 'knobs' -- the only things that change during learning. Tie back to Lab 1.10 where they coded exactly this: weighted sum + sigmoid.">
-    <div class="kicker"><span class="dot"></span> The neuron &middot; the atom of deep learning</div>
+    data-note="[PAUSE -> Lab 01 (artificial-neuron) after this slide - build exactly this neuron from scratch.] The atom of deep learning. Walk left to right: inputs (numbers) each get multiplied by a WEIGHT (how much that input matters), all summed, a BIAS is added (a tunable offset), and the result is passed through an ACTIVATION to produce the output. The weights and bias are the 'knobs' -- the only things that change during learning. Tie back to Lab 1.10 where they coded exactly this: weighted sum + sigmoid.">
+    <div class="kicker"><span class="dot"></span> The neuron &middot; the atom of deep learning<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 01</span></div>
     <h2 class="title">One artificial neuron</h2>
     <div class="body center">
       <figure>
@@ -332,8 +342,8 @@
 
   <!-- ============ SLIDE 5 — ACTIVATIONS ============ -->
   <section class="slide" data-title="Activation functions"
-    data-note="Why activations matter: without them, stacking layers collapses into a single straight-line model -- it could never learn a curve. The activation bends the line, giving the network the power to model anything. Walk the three: sigmoid (squashes to 0..1, good for probabilities/output), tanh (-1..1, centred), ReLU (the workhorse of hidden layers -- zero for negatives, linear for positives, fast and avoids some training problems). Tell them: ReLU is the default you'll see everywhere.">
-    <div class="kicker"><span class="dot"></span> The spark &middot; activation functions</div>
+    data-note="[PAUSE -> Lab 02 (activation-functions) after this slide.] Why activations matter: without them, stacking layers collapses into a single straight-line model -- it could never learn a curve. The activation bends the line, giving the network the power to model anything. Walk the three: sigmoid (squashes to 0..1, good for probabilities/output), tanh (-1..1, centred), ReLU (the workhorse of hidden layers -- zero for negatives, linear for positives, fast and avoids some training problems). Tell them: ReLU is the default you'll see everywhere.">
+    <div class="kicker"><span class="dot"></span> The spark &middot; activation functions<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 02</span></div>
     <h2 class="title">Activations &mdash; the non-linearity that gives power</h2>
     <div class="body center">
       <figure>
@@ -441,8 +451,8 @@
 
   <!-- ============ SLIDE 8 — WHAT IS LEARNING / LOSS ============ -->
   <section class="slide" data-title="What 'learning' means: loss"
-    data-note="Now the heart of the module. 'Learning' = adjusting the weights so predictions get closer to the right answers. To do that we need a single number that says HOW WRONG the network currently is -- that's the LOSS (a.k.a. cost/error). Big loss = very wrong, zero loss = perfect. The entire goal of training is to make this one number as small as possible. Examples: mean-squared-error for numbers, cross-entropy for classification. Don't dwell on formulae.">
-    <div class="kicker"><span class="dot"></span> How a network learns &middot; 1 of 4</div>
+    data-note="[PAUSE -> Lab 03 (loss-mse) after this slide.] Now the heart of the module. 'Learning' = adjusting the weights so predictions get closer to the right answers. To do that we need a single number that says HOW WRONG the network currently is -- that's the LOSS (a.k.a. cost/error). Big loss = very wrong, zero loss = perfect. The entire goal of training is to make this one number as small as possible. Examples: mean-squared-error for numbers, cross-entropy for classification. Don't dwell on formulae.">
+    <div class="kicker"><span class="dot"></span> How a network learns &middot; 1 of 4<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 03</span></div>
     <h2 class="title">&ldquo;Learning&rdquo; = making the <i>loss</i> small</h2>
     <div class="body">
       <p class="lead">The network makes a prediction; we compare it to the right answer; the gap is the <b>loss</b> &mdash; one number for &ldquo;how wrong.&rdquo; Training is the search for weights that make that number small.</p>
@@ -465,8 +475,8 @@
 
   <!-- ============ SLIDE 9 — GRADIENT DESCENT ============ -->
   <section class="slide" data-title="Gradient descent"
-    data-note="The killer metaphor: you're standing on a foggy hill (the loss surface) and want the lowest valley. You can't see the whole map, but you can feel which way is downhill under your feet -- that's the GRADIENT. Take a step downhill, feel again, step again. Repeat until you're at the bottom (low loss). That's gradient descent. The 'gradient' is just the slope; calculus gives it to us automatically. This is THE optimisation algorithm behind essentially all deep learning.">
-    <div class="kicker"><span class="dot"></span> How a network learns &middot; 2 of 4</div>
+    data-note="[PAUSE -> Lab 04 (gradient-descent) after this slide.] The killer metaphor: you're standing on a foggy hill (the loss surface) and want the lowest valley. You can't see the whole map, but you can feel which way is downhill under your feet -- that's the GRADIENT. Take a step downhill, feel again, step again. Repeat until you're at the bottom (low loss). That's gradient descent. The 'gradient' is just the slope; calculus gives it to us automatically. This is THE optimisation algorithm behind essentially all deep learning.">
+    <div class="kicker"><span class="dot"></span> How a network learns &middot; 2 of 4<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 04</span></div>
     <h2 class="title">Gradient descent &mdash; walk downhill on the loss</h2>
     <div class="body center">
       <figure>
@@ -531,8 +541,8 @@
 
   <!-- ============ SLIDE 11 — TRAINING LOOP ============ -->
   <section class="slide" data-title="The training loop"
-    data-note="Put the pieces in motion. The loop: (1) forward pass -> prediction, (2) compute loss, (3) backward pass -> gradients, (4) update weights a small step downhill. Repeat for the next BATCH of data. One full pass over all the training data = one EPOCH; we run several epochs. Define the vocabulary clearly: batch = a handful of examples processed at once; iteration = one batch; epoch = one sweep through the whole dataset. This loop is literally the PyTorch code on the next slides.">
-    <div class="kicker"><span class="dot"></span> How a network learns &middot; 4 of 4</div>
+    data-note="[PAUSE -> Lab 05 (single-neuron-learns) after this slide - run this exact loop.] Put the pieces in motion. The loop: (1) forward pass -> prediction, (2) compute loss, (3) backward pass -> gradients, (4) update weights a small step downhill. Repeat for the next BATCH of data. One full pass over all the training data = one EPOCH; we run several epochs. Define the vocabulary clearly: batch = a handful of examples processed at once; iteration = one batch; epoch = one sweep through the whole dataset. This loop is literally the PyTorch code on the next slides.">
+    <div class="kicker"><span class="dot"></span> How a network learns &middot; 4 of 4<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 05</span></div>
     <h2 class="title">The training loop &mdash; repeat until good</h2>
     <div class="body center">
       <figure>
@@ -567,8 +577,8 @@
 
   <!-- ============ SLIDE 12 — BACKPROP INTUITION ============ -->
   <section class="slide" data-title="Backpropagation, intuitively"
-    data-note="Demystify the scary word. Backpropagation is just 'assigning blame'. After the forward pass produces a wrong answer, backprop works BACKWARD through the layers, using calculus' chain rule, to figure out how much each weight contributed to the error -- so each can be nudged in the right direction. You will essentially never implement it by hand; PyTorch/TensorFlow do it automatically (autograd) when you call loss.backward(). The takeaway: backprop = efficient blame assignment, done for you.">
-    <div class="kicker"><span class="dot"></span> The one scary word, demystified</div>
+    data-note="[PAUSE -> Lab 07 (two-layer-net-from-scratch) - Intermediate, run paired; backprop is the mechanism it uses.] Demystify the scary word. Backpropagation is just 'assigning blame'. After the forward pass produces a wrong answer, backprop works BACKWARD through the layers, using calculus' chain rule, to figure out how much each weight contributed to the error -- so each can be nudged in the right direction. You will essentially never implement it by hand; PyTorch/TensorFlow do it automatically (autograd) when you call loss.backward(). The takeaway: backprop = efficient blame assignment, done for you.">
+    <div class="kicker"><span class="dot"></span> The one scary word, demystified<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 07</span></div>
     <h2 class="title">Backpropagation = assigning blame, backwards</h2>
     <div class="body center">
       <figure>
@@ -601,8 +611,8 @@
 
   <!-- ============ SLIDE 13 — OVERFITTING CURVE ============ -->
   <section class="slide" data-title="Overfitting &amp; the training curve"
-    data-note="The single most important practical skill: reading a training curve. Plot loss/error over epochs for BOTH the training set and a held-out validation set. Early on, both drop -- the model is genuinely learning. At some point the validation curve turns UP while training keeps dropping: the model has started MEMORISING the training data (noise included) instead of learning general patterns. That gap is overfitting. The sweet spot is the bottom of the validation curve -- that's where you stop. This is the visual version of Lab 1.8.">
-    <div class="kicker"><span class="dot"></span> The practitioner&rsquo;s skill &middot; reading the curve</div>
+    data-note="[PAUSE -> Lab 06 (reading-training-curve) after this slide.] The single most important practical skill: reading a training curve. Plot loss/error over epochs for BOTH the training set and a held-out validation set. Early on, both drop -- the model is genuinely learning. At some point the validation curve turns UP while training keeps dropping: the model has started MEMORISING the training data (noise included) instead of learning general patterns. That gap is overfitting. The sweet spot is the bottom of the validation curve -- that's where you stop. This is the visual version of Lab 1.8.">
+    <div class="kicker"><span class="dot"></span> The practitioner&rsquo;s skill &middot; reading the curve<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 06</span></div>
     <h2 class="title">Overfitting &mdash; when the model memorises</h2>
     <div class="body center">
       <figure>
@@ -633,8 +643,8 @@
 
   <!-- ============ SLIDE 14 — FIGHTING OVERFITTING ============ -->
   <section class="slide" data-title="Fighting overfitting"
-    data-note="Give them the toolbox. More data is the best cure (harder to memorise). Early stopping: just stop at the bottom of the validation curve. Dropout: randomly switch off neurons during training so the net can't rely on any one path -- a kind of forced robustness. Regularisation (weight decay): penalise overly large weights. Simpler model: fewer layers/neurons. Tell them these are knobs they'll meet again on Day 2 when fine-tuning. Frame positively: overfitting is normal and manageable.">
-    <div class="kicker"><span class="dot"></span> The practitioner&rsquo;s toolbox</div>
+    data-note="[PAUSE -> Intermediate block: Lab 08 (overfitting-early-stopping), Lab 09 (hyperparameters). Run paired.] Give them the toolbox. More data is the best cure (harder to memorise). Early stopping: just stop at the bottom of the validation curve. Dropout: randomly switch off neurons during training so the net can't rely on any one path -- a kind of forced robustness. Regularisation (weight decay): penalise overly large weights. Simpler model: fewer layers/neurons. Tell them these are knobs they'll meet again on Day 2 when fine-tuning. Frame positively: overfitting is normal and manageable.">
+    <div class="kicker"><span class="dot"></span> The practitioner&rsquo;s toolbox<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 08&ndash;09</span></div>
     <h2 class="title">How to fight overfitting</h2>
     <div class="body">
       <div class="grid3">
@@ -651,8 +661,8 @@
 
   <!-- ============ SLIDE 15 — THE TOOLKIT ============ -->
   <section class="slide" data-title="The deep-learning toolkit"
-    data-note="Orient them in the tooling so the labs aren't a mystery. Python is the lingua franca. NumPy is raw arrays/maths -- great for understanding (Lab 1.10 used pure NumPy), but you'd never build a big model by hand with it. PyTorch and TensorFlow/Keras are the real frameworks: they give you layers, autograd (automatic backprop), optimisers and GPU support. Keras is the friendly high-level API; PyTorch is more explicit and dominant in research. For this course we lean on the high-level APIs and scikit-learn for the early labs.">
-    <div class="kicker"><span class="dot"></span> What you build with</div>
+    data-note="[PAUSE -> Lab 10 (first-keras-network) - Advanced; the jump from NumPy-by-hand to a real framework.] Orient them in the tooling so the labs aren't a mystery. Python is the lingua franca. NumPy is raw arrays/maths -- great for understanding (Lab 1.10 used pure NumPy), but you'd never build a big model by hand with it. PyTorch and TensorFlow/Keras are the real frameworks: they give you layers, autograd (automatic backprop), optimisers and GPU support. Keras is the friendly high-level API; PyTorch is more explicit and dominant in research. For this course we lean on the high-level APIs and scikit-learn for the early labs.">
+    <div class="kicker"><span class="dot"></span> What you build with<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 10</span></div>
     <h2 class="title">The deep-learning toolkit</h2>
     <div class="body">
       <table>
@@ -718,8 +728,8 @@ opt = torch.optim.<span class="fn">Adam</span>(model.<span class="fn">parameters
 
   <!-- ============ SLIDE 17 — CONNECT TO LABS ============ -->
   <section class="slide" data-title="This connects to your labs"
-    data-note="Make the theory land in their hands. Point them back to the Module 1 labs they've already met: Lab 1.10 was this entire module in miniature -- they coded a neuron, a sigmoid, a forward pass and a gradient-descent update by hand. Lab 1.11 trained a real multi-layer network on digits and visualised its decisions. Encourage them: re-open those labs now and you'll understand every line. Module 2's deeper labs (the MNIST classifier in Keras) come next in the course build-out.">
-    <div class="kicker"><span class="dot"></span> From slides to keyboards</div>
+    data-note="[PAUSE -> Advanced finale: Lab 11 (mnist-classifier) then Lab 12 (visualizing-decisions) - the Day-1 marquee labs. Run capstone-style.] Make the theory land in their hands. Point them back to the Module 1 labs they've already met: Lab 1.10 was this entire module in miniature -- they coded a neuron, a sigmoid, a forward pass and a gradient-descent update by hand. Lab 1.11 trained a real multi-layer network on digits and visualised its decisions. Encourage them: re-open those labs now and you'll understand every line. Module 2's deeper labs (the MNIST classifier in Keras) come next in the course build-out.">
+    <div class="kicker"><span class="dot"></span> From slides to keyboards<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 11&ndash;12</span></div>
     <h2 class="title">This is exactly what your labs do</h2>
     <div class="body">
       <div class="grid2">
@@ -774,7 +784,7 @@ opt = torch.optim.<span class="fn">Adam</span>(model.<span class="fn">parameters
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>Picking a random number</span></div>
         <div class="quiz-opt"><span class="ltr">B</span><span>Sorting its inputs</span></div>
-        <div class="quiz-opt"><span class="ltr">C</span><span>A <b>weighted sum</b> of its inputs + a bias, passed through an activation function</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>A weighted sum of its inputs + a bias, passed through an activation function</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>Storing the inputs unchanged</span></div>
       </div>
     </div>
@@ -804,7 +814,7 @@ opt = torch.optim.<span class="fn">Adam</span>(model.<span class="fn">parameters
     <div class="body center">
       <p class="quiz-q">What is the role of an activation function such as <b>ReLU</b>?</p>
       <div class="quiz-opts">
-        <div class="quiz-opt"><span class="ltr">A</span><span>It introduces <b>non-linearity</b> so the network can model complex patterns</span></div>
+        <div class="quiz-opt"><span class="ltr">A</span><span>It introduces non-linearity so the network can model complex patterns</span></div>
         <div class="quiz-opt"><span class="ltr">B</span><span>It speeds up file I/O</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>It labels the training data</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>It removes the need for weights</span></div>
@@ -871,7 +881,7 @@ opt = torch.optim.<span class="fn">Adam</span>(model.<span class="fn">parameters
         <div class="quiz-opt"><span class="ltr">A</span><span>Increasing the loss on purpose</span></div>
         <div class="quiz-opt"><span class="ltr">B</span><span>Randomly reshuffling them</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>Deleting layers</span></div>
-        <div class="quiz-opt"><span class="ltr">D</span><span>Stepping them in the direction that <b>reduces the loss</b> (opposite the gradient)</span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Stepping them in the direction that reduces the loss (opposite the gradient)</span></div>
       </div>
     </div>
   </section>
@@ -902,7 +912,7 @@ opt = torch.optim.<span class="fn">Adam</span>(model.<span class="fn">parameters
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>The number of training examples</span></div>
         <div class="quiz-opt"><span class="ltr">B</span><span>The model&rsquo;s accuracy directly</span></div>
-        <div class="quiz-opt"><span class="ltr">C</span><span><b>How big</b> each weight-update step is</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>How big each weight-update step is</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>The number of layers</span></div>
       </div>
     </div>
@@ -932,7 +942,7 @@ opt = torch.optim.<span class="fn">Adam</span>(model.<span class="fn">parameters
     <div class="body center">
       <p class="quiz-q"><b>Backpropagation</b> is the algorithm that&hellip;</p>
       <div class="quiz-opts">
-        <div class="quiz-opt"><span class="ltr">A</span><span>Computes how much each weight contributed to the loss (the <b>gradients</b>)</span></div>
+        <div class="quiz-opt"><span class="ltr">A</span><span>Computes how much each weight contributed to the loss (the gradients)</span></div>
         <div class="quiz-opt"><span class="ltr">B</span><span>Generates new training data</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>Deploys the model to production</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>Chooses the activation function</span></div>
@@ -967,7 +977,7 @@ opt = torch.optim.<span class="fn">Adam</span>(model.<span class="fn">parameters
         <div class="quiz-opt"><span class="ltr">A</span><span>Underfitting</span></div>
         <div class="quiz-opt"><span class="ltr">B</span><span>Generalising perfectly</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>Too small to learn</span></div>
-        <div class="quiz-opt"><span class="ltr">D</span><span><b>Overfitting</b></span></div>
+        <div class="quiz-opt"><span class="ltr">D</span><span>Overfitting</span></div>
       </div>
     </div>
   </section>
@@ -998,7 +1008,7 @@ opt = torch.optim.<span class="fn">Adam</span>(model.<span class="fn">parameters
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>Train forever with no stopping</span></div>
         <div class="quiz-opt"><span class="ltr">B</span><span>Throw away the validation set</span></div>
-        <div class="quiz-opt"><span class="ltr">C</span><span><b>Regularisation, dropout, early stopping</b> (and more data)</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Regularisation, dropout, early stopping (and more data)</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>Raise the learning rate to the maximum</span></div>
       </div>
     </div>
@@ -1029,7 +1039,7 @@ opt = torch.optim.<span class="fn">Adam</span>(model.<span class="fn">parameters
       <p class="quiz-q">Each step of the <b>training loop</b> does (roughly)&hellip;</p>
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>Deletes the data</span></div>
-        <div class="quiz-opt"><span class="ltr">B</span><span><b>Forward pass &rarr; compute loss &rarr; backprop gradients &rarr; update weights</b></span></div>
+        <div class="quiz-opt"><span class="ltr">B</span><span>Forward pass &rarr; compute loss &rarr; backprop gradients &rarr; update weights</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>Deploys the model</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>Picks the hyperparameters</span></div>
       </div>
@@ -1060,7 +1070,7 @@ opt = torch.optim.<span class="fn">Adam</span>(model.<span class="fn">parameters
     <div class="body center">
       <p class="quiz-q"><b>Keras</b> and <b>PyTorch</b> are&hellip;</p>
       <div class="quiz-opts">
-        <div class="quiz-opt"><span class="ltr">A</span><span>Two popular <b>frameworks</b> for building &amp; training the same kind of neural network</span></div>
+        <div class="quiz-opt"><span class="ltr">A</span><span>Two popular frameworks for building &amp; training the same kind of neural network</span></div>
         <div class="quiz-opt"><span class="ltr">B</span><span>Two datasets</span></div>
         <div class="quiz-opt"><span class="ltr">C</span><span>Two programming languages</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>Two models of GPU</span></div>
@@ -1147,7 +1157,7 @@ opt = torch.optim.<span class="fn">Adam</span>(model.<span class="fn">parameters
 <div class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Day 1 · Module 2 — Introduction to Deep Learning</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.2</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.4</span>
 </div>
 
 <script>

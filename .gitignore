@@ -7,6 +7,9 @@ hands-on/**/_generators/_meta.json
 # Verification-only course TOC (not for sharing)
 TOC_Building Intelligent AI Agents A Hands-on Journey from Deep Learning to Agentic AI.md
 
+# Personal facilitator notes (local-only, never shared)
+scripts/*.local.md
+
 # Personal Claude Code overrides (settings.json is the shared tier)
 .claude/settings.local.json
 
