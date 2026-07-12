@@ -681,6 +681,10 @@ This is the experience the whole module builds toward: a **neural network that l
 We use the 8x8 `digits` dataset (loads offline, no download). You'll build the network, score it,
 and *look* at its decisions &mdash; the "visualising how AI decides" goal from the slides.
 
+> **See it first (interactive):** [Inside `hidden_layer_sizes=(64,)`](../../presentation/inside-hidden-64-neural-network.html)
+> &mdash; a *real* trained `(64,)` network runs its forward pass in your browser on these very digits. Pick a
+> sample or draw your own and watch the 64 hidden neurons fire, then come back and build it yourself.
+
 > Needs `scikit-learn` and `matplotlib`.'''),
       code('''# DEMO -- load & peek at the data
 from sklearn.datasets import load_digits
