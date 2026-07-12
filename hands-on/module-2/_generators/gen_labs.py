@@ -455,6 +455,7 @@ Complete the forward pass (hidden activation + output activation) and the four w
         "    rng = np.random.default_rng(0)",
         "    W1 = rng.normal(scale=0.7, size=(2, 16)); b1 = np.zeros((1, 16))",
         "    W2 = rng.normal(scale=0.7, size=(16, 1)); b2 = np.zeros((1, 1))",
+        "    history = []",
         "    for _ in range(epochs):",
         "        # ---- forward pass ----",
         "        z1 = X @ W1 + b1",
@@ -463,6 +464,7 @@ Complete the forward pass (hidden activation + output activation) and the four w
         "        z2 = a1 @ W2 + b2",
         {"s": '        a2 = ___          # TODO: sigmoid of z2 (the prediction)',
          "a": '        a2 = sigmoid(z2)'},
+        "        history.append(float(np.mean((a2 - y) ** 2)))   # track the loss each epoch",
         "        # ---- backward pass (gradients given) ----",
         "        dz2 = (a2 - y) / len(X)",
         "        dW2 = a1.T @ dz2; db2 = dz2.sum(0, keepdims=True)",
@@ -474,13 +476,36 @@ Complete the forward pass (hidden activation + output activation) and the four w
         {"s": '        W1 = ___; b1 = b1 - lr * db1   # TODO: W1 - lr * dW1',
          "a": '        W1 = W1 - lr * dW1; b1 = b1 - lr * db1'},
         "    preds = (sigmoid(relu(X @ W1 + b1) @ W2 + b2) > 0.5).astype(int)",
-        "    return float((preds == y).mean())",
+        "    acc = float((preds == y).mean())",
+        "    return acc, (W1, b1, W2, b2), history   # accuracy + trained weights + loss curve",
         "",
-        "try: print('train accuracy:', round(train_net(), 3))",
+        "try: print('train accuracy:', round(train_net()[0], 3))",
         "except Exception as e: print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
-      grader('''expect_true("the 2-layer net trains and returns accuracy", lambda: 0.0 < train_net() <= 1.0)
-expect_true("accuracy >= 0.90 (it learned the curved boundary)", lambda: train_net() >= 0.90)'''),
+      code('''# DEMO -- visualise what your network learned: decision boundary + loss curve
+try:
+    import numpy as np, matplotlib.pyplot as plt
+    acc, (W1, b1, W2, b2), history = train_net()          # uses YOUR filled-in train_net
+    Xv, yv = make_moons(n_samples=400, noise=0.2, random_state=0)
+    def predict(P): return (sigmoid(relu(P @ W1 + b1) @ W2 + b2) > 0.5).astype(int).ravel()
+    xx, yy = np.meshgrid(np.linspace(Xv[:, 0].min() - .5, Xv[:, 0].max() + .5, 200),
+                         np.linspace(Xv[:, 1].min() - .5, Xv[:, 1].max() + .5, 200))
+    Z = predict(np.c_[xx.ravel(), yy.ravel()]).reshape(xx.shape)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4))
+    ax1.contourf(xx, yy, Z, alpha=0.25, cmap="coolwarm")   # the net's prediction everywhere
+    ax1.scatter(Xv[yv == 0, 0], Xv[yv == 0, 1], s=15, label="class 0")
+    ax1.scatter(Xv[yv == 1, 0], Xv[yv == 1, 1], s=15, label="class 1")
+    ax1.set_title(f"Decision boundary it learned (acc = {acc:.2f})")
+    ax1.set_xlabel("feature 1"); ax1.set_ylabel("feature 2"); ax1.legend()
+    ax2.plot(history)                                      # the epoch loop, made visible
+    ax2.set_title("Training loss vs epoch"); ax2.set_xlabel("epoch"); ax2.set_ylabel("loss (MSE)")
+    ax2.grid(alpha=.3)
+    fig.tight_layout(); fig.savefig(WORK + "/decision_boundary.png", dpi=90); plt.show()
+    print("saved:", WORK + "/decision_boundary.png")
+except Exception as e:
+    print("Fill the blanks above (and install matplotlib), then re-run.", type(e).__name__)'''),
+      grader('''expect_true("the 2-layer net trains and returns accuracy", lambda: 0.0 < train_net()[0] <= 1.0)
+expect_true("accuracy >= 0.90 (it learned the curved boundary)", lambda: train_net()[0] >= 0.90)'''),
       footer(7, "You just built and trained a real neural network from first principles. Frameworks (next labs) automate exactly this forward/backward/update loop."),
     ]
 
