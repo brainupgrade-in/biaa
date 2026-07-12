@@ -178,7 +178,7 @@
   <div class="day-header" id="m1">
     <span class="tag">Day 1 &middot; Module 1</span>
     <h2>AI &amp; Its Evolution</h2>
-    <span class="cnt">5 questions</span>
+    <span class="cnt">7 questions</span>
   </div>
 
   <details class="faq" id="m1-ai-ml-dl">
@@ -224,11 +224,29 @@
     </div>
   </details>
 
+  <details class="faq" id="m1-why-1950">
+    <summary><span class="q">Q</span><span>Why does the AI timeline (slide 8) start at 1950? Didn't Turing break Enigma in the 1940s?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>Because the timeline is a history of <b>AI</b>, not of computing. Turing's <b>Enigma Bombe</b> (1939&ndash;45) was <b>codebreaking hardware</b> &mdash; no learning, no reasoning. <b>1950</b> is his paper <em>Computing Machinery and Intelligence</em> (&ldquo;Can machines think?&rdquo; + the Turing Test) &mdash; the birth of AI as an <em>idea</em>.</div>
+      <p>Turing sits at the head of <b>both</b> stories: 1936 the Turing machine (theory of computing) &rarr; 1939&ndash;45 the Bombe (codebreaking) &rarr; <b>1950 &ldquo;Can machines think?&rdquo; (AI is born as an idea)</b> &rarr; 1956 the Dartmouth workshop coins the term &ldquo;Artificial Intelligence.&rdquo; The Bombe was a fast, special-purpose search machine, not a thinking one &mdash; it belongs on a computing timeline, not this one.</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m1-is-the-bombe-ai">
+    <summary><span class="q">Q</span><span>If hand-written rules (expert systems) count as AI, why isn't the Enigma Bombe AI? It also just follows rules.</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>AI is classified by the <b>task</b> it attempts and the <b>tradition</b> it comes from, <b>not the mechanism</b>. Not every rule-follower is AI (a thermostat isn't). An expert system <b>reasons over encoded knowledge</b> to do an intelligence-needing task (diagnosis); the Bombe <b>brute-force searches</b> cipher settings.</div>
+      <p>Three tests separate them: (1) is the <b>task</b> one that needs human-like intelligence? &mdash; diagnosis yes, cipher search no; (2) does it <b>represent knowledge and infer</b> new conclusions? &mdash; expert system yes, Bombe no; (3) which <b>research lineage</b>? &mdash; the AI program vs. cryptanalysis.</p>
+      <p><b>The counter that sharpens it:</b> Deep Blue is basically brute-force search too, yet it's AI &mdash; because chess is a canonical intelligence challenge, it encodes chess <em>knowledge</em>, and it came from the AI community. So mechanism alone never decides it.</p>
+      <p><b>Honest note:</b> &ldquo;AI&rdquo; has no crisp, mechanism-based definition; by a strict behavioural view you <em>could</em> file the Bombe as narrow AI. The <b>&ldquo;AI effect&rdquo;</b> (&ldquo;AI is whatever hasn't been done yet&rdquo;) means the label keeps moving &mdash; which is exactly what the &ldquo;What is AI?&rdquo; and &ldquo;Rules vs learning&rdquo; slides are meant to provoke.</p>
+    </div>
+  </details>
+
   <!-- ================= MODULE 2 ================= -->
   <div class="day-header" id="m2">
     <span class="tag">Day 1 &middot; Module 2</span>
     <h2>Introduction to Deep Learning</h2>
-    <span class="cnt">6 questions</span>
+    <span class="cnt">8 questions</span>
   </div>
 
   <details class="faq" id="m2-neuron">
@@ -284,6 +302,22 @@
     <div class="faq-body">
       <div class="quick"><span class="lbl">Quick answer</span>A bigger network has more capacity to <b>memorise</b> &mdash; so past a point it overfits, trains slower, and needs more data. Bigger is only better if you have the data (and regularisation) to match.</div>
       <p>Capacity is a budget: too little and the model underfits (can't capture the pattern); too much and it overfits (captures noise). The right size is found empirically by watching the validation curve, not by assuming "more is better."</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m2-batch-vs-epoch">
+    <summary><span class="q">Q</span><span>Do the weights update after every batch, or after every epoch?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>After every <b>batch</b>, not every epoch. One batch through the loop = one weight update. An <b>epoch</b> is one full pass over the data &mdash; made of many batches, so many updates.</div>
+      <p>The loop runs per batch: forward &rarr; loss &rarr; backward &rarr; <b>update</b> &rarr; next batch. Example: 10,000 images with batch size 100 &rarr; 100 batches &rarr; <b>100 updates per epoch</b>. This is <b>mini-batch gradient descent</b>, the standard &mdash; hundreds of small corrective nudges per epoch instead of one, which learns faster and is more stable. (Update-once-per-epoch is full-batch GD; batch size 1 is stochastic GD.)</p>
+    </div>
+  </details>
+
+  <details class="faq" id="m2-adam-and-loss">
+    <summary><span class="q">Q</span><span>Why are <code class="inl">adam</code> and <code class="inl">sparse_categorical_crossentropy</code> used together?</span><span class="tw">&#9660;</span></summary>
+    <div class="faq-body">
+      <div class="quick"><span class="lbl">Quick answer</span>They're <b>not a pair</b> &mdash; they're two independent choices on the same <code class="inl">compile()</code> line. The <b>loss</b> fits the <em>problem type</em>; the <b>optimizer</b> is a general-purpose default. You pick them for unrelated reasons.</div>
+      <p><b>Loss</b> answers "how wrong?": <code class="inl">sparse_categorical_crossentropy</code> is for multi-class classification with <b>integer labels</b> (MNIST gives labels as <code class="inl">3</code>, not one-hot) &mdash; same math as <code class="inl">categorical_crossentropy</code>, just a different label format. <b>Optimizer</b> answers "how do I step the weights?": <code class="inl">adam</code> is the robust default that works out of the box for almost any problem. Swap the loss to <code class="inl">binary_crossentropy</code> or <code class="inl">mse</code> and <code class="inl">adam</code> wouldn't change &mdash; that's the tell they're independent.</p>
     </div>
   </details>
 
@@ -896,7 +930,7 @@ y: 0.446&times;0  + 0.108&times;10 + 0.446&times;5 = 3.31
 <footer class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Building Intelligent AI Agents &mdash; FAQ &amp; Quick Revision</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> &middot; Trainer: Rajesh Gheware &middot; v1.1</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> &middot; Trainer: Rajesh Gheware &middot; v1.2</span>
 </footer>
 
 <script>
