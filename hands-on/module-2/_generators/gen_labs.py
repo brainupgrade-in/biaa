@@ -428,6 +428,19 @@ from sklearn.datasets import make_moons
 X, y = make_moons(n_samples=400, noise=0.2, random_state=0)
 y = y.reshape(-1, 1)
 print("X shape:", X.shape, "| classes:", np.unique(y))'''),
+      code('''# DEMO -- visualise the input: two interleaving crescents
+try:
+    import matplotlib.pyplot as plt
+    c = y.ravel()
+    plt.scatter(X[c == 0, 0], X[c == 0, 1], s=20, label="class 0")
+    plt.scatter(X[c == 1, 0], X[c == 1, 1], s=20, label="class 1")
+    plt.xlabel("feature 1  (X[:,0])"); plt.ylabel("feature 2  (X[:,1])")
+    plt.title("make_moons input -- no straight line separates them")
+    plt.legend(); plt.tight_layout()
+    plt.savefig(WORK + "/moons_input.png", dpi=90); plt.show()
+    print("saved:", WORK + "/moons_input.png")
+except Exception as e:
+    print("Plot needs matplotlib (pip install matplotlib).", type(e).__name__)'''),
       md('''## Your Turn
 Complete the forward pass (hidden activation + output activation) and the four weight updates.'''),
       code(render([
@@ -496,6 +509,20 @@ from sklearn.model_selection import train_test_split
 X, y = make_classification(n_samples=400, n_features=20, n_informative=5, flip_y=0.2, random_state=0)
 X_tr, X_val, y_tr, y_val = train_test_split(X, y, test_size=0.4, random_state=0)
 print("train:", len(X_tr), "validation:", len(X_val))'''),
+      code('''# DEMO -- visualise the 20-feature input as a 2D PCA projection
+try:
+    import matplotlib.pyplot as plt
+    from sklearn.decomposition import PCA
+    XY = PCA(n_components=2, random_state=0).fit_transform(X)   # 20-D -> 2-D for plotting only
+    plt.scatter(XY[y == 0, 0], XY[y == 0, 1], s=20, label="class 0")
+    plt.scatter(XY[y == 1, 0], XY[y == 1, 1], s=20, label="class 1")
+    plt.xlabel("PCA 1"); plt.ylabel("PCA 2")
+    plt.title("make_classification input (20-D, shown in 2-D via PCA)")
+    plt.legend(); plt.tight_layout()
+    plt.savefig(WORK + "/classification_input.png", dpi=90); plt.show()
+    print("saved:", WORK + "/classification_input.png")
+except Exception as e:
+    print("Plot needs matplotlib (pip install matplotlib).", type(e).__name__)'''),
       md('''## Your Turn
 Compute the validation accuracy of an overfit network, and turn **early stopping** on.'''),
       code(render([
@@ -558,6 +585,19 @@ def acc_for(hidden):
     clf = MLPClassifier(hidden_layer_sizes=hidden, max_iter=600, random_state=0).fit(X_tr, y_tr)
     return accuracy_score(y_te, clf.predict(X_te))
 print("tiny (2,) network accuracy:", round(acc_for((2,)), 3))'''),
+      code('''# DEMO -- visualise the input: the first 10 of the 8x8 digit images
+try:
+    import matplotlib.pyplot as plt
+    fig, axes = plt.subplots(2, 5, figsize=(6, 2.6))
+    for i, ax in enumerate(axes.ravel()):
+        ax.imshow(X[i].reshape(8, 8), cmap="gray_r")   # each row is a flattened 8x8 image
+        ax.set_title(str(y[i])); ax.axis("off")
+    fig.suptitle("load_digits input -- each sample is an 8x8 image")
+    fig.tight_layout()
+    fig.savefig(WORK + "/digits_input.png", dpi=90); plt.show()
+    print("saved:", WORK + "/digits_input.png")
+except Exception as e:
+    print("Plot needs matplotlib (pip install matplotlib).", type(e).__name__)'''),
       md('''## Your Turn
 Choose **three** hidden sizes to compare (include a tiny one and a big one) and run the sweep.'''),
       code(render([
