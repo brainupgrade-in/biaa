@@ -533,6 +533,22 @@ A deep decision tree is fitted for you. Compute its **train** and **test** accur
       grader('''expect_true("train accuracy computed (very high)", lambda: train_acc() >= 0.95)
 expect_true("test accuracy computed (lower)", lambda: 0.0 < test_acc() < 0.95)
 expect_true("overfitting visible: train > test", lambda: gap() > 0.1)'''),
+      md('''## Counterfactual: is the gap the *noise*, or *overfitting*?
+A sharp question: with 25% label noise, maybe the gap is just the noise &mdash; not overfitting?
+Test it. Hold the **noisy data fixed** and change only the model's **capacity**. If noise alone
+opened the gap, a shallow tree (same data) would show it too.'''),
+      code('''# DEMO -- same noisy data, vary ONLY capacity (nothing to fill in)
+for depth in (None, 2):
+    m  = DecisionTreeClassifier(max_depth=depth, random_state=0).fit(X_tr, y_tr)
+    tr = accuracy_score(y_tr, m.predict(X_tr))
+    te = accuracy_score(y_te, m.predict(X_te))
+    tag = "deep (can memorise noise)" if depth is None else "shallow (cannot memorise)"
+    print(f"max_depth={str(depth):<4}  train={tr:.2f}  test={te:.2f}  gap={tr-te:+.2f}   {tag}")
+print("\\nSame noise in BOTH rows -- only model capacity changed.")
+print("The GAP tracks capacity, not noise: it collapses from ~0.24 to ~0.10 the moment the")
+print("tree can no longer memorise. So the train>>test gap IS overfitting.")
+print("Separately, the noise caps the best achievable TEST score near ~0.75 -- that ceiling")
+print("is why even the deep tree tops out around 0.76 on test, never 1.00.")'''),
       footer(8, "The model memorised the noise. Always report the **test** score &mdash; the train score flatters and lies. Module 2 covers how to fight overfitting."),
     ]
     return cells
