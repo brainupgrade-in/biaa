@@ -51,10 +51,22 @@ print("All checks passed -- lab complete!" if _p == len(_results) else "Keep goi
 def grader(body):
     return code(GRADER_HEAD + "\n" + body.strip() + "\n\n" + GRADER_TAIL)
 
-def setup(nn, extra=""):
+def setup(nn, extra="", keras=False):
+    # Keras labs (10-12) also silence the CUDA/GPU probe. With no NVIDIA GPU, TensorFlow prints a
+    # harmless "Could not find cuda drivers ... GPU will not be used" line at import -- emitted from
+    # C++ (cudart_stub) via absl, so neither TF_CPP_MIN_LOG_LEVEL nor CUDA_VISIBLE_DEVICES catches it.
+    # The only reliable fix is to pre-import TF once with the stderr file descriptor muted; every
+    # later `from tensorflow import keras` cell reuses the cached module silently. CPU-only anyway.
+    gpu = '''
+# Pre-import TensorFlow once with stderr muted, to swallow the C++ GPU-probe line (no GPU here).
+try:
+    _fd = os.dup(2); _null = os.open(os.devnull, os.O_WRONLY); os.dup2(_null, 2)
+    try: import tensorflow  # noqa: F401  (cached; later keras imports are silent + free)
+    finally: os.dup2(_fd, 2); os.close(_fd); os.close(_null)
+except Exception: pass''' if keras else ""
     return code(f'''# Setup -- run me first
 import os
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"   # quiet TensorFlow logs (used in the advanced labs)
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"   # quiet TensorFlow logs (used in the advanced labs){gpu}
 WORK = os.path.join(os.environ.get("TEMP") or os.environ.get("TMP") or "/tmp", "biaa-lab-02-{nn:02d}")
 os.makedirs(WORK, exist_ok=True)
 print("Working dir:", WORK){extra}''')
@@ -696,7 +708,7 @@ def _l10(sol):
          "Compile it with an optimizer and loss, then fit it",
          "Train on real image data and evaluate on a test set"],
         "The deep-learning toolkit"),
-      setup(10),
+      setup(10, keras=True),
       md('''## Concept
 From-scratch NumPy taught you the mechanics; in practice we use a **framework**. **Keras**
 (part of TensorFlow) lets you declare layers, `compile` with an optimizer + loss, and `fit`.
@@ -750,7 +762,7 @@ def _l11(sol):
          "Hold out a validation split and capture the training history",
          "Plot train vs validation curves and reach high accuracy"],
         "The same model, two frameworks"),
-      setup(11),
+      setup(11, keras=True),
       md('''## Concept
 The classic deep-learning 'hello world': **MNIST** handwritten digits. You'll train a network,
 keep a **validation split** to watch generalisation, and plot the **training curves**.
@@ -818,7 +830,7 @@ def _l12(sol):
          "Compute per-class accuracy to find the model's weak spots",
          "Surface and view the digits the model gets wrong"],
         "This connects to your labs"),
-      setup(12),
+      setup(12, keras=True),
       md('''## Concept &mdash; the module's payoff
 A single accuracy number hides *how* a model decides. This capstone opens the box: a
 **confusion matrix** (which true digit gets predicted as what), **per-class accuracy** (where it
