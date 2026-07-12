@@ -573,6 +573,29 @@ Compute the validation accuracy of an overfit network, and turn **early stopping
         "    print(f'train={train_acc():.2f} val={val_acc():.2f} gap={gap():.2f} | early-stopped at {es.n_iter_} iters')",
         "except Exception as e: print('Fill the blanks, then re-run.', type(e).__name__)",
       ], sol)),
+      code('''# DEMO -- visualise the gap: overfit big net vs your early-stopped net
+try:
+    import numpy as np, matplotlib.pyplot as plt
+    es = make_early_stopped()                              # uses YOUR early_stopping choice
+    es_train = accuracy_score(y_tr, es.predict(X_tr))
+    es_val   = accuracy_score(y_val, es.predict(X_val))
+    labels = ["overfit big net", "early-stopped"]
+    train_scores = [train_acc(), es_train]
+    val_scores   = [val_acc(),   es_val]
+    x = np.arange(len(labels)); w = 0.35
+    fig, ax = plt.subplots(figsize=(7, 4.2))
+    ax.bar(x - w/2, train_scores, w, label="train accuracy")
+    ax.bar(x + w/2, val_scores,   w, label="validation accuracy")
+    for i in range(len(labels)):                           # annotate the train/val gap
+        ax.annotate(f"gap {train_scores[i]-val_scores[i]:+.2f}",
+                    (x[i], max(train_scores[i], val_scores[i]) + 0.02), ha="center")
+    ax.set_xticks(x); ax.set_xticklabels(labels); ax.set_ylim(0, 1.12)
+    ax.set_ylabel("accuracy"); ax.set_title("The train/validation gap is overfitting")
+    ax.legend(loc="lower right")
+    fig.tight_layout(); fig.savefig(WORK + "/overfit_gap.png", dpi=90); plt.show()
+    print("saved:", WORK + "/overfit_gap.png")
+except Exception as e:
+    print("Fill the blanks above (and install matplotlib), then re-run.", type(e).__name__)'''),
       grader('''from sklearn.neural_network import MLPClassifier
 expect_true("training accuracy is very high (memorised)", lambda: train_acc() >= 0.95)
 expect_true("validation accuracy is clearly lower (the gap)", lambda: gap() > 0.1)
@@ -637,6 +660,24 @@ Choose **three** hidden sizes to compare (include a tiny one and a big one) and 
         "    for h, a in results.items(): print(f'hidden {h}: accuracy {a:.3f}')",
         "except Exception as e: print('Fill the blank, then re-run.', type(e).__name__)",
       ], sol)),
+      code('''# DEMO -- visualise your sweep: accuracy vs hidden-layer size
+try:
+    import matplotlib.pyplot as plt
+    results = run_sweep()                                  # uses YOUR list of SIZES
+    if len(results) < 2:                                   # SIZES not filled in yet
+        raise ValueError("fill in SIZES above (need >= 2 sizes to compare)")
+    labels = [str(h) for h in results]
+    scores = list(results.values())
+    fig, ax = plt.subplots(figsize=(7, 4.2))
+    bars = ax.bar(labels, scores, color="#4f46e5")
+    for b, s in zip(bars, scores):                         # label each bar with its accuracy
+        ax.annotate(f"{s:.2f}", (b.get_x() + b.get_width()/2, s + 0.02), ha="center")
+    ax.set_ylim(0, 1.12); ax.set_xlabel("hidden-layer size"); ax.set_ylabel("test accuracy")
+    ax.set_title("More capacity -> higher accuracy (up to a point)")
+    fig.tight_layout(); fig.savefig(WORK + "/hp_sweep.png", dpi=90); plt.show()
+    print("saved:", WORK + "/hp_sweep.png")
+except Exception as e:
+    print("Fill the blank above (and install matplotlib), then re-run.", type(e).__name__)'''),
       grader('''expect_true("swept exactly 3 configurations", lambda: len(run_sweep()) == 3)
 expect_true("all accuracies are valid fractions", lambda: all(0.0 < a <= 1.0 for a in run_sweep().values()))
 expect_true("a bigger hidden layer beats the smallest one", lambda: max(run_sweep().values()) > min(run_sweep().values()) + 0.1)'''),
