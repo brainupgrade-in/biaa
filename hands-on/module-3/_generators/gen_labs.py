@@ -268,12 +268,12 @@ print("cos(paris,france) =", round(cosine(E2[0], E2[1]), 3),
 
 # ============================================================ LAB 03
 @lab(3, "lab-03-attention-by-hand", "Beginner",
-     "Self-Attention by Hand", 25,
+     "Attention by Hand", 25,
      "Implement scaled dot-product attention in NumPy -- the single idea at the heart of every transformer (real mechanics, computed by hand).",
      ["Query/Key/Value", "Softmax", "Scaled dot-product attention"])
 def _l3(sol):
     return [
-      header(3, "Self-Attention by Hand", "Beginner", 25,
+      header(3, "Attention by Hand", "Beginner", 25,
         ["Implement a numerically-stable softmax",
          "Compute scaled dot-product attention: softmax(Q.Kt / sqrt(d)) . V",
          "See a query 'attend' to the matching key"],
