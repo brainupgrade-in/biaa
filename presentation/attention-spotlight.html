@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attention is a spotlight</title>
+<style>
+  :root{
+    --bg:#f5f4fb; --panel:#ffffff; --panel2:#f0eefb; --edge:#dcd9ef;
+    --ink:#1c1740; --ink-dim:#4b4680; --muted:#8b86b8;
+    --cyan:#0891b2; --indigo:#4f46e5; --amber:#b45309; --amber-hi:#f59e0b;
+    --good:#059669; --track:#e7e4f4; --shadow:0 10px 40px rgba(43,37,90,.10);
+    --mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0c0a1e; --panel:#16123a; --panel2:#1d1747; --edge:#2f2a62;
+      --ink:#eceafb; --ink-dim:#aca6d6; --muted:#736ea6;
+      --cyan:#22d3ee; --indigo:#8b83ff; --amber:#f59e0b; --amber-hi:#fbbf24;
+      --good:#34d399; --track:#221c50; --shadow:0 16px 50px rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="light"]{ --bg:#f5f4fb; --panel:#fff; --panel2:#f0eefb; --edge:#dcd9ef;
+    --ink:#1c1740; --ink-dim:#4b4680; --muted:#8b86b8; --cyan:#0891b2; --indigo:#4f46e5;
+    --amber:#b45309; --amber-hi:#f59e0b; --track:#e7e4f4; --shadow:0 10px 40px rgba(43,37,90,.10);}
+  :root[data-theme="dark"]{ --bg:#0c0a1e; --panel:#16123a; --panel2:#1d1747; --edge:#2f2a62;
+    --ink:#eceafb; --ink-dim:#aca6d6; --muted:#736ea6; --cyan:#22d3ee; --indigo:#8b83ff;
+    --amber:#f59e0b; --amber-hi:#fbbf24; --track:#221c50; --shadow:0 16px 50px rgba(0,0,0,.45);}
+  *{box-sizing:border-box}
+  body{margin:0;background:
+      radial-gradient(1200px 600px at 15% -10%, color-mix(in srgb,var(--indigo) 14%, transparent), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, color-mix(in srgb,var(--cyan) 12%, transparent), transparent 55%),
+      var(--bg);
+    color:var(--ink); font-family:var(--sans); line-height:1.55;
+    -webkit-font-smoothing:antialiased; padding:clamp(16px,4vw,44px);}
+  .wrap{max-width:940px;margin:0 auto}
+
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--cyan);font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan)}
+  h1{font-weight:800;letter-spacing:-.015em;line-height:1.04;font-size:clamp(30px,5.6vw,52px);
+    margin:.3em 0 .18em;text-wrap:balance}
+  h1 .g{background:linear-gradient(92deg,var(--amber-hi),var(--cyan));-webkit-background-clip:text;
+    background-clip:text;color:transparent}
+  .sub{color:var(--ink-dim);font-size:clamp(15px,1.7vw,18.5px);max-width:60ch;margin:0}
+  .sub b{color:var(--ink)}
+
+  .hook{margin:22px 0 4px;display:flex;gap:14px;align-items:flex-start;background:var(--panel);
+    border:1px solid var(--edge);border-radius:16px;padding:16px 18px;box-shadow:var(--shadow)}
+  .hook .ic{font-size:26px;line-height:1;filter:saturate(1.1)}
+  .hook p{margin:0;font-size:15px;color:var(--ink-dim)} .hook b{color:var(--ink)}
+
+  .stagewrap{margin-top:20px;background:var(--panel);border:1px solid var(--edge);
+    border-radius:20px;box-shadow:var(--shadow);overflow:hidden}
+  .bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 20px;
+    border-bottom:1px solid var(--edge);background:var(--panel2)}
+  .bar .lbl{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .bar .hint{font-size:13px;color:var(--ink-dim)} .bar .hint b{color:var(--cyan)}
+
+  .scene{position:relative;padding:8px 20px 26px}
+  .beams{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+  .beams path{fill:none;stroke-linecap:round;transition:stroke-width .35s ease,opacity .35s ease,stroke .2s}
+  .chips{position:relative;z-index:2;display:flex;flex-wrap:wrap;gap:9px 10px;justify-content:center;
+    padding-top:118px}
+  .chip{font-size:clamp(16px,2.3vw,21px);font-weight:600;font-family:var(--sans);
+    padding:9px 15px;border-radius:12px;border:1px solid var(--edge);background:var(--panel);
+    color:var(--ink-dim);cursor:pointer;position:relative;transition:transform .18s,border-color .18s,
+    box-shadow .35s,background .35s,color .18s;--w:0}
+  .chip:hover{transform:translateY(-2px);border-color:var(--cyan)}
+  /* target glow scales with attention weight via --w (0..1) */
+  .chip.lit{color:var(--ink);
+    box-shadow:0 0 calc(6px + 34px*var(--w)) color-mix(in srgb,var(--cyan) calc(18% + 62%*var(--w)),transparent);
+    border-color:color-mix(in srgb,var(--cyan) calc(30% + 60%*var(--w)),var(--edge))}
+  .chip.focus{color:#04121a;background:var(--amber-hi);border-color:var(--amber-hi);font-weight:800;
+    box-shadow:0 0 0 4px color-mix(in srgb,var(--amber-hi) 32%,transparent),0 8px 26px color-mix(in srgb,var(--amber-hi) 40%,transparent)}
+  .chip.focus:hover{transform:none}
+
+  .readout{padding:2px 20px 22px;display:flex;flex-direction:column;gap:12px}
+  .caption{font-size:clamp(16px,2vw,20px);color:var(--ink);line-height:1.4}
+  .caption b{color:var(--amber);} @media (prefers-color-scheme:dark){.caption b{color:var(--amber-hi)}}
+  .caption .q{color:var(--cyan);font-weight:700}
+  .barsmini{display:flex;flex-direction:column;gap:5px;max-width:420px}
+  .brow{display:grid;grid-template-columns:78px 1fr 40px;align-items:center;gap:10px;font-family:var(--mono);font-size:12.5px}
+  .brow .wl{color:var(--ink-dim);text-align:right} .brow .pct{color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+  .brow .tk{height:12px;background:var(--track);border-radius:6px;overflow:hidden}
+  .brow .fl{height:100%;width:0;background:var(--cyan);border-radius:6px;transition:width .4s cubic-bezier(.5,.1,.2,1),background .2s}
+  .brow.top .wl{color:var(--amber)} .brow.top .fl{background:var(--amber-hi)} .brow.top .pct{color:var(--amber);font-weight:600}
+  @media (prefers-color-scheme:dark){.brow.top .wl{color:var(--amber-hi)}.brow.top .pct{color:var(--amber-hi)}}
+
+  .legend{margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px}
+  .lcard{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:15px 17px}
+  .lcard h3{font-size:13px;letter-spacing:.02em;color:var(--cyan);margin:0 0 7px;font-weight:700;
+    display:flex;align-items:center;gap:8px}
+  .lcard p{margin:0;font-size:13.5px;color:var(--ink-dim)}
+  .lcard a{color:var(--cyan);font-weight:600;text-decoration:none} .lcard a:hover{text-decoration:underline}
+  .lcard code{font-family:var(--mono);background:var(--panel2);padding:.05em .35em;border-radius:4px;color:var(--ink);font-size:.9em}
+
+  footer{margin-top:28px;padding-top:18px;border-top:1px solid var(--edge);
+    display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);font-family:var(--mono)}
+  footer a{color:var(--cyan);text-decoration:none} footer a:hover{text-decoration:underline}
+
+  .homelink{position:fixed;top:14px;right:16px;z-index:30;font-family:var(--mono);font-size:12px;
+    padding:7px 13px;border-radius:999px;border:1px solid var(--edge);background:var(--panel);
+    color:var(--ink-dim);text-decoration:none;box-shadow:var(--shadow)}
+  .homelink:hover{border-color:var(--cyan);color:var(--ink)}
+  @media print{.homelink{display:none}}
+  @media (max-width:760px){.homelink{position:static;display:inline-flex;margin:0 0 12px}.chips{padding-top:96px}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<a class="homelink" href="../course-outline-building-intelligent-ai-agents.html" title="Back to course outline">&#8962; Course outline</a>
+  <div class="wrap">
+  <div class="eyebrow"><span class="dot"></span> Module 3 &middot; the intuition behind attention</div>
+  <h1>Attention is a <span class="g">spotlight</span></h1>
+  <p class="sub">At a noisy party you don&rsquo;t hear every voice equally &mdash; you <b>lock onto the one that matters</b>
+    and let the rest blur. A model reads a sentence the same way: every word shines a spotlight on the words that <b>explain it</b>.</p>
+
+  <div class="hook">
+    <span class="ic">&#127881;&#128483;&#65039;</span>
+    <p><b>The cocktail-party effect.</b> Ten people are talking at once. Your friend says your name across the room &mdash;
+      instantly it cuts through, and the background chatter fades. Your brain just did <b>attention</b>: it weighted one voice up and the others down.
+      Below, each <b>word</b> is a voice in the room &mdash; <b>click one</b> to see which words it listens to.</p>
+  </div>
+
+  <div class="stagewrap">
+    <div class="bar">
+      <span class="lbl">The sentence</span>
+      <span class="hint">Click a word &mdash; thicker, brighter beams = <b>more attention</b>. Start with <b>&ldquo;it&rdquo;</b>.</span>
+    </div>
+    <div class="scene">
+      <svg class="beams" id="beams" aria-hidden="true"></svg>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="readout">
+      <div class="caption" id="caption"></div>
+      <div class="barsmini" id="bars"></div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="lcard"><h3>&#128161; Why a spotlight?</h3><p>A word&rsquo;s meaning depends on <b>context</b>. &ldquo;It&rdquo; is empty until you look back at what it points to. Attention <i>is</i> that look.</p></div>
+    <div class="lcard"><h3>&#128207; Distance doesn&rsquo;t matter</h3><p>The spotlight jumps <b>directly</b> to the right word &mdash; near or far. That is the long-range problem RNNs could not solve.</p></div>
+    <div class="lcard"><h3>&#9878;&#65039; It&rsquo;s a weighting</h3><p>The beams are <b>weights that sum to 1</b> &mdash; a little to many, a lot to a few. The exact numbers come from <code>softmax</code>.</p></div>
+    <div class="lcard"><h3>&#128064; See the mechanics</h3><p>Back to <a href="day2-module3-why-transformers.html#8">deck slide&nbsp;8</a>, the <a href="softmax-attention-weights.html">softmax weights</a>, and build it in <a href="../hands-on/module-3/lab-03-attention-by-hand.ipynb">Lab&nbsp;3.3</a>.</p></div>
+  </div>
+
+  <footer>
+    <span>&copy; 2026 Gheware DevOps &amp; Agentic AI &middot; Building Intelligent AI Agents</span>
+    <span><a href="day2-module3-why-transformers.html">Module 3 slides</a> &middot; <a href="https://devops.gheware.com">devops.gheware.com</a></span>
+  </footer>
+  </div>
+
+<script>
+(function(){
+  var WORDS = ["The","animal","didn’t","cross","the","street","because","it","was","tired"];
+  // who each word "listens to" most (index -> {targetIndex: strength}); everything else gets a base weight
+  var REL = {
+    1: {7:2.6, 9:2.0},          // animal -> it, tired
+    2: {3:2.6},                 // didn't -> cross
+    3: {5:3.0, 1:1.4},          // cross  -> street, animal
+    5: {3:2.6},                 // street -> cross
+    6: {9:2.2, 7:1.6},          // because-> tired, it
+    7: {1:3.2, 9:2.0},          // it     -> animal, tired
+    9: {1:2.4, 7:2.4}           // tired  -> animal, it
+  };
+  var BASE = 0.3;
+  var focus = 7;   // default: "it"
+
+  var chipsEl = document.getElementById("chips");
+  var svg     = document.getElementById("beams");
+  var capEl   = document.getElementById("caption");
+  var barsEl  = document.getElementById("bars");
+  var SVGNS   = "http://www.w3.org/2000/svg";
+
+  // build chips
+  var chipEls = WORDS.map(function(w,i){
+    var b = document.createElement("button");
+    b.className = "chip"; b.textContent = w; b.type = "button";
+    b.addEventListener("click", function(){ focus = i; render(); });
+    chipsEl.appendChild(b);
+    return b;
+  });
+
+  function weights(f){
+    var isContent = !!REL[f];
+    var s = WORDS.map(function(_,t){
+      if (t === f) return isContent ? 1.0 : 0.6;            // self
+      if (REL[f] && REL[f][t] != null) return REL[f][t];    // related
+      return BASE;
+    });
+    var e = s.map(function(v){ return Math.exp(v); });
+    var sum = e.reduce(function(a,b){ return a+b; }, 0);
+    return e.map(function(v){ return v/sum; });
+  }
+
+  function centreTop(el){
+    var r = el.getBoundingClientRect(), s = svg.getBoundingClientRect();
+    return { x: r.left - s.left + r.width/2, y: r.top - s.top };
+  }
+  function centre(el){
+    var r = el.getBoundingClientRect(), s = svg.getBoundingClientRect();
+    return { x: r.left - s.left + r.width/2, y: r.top - s.top + r.height/2 };
+  }
+
+  function drawBeams(w, topIdx){
+    var rect = svg.getBoundingClientRect();
+    svg.setAttribute("width", rect.width); svg.setAttribute("height", rect.height);
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var f = centre(chipEls[focus]);
+    WORDS.forEach(function(_,t){
+      if (t === focus) return;
+      var wt = w[t];
+      var c = centreTop(chipEls[t]);
+      var midX = (f.x + c.x)/2, midY = Math.min(f.y, c.y) - 74;   // arc up into the empty band
+      var p = document.createElementNS(SVGNS, "path");
+      p.setAttribute("d", "M "+f.x+" "+f.y+" Q "+midX+" "+midY+" "+c.x+" "+c.y);
+      p.setAttribute("stroke", t === topIdx ? "var(--amber-hi)" : "var(--cyan)");
+      p.setAttribute("stroke-width", (1.2 + wt*14).toFixed(2));
+      p.setAttribute("opacity", (0.12 + wt*0.9).toFixed(3));
+      svg.appendChild(p);
+    });
+  }
+
+  function render(){
+    var w = weights(focus);
+    // top target (exclude self)
+    var topIdx = -1, topV = -1;
+    w.forEach(function(v,t){ if (t !== focus && v > topV){ topV = v; topIdx = t; } });
+
+    chipEls.forEach(function(el,i){
+      el.classList.toggle("focus", i === focus);
+      el.classList.toggle("lit", i !== focus);
+      el.style.setProperty("--w", i === focus ? 0 : (w[i]).toFixed(3));
+    });
+
+    drawBeams(w, topIdx);
+
+    // caption
+    var isContent = !!REL[focus];
+    if (!isContent){
+      capEl.innerHTML = '<span class="q">&ldquo;'+WORDS[focus]+'&rdquo;</span> is a function word &mdash; its spotlight is <b>spread thin</b>. It doesn&rsquo;t point at any one word.';
+    } else {
+      capEl.innerHTML = '<span class="q">&ldquo;'+WORDS[focus]+'&rdquo;</span> shines brightest on <b>&ldquo;'+WORDS[topIdx]+'&rdquo;</b> ('+Math.round(topV*100)+'%) &mdash; that&rsquo;s the word it leans on most.';
+    }
+
+    // mini weight bars: top 4 targets
+    var order = WORDS.map(function(_,t){ return t; })
+      .filter(function(t){ return t !== focus; })
+      .sort(function(a,b){ return w[b]-w[a]; }).slice(0,4);
+    barsEl.innerHTML = "";
+    order.forEach(function(t){
+      var row = document.createElement("div");
+      row.className = "brow" + (t === topIdx ? " top" : "");
+      row.innerHTML = '<span class="wl">'+WORDS[t]+'</span>'+
+        '<span class="tk"><span class="fl" style="width:'+(w[t]*100).toFixed(0)+'%"></span></span>'+
+        '<span class="pct">'+Math.round(w[t]*100)+'%</span>';
+      barsEl.appendChild(row);
+    });
+  }
+
+  window.addEventListener("resize", render);
+  // fonts/layout can settle a tick after load; redraw beams once ready
+  window.addEventListener("load", render);
+  render();
+})();
+</script>
+</body>
+</html>
