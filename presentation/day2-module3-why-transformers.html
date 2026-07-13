@@ -34,12 +34,20 @@
   @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 
   .kicker{
-    display:flex;align-items:center;gap:10px;
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
     font-size:clamp(.7rem,1.1vw,.85rem);font-weight:700;letter-spacing:.06em;
     text-transform:uppercase;color:var(--ind-600);margin-bottom:6px;
   }
   .kicker .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);}
   .kicker .sub{color:var(--muted);font-weight:600;}
+  /* ---------- Hands-on lab cue (right-aligned badge in the kicker) ---------- */
+  .kicker .lab-cue{display:inline-flex;align-items:center;gap:6px;
+    background:var(--amber);color:var(--ink-900);font-weight:800;text-transform:none;
+    padding:3px 12px;border-radius:12px;letter-spacing:.02em;
+    box-shadow:0 1px 4px rgba(245,158,11,.45);}
+  .kicker .lab-cue.bridge{background:#fff;color:var(--blue);border:1px solid var(--blue);box-shadow:none;}
+  .kicker .lab-cue .tri{font-size:.85em;line-height:1;}
+  @media print{.kicker .lab-cue{box-shadow:none;border:1px solid var(--amber-d);}}
   h2.title{
     margin:0 0 14px;color:var(--ink-800);
     font-size:clamp(1.5rem,3.4vw,2.5rem);line-height:1.1;
@@ -279,11 +287,52 @@
           </ul>
         </div>
       </div>
-      <p class="callout warn" style="margin-top:14px">&#128161; We need a model built for <b>sequence + context</b>. The story of getting there runs: RNNs &rarr; LSTMs &rarr; <b>the transformer</b>.</p>
+      <p class="callout warn" style="margin-top:14px">&#128161; But a neural network reads <b>numbers</b>, not words &mdash; so step one is turning language into numbers. <b>Then</b> we can ask how to model the sequence: RNNs &rarr; <b>the transformer</b>.</p>
     </div>
   </section>
 
-  <!-- ============ SLIDE 4 — RNN: THE OLD WAY ============ -->
+  <!-- ============ SLIDE 4 — TOKENS & EMBEDDINGS ============ -->
+  <section class="slide" data-title="Tokens &amp; embeddings"
+    data-note="First things first -- inputs: how does text become numbers a network can process? Two steps. (1) Tokenization: split text into tokens -- often sub-word pieces, not whole words ('tokenization' -> 'token' + 'ization'). Each token maps to an integer id. (2) Embedding: each id becomes a vector of numbers (e.g. 768 dims) that captures meaning -- similar words get similar vectors, so 'king' and 'queen' land near each other. These embeddings are learned. This is the bridge from language to the maths of Day 1, and every model today -- RNN or transformer -- runs on these vectors. Labs: they'll tokenize with a real tokenizer and measure embedding similarity.">
+    <div class="kicker"><span class="dot"></span> The input &middot; turning text into numbers<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 01&ndash;02, 06&ndash;07</span></div>
+    <h2 class="title">Tokens &amp; embeddings &mdash; turning words into vectors</h2>
+    <div class="body center">
+      <figure>
+        <svg viewBox="0 0 1000 270" role="img" aria-label="Text split into tokens, mapped to ids, then to embedding vectors">
+          <defs><marker id="e9" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker></defs>
+          <!-- text -->
+          <rect x="40" y="40" width="200" height="46" rx="10" fill="#fff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="140" y="69" text-anchor="middle" font-size="14" fill="#1e1f33" font-weight="700">&ldquo;Transformers rock&rdquo;</text>
+          <path d="M140 86 L140 116" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#e9)"/>
+          <!-- tokens -->
+          <g text-anchor="middle" font-size="12.5" font-weight="700">
+            <rect x="30" y="120" width="90" height="40" rx="8" fill="#eef2ff" stroke="#4f46e5"/><text x="75" y="145" fill="#312e81">Transform</text>
+            <rect x="125" y="120" width="55" height="40" rx="8" fill="#eef2ff" stroke="#4f46e5"/><text x="152" y="145" fill="#312e81">ers</text>
+            <rect x="185" y="120" width="70" height="40" rx="8" fill="#eef2ff" stroke="#4f46e5"/><text x="220" y="145" fill="#312e81">rock</text>
+          </g>
+          <text x="140" y="182" text-anchor="middle" font-size="11" fill="#5b5f7a">tokens (sub-word pieces)</text>
+          <path d="M270 140 L360 140" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#e9)"/>
+          <!-- ids -->
+          <g text-anchor="middle" font-size="13" font-weight="700">
+            <rect x="375" y="120" width="70" height="40" rx="8" fill="#fffbeb" stroke="#f59e0b"/><text x="410" y="145" fill="#92400e">19134</text>
+            <rect x="450" y="120" width="55" height="40" rx="8" fill="#fffbeb" stroke="#f59e0b"/><text x="477" y="145" fill="#92400e">409</text>
+            <rect x="510" y="120" width="60" height="40" rx="8" fill="#fffbeb" stroke="#f59e0b"/><text x="540" y="145" fill="#92400e">3138</text>
+          </g>
+          <text x="470" y="182" text-anchor="middle" font-size="11" fill="#5b5f7a">integer ids (a lookup)</text>
+          <path d="M585 140 L675 140" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#e9)"/>
+          <!-- embeddings -->
+          <rect x="690" y="95" width="280" height="92" rx="12" fill="#312e81" stroke="#06b6d4" stroke-width="2.5"/>
+          <text x="830" y="124" text-anchor="middle" font-size="14" font-weight="700" fill="#67e8f9">embedding vectors</text>
+          <text x="830" y="148" text-anchor="middle" font-size="12" fill="#c7cbf0" class="mono">[0.21, -0.08, 0.74, ... ]</text>
+          <text x="830" y="170" text-anchor="middle" font-size="11" fill="#a5b4fc">meaning as numbers &mdash; similar words, similar vectors</text>
+          <text x="500" y="232" text-anchor="middle" font-size="13" fill="#1e1f33">&ldquo;king&rdquo; and &ldquo;queen&rdquo; land near each other; &ldquo;king&rdquo;&minus;&ldquo;man&rdquo;+&ldquo;woman&rdquo; &asymp; &ldquo;queen&rdquo; &mdash; geometry of meaning</text>
+        </svg>
+        <figcaption>Text &rarr; <b>tokens</b> &rarr; <b>ids</b> &rarr; <b>embeddings</b> (learned vectors) &mdash; meaning as numbers, and where your labs start. Every word is now a <b>vector</b> &mdash; so how does a model read the whole <b>sequence</b> of them?</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 5 — RNN: THE OLD WAY ============ -->
   <section class="slide" data-title="The old way: RNNs"
     data-note="The pre-transformer approach. A Recurrent Neural Network reads one word at a time, keeping a 'hidden state' -- a running memory -- that it updates at each step and passes forward. LSTMs/GRUs are fancier RNNs with gates to remember longer. This genuinely worked and powered translation and speech for years. Set it up fairly before we show the cracks: the sequential hidden-state passing is the key picture.">
     <div class="kicker"><span class="dot"></span> Before transformers &middot; 1 of 2</div>
@@ -331,12 +380,12 @@
           <path d="M810 195 L810 172" stroke="#94a3b8" stroke-width="2" marker-end="url(#r4)"/>
           <text x="500" y="55" text-anchor="middle" font-size="14" font-weight="700" fill="#312e81">reads one word at a time, carrying a running &ldquo;memory&rdquo; forward</text>
         </svg>
-        <figcaption>An <b>RNN/LSTM</b> processes a sentence <b>step by step</b>, updating a hidden state. This powered translation &amp; speech for years &mdash; but it has two deep problems.</figcaption>
+        <figcaption>An <b>RNN/LSTM</b> reads that <b>sequence of vectors</b> step by step, updating a hidden state. This powered translation &amp; speech for years &mdash; but it has two deep problems.</figcaption>
       </figure>
     </div>
   </section>
 
-  <!-- ============ SLIDE 5 — WHERE RNNs BREAK ============ -->
+  <!-- ============ SLIDE 6 — WHERE RNNs BREAK ============ -->
   <section class="slide" data-title="Where RNNs break"
     data-note="The two cracks that motivated the transformer. (1) Long-range memory loss: information from early words fades by the time you reach the end of a long sentence -- the pronoun at the end can't 'reach back' to the noun far away. LSTMs helped but didn't solve it. (2) No parallelism: because step N needs step N-1's hidden state, you must process words strictly in order -- you can't use a modern GPU's thousands of cores to do it all at once, so training is painfully slow and hard to scale. The transformer fixes BOTH at once. That's the whole motivation.">
     <div class="kicker"><span class="dot"></span> Before transformers &middot; 2 of 2</div>
@@ -378,7 +427,7 @@
     </div>
   </section>
 
-  <!-- ============ SLIDE 6 — ATTENTION: THE BIG IDEA ============ -->
+  <!-- ============ SLIDE 7 — ATTENTION: THE BIG IDEA ============ -->
   <section class="slide" data-title="The big idea: attention"
     data-note="The single most important concept of the day. Attention lets the model, when processing one word, look at ALL other words at once and decide how much each one matters for understanding this word -- assigning a weight to each. High weight = 'pay attention to this word'. No more single bottleneck memory; every word has direct access to every other word. The famous 2017 paper that introduced this was literally titled 'Attention Is All You Need'. Land that title.">
     <div class="kicker"><span class="dot"></span> The breakthrough</div>
@@ -394,121 +443,84 @@
     </div>
   </section>
 
-  <!-- ============ SLIDE 7 — SELF-ATTENTION Q/K/V ============ -->
-  <section class="slide" data-title="Self-attention: Q, K, V"
-    data-note="How attention is actually computed, by analogy -- no heavy maths. Every word produces three vectors: a Query (what am I looking for?), a Key (what do I offer?), and a Value (what do I contribute?). To process a word, compare its Query against every word's Key (a dot product) -> similarity scores -> softmax to turn them into weights that sum to 1 -> take a weighted sum of all the Values. Use the library analogy: your Query is your search; each book's Key is its title/spine; the Value is its contents; you read mostly from the best-matching books. 'Self' = the words attend to each other within the same sentence.">
-    <div class="kicker"><span class="dot"></span> Inside attention &middot; the Q/K/V recipe</div>
-    <h2 class="title">Self-attention: Query, Key, Value</h2>
-    <div class="body center">
-      <figure>
-        <svg viewBox="0 0 1000 300" role="img" aria-label="Query compared to Keys gives weights used to blend Values">
-          <defs><marker id="s7" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker></defs>
-          <!-- Query -->
-          <rect x="40" y="120" width="150" height="64" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="2.5"/>
-          <text x="115" y="148" text-anchor="middle" font-size="14" font-weight="700" fill="#92400e">Query (Q)</text>
-          <text x="115" y="168" text-anchor="middle" font-size="11" fill="#5b5f7a">&ldquo;what am I after?&rdquo;</text>
-          <!-- Keys -->
-          <g text-anchor="middle">
-            <rect x="300" y="40" width="150" height="50" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/><text x="375" y="70" font-size="13" font-weight="700" fill="#312e81">Key&#8321; &middot; Value&#8321;</text>
-            <rect x="300" y="128" width="150" height="50" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/><text x="375" y="158" font-size="13" font-weight="700" fill="#312e81">Key&#8322; &middot; Value&#8322;</text>
-            <rect x="300" y="216" width="150" height="50" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/><text x="375" y="246" font-size="13" font-weight="700" fill="#312e81">Key&#8323; &middot; Value&#8323;</text>
-          </g>
-          <!-- compare arrows with scores -->
-          <path d="M190 150 L298 66" stroke="#4f46e5" stroke-width="2" marker-end="url(#s7)"/>
-          <path d="M190 152 L298 152" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#s7)"/>
-          <path d="M190 156 L298 238" stroke="#4f46e5" stroke-width="2" marker-end="url(#s7)"/>
-          <text x="540" y="70" font-size="12.5" fill="#5b5f7a">score 0.1</text>
-          <text x="540" y="158" font-size="13.5" fill="#0e7490" font-weight="700">score 0.7</text>
-          <text x="540" y="246" font-size="12.5" fill="#5b5f7a">score 0.2</text>
-          <text x="375" y="108" text-anchor="middle" font-size="11" fill="#b45309">compare Q&middot;K &rarr; softmax &rarr; weights (sum to 1)</text>
-          <!-- blend -->
-          <path d="M620 152 L700 152" stroke="#f59e0b" stroke-width="2.5" marker-end="url(#s7)"/>
-          <rect x="705" y="116" width="250" height="72" rx="12" fill="#312e81" stroke="#06b6d4" stroke-width="2.5"/>
-          <text x="830" y="146" text-anchor="middle" font-size="14" font-weight="700" fill="#67e8f9">weighted sum of Values</text>
-          <text x="830" y="168" text-anchor="middle" font-size="11.5" fill="#c7cbf0">this word, now context-aware</text>
-        </svg>
-        <figcaption>Like a library search: your <b>Query</b> matches each book&rsquo;s <b>Key</b>; you read most from the best matches&rsquo; <b>Values</b>. &ldquo;Self&rdquo;-attention = words attend to each other in the same sentence.</figcaption>
-      </figure>
-    </div>
-  </section>
-
   <!-- ============ SLIDE 8 — ATTENTION EXAMPLE ============ -->
   <section class="slide" data-title="Attention in action"
-    data-note="Make it concrete with the canonical example. Sentence: 'The animal didn't cross the street because it was tired.' What does 'it' refer to? A human knows 'animal'. Self-attention, when processing 'it', puts a high weight on 'animal' (and low on 'street') -- it resolves the reference by attending to the right word, regardless of distance. Show the heavier line from 'it' to 'animal'. This is the long-range problem from the RNN slide, SOLVED. Note models learn these patterns from data, and we can visualise them (a Module 3 lab does exactly this).">
-    <div class="kicker"><span class="dot"></span> Self-attention &middot; a concrete example</div>
+    data-note="Make it concrete with the canonical example. Sentence: 'The animal didn't cross the street because it was tired.' What does 'it' refer to? A human knows 'animal'. Self-attention, when processing 'it', puts a high weight on 'animal' (and low on 'street') -- it resolves the reference by attending to the right word, regardless of distance. Show the heavier line from 'it' to 'animal'. This is the long-range problem from the RNN slide, SOLVED. Anchor it in everyday experience FIRST -- the class does this instantly when reading, and the cocktail-party effect (locking onto one voice in a noisy room) is the same 'spotlight'. The Q/K/V mechanism (next slide) is just HOW the model pulls it off. Models learn these patterns from data and we can visualise them (a Module 3 lab does exactly this).">
+    <div class="kicker"><span class="dot"></span> Self-attention &middot; a concrete example<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 08&ndash;09</span></div>
     <h2 class="title">&ldquo;it&rdquo; learns to look at &ldquo;animal&rdquo;</h2>
-    <div class="body center">
-      <figure>
-        <svg viewBox="0 0 1000 250" role="img" aria-label="The word it attends most strongly to the word animal across the sentence">
+    <div class="body">
+      <p class="lead">You already do this. Reading &ldquo;&hellip;because <b>it</b> was tired,&rdquo; your mind jumps straight back to <b>animal</b> &mdash; not <b>street</b> &mdash; with zero effort. <b>Self-attention</b> gives a model the same reflex: for every word, glance across the whole sentence and decide which words actually explain it.</p>
+      <figure style="margin-top:4px">
+        <svg viewBox="0 0 1000 230" role="img" aria-label="The word it attends most strongly to the word animal across the sentence">
           <g font-size="16" text-anchor="middle" fill="#1e1f33" font-weight="600">
-            <text x="70" y="150">The</text>
-            <text x="170" y="150" font-weight="800" fill="#312e81">animal</text>
-            <text x="290" y="150">didn&rsquo;t</text>
-            <text x="380" y="150">cross</text>
-            <text x="450" y="150">the</text>
-            <text x="530" y="150">street</text>
-            <text x="640" y="150">because</text>
-            <text x="740" y="150" font-weight="800" fill="#b45309">it</text>
-            <text x="800" y="150">was</text>
-            <text x="880" y="150">tired</text>
+            <text x="70" y="140">The</text>
+            <text x="170" y="140" font-weight="800" fill="#312e81">animal</text>
+            <text x="290" y="140">didn&rsquo;t</text>
+            <text x="380" y="140">cross</text>
+            <text x="450" y="140">the</text>
+            <text x="530" y="140">street</text>
+            <text x="640" y="140">because</text>
+            <text x="740" y="140" font-weight="800" fill="#b45309">it</text>
+            <text x="800" y="140">was</text>
+            <text x="880" y="140">tired</text>
           </g>
           <!-- attention arcs from "it" -->
-          <path d="M735 138 C600 60 300 60 175 136" fill="none" stroke="#06b6d4" stroke-width="5" opacity="0.85"/>
-          <path d="M740 138 C690 90 590 90 535 138" fill="none" stroke="#94a3b8" stroke-width="1.5" opacity="0.6" stroke-dasharray="4 4"/>
-          <text x="430" y="55" text-anchor="middle" font-size="13.5" font-weight="700" fill="#0e7490">strong attention: &ldquo;it&rdquo; &rarr; &ldquo;animal&rdquo;</text>
-          <text x="600" y="120" text-anchor="middle" font-size="11.5" fill="#5b5f7a">weak: &ldquo;it&rdquo; &rarr; &ldquo;street&rdquo;</text>
-          <text x="500" y="210" text-anchor="middle" font-size="13" fill="#1e1f33">distance doesn&rsquo;t matter &mdash; attention links the pronoun to its noun <b>directly</b></text>
+          <path d="M735 128 C600 50 300 50 175 126" fill="none" stroke="#06b6d4" stroke-width="5" opacity="0.85"/>
+          <path d="M740 128 C690 80 590 80 535 128" fill="none" stroke="#94a3b8" stroke-width="1.5" opacity="0.6" stroke-dasharray="4 4"/>
+          <text x="430" y="45" text-anchor="middle" font-size="13.5" font-weight="700" fill="#0e7490">strong attention: &ldquo;it&rdquo; &rarr; &ldquo;animal&rdquo;</text>
+          <text x="600" y="110" text-anchor="middle" font-size="11.5" fill="#5b5f7a">weak: &ldquo;it&rdquo; &rarr; &ldquo;street&rdquo;</text>
+          <text x="500" y="200" text-anchor="middle" font-size="13" fill="#1e1f33">distance doesn&rsquo;t matter &mdash; attention links the pronoun to its noun <tspan font-weight="700">directly</tspan></text>
         </svg>
-        <figcaption>The exact long-range problem that defeated RNNs &mdash; <b>solved</b>. Models learn these links from data, and you can <b>visualise</b> them (you&rsquo;ll do this in a Module 3 lab).</figcaption>
+        <figcaption>The exact long-range problem that defeated RNNs &mdash; <b>solved</b>. Models learn these links from data, and you&rsquo;ll <b>visualise</b> them in a Module 3 lab.</figcaption>
       </figure>
+      <p class="callout warn" style="margin-top:10px">&#128161; <b>Everyday parallel &mdash; the cocktail-party effect:</b> in a loud room you lock onto the one voice that matters and let the rest fade to a murmur. Attention is that <b>spotlight</b> inside a sentence &mdash; for each word it turns up the few words that are relevant and turns the others down.</p>
     </div>
   </section>
 
-  <!-- ============ SLIDE 9 — TOKENS & EMBEDDINGS ============ -->
-  <section class="slide" data-title="Tokens &amp; embeddings"
-    data-note="Step back to inputs: how does text become numbers a network can process? Two steps. (1) Tokenization: split text into tokens -- often sub-word pieces, not whole words ('tokenization' -> 'token' + 'ization'). Each token maps to an integer id. (2) Embedding: each id becomes a vector of numbers (e.g. 768 dims) that captures meaning -- similar words get similar vectors, so 'king' and 'queen' land near each other. These embeddings are learned. This is the bridge from language to the maths of Day 1. Labs: they'll tokenize with a real tokenizer and measure embedding similarity.">
-    <div class="kicker"><span class="dot"></span> From text to numbers &middot; 1 of 2</div>
-    <h2 class="title">Tokens &amp; embeddings &mdash; turning words into vectors</h2>
-    <div class="body center">
-      <figure>
-        <svg viewBox="0 0 1000 270" role="img" aria-label="Text split into tokens, mapped to ids, then to embedding vectors">
-          <defs><marker id="e9" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker></defs>
-          <!-- text -->
-          <rect x="40" y="40" width="200" height="46" rx="10" fill="#fff" stroke="#4f46e5" stroke-width="2"/>
-          <text x="140" y="69" text-anchor="middle" font-size="14" fill="#1e1f33" font-weight="700">&ldquo;Transformers rock&rdquo;</text>
-          <path d="M140 86 L140 116" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#e9)"/>
-          <!-- tokens -->
-          <g text-anchor="middle" font-size="12.5" font-weight="700">
-            <rect x="30" y="120" width="90" height="40" rx="8" fill="#eef2ff" stroke="#4f46e5"/><text x="75" y="145" fill="#312e81">Transform</text>
-            <rect x="125" y="120" width="55" height="40" rx="8" fill="#eef2ff" stroke="#4f46e5"/><text x="152" y="145" fill="#312e81">ers</text>
-            <rect x="185" y="120" width="70" height="40" rx="8" fill="#eef2ff" stroke="#4f46e5"/><text x="220" y="145" fill="#312e81">rock</text>
+  <!-- ============ SLIDE 9 — SELF-ATTENTION Q/K/V ============ -->
+  <section class="slide" data-title="Self-attention: Q, K, V"
+    data-note="NOW the machinery -- how the spotlight from the last slide is actually computed, by analogy, no heavy maths. Every word turns its embedding into three vectors: a Query (what am I looking for?), a Key (what do I offer?), and a Value (what do I contribute?). To process a word, compare its Query against every word's Key (a dot product) -> similarity scores -> softmax to turn them into weights that sum to 1 -> take a weighted sum of all the Values. Use a search analogy they know cold: typing into a video site -- your Query is the search box, each video's Key is its title/tags, the Value is the video you watch; attention does this SOFTLY, blending a weighted mix instead of returning one result. 'Self' = the words attend to each other within the same sentence.">
+    <div class="kicker"><span class="dot"></span> Inside attention &middot; the Q/K/V recipe<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 03</span></div>
+    <h2 class="title">Self-attention: Query, Key, Value</h2>
+    <div class="body">
+      <p class="lead">So <i>how</i> does a word decide what to look at? Under the hood, each word runs a tiny <b>search</b> against every other word &mdash; using three roles you meet every time you look something up.</p>
+      <figure style="margin-top:2px">
+        <svg viewBox="0 0 1000 285" style="max-height:34vh" role="img" aria-label="Query compared to Keys gives weights used to blend Values">
+          <defs><marker id="s7" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#4f46e5"/></marker></defs>
+          <!-- Query -->
+          <rect x="40" y="110" width="150" height="64" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="2.5"/>
+          <text x="115" y="138" text-anchor="middle" font-size="14" font-weight="700" fill="#92400e">Query (Q)</text>
+          <text x="115" y="158" text-anchor="middle" font-size="11" fill="#5b5f7a">&ldquo;what am I after?&rdquo;</text>
+          <!-- Keys -->
+          <g text-anchor="middle">
+            <rect x="300" y="30" width="150" height="50" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/><text x="375" y="60" font-size="13" font-weight="700" fill="#312e81">Key&#8321; &middot; Value&#8321;</text>
+            <rect x="300" y="118" width="150" height="50" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/><text x="375" y="148" font-size="13" font-weight="700" fill="#312e81">Key&#8322; &middot; Value&#8322;</text>
+            <rect x="300" y="206" width="150" height="50" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/><text x="375" y="236" font-size="13" font-weight="700" fill="#312e81">Key&#8323; &middot; Value&#8323;</text>
           </g>
-          <text x="140" y="182" text-anchor="middle" font-size="11" fill="#5b5f7a">tokens (sub-word pieces)</text>
-          <path d="M270 140 L360 140" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#e9)"/>
-          <!-- ids -->
-          <g text-anchor="middle" font-size="13" font-weight="700">
-            <rect x="375" y="120" width="70" height="40" rx="8" fill="#fffbeb" stroke="#f59e0b"/><text x="410" y="145" fill="#92400e">19134</text>
-            <rect x="450" y="120" width="55" height="40" rx="8" fill="#fffbeb" stroke="#f59e0b"/><text x="477" y="145" fill="#92400e">409</text>
-            <rect x="510" y="120" width="60" height="40" rx="8" fill="#fffbeb" stroke="#f59e0b"/><text x="540" y="145" fill="#92400e">3138</text>
-          </g>
-          <text x="470" y="182" text-anchor="middle" font-size="11" fill="#5b5f7a">integer ids (a lookup)</text>
-          <path d="M585 140 L675 140" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#e9)"/>
-          <!-- embeddings -->
-          <rect x="690" y="95" width="280" height="92" rx="12" fill="#312e81" stroke="#06b6d4" stroke-width="2.5"/>
-          <text x="830" y="124" text-anchor="middle" font-size="14" font-weight="700" fill="#67e8f9">embedding vectors</text>
-          <text x="830" y="148" text-anchor="middle" font-size="12" fill="#c7cbf0" class="mono">[0.21, -0.08, 0.74, ... ]</text>
-          <text x="830" y="170" text-anchor="middle" font-size="11" fill="#a5b4fc">meaning as numbers &mdash; similar words, similar vectors</text>
-          <text x="500" y="232" text-anchor="middle" font-size="13" fill="#1e1f33">&ldquo;king&rdquo; and &ldquo;queen&rdquo; land near each other; &ldquo;king&rdquo;&minus;&ldquo;man&rdquo;+&ldquo;woman&rdquo; &asymp; &ldquo;queen&rdquo; &mdash; geometry of meaning</text>
+          <!-- compare arrows with scores -->
+          <path d="M190 140 L298 56" stroke="#4f46e5" stroke-width="2" marker-end="url(#s7)"/>
+          <path d="M190 142 L298 142" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#s7)"/>
+          <path d="M190 146 L298 228" stroke="#4f46e5" stroke-width="2" marker-end="url(#s7)"/>
+          <text x="540" y="60" font-size="12.5" fill="#5b5f7a">score 0.1</text>
+          <text x="540" y="148" font-size="13.5" fill="#0e7490" font-weight="700">score 0.7</text>
+          <text x="540" y="236" font-size="12.5" fill="#5b5f7a">score 0.2</text>
+          <text x="375" y="98" text-anchor="middle" font-size="11" fill="#b45309">compare Q&middot;K &rarr; softmax &rarr; weights (sum to 1)</text>
+          <!-- blend -->
+          <path d="M620 142 L700 142" stroke="#f59e0b" stroke-width="2.5" marker-end="url(#s7)"/>
+          <rect x="705" y="106" width="250" height="72" rx="12" fill="#312e81" stroke="#06b6d4" stroke-width="2.5"/>
+          <text x="830" y="136" text-anchor="middle" font-size="14" font-weight="700" fill="#67e8f9">weighted sum of Values</text>
+          <text x="830" y="158" text-anchor="middle" font-size="11.5" fill="#c7cbf0">this word, now context-aware</text>
         </svg>
-        <figcaption>Text &rarr; <b>tokens</b> &rarr; <b>ids</b> &rarr; <b>embeddings</b> (learned vectors). This is the bridge from language to the numeric world of Day 1 &mdash; and what your labs start with.</figcaption>
+        <figcaption>Each word derives a <b>Query</b>, <b>Key</b> &amp; <b>Value</b> from its embedding &mdash; and does this against every other word in the sentence.</figcaption>
       </figure>
+      <p class="callout warn" style="margin-top:8px">&#128269; <b>Everyday parallel &mdash; searching a video site:</b> your <b>Query</b> is what you type; each video&rsquo;s <b>Key</b> is its title &amp; tags (how it advertises itself); the <b>Value</b> is the video you actually watch. Attention just does it <b>softly</b> &mdash; instead of one result, it blends a weighted mix of every Value.</p>
     </div>
   </section>
 
   <!-- ============ SLIDE 10 — POSITIONAL ENCODING ============ -->
   <section class="slide" data-title="Positional encoding"
     data-note="A subtle but crucial point. Because attention looks at all words at once (a SET), it has no built-in sense of order -- 'dog bites man' and 'man bites dog' would look identical to raw attention. So transformers ADD a 'positional encoding' to each token's embedding -- a signal that encodes 'I am word #1, #2, #3...'. Now order is baked into the numbers. Keep it light: the point is just 'attention is order-blind, so we inject position'. Modern variants use rotary/relative positions but the idea is the same.">
-    <div class="kicker"><span class="dot"></span> From text to numbers &middot; 2 of 2</div>
+    <div class="kicker"><span class="dot"></span> Attention is order-blind &middot; put order back<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 04</span></div>
     <h2 class="title">Positional encoding &mdash; putting order back in</h2>
     <div class="body">
       <p class="lead">Attention sees the words as a <b>set</b>, with no inherent order. So we <b>add a position signal</b> to each token&rsquo;s embedding &mdash; now the model knows word 1 from word 5, and &ldquo;dog bites man&rdquo; differs from &ldquo;man bites dog.&rdquo;</p>
@@ -535,7 +547,7 @@
   <!-- ============ SLIDE 11 — THE TRANSFORMER BLOCK ============ -->
   <section class="slide" data-title="The transformer block"
     data-note="Assemble the architecture. A transformer is a STACK of identical blocks. Each block has two main parts: (1) multi-head self-attention -- 'multi-head' means several attention computations run in parallel, each learning a different kind of relationship (one head tracks grammar, another tracks references, etc.), then they're combined; (2) a small feed-forward network (a Day-1 style MLP) applied to each position. Around each part: residual connections + layer-norm (helpers that make deep stacks trainable). Stack 12, 24, 96 of these and you have BERT/GPT. Don't over-explain the helpers; the headline is attention + feed-forward, repeated.">
-    <div class="kicker"><span class="dot"></span> Assembling the architecture</div>
+    <div class="kicker"><span class="dot"></span> Assembling the architecture<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 12 (capstone)</span></div>
     <h2 class="title">The transformer block &mdash; attention + feed-forward, stacked</h2>
     <div class="body center">
       <figure>
@@ -596,7 +608,7 @@
   <!-- ============ SLIDE 13 — ENCODER VS DECODER ============ -->
   <section class="slide" data-title="Encoder vs decoder"
     data-note="The practical split they'll meet in the labs and on Day 2's hands-on. The original transformer had an encoder (reads/understands a whole input, sees all words both directions) and a decoder (generates text left-to-right, each word seeing only the words before it). Two families grew from this: ENCODER-only = BERT -> great at UNDERSTANDING tasks (classification, sentiment, search) -- this is the BERT fine-tuning lab. DECODER-only = GPT -> great at GENERATING text -- this is the GPT text-generation lab. One sentence each; tie each to its lab.">
-    <div class="kicker"><span class="dot"></span> The family split &middot; BERT vs GPT</div>
+    <div class="kicker"><span class="dot"></span> The family split &middot; BERT vs GPT<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 05 &amp; 10</span></div>
     <h2 class="title">Encoder vs decoder &mdash; understanding vs generating</h2>
     <div class="body">
       <div class="grid2">
@@ -643,7 +655,7 @@
   <!-- ============ SLIDE 15 — CODE PEEK ============ -->
   <section class="slide" data-title="A transformer in a few lines"
     data-note="The payoff: you don't build a transformer from scratch -- you load one. Show how little code it takes with Hugging Face. Left: a decoder (GPT-style) generating text in 3 lines via a pipeline. Right: an encoder (BERT-style) classifying sentiment in 3 lines. Point out: the pipeline hides tokenization + the model + decoding. This is exactly what the labs do -- on small, free, local models so no API key is needed (the OpenAI GPT API is the same idea, just a paid hosted decoder). Reassure: runnable on a laptop CPU.">
-    <div class="kicker"><span class="dot"></span> You load one &mdash; you don&rsquo;t build it</div>
+    <div class="kicker"><span class="dot"></span> You load one &mdash; you don&rsquo;t build it<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 11</span></div>
     <h2 class="title">A transformer in a few lines (Hugging Face)</h2>
     <div class="body">
       <div class="grid2">
@@ -674,7 +686,7 @@ clf(<span class="str">"This workshop is fantastic!"</span>)
 
   <!-- ============ SLIDE 16 — CONNECT TO LABS ============ -->
   <section class="slide" data-title="This connects to your labs"
-    data-note="Hand off to the keyboards. Module 3's 12 labs let them touch every idea from this deck: tokenization with a real tokenizer, word embeddings and cosine similarity, self-attention coded by hand in NumPy (Q.Kt -> softmax -> V), positional encoding, visualising an attention matrix, and finally generating text with a small local transformer. Encourage: the attention-by-hand lab is the 'aha' -- you'll implement the exact recipe from slide 7. Then Module 4 this afternoon goes to pre-trained models and fine-tuning BERT.">
+    data-note="Hand off to the keyboards. Module 3's 12 labs let them touch every idea from this deck: tokenization with a real tokenizer, word embeddings and cosine similarity, self-attention coded by hand in NumPy (Q.Kt -> softmax -> V), positional encoding, visualising an attention matrix, and finally generating text with a small local transformer. Encourage: the attention-by-hand lab is the 'aha' -- you'll implement the exact recipe from slide 9. Then Module 4 this afternoon goes to pre-trained models and fine-tuning BERT.">
     <div class="kicker"><span class="dot"></span> From slides to keyboards</div>
     <h2 class="title">Now build it &mdash; Module 3 labs</h2>
     <div class="body">
@@ -696,7 +708,7 @@ clf(<span class="str">"This workshop is fantastic!"</span>)
           </ul>
         </div>
       </div>
-      <p class="callout warn" style="margin-top:16px">&#128218; Open <b><a href="../hands-on/module-3/index.html">Module 3&rsquo;s 12 hands-on labs</a></b> &mdash; 6 beginner, 3 intermediate, 3 advanced. The <b>attention-by-hand</b> lab implements the exact recipe from slide 7.</p>
+      <p class="callout warn" style="margin-top:16px">&#128218; Open <b><a href="../hands-on/module-3/index.html">Module 3&rsquo;s 12 hands-on labs</a></b> &mdash; 6 beginner, 3 intermediate, 3 advanced. The <b>attention-by-hand</b> lab implements the exact recipe from slide 9.</p>
     </div>
   </section>
 
@@ -1113,7 +1125,7 @@ clf(<span class="str">"This workshop is fantastic!"</span>)
 <div class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Day 2 · Module 3 — Why Transformers?</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.3</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.4</span>
 </div>
 
 <script>
