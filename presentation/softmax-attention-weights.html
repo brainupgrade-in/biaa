@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>softmax &mdash; from scores to attention weights</title>
+<style>
+  :root{
+    --bg:#f5f4fb; --panel:#ffffff; --panel2:#f0eefb; --edge:#dcd9ef;
+    --ink:#1c1740; --ink-dim:#4b4680; --muted:#8b86b8;
+    --cyan:#0891b2; --indigo:#4f46e5; --amber:#b45309; --amber-hi:#f59e0b;
+    --good:#059669; --bad:#e11d48; --track:#e7e4f4;
+    --shadow:0 10px 40px rgba(43,37,90,.10);
+    --mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0c0a1e; --panel:#16123a; --panel2:#1d1747; --edge:#2f2a62;
+      --ink:#eceafb; --ink-dim:#aca6d6; --muted:#736ea6;
+      --cyan:#22d3ee; --indigo:#8b83ff; --amber:#f59e0b; --amber-hi:#fbbf24;
+      --good:#34d399; --bad:#fb7185; --track:#221c50;
+      --shadow:0 16px 50px rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f5f4fb; --panel:#ffffff; --panel2:#f0eefb; --edge:#dcd9ef;
+    --ink:#1c1740; --ink-dim:#4b4680; --muted:#8b86b8;
+    --cyan:#0891b2; --indigo:#4f46e5; --amber:#b45309; --amber-hi:#f59e0b;
+    --good:#059669; --bad:#e11d48; --track:#e7e4f4; --shadow:0 10px 40px rgba(43,37,90,.10);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0c0a1e; --panel:#16123a; --panel2:#1d1747; --edge:#2f2a62;
+    --ink:#eceafb; --ink-dim:#aca6d6; --muted:#736ea6;
+    --cyan:#22d3ee; --indigo:#8b83ff; --amber:#f59e0b; --amber-hi:#fbbf24;
+    --good:#34d399; --bad:#fb7185; --track:#221c50; --shadow:0 16px 50px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:
+      radial-gradient(1200px 600px at 15% -10%, color-mix(in srgb,var(--indigo) 14%, transparent), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, color-mix(in srgb,var(--cyan) 12%, transparent), transparent 55%),
+      var(--bg);
+    color:var(--ink); font-family:var(--sans); line-height:1.55;
+    -webkit-font-smoothing:antialiased; padding:clamp(16px,4vw,44px);}
+  .wrap{max-width:1000px;margin:0 auto}
+
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--cyan);font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan)}
+  h1{font-family:var(--mono);font-weight:700;letter-spacing:-.01em;line-height:1.05;
+    font-size:clamp(27px,5vw,46px);margin:.35em 0 .18em;text-wrap:balance}
+  h1 .fn{color:var(--amber-hi)}
+  .sub{color:var(--ink-dim);font-size:clamp(15px,1.6vw,18px);max-width:66ch;margin:0}
+  .sub code,.sub b{font-family:var(--mono);color:var(--ink)}
+
+  .meta{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0 4px}
+  .chip{font-family:var(--mono);font-size:12.5px;padding:6px 12px;border-radius:999px;
+    border:1px solid var(--edge);background:var(--panel);color:var(--ink-dim);display:inline-flex;gap:7px;align-items:center}
+  .chip b{color:var(--ink);font-weight:600}
+  .chip .k{color:var(--cyan)}
+
+  .console{margin-top:24px;background:var(--panel);border:1px solid var(--edge);
+    border-radius:20px;box-shadow:var(--shadow);overflow:hidden}
+  .bar{display:flex;align-items:center;gap:14px 20px;flex-wrap:wrap;padding:16px 20px;
+    border-bottom:1px solid var(--edge);background:var(--panel2)}
+  .bar .lbl{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .presets{display:flex;gap:7px;flex-wrap:wrap}
+  .btn{font-family:var(--mono);font-size:12.5px;font-weight:600;padding:8px 13px;border-radius:9px;
+    border:1px solid var(--edge);background:var(--panel);color:var(--ink);cursor:pointer;
+    display:inline-flex;align-items:center;gap:7px;transition:background .12s,border-color .12s,transform .1s}
+  .btn:hover{border-color:var(--cyan)} .btn:active{transform:translateY(1px)}
+  .btn.primary{background:var(--cyan);border-color:var(--cyan);color:#04121a}
+  .spacer{flex:1 1 auto}
+
+  /* ---- controls: score sliders + temperature ---- */
+  .controls{padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:14px 32px}
+  @media (max-width:720px){.controls{grid-template-columns:1fr}}
+  .slider{display:grid;grid-template-columns:52px 1fr 54px;align-items:center;gap:12px}
+  .slider .name{font-family:var(--mono);font-weight:700;font-size:14px;color:var(--ink)}
+  .slider .val{font-family:var(--mono);font-size:13px;color:var(--cyan);text-align:right;font-variant-numeric:tabular-nums}
+  input[type=range]{-webkit-appearance:none;appearance:none;height:6px;border-radius:5px;background:var(--track);outline:none;width:100%}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+    background:var(--indigo);cursor:pointer;border:2px solid var(--panel);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--indigo);
+    cursor:pointer;border:2px solid var(--panel)}
+  .tctrl{grid-column:1 / -1;border-top:1px dashed var(--edge);padding-top:14px;margin-top:2px}
+  .tctrl .slider{grid-template-columns:auto 1fr 120px}
+  .tctrl .name{font-size:13px}
+  .tctrl .val{color:var(--amber-hi);text-align:right}
+
+  /* ---- the three-stage visualization ---- */
+  .viz{padding:8px 20px 22px}
+  .head{display:grid;grid-template-columns:56px 1fr 1fr 1.15fr;gap:10px 16px;
+    font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+    padding:0 0 8px;align-items:end}
+  .head b{color:var(--cyan);font-weight:600;text-transform:none;font-size:12.5px;letter-spacing:0}
+  .head .op{color:var(--amber-hi);font-family:var(--mono);font-size:12px}
+  .smrow{display:grid;grid-template-columns:56px 1fr 1fr 1.15fr;gap:10px 16px;align-items:center;padding:7px 0;
+    border-top:1px solid var(--edge)}
+  .smrow .wlabel{font-family:var(--mono);font-weight:700;font-size:15px;color:var(--ink-dim)}
+  .cell{display:flex;align-items:center;gap:9px}
+  .cell .v{font-family:var(--mono);font-size:12.5px;color:var(--muted);min-width:42px;text-align:right;
+    font-variant-numeric:tabular-nums}
+  /* raw score bar: diverging from a centre zero line */
+  .ztrack{position:relative;flex:1;height:18px;background:var(--track);border-radius:6px;overflow:hidden}
+  .zzero{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--muted);opacity:.5}
+  .zfill{position:absolute;top:0;bottom:0;border-radius:4px;transition:left .35s cubic-bezier(.5,.1,.2,1),width .35s cubic-bezier(.5,.1,.2,1),background .2s}
+  /* positive-only bars (exp, softmax) */
+  .track{position:relative;flex:1;height:18px;background:var(--track);border-radius:6px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:6px;
+    transition:width .45s cubic-bezier(.5,.1,.2,1),background .2s}
+  .efill{background:var(--indigo);opacity:.8}
+  .pfill{background:var(--cyan)}
+  .smrow.win .wlabel{color:var(--amber-hi)}
+  .smrow.win .pfill{background:var(--amber-hi)}
+  .smrow.win .cell .v.pv{color:var(--amber-hi);font-weight:700}
+  .sumrow{display:grid;grid-template-columns:56px 1fr 1fr 1.15fr;gap:10px 16px;padding:10px 0 2px;border-top:2px solid var(--edge)}
+  .sumrow .s{grid-column:4;font-family:var(--mono);font-size:13px;color:var(--good);text-align:left;font-weight:600}
+
+  .eqbar{padding:15px 20px;border-top:1px solid var(--edge);background:var(--panel2);
+    font-family:var(--mono);font-size:15px;color:var(--ink-dim);display:flex;gap:14px;flex-wrap:wrap;
+    align-items:center;justify-content:center}
+  .eqbar b{color:var(--cyan);font-weight:600} .eqbar i{color:var(--amber-hi);font-style:normal}
+
+  .legend{margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px}
+  .lcard{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:15px 17px}
+  .lcard h3{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--cyan);margin:0 0 7px}
+  .lcard p{margin:0;font-size:13.5px;color:var(--ink-dim)}
+  .lcard code{font-family:var(--mono);background:var(--panel2);padding:.05em .35em;border-radius:4px;color:var(--ink);font-size:.9em}
+  .lcard a{color:var(--cyan);font-weight:600;text-decoration:none}
+  .lcard a:hover{text-decoration:underline}
+
+  footer{margin-top:30px;padding-top:18px;border-top:1px solid var(--edge);
+    display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);font-family:var(--mono)}
+  footer a{color:var(--cyan);text-decoration:none} footer a:hover{text-decoration:underline}
+
+  .homelink{position:fixed;top:14px;right:16px;z-index:30;font-family:var(--mono);font-size:12px;
+    padding:7px 13px;border-radius:999px;border:1px solid var(--edge);background:var(--panel);
+    color:var(--ink-dim);text-decoration:none;box-shadow:var(--shadow)}
+  .homelink:hover{border-color:var(--cyan);color:var(--ink)}
+  @media print{.homelink{display:none}}
+  @media (max-width:760px){.homelink{position:static;display:inline-flex;margin:0 0 12px}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<a class="homelink" href="../course-outline-building-intelligent-ai-agents.html" title="Back to course outline">&#8962; Course outline</a>
+  <div class="wrap">
+  <div class="eyebrow"><span class="dot"></span> Module 3 &middot; Lab 3.3 &middot; the heart of attention</div>
+  <h1><span class="fn">softmax</span>(z) &mdash; turning scores into weights</h1>
+  <p class="sub">Attention scores each word, then <b>softmax</b> turns those raw scores into <b>weights that sum to 1</b>.
+    Drag the scores and the <b>temperature</b> below and watch the two steps happen live &mdash;
+    <b>exponentiate</b>, then <b>normalise</b>. The defaults reproduce <code>cat</code>&rsquo;s attention row from Lab&nbsp;3.3.</p>
+
+  <div class="meta">
+    <span class="chip"><span class="k">formula</span> <b>e^(z&#7522;/T) &divide; &Sigma; e^(z&#11002;/T)</b></span>
+    <span class="chip"><span class="k">always</span> <b>&gt; 0</b></span>
+    <span class="chip"><span class="k">&Sigma; weights</span> <b>= 1</b></span>
+    <span class="chip"><span class="k">in attention</span> <b>T = &radic;d</b></span>
+  </div>
+
+  <div class="console">
+    <div class="bar">
+      <span class="lbl">Presets</span>
+      <div class="presets" id="presets">
+        <button class="btn primary" data-p="lab">Lab 3.3 &mdash; cat&rsquo;s row</button>
+        <button class="btn" data-p="winner">Clear winner</button>
+        <button class="btn" data-p="tie">Near tie</button>
+        <button class="btn" data-p="neg">With negatives</button>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn" id="reset">&#8635; Reset</button>
+    </div>
+
+    <div class="controls" id="controls"><!-- score sliders injected --></div>
+
+    <div class="viz">
+      <div class="head">
+        <div></div>
+        <div>1 &middot; raw score <b>z</b></div>
+        <div><span class="op">e^( )&nbsp;&rarr;</span> 2 &middot; <b>e^(z/T)</b></div>
+        <div><span class="op">&divide;&Sigma;&nbsp;&rarr;</span> 3 &middot; <b>softmax</b> (weight)</div>
+      </div>
+      <div id="rows"><!-- rows injected --></div>
+      <div class="sumrow"><div class="s" id="sum">&Sigma; = 1.000</div></div>
+    </div>
+
+    <div class="eqbar">
+      <span>softmax(z<i>&#7522;</i>) =</span>
+      <span><b>e^(z<i>&#7522;</i>/T)</b> &divide; <b>&Sigma;<sub>j</sub> e^(z<i>j</i>/T)</b></span>
+      <span style="color:var(--muted)">&mdash; the exact line you wrote in Lab 3.3</span>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="lcard"><h3>&#9312; Exponentiate</h3><p><code>e^(z/T)</code> makes every score <b>positive</b> and blows up the gaps &mdash; a small lead in <code>z</code> becomes a big lead after <code>exp</code>.</p></div>
+    <div class="lcard"><h3>&#9313; Normalise</h3><p>Divide by the total so the weights <b>sum to 1</b>. That is what makes them a <b>probability distribution</b> &mdash; a weighted average you can trust.</p></div>
+    <div class="lcard"><h3>&#127777;&#65039; Temperature T</h3><p>Low <code>T</code> &rarr; <b>sharpen</b> (winner-take-all); high <code>T</code> &rarr; <b>flatten</b> (near-uniform). Attention&rsquo;s <code>/&radic;d</code> scaling <b>is</b> a temperature.</p></div>
+    <div class="lcard"><h3>&#128273; This <i>is</i> attention</h3><p>These weights are exactly <code>attention</code>&rsquo;s middle step. See it in <a href="day2-module3-why-transformers.html#9">deck slide&nbsp;9</a> and build it in <a href="../hands-on/module-3/lab-03-attention-by-hand.ipynb">Lab&nbsp;3.3</a>.</p></div>
+  </div>
+
+  <footer>
+    <span>&copy; 2026 Gheware DevOps &amp; Agentic AI &middot; Building Intelligent AI Agents</span>
+    <span><a href="day2-module3-why-transformers.html">Module 3 slides</a> &middot; <a href="../hands-on/module-3/index.html">Module 3 labs</a> &middot; <a href="https://devops.gheware.com">devops.gheware.com</a></span>
+  </footer>
+  </div>
+
+<script>
+(function(){
+  var WORDS = ["cat","and","dog","ran"];
+  var PRESETS = {
+    lab:    {z:[1.0, 0.0, 0.9, 0.0], T:1.41},   // reproduces Lab 3.3's cat row
+    winner: {z:[3.0, 0.2, 0.6, 0.1], T:1.0},
+    tie:    {z:[1.0, 0.9, 1.1, 0.95], T:1.0},
+    neg:    {z:[1.5, -2.0, 0.5, -1.0], T:1.0}
+  };
+  var state = {z: PRESETS.lab.z.slice(), T: PRESETS.lab.T};
+
+  var controls = document.getElementById("controls");
+  var rowsEl   = document.getElementById("rows");
+  var sumEl    = document.getElementById("sum");
+
+  // build score sliders
+  var sliders = [];
+  WORDS.forEach(function(w,i){
+    var d = document.createElement("div");
+    d.className = "slider";
+    d.innerHTML = '<span class="name">'+w+'</span>'+
+      '<input type="range" min="-3" max="6" step="0.1" aria-label="score for '+w+'">'+
+      '<span class="val"></span>';
+    var inp = d.querySelector("input"), val = d.querySelector(".val");
+    inp.addEventListener("input", function(){ state.z[i] = parseFloat(inp.value); render(); });
+    controls.appendChild(d);
+    sliders.push({inp:inp, val:val});
+  });
+  // temperature slider
+  var tc = document.createElement("div");
+  tc.className = "tctrl";
+  tc.innerHTML = '<div class="slider"><span class="name">Temperature&nbsp;T</span>'+
+    '<input type="range" min="0.2" max="4" step="0.01" aria-label="temperature">'+
+    '<span class="val"></span></div>';
+  controls.appendChild(tc);
+  var tInp = tc.querySelector("input"), tVal = tc.querySelector(".val");
+  tInp.addEventListener("input", function(){ state.T = parseFloat(tInp.value); render(); });
+
+  // build viz rows
+  var rowEls = [];
+  WORDS.forEach(function(w){
+    var r = document.createElement("div");
+    r.className = "smrow";
+    r.innerHTML =
+      '<div class="wlabel">'+w+'</div>'+
+      '<div class="cell"><div class="ztrack"><div class="zzero"></div><div class="zfill"></div></div><span class="v zv"></span></div>'+
+      '<div class="cell"><div class="track"><div class="fill efill"></div></div><span class="v ev"></span></div>'+
+      '<div class="cell"><div class="track"><div class="fill pfill"></div></div><span class="v pv"></span></div>';
+    rowsEl.appendChild(r);
+    rowEls.push({
+      row:r,
+      zfill:r.querySelector(".zfill"), zv:r.querySelector(".zv"),
+      efill:r.querySelector(".efill"), ev:r.querySelector(".ev"),
+      pfill:r.querySelector(".pfill"), pv:r.querySelector(".pv")
+    });
+  });
+
+  function render(){
+    var z = state.z, T = state.T;
+    var e = z.map(function(v){ return Math.exp(v/T); });
+    var S = e.reduce(function(a,b){ return a+b; }, 0);
+    var p = e.map(function(v){ return v/S; });
+    var maxAbsZ = Math.max(1, Math.max.apply(null, z.map(Math.abs)));
+    var maxE = Math.max.apply(null, e);
+    var maxP = Math.max.apply(null, p);
+    var winner = p.indexOf(maxP);
+
+    // sync slider labels/positions (handles preset changes too)
+    sliders.forEach(function(s,i){ s.inp.value = z[i]; s.val.textContent = z[i].toFixed(1); });
+    tInp.value = T; tVal.textContent = "T = " + T.toFixed(2);
+
+    rowEls.forEach(function(el,i){
+      // diverging raw-score bar from the centre
+      var half = 50 * Math.abs(z[i]) / maxAbsZ;   // percent of full width, per side
+      if (z[i] >= 0){ el.zfill.style.left = "50%"; el.zfill.style.width = half + "%"; el.zfill.style.background = "var(--cyan)"; }
+      else          { el.zfill.style.left = (50 - half) + "%"; el.zfill.style.width = half + "%"; el.zfill.style.background = "var(--bad)"; }
+      el.zv.textContent = z[i].toFixed(2);
+      // exp bar (relative to the biggest exp)
+      el.efill.style.width = (100 * e[i] / maxE) + "%";
+      el.ev.textContent = e[i].toFixed(2);
+      // softmax weight bar (0..100% of the row = the actual probability)
+      el.pfill.style.width = (p[i] * 100) + "%";
+      el.pv.textContent = Math.round(p[i]*100) + "%";
+      el.pv.classList.add("pv");
+      el.row.classList.toggle("win", i === winner);
+    });
+
+    var psum = p.reduce(function(a,b){ return a+b; }, 0);
+    sumEl.textContent = "Σ weights = " + psum.toFixed(3);
+  }
+
+  document.getElementById("presets").addEventListener("click", function(ev){
+    var b = ev.target.closest("button[data-p]"); if(!b) return;
+    var pr = PRESETS[b.getAttribute("data-p")];
+    state.z = pr.z.slice(); state.T = pr.T; render();
+  });
+  document.getElementById("reset").addEventListener("click", function(){
+    state.z = PRESETS.lab.z.slice(); state.T = PRESETS.lab.T; render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

@@ -284,7 +284,9 @@ def _l3(sol):
 `attention(Q, K, V) = softmax( Q . Kt / sqrt(d) ) . V`.
 The `softmax` turns similarity scores into weights that sum to 1; the scaling by `sqrt(d)` keeps them
 stable. This is the exact maths a real model runs &mdash; here we compute it by hand so the mechanism
-is unambiguous (Lab 3.9 pulls the same weights out of a real model).'''),
+is unambiguous (Lab 3.9 pulls the same weights out of a real model).
+
+> **See it live (interactive):** [softmax &mdash; from scores to attention weights](../../presentation/softmax-attention-weights.html) &mdash; drag the raw scores and the temperature and watch `exp` &rarr; `normalise` happen. Its defaults reproduce **cat**'s attention row from this lab (the `/sqrt(d)` scaling is the temperature).'''),
       buildmd("Implement `softmax` and `attention`."),
       code(render([
         "import numpy as np",
