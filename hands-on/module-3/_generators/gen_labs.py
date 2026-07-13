@@ -312,17 +312,73 @@ print("softmax([2,1,0]) =", np.round(softmax(np.array([2.0, 1.0, 0.0])), 3), "(s
       noticemd('''- The output is (almost) the identity: query 1 pulls value 1, query 2 pulls value 2 &mdash; each **strong query attended to its matching key**.
 - Softmax weights are a **probability distribution** &mdash; they sum to 1, so attention is a weighted average of the values.
 - Drop the `/ sqrt(d)` scaling and, for large `d`, the softmax saturates (one weight ~1, the rest ~0) &mdash; that is the vanishing-gradient problem the scaling fixes.'''),
-      yourturn('''Make the two queries **similar** instead of orthogonal (e.g. `[[5,5],[5,5]]`) &mdash; what
-happens to the attention weights and the output? Then grow `d` and add the scaling back and forth to
-feel its effect. A "good" answer: you can predict the output shape and roughly where the weight mass
-lands before you run it.'''),
+      runmd("Identity matrices proved the maths. Now run the **same** `attention` on a **real sentence** &mdash; four words, each given a hand-made 2-D meaning-vector (axis&nbsp;0&nbsp;=&nbsp;`animal`-ness, axis&nbsp;1&nbsp;=&nbsp;`action`-ness). Watch which words attend to which &mdash; this is slide 8's &ldquo;it&nbsp;&rarr;&nbsp;animal&rdquo;, computed."),
+      code(guard('''import numpy as np
+# A tiny sentence -- each word gets a hand-made 2-D "meaning" vector.
+words = ["cat", "and", "dog", "ran"]
+E = np.array([[1.0, 0.0],    # cat  -> animal
+              [0.0, 0.0],    # and  -> neutral (no direction)
+              [0.9, 0.0],    # dog  -> animal
+              [0.0, 1.0]])   # ran  -> action
+
+# Self-attention: every word is its OWN Query, Key and Value.
+W = softmax(E @ E.T / np.sqrt(2), axis=-1)   # row i = how much word i attends to each word
+
+print("attention weights  (each row sums to 1):")
+print("       " + " ".join(f"{w:>5}" for w in words))
+for w, row in zip(words, W):
+    print(f"{w:>5} |" + " ".join(f"{p:5.2f}" for p in row))
+
+print()
+print("context-aware outputs (each word = weighted blend of the Values):")
+print(np.round(attention(E, E, E), 2))''')),
+      noticemd('''- Read **cat&rsquo;s row**: most of its weight lands on **cat** and **dog** &mdash; the two animal words (~0.66 combined) &mdash; and little on **and**/**ran**. Attention *pooled the related words*, exactly like slide 8&rsquo;s &ldquo;it &rarr; animal&rdquo;.
+- **ran&rsquo;s row** attends mostly to **itself** &mdash; no other word points in the `action` direction.
+- **and&rsquo;s row** is split ~evenly: its vector is all-zeros, so it has **no direction** to prefer anyone &mdash; a neutral word attends to everything equally.
+- Nothing is hand-waved: we *chose* the vectors, so every weight is explainable. A real model **learns** vectors that do this on real sentences &mdash; Lab 3.9 pulls exactly these weights out of a live model.'''),
+      *([md('''### Answer-key note &mdash; reading `attention(E, E, E)`
+
+The weight matrix above shows **who looks at whom**. The second block &mdash; `attention(E, E, E)` &mdash; shows **what each word *becomes*** afterwards: its original vector *replaced* by a weighted blend of every word&rsquo;s Value.
+
+```
+[[0.63 0.17]    <- cat
+ [0.48 0.25]    <- and
+ [0.62 0.18]    <- dog
+ [0.38 0.40]]   <- ran
+```
+
+**Where cat&rsquo;s `[0.63, 0.17]` comes from** &mdash; its weight row was `cat 0.34, and 0.17, dog 0.32, ran 0.17`, times the Value vectors:
+
+```
+0.34*[1.0,0] + 0.17*[0,0] + 0.32*[0.9,0] + 0.17*[0,1]
+  = [0.34+0.29, 0.17]
+  = [0.63, 0.17]
+```
+
+So cat started as pure &ldquo;animal&rdquo; `[1.0, 0.0]` and comes out `[0.63, 0.17]`: still mostly animal (0.63 on axis&nbsp;0, pulled from **cat** and **dog**), plus a little &ldquo;action&rdquo; (0.17) leaked in from the small weight it gave *ran*.
+
+**Why it matters:** the weight matrix is the *diagnosis* (who is relevant to whom); this block is the *result that flows onward*. Every token leaves an attention layer carrying a mix of the tokens it attended to &mdash; and that context-aware vector is exactly what a real transformer stacks layer after layer. See **ran** &rarr; `[0.38, 0.40]`: it attended mostly to itself but still picked up some animal content, so it is no longer pure &ldquo;action&rdquo;.''')] if sol else []),
+      yourturn('''Grow the sentence: add a fifth word **&ldquo;kitten&rdquo;** as another animal &mdash; a vector
+near **cat**, e.g. `[0.95, 0.05]` &mdash; and rebuild the weight matrix. **Before you run it**, predict:
+whose rows change, and where does **cat**&rsquo;s attention go now that there are *three* animals? Then check.
+Stretch: flip **ran** toward the `animal` axis and watch the whole matrix rebalance. A "good" answer: you can
+call the rough shape of each row before running &mdash; **kitten**&rsquo;s row should come out almost identical
+to **cat**&rsquo;s.'''),
       *sol_answer(sol, r'''import numpy as np
-Q = np.array([[5.0, 5.0], [5.0, 5.0]])     # two IDENTICAL queries
-K = np.array([[1.0, 0.0], [0.0, 1.0]])
-V = np.array([[1.0, 0.0], [0.0, 1.0]])
-weights = softmax(Q @ K.T / np.sqrt(2), axis=-1)
-print("weights (both rows equal, split ~50/50):\n", np.round(weights, 3))
-print("output (both rows average the values):\n", np.round(attention(Q, K, V), 3))'''),
+# Added "kitten" -- a third animal, near "cat" -- and rebuilt the weight matrix.
+words = ["cat", "and", "dog", "ran", "kitten"]
+E = np.array([[1.00, 0.00],    # cat    -> animal
+              [0.00, 0.00],    # and    -> neutral
+              [0.90, 0.00],    # dog    -> animal
+              [0.00, 1.00],    # ran    -> action
+              [0.95, 0.05]])   # kitten -> animal, near cat
+W = softmax(E @ E.T / np.sqrt(2), axis=-1)
+print("       " + " ".join(f"{w:>6}" for w in words))
+for w, row in zip(words, W):
+    print(f"{w:>6} |" + " ".join(f"{p:6.2f}" for p in row))
+print()
+print("cat's attention now splits across THREE animals (cat, dog, kitten);")
+print("kitten's row is nearly identical to cat's -- near-identical vectors attend alike.")'''),
       footer(3, "That is the whole mechanism. A transformer stacks many of these attention steps -- and that is what 'Attention Is All You Need' meant."),
     ]
 
