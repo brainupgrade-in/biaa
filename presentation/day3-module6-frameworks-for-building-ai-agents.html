@@ -34,11 +34,19 @@
   @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 
   .kicker{
-    display:flex;align-items:center;gap:10px;
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
     font-size:clamp(.7rem,1.1vw,.85rem);font-weight:700;letter-spacing:.06em;
     text-transform:uppercase;color:var(--ind-600);margin-bottom:6px;
   }
   .kicker .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);}
+  /* ---------- Hands-on lab cue (badge in the kicker) ---------- */
+  .kicker .lab-cue{display:inline-flex;align-items:center;gap:6px;
+    background:var(--amber);color:var(--ink-900);font-weight:800;text-transform:none;
+    padding:3px 12px;border-radius:12px;letter-spacing:.02em;
+    box-shadow:0 1px 4px rgba(245,158,11,.45);}
+  .kicker .lab-cue.bridge{background:#fff;color:var(--blue);border:1px solid var(--blue);box-shadow:none;}
+  .kicker .lab-cue .tri{font-size:.85em;line-height:1;}
+  @media print{.kicker .lab-cue{box-shadow:none;border:1px solid var(--amber-d);}}
   .kicker .sub{color:var(--muted);font-weight:600;}
   h2.title{
     margin:0 0 14px;color:var(--ink-800);
@@ -293,7 +301,7 @@
       <div class="grid3">
         <div class="card"><h3>&#128268; Model wrappers</h3><p>One interface over many providers &mdash; swap <b>Ollama &harr; Groq &harr; OpenAI</b> in a line.</p></div>
         <div class="card cyan"><h3>&#128295; Tool abstraction</h3><p>Wrap any function as a tool with a <b>name, description &amp; schema</b> the model reads.</p></div>
-        <div class="card"><h3>&#128260; Loop / orchestration</h3><p>The <b>agent executor</b> that runs reason&rarr;act&rarr;observe and caps the steps.</p></div>
+        <div class="card"><h3>&#128260; Loop / orchestration</h3><p>The <b>agent runtime</b> that runs reason&rarr;act&rarr;observe and caps the steps.</p></div>
         <div class="card cyan"><h3>&#129516; Memory</h3><p>Ready objects for the <b>scratchpad</b> and conversation history.</p></div>
         <div class="card gold"><h3>&#128279; Integrations</h3><p>Hundreds of pre-built <b>tools &amp; connectors</b> &mdash; search, DBs, vector stores.</p></div>
         <div class="card gold"><h3>&#128202; Observability</h3><p>Tracing &amp; callbacks &mdash; <b>see every</b> thought, action &amp; observation.</p></div>
@@ -367,7 +375,7 @@
   <!-- ============ SLIDE 7 — LANGCHAIN BUILDING BLOCKS ============ -->
   <section class="slide" data-title="LangChain building blocks"
     data-note="Give them the five nouns that make LangChain code readable. CHAT MODEL: the wrapped LLM -- ChatOllama, ChatGroq -- you .invoke() with messages. PROMPT TEMPLATE: a reusable prompt with slots, plus an optional system_prompt that steers the agent. TOOL: a function exposed to the model, usually via the @tool decorator. AGENT: the reasoning core that, given the model + tools, decides the next action -- you build it with create_agent. AGENT RUNTIME: create_agent returns a runnable graph that actually runs the loop -- calls the model, executes the chosen tool, feeds back the observation, caps the steps with recursion_limit. (In LangChain 1.x this is the compiled agent itself, not a separate AgentExecutor as in older versions.) Map each back to Module 5's anatomy slide: model = brain, tool = hands, runtime = orchestrator, prompt = the instructions, memory = the scratchpad. The whole point: once you know these five nouns, any LangChain agent snippet reads like a sentence.">
-    <div class="kicker"><span class="dot"></span> Five nouns that make the code readable</div>
+    <div class="kicker"><span class="dot"></span> Five nouns that make the code readable<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 6.3</span></div>
     <h2 class="title">LangChain&rsquo;s core building blocks</h2>
     <div class="body">
       <div class="grid3">
@@ -385,7 +393,7 @@
   <!-- ============ SLIDE 8 — DEFINING A TOOL ============ -->
   <section class="slide" data-title="Defining a tool"
     data-note="Slow down on the single most important thing you write when building an agent: a tool. Walk the code. The @tool decorator turns a plain Python function into something the agent can use. THREE things matter and the model sees all three: the NAME (the function name -- keep it verb-like and clear); the DOCSTRING (this becomes the tool's description -- the model reads THIS to decide when to call it, so write it for the model, not for a human colleague); and the SIGNATURE / type hints (which become the input schema, so the model knows what arguments to pass). Stress the docstring point hard -- a vague docstring is the #1 reason an agent picks the wrong tool or ignores a good one. The return value becomes the Observation fed back into the loop. Tie back: this is the concrete version of 'a tool has a name, a description and inputs' from Module 5.">
-    <div class="kicker"><span class="dot"></span> The most important thing you&rsquo;ll write</div>
+    <div class="kicker"><span class="dot"></span> The most important thing you&rsquo;ll write<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 6.1 &amp; 6.2</span></div>
     <h2 class="title">Defining a tool &mdash; <span class="mono" style="font-size:.8em">@tool</span></h2>
     <div class="body">
       <div class="terminal">
@@ -408,8 +416,8 @@
 
   <!-- ============ SLIDE 9 — BUILD A REACT AGENT ============ -->
   <section class="slide" data-title="Build an agent"
-    data-note="Now assemble a whole agent in the shape they'll type tomorrow. In LangChain 1.x it's THREE moves. ONE: create the model -- ChatOllama or ChatGroq, the model-agnostic swap. TWO: collect your tools into a list -- the agent's hands. THREE: create_agent(model, tools) binds them into a runnable agent -- a compiled graph that runs the whole loop for you (this replaced the old create_react_agent + AgentExecutor two-step). Then invoke it with a messages list, and pass recursion_limit as the loop-cap guardrail (the 1.x name for max_iterations). Emphasise how little code this is versus the hand-rolled version they wrote -- the framework absorbed all the tool-calling and looping. The returned agent is a LangGraph graph, which is why the next slide reads its message trace. This is essentially Lab 6.1.">
-    <div class="kicker"><span class="dot"></span> The shape you&rsquo;ll type tomorrow &middot; &asymp; Lab 6.1</div>
+    data-note="Now assemble a whole agent in the shape they'll type tomorrow. In LangChain 1.x it's THREE moves. ONE: create the model -- ChatOllama or ChatGroq, the model-agnostic swap. TWO: collect your tools into a list -- the agent's hands. THREE: create_agent(model, tools) binds them into a runnable agent -- a compiled graph that runs the whole loop for you (this replaced the old create_react_agent + AgentExecutor two-step). Then invoke it with a messages list, and pass recursion_limit as the loop-cap guardrail (the 1.x name for max_iterations). Emphasise how little code this is versus the hand-rolled version they wrote -- the framework absorbed all the tool-calling and looping. The returned agent is a LangGraph graph, which is why the next slide reads its message trace. This is essentially Lab 6.4.">
+    <div class="kicker"><span class="dot"></span> The shape you&rsquo;ll type tomorrow<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 6.4 &amp; 6.9</span></div>
     <h2 class="title">Assemble an agent &mdash; <span class="mono" style="font-size:.8em">create_agent</span></h2>
     <div class="body">
       <div class="terminal">
@@ -423,7 +431,7 @@ agent = <span class="fn">create_agent</span>(model, tools)           <span class
 
 agent.<span class="fn">invoke</span>(
     {<span class="str">"messages"</span>: [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"Is Tokyo warmer than 20C right now?"</span>}]},
-    config={<span class="str">"recursion_limit"</span>: <span class="str">6</span>},          <span class="com"># the loop cap -- a guardrail</span>
+    config={<span class="str">"recursion_limit"</span>: 6},          <span class="com"># the loop cap -- a guardrail</span>
 )
       </div>
       <p class="callout" style="margin-top:14px">&#128073; Three moves &mdash; <b>model &rarr; tools &rarr; create_agent</b> &mdash; and the framework absorbs all the tool-calling and looping you wrote by hand in Module 5. <span class="mono">create_agent</span> returns a runnable <b>agent</b> (a compiled graph); <span class="mono">recursion_limit</span> is your guardrail in one line.</p>
@@ -436,7 +444,7 @@ agent.<span class="fn">invoke</span>(
   <!-- ============ SLIDE 10 — THE EXECUTOR TRACE ============ -->
   <section class="slide" data-title="The agent trace"
     data-note="Show what the agent RETURNS, so the abstraction becomes visible. agent.invoke(...) gives back result['messages'] -- the trace -- the 1.x equivalent of the ReAct scroll they read by hand in Module 5. Walk it: the HumanMessage is the goal; the model replies with an AIMessage carrying tool_calls (it DECIDED to call get_weather with city='Tokyo') -- note it emitted a structured tool call, not free ReAct text; the tools node RUNS the real tool and appends a ToolMessage with the result; the model is called again, reasons over the observation, and returns a final AIMessage with the answer in .content. Point at the division of labour: the model only ever DECIDED (the tool_calls); the tools node did the actual calling. That's the reason/execute split from Module 5. And it's why this is debuggable: every message is a log you can inspect. Reading tools_used and final_answer off this list is exactly Lab 6.5. Tell them this message list is the single most useful debugging surface they'll have.">
-    <div class="kicker"><span class="dot"></span> What <span class="mono" style="font-size:.85em">agent.invoke()</span> returns &mdash; the trace</div>
+    <div class="kicker"><span class="dot"></span> What <span class="mono" style="font-size:.85em">agent.invoke()</span> returns &mdash; the trace<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 6.5 &amp; 6.6</span></div>
     <h2 class="title">The agent loop, made visible</h2>
     <div class="body">
       <div class="terminal">
@@ -454,7 +462,7 @@ agent.<span class="fn">invoke</span>(
   <!-- ============ SLIDE 11 — MEMORY IN A FRAMEWORK ============ -->
   <section class="slide" data-title="Memory in a framework"
     data-note="Show how the framework turns Module 5's memory concept into objects you just plug in. Two kinds, matching the earlier lesson. SHORT-TERM / conversation: the framework keeps the running message history and re-injects it each turn, so a follow-up like 'and what about Osaka?' works without you re-stating context. You add it by passing a history/checkpointer to the agent -- a couple of lines, not a parsing project. LONG-TERM: you connect a vector store (Chroma, FAISS) as a retriever tool or memory, so the agent can recall facts across sessions by meaning -- the bridge to RAG, which is the very next topic on Day 3. The framing: memory that was a concept in Module 5 and a manual scratchpad-list in the Module-5 labs is, in the framework, a first-class component you attach. Don't overload -- the point is 'the framework gives you memory as a part, not a chore'.">
-    <div class="kicker"><span class="dot"></span> The concept, now a first-class part</div>
+    <div class="kicker"><span class="dot"></span> The concept, now a first-class part<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 6.7</span></div>
     <h2 class="title">Memory &mdash; plugged in, not hand-built</h2>
     <div class="body">
       <div class="grid2">
@@ -480,7 +488,7 @@ agent.<span class="fn">invoke</span>(
   <!-- ============ SLIDE 12 — WHEN THE SIMPLE LOOP ISN'T ENOUGH (LANGGRAPH) ============ -->
   <section class="slide" data-title="LangGraph"
     data-note="Motivate LangGraph by the pain the simple create_agent loop hits. The default agent is a single implicit loop -- great until you need real control: branching ('if the tool failed, try a different path'), cycles you steer, MULTIPLE cooperating steps or agents, a durable pause for human approval, or the ability to resume after a crash. LangGraph (from the LangChain team) models the agent as an explicit STATE GRAPH: nodes are steps (call the model, run a tool, ask a human), edges are transitions you control, and a shared state object flows through. Because the graph is explicit you get things the implicit loop can't easily give: conditional routing, checkpointing/durability, streaming of each node, and clean human-in-the-loop pauses. Show the little graph. The message: LangChain gives you the agent; LangGraph gives you CONTROL over how it flows. Don't oversell -- most first agents don't need it; you graduate to it.">
-    <div class="kicker"><span class="dot"></span> When one implicit loop isn&rsquo;t enough</div>
+    <div class="kicker"><span class="dot"></span> When one implicit loop isn&rsquo;t enough<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 6.8</span></div>
     <h2 class="title">LangGraph &mdash; agents as state graphs</h2>
     <div class="body center">
       <figure>
@@ -627,7 +635,7 @@ agent.<span class="fn">invoke</span>(
   <!-- ============ AUTOGPT vs LANGGRAPH — head-to-head (inserted) ============ -->
   <section class="slide" data-title="AutoGPT vs LangGraph"
     data-note="This is the slide that turns a philosophical point into an engineering one. Both answer the same question -- 'how do you run an agent loop?' -- but at opposite ends of the structure axis. Row by row. WHO WRITES THE FLOW: in AutoGPT the model invents the plan at run time by self-prompting; in LangGraph you author the nodes and edges up front. THE LOOP: AutoGPT runs until the model decides it's done (or you kill it); LangGraph is bounded -- explicit steps, a recursion cap, a real END. TOOLS: AutoGPT self-selects from a broad set; LangGraph only ever calls the tools you bound (that's least-privilege, the Module 9/10 guardrail). HUMAN-IN-THE-LOOP: none by default vs first-class pause/approve/resume. TYPICAL FAILURE: drift, loops and runaway cost vs predictable, steerable, per-node visibility. REACH FOR IT: AutoGPT is superb for learning and a quick autonomous demo; LangGraph is what you use for anything you must trust or ship. Then the money line: same goal, two runs -- the self-prompting loop wanders and can stall, the authored graph converges. The lesson only sticks when they SEE it, so the move is to run both on the same task and read the two traces side by side. Tie it home: this is exactly why the capstone is a bounded, guardrailed graph and not an unleashed AutoGPT -- not because autonomy is bad, but because you earn autonomy with structure.">
-    <div class="kicker"><span class="dot"></span> Two answers to &ldquo;how much structure?&rdquo; &mdash; head to head</div>
+    <div class="kicker"><span class="dot"></span> Two answers to &ldquo;how much structure?&rdquo; &mdash; head to head<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 6.13 (bonus)</span></div>
     <h2 class="title">AutoGPT <span style="color:var(--muted)">vs</span> LangGraph</h2>
     <div class="body">
       <table>
@@ -674,8 +682,8 @@ agent.<span class="fn">invoke</span>(
 
   <!-- ============ SLIDE 16 — CONNECTING TO THE WORLD ============ -->
   <section class="slide" data-title="Connecting to real tools"
-    data-note="This is the slide that makes Lab 6.2 concrete: giving the agent real, live capabilities. The framework ships pre-built integrations so you rarely write a tool from scratch. GOOGLE SEARCH (via a Search API wrapper like Serp/Google): live facts beyond the model's training cutoff -- today's news, prices, events. WOLFRAM ALPHA: real computation and curated knowledge -- exact math, unit conversions, scientific/geographic facts -- exactly where LLMs are weak. Both are in the client's lab spec. The pattern is always the same three steps: get an API key, wrap the service as a tool (often one line from a prebuilt integration), add it to the tools list. Then the SAME agent from slide 9 can suddenly answer questions no static model could. Tie to the Module-5 'day in the life' trace: this is that trace, for real, with real APIs. Mention keys live in .env (GROQ_API_KEY pattern they've seen) and never in code.">
-    <div class="kicker"><span class="dot"></span> Give the agent live capabilities &middot; &asymp; Lab 6.2</div>
+    data-note="This is the slide that makes Lab 6.10 concrete: giving the agent real, live capabilities. The framework ships pre-built integrations so you rarely write a tool from scratch. GOOGLE SEARCH (via a Search API wrapper like Serp/Google): live facts beyond the model's training cutoff -- today's news, prices, events. WOLFRAM ALPHA: real computation and curated knowledge -- exact math, unit conversions, scientific/geographic facts -- exactly where LLMs are weak. Both are in the client's lab spec. The pattern is always the same three steps: get an API key, wrap the service as a tool (often one line from a prebuilt integration), add it to the tools list. Then the SAME agent from slide 9 can suddenly answer questions no static model could. Tie to the Module-5 'day in the life' trace: this is that trace, for real, with real APIs. Mention keys live in .env (GROQ_API_KEY pattern they've seen) and never in code.">
+    <div class="kicker"><span class="dot"></span> Give the agent live capabilities<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 6.10</span></div>
     <h2 class="title">Connecting to real tools &amp; APIs</h2>
     <div class="body">
       <div class="grid2">
@@ -699,12 +707,12 @@ agent.<span class="fn">invoke</span>(
 
   <!-- ============ SLIDE 17 — OBSERVABILITY ============ -->
   <section class="slide" data-title="Observability & debugging"
-    data-note="Close the practitioner loop: you cannot fix what you cannot see, and agents are non-deterministic, so observability is not optional. Three levels. LEVEL 1, free: verbose=True prints the ReAct trace we saw -- enough to debug your first agents. LEVEL 2, callbacks: hook into every model call and tool call to log latency, tokens and errors programmatically. LEVEL 3, a tracing platform: LangSmith (from LangChain) or Langfuse (open-source, and part of THIS course's stack per the outline) capture every run as a visual trace -- inputs, each thought/action/observation, token cost, timing -- so you can inspect failures, compare prompt versions, and even run evals. Tie back to Karpathy-style iteration and to the AutoResearch eval idea: once you can see and score runs, you can improve the agent systematically instead of guessing. Message: tracing is what turns 'it sometimes works' into 'here's exactly where it broke'.">
-    <div class="kicker"><span class="dot"></span> You can&rsquo;t fix what you can&rsquo;t see</div>
+    data-note="Close the practitioner loop: you cannot fix what you cannot see, and agents are non-deterministic, so observability is not optional. Three levels. LEVEL 1, free: read result["messages"] -- the message trace from slide 10 -- enough to debug your first agents. LEVEL 2, callbacks: hook into every model call and tool call to log latency, tokens and errors programmatically. LEVEL 3, a tracing platform: LangSmith (from LangChain) or Langfuse (open-source, and part of THIS course's stack per the outline) capture every run as a visual trace -- inputs, each thought/action/observation, token cost, timing -- so you can inspect failures, compare prompt versions, and even run evals. Tie back to Karpathy-style iteration and to the AutoResearch eval idea: once you can see and score runs, you can improve the agent systematically instead of guessing. Message: tracing is what turns 'it sometimes works' into 'here's exactly where it broke'.">
+    <div class="kicker"><span class="dot"></span> You can&rsquo;t fix what you can&rsquo;t see<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 6.11</span></div>
     <h2 class="title">Observability &amp; debugging</h2>
     <div class="body">
       <div class="grid3">
-        <div class="card"><h3>1 &middot; <span class="mono" style="font-size:.8em">verbose=True</span></h3><p>Prints the ReAct trace &mdash; <b>free</b>, enough to debug your first agents.</p></div>
+        <div class="card"><h3>1 &middot; <span class="mono" style="font-size:.8em">result["messages"]</span></h3><p>Read the message trace &mdash; <b>free</b>, enough to debug your first agents.</p></div>
         <div class="card cyan"><h3>2 &middot; Callbacks</h3><p>Hook every model &amp; tool call &mdash; log <b>latency, tokens, errors</b> in code.</p></div>
         <div class="card gold"><h3>3 &middot; Tracing platform</h3><p><b>LangSmith / Langfuse</b> &mdash; every run as a visual trace you can inspect &amp; score.</p></div>
       </div>
@@ -715,7 +723,7 @@ agent.<span class="fn">invoke</span>(
   <!-- ============ SLIDE 18 — CHOOSING A FRAMEWORK ============ -->
   <section class="slide" data-title="Choosing a framework"
     data-note="Synthesise everything into a decision guide they can actually use on Monday. Walk the four rows as a flow. If it's a SINGLE agent with a few tools -> LangChain's prebuilt agent (and that's your labs and most first projects). If you need explicit control -- branching, cycles, durable state, human approval -> LangGraph. If the job is genuinely several specialised roles collaborating -> a multi-agent framework (CrewAI / AutoGen), but only when one agent truly can't do it. If you just want to SEE the loop to learn -> smolagents or your own hand-rolled version. The meta-rule, echoing Module 5's agent-vs-workflow: always start with the SIMPLEST thing that works and graduate only when a concrete need forces you up. Over-engineering the framework choice is the classic beginner mistake. End by pointing at the labs: you'll use exactly the left column -- LangChain -- and that's the right call for where you are.">
-    <div class="kicker"><span class="dot"></span> A guide you can use on Monday</div>
+    <div class="kicker"><span class="dot"></span> A guide you can use on Monday<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 6.12 (capstone)</span></div>
     <h2 class="title">Choosing a framework</h2>
     <div class="body">
       <table>
@@ -733,25 +741,25 @@ agent.<span class="fn">invoke</span>(
 
   <!-- ============ SLIDE 19 — CONNECT TO LABS ============ -->
   <section class="slide" data-title="This connects to your labs"
-    data-note="Hand off to the keyboards. Module 6's labs turn everything on these slides into a running agent. Lab 6.1: build a real LangChain agent -- create the model (Ollama or Groq), define a tool with @tool, create_agent(model, tools), invoke a goal, and read the message trace (tool_calls) you saw on slide 10. That's the framework version of the loop you hand-built in Module 5. Lab 6.2: connect it to the world -- add Google Search for live facts and Wolfram Alpha for computation, so your agent answers questions no static model could, plus wire in memory and a recursion_limit guardrail. This is the client's Day-3 lab spec, for real. Encourage them: this is the payoff -- from understanding agents, to building one that reaches the live internet. Then Day 4 makes agents DO real work: task automation and multi-agent collaboration.">
+    data-note="Hand off to the keyboards. Module 6's 13 labs turn everything on these slides into a running agent. Labs 6.1-6.6 build a real LangChain agent: your first @tool and why the docstring is its API, the model interface, create_agent(model, tools), running it and reading the message trace (tool_calls) from slide 10, and safe tool routing -- the framework version of the loop you hand-built in Module 5. Labs 6.7-6.13 make it real and robust: conversation memory, a LangGraph state graph with human approval, multi-tool orchestration, connecting live Google Search and Wolfram Alpha, guardrails and observability, the guardrailed capstone, and a bonus that runs AutoGPT-style autonomy vs LangGraph control side by side. This realises the client's Day-3 lab spec (a real agent + external APIs), for real. Encourage them: this is the payoff -- from understanding agents, to building one that reaches the live internet. Then Day 4 makes agents DO real work: task automation and multi-agent collaboration.">
     <div class="kicker"><span class="dot"></span> From slides to keyboards</div>
     <h2 class="title">Now build it &mdash; Module 6 labs</h2>
     <div class="body">
       <div class="grid2">
-        <div class="card"><h3>&#9654; Lab 6.1 &middot; A real LangChain agent</h3>
+        <div class="card"><h3>&#9654; Build a real agent &middot; Labs 6.1&ndash;6.6</h3>
           <ul>
-            <li>Create the model (<b>Ollama</b> or <b>Groq</b>), define a tool with <span class="mono">@tool</span></li>
-            <li><span class="mono">create_agent(model, tools)</span> &mdash; the loop, for free</li>
-            <li>Read the <b>message trace</b> (<span class="mono">tool_calls</span>) you saw on slide 10</li>
-            <li>The framework version of the loop you hand-built in Module 5</li>
+            <li>Your first <span class="mono">@tool</span> &mdash; and why the <b>docstring is its API</b></li>
+            <li>The model interface, then <span class="mono">create_agent(model, tools)</span> &mdash; the loop, for free</li>
+            <li>Run it &amp; read the <b>message trace</b> (<span class="mono">tool_calls</span>) from slide 10</li>
+            <li>Safe <b>tool routing</b> &mdash; the framework version of Module 5&rsquo;s loop</li>
           </ul>
         </div>
-        <div class="card cyan"><h3>&#9654; Lab 6.2 &middot; Connect to external APIs</h3>
+        <div class="card cyan"><h3>&#9654; Make it real &amp; robust &middot; Labs 6.7&ndash;6.13</h3>
           <ul>
-            <li>Add <b>Google Search</b> &mdash; live facts beyond training data</li>
-            <li>Add <b>Wolfram Alpha</b> &mdash; real computation &amp; knowledge</li>
-            <li>Wire in <b>memory</b> &amp; a <span class="mono">recursion_limit</span> guardrail</li>
-            <li>Answer questions a static model never could</li>
+            <li>Conversation <b>memory</b>, then a <b>LangGraph</b> state graph with human approval</li>
+            <li>Multi-tool orchestration; connect live <b>Google Search</b> &amp; <b>Wolfram Alpha</b></li>
+            <li><b>Guardrails &amp; observability</b>, then the guardrailed <b>capstone</b> agent</li>
+            <li>Bonus: <b>AutoGPT-style autonomy vs LangGraph control</b>, side by side</li>
           </ul>
         </div>
       </div>
@@ -761,13 +769,13 @@ agent.<span class="fn">invoke</span>(
 
   <!-- ============ SLIDE 20 — KEY TAKEAWAYS ============ -->
   <section class="slide dark" data-title="Key takeaways"
-    data-note="Recap crisply, then the quiz. Five points: a framework runs the loop so you write intent not plumbing; LangChain's five nouns -- model, prompt, tool, agent, executor -- make any snippet readable; the @tool docstring is the model's instruction, so write it for the model; graduate from LangChain to LangGraph only when you need explicit control; and always start with the simplest framework that works, with observability from day one. Then tell them: a quick 10-question check to lock it in before the labs.">
+    data-note="Recap crisply, then the quiz. Five points: a framework runs the loop so you write intent not plumbing; LangChain's five nouns -- model, prompt, tool, agent, runtime -- make any snippet readable; the @tool docstring is the model's instruction, so write it for the model; graduate from LangChain to LangGraph only when you need explicit control; and always start with the simplest framework that works, with observability from day one. Then tell them: a quick 10-question check to lock it in before the labs.">
     <div class="kicker"><span class="dot"></span> Recap</div>
     <h2 class="title">Five things to carry forward</h2>
     <div class="body">
       <div class="grid2">
         <div class="card"><h3>1 &middot; Frameworks run the loop</h3><p>They handle tools, memory &amp; tracing &mdash; you write <b>intent</b>, not plumbing.</p></div>
-        <div class="card cyan"><h3>2 &middot; Five nouns</h3><p>Model &middot; prompt &middot; tool &middot; agent &middot; <b>executor</b> &mdash; and any LangChain snippet reads clearly.</p></div>
+        <div class="card cyan"><h3>2 &middot; Five nouns</h3><p>Model &middot; prompt &middot; tool &middot; agent &middot; <b>runtime</b> &mdash; and any LangChain snippet reads clearly.</p></div>
         <div class="card"><h3>3 &middot; The docstring is the API</h3><p>A tool&rsquo;s <b>description</b> is what the model reads to decide &mdash; write it for the model.</p></div>
         <div class="card"><h3>4 &middot; Graduate deliberately</h3><p>LangChain to <b>run</b>; LangGraph for <b>control</b>; multi-agent only when needed.</p></div>
         <div class="card gold" style="grid-column:1/-1"><h3>5 &middot; Simplest thing + observability</h3><p>Start with the simplest framework that works, and <b>trace from day one</b> &mdash; you can&rsquo;t fix what you can&rsquo;t see. Next: build one (Module 6 labs).</p></div>
@@ -1074,7 +1082,7 @@ agent.<span class="fn">invoke</span>(
         <div class="quiz-opt correct"><span class="ltr">C</span><span>Wrap the service as a tool (often a prebuilt integration) and add it to the agent&rsquo;s tools list. &#10003;</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>Paste the API key into the user&rsquo;s question.</span></div>
       </div>
-      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Always the same pattern: get an <b>API key</b> (in <span class="mono">.env</span>) &rarr; <b>wrap</b> the service as a tool &rarr; <b>add</b> it to the tools list. The same agent then reaches live facts &amp; real computation &mdash; that&rsquo;s Lab 6.2.</p>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Always the same pattern: get an <b>API key</b> (in <span class="mono">.env</span>) &rarr; <b>wrap</b> the service as a tool &rarr; <b>add</b> it to the tools list. The same agent then reaches live facts &amp; real computation &mdash; that&rsquo;s Lab 6.10.</p>
     </div>
   </section>
 
@@ -1173,7 +1181,7 @@ agent.<span class="fn">invoke</span>(
 <div class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Day 3 · Module 6 — Frameworks for Building AI Agents</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.3</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.4</span>
 </div>
 
 <script>

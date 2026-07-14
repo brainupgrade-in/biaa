@@ -34,12 +34,20 @@
   @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 
   .kicker{
-    display:flex;align-items:center;gap:10px;
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
     font-size:clamp(.7rem,1.1vw,.85rem);font-weight:700;letter-spacing:.06em;
     text-transform:uppercase;color:var(--ind-600);margin-bottom:6px;
   }
   .kicker .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);}
   .kicker .sub{color:var(--muted);font-weight:600;}
+  /* ---------- Hands-on lab cue (badge in the kicker) ---------- */
+  .kicker .lab-cue{display:inline-flex;align-items:center;gap:6px;
+    background:var(--amber);color:var(--ink-900);font-weight:800;text-transform:none;
+    padding:3px 12px;border-radius:12px;letter-spacing:.02em;
+    box-shadow:0 1px 4px rgba(245,158,11,.45);}
+  .kicker .lab-cue.bridge{background:#fff;color:var(--blue);border:1px solid var(--blue);box-shadow:none;}
+  .kicker .lab-cue .tri{font-size:.85em;line-height:1;}
+  @media print{.kicker .lab-cue{box-shadow:none;border:1px solid var(--amber-d);}}
   h2.title{
     margin:0 0 14px;color:var(--ink-800);
     font-size:clamp(1.5rem,3.4vw,2.5rem);line-height:1.1;
@@ -259,7 +267,7 @@
   <!-- ============ SLIDE 3 — DEFINITION ============ -->
   <section class="slide" data-title="A working definition"
     data-note="Anchor a clean definition before the diagrams. An AI agent is a system that uses a language model to decide and take actions toward a goal -- in a loop -- using tools and memory, with minimal step-by-step human instruction. Unpack each phrase: 'decide and take actions' (not just produce text); 'toward a goal' (you give the destination, not the steps); 'in a loop' (it can do several steps); 'tools and memory' (it can reach the world and remember). Contrast with a plain chatbot, which answers once and stops. Keep it concrete -- this definition is the spine of the module.">
-    <div class="kicker"><span class="dot"></span> Let&rsquo;s define it</div>
+    <div class="kicker"><span class="dot"></span> Let&rsquo;s define it<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 5.1</span></div>
     <h2 class="title">What is an AI agent?</h2>
     <div class="body">
       <p class="lead">An <b>AI agent</b> is a system that uses a language model to <b>decide and take actions toward a goal</b> &mdash; in a <b>loop</b>, using <b>tools</b> and <b>memory</b> &mdash; with minimal step-by-step human instruction.</p>
@@ -371,7 +379,7 @@
   <!-- ============ SLIDE 7 — THE AGENT LOOP (CENTERPIECE) ============ -->
   <section class="slide" data-title="The agent loop"
     data-note="The centrepiece -- spend time here. Every agent runs the same cycle. Start with a GOAL. The model REASONS / PLANS (a 'Thought': what should I do next?). It ACTS by calling a tool (an 'Action', e.g. search('gold price today')). It OBSERVES the result (the 'Observation' fed back in). Then it loops -- reason again with the new information -- until it decides it can STOP and give the final answer. This reason-act pattern has a name: ReAct (Reason + Act). The genius is the feedback: each observation updates the plan, so the agent self-corrects. Walk the circle once, then trace the gold-price example around it.">
-    <div class="kicker"><span class="dot"></span> The centrepiece &middot; ReAct</div>
+    <div class="kicker"><span class="dot"></span> The centrepiece &middot; ReAct<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 5.3 &amp; 5.4</span></div>
     <h2 class="title">The agent loop</h2>
     <div class="body center">
       <figure>
@@ -419,7 +427,7 @@
   <!-- ============ SLIDE 8 — ANATOMY OF AN AGENT ============ -->
   <section class="slide" data-title="Anatomy of an agent"
     data-note="Now the parts that run that loop. At the centre is the LLM -- the brain / reasoner -- which decides what to do. Around it: TOOLS, its hands (search, APIs, a calculator, code execution, databases); MEMORY, split into a short-term scratchpad for the current task and a long-term store across tasks; the GOAL / INSTRUCTIONS that frame the job and the rules; and the ORCHESTRATOR -- the loop code (LangChain, an agent executor) that wires it all together, calls the model, runs the chosen tool, and feeds the result back. Stress: the LLM only DECIDES; the orchestrator actually executes the tool. That separation is what makes agents debuggable.">
-    <div class="kicker"><span class="dot"></span> The parts that run the loop</div>
+    <div class="kicker"><span class="dot"></span> The parts that run the loop<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 5.7</span></div>
     <h2 class="title">Anatomy of an agent</h2>
     <div class="body center">
       <figure>
@@ -463,7 +471,7 @@
   <!-- ============ SLIDE 9 — TOOLS TURN AN LLM INTO AN AGENT ============ -->
   <section class="slide" data-title="Tools = the hands"
     data-note="Drive home why tools are the unlock. A language model alone can only produce text -- it can't check today's weather, do exact arithmetic, query your database, or send an email. Tools are functions you expose to the model: each has a name, a description of what it does, and inputs. The model reads the descriptions and, when it needs one, emits a call. Examples: web search (current facts), a calculator (exact math -- LLMs are bad at arithmetic), code execution, a database query, an email-send. The leap: a tool turns 'I think the answer is about...' into 'I checked, and the answer is...'. This is the single most important idea for building useful agents.">
-    <div class="kicker"><span class="dot"></span> The unlock</div>
+    <div class="kicker"><span class="dot"></span> The unlock<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 5.2</span></div>
     <h2 class="title">Tools turn an LLM into an agent</h2>
     <div class="body">
       <p class="lead">A model alone only produces <b>text</b>. A <b>tool</b> is a function you expose to it &mdash; with a name, a description, and inputs &mdash; so it can reach beyond words and <b>act</b>.</p>
@@ -481,8 +489,9 @@
 
   <!-- ============ SLIDE 10 — TOOLS & FUNCTION-CALLING (TRACE) ============ -->
   <section class="slide" data-title="Function-calling trace"
-    data-note="Show the mechanism concretely with a ReAct scratchpad. How does the model 'call' a tool? It doesn't run code itself -- it OUTPUTS a structured request ('Action: search, Input: ...'). The orchestrator sees that, runs the real tool, and pastes the result back as an 'Observation'. The model reads the observation and decides the next step. Walk the trace line by line: question needs a current fact (search) AND a calculation (calculator), so the agent chains two tools, then writes the Final Answer. Point out the alternation Thought -> Action -> Observation -> Thought... -- that IS ReAct, and it's exactly what they'll see scroll past in the LangChain lab with verbose=True.">
-    <div class="kicker"><span class="dot"></span> How the model &ldquo;calls&rdquo; a tool</div>
+    data-note="Show the mechanism concretely with a ReAct scratchpad. How does the model 'call' a tool? It doesn't run code itself -- it OUTPUTS a structured request ('Action: search, Input: ...'). The orchestrator sees that, runs the real tool, and pastes the result back as an 'Observation'. The model reads the observation and decides the next step. Walk the trace line by line: question needs a current fact (search) AND a calculation (calculator), so the agent chains two tools, then writes the Final Answer. Point out the alternation Thought -> Action -> Observation -> Thought... -- that IS ReAct, and it's exactly the trace they'll read scroll past in the labs. One nuance to name out loud: the readable Thought/Action/Observation text is the ReAct *rendering*; modern models emit that Action as a structured JSON tool call at the API level -- that's 'function-calling' -- so the runtime gets a clean object, not text to regex-parse. Same loop, cleaner mechanism; the labs let them see both.">
+
+    <div class="kicker"><span class="dot"></span> How the model &ldquo;calls&rdquo; a tool<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 5.5</span></div>
     <h2 class="title">Tools &amp; function-calling &mdash; a ReAct trace</h2>
     <div class="body">
       <div class="terminal">
@@ -499,14 +508,15 @@
 <span class="kw">Thought:</span> I now have everything I need.
 <span class="kw">Final Answer:</span> France&rsquo;s population (~68M) divided by 2 is about <span class="you">34 million</span>.
       </div>
-      <p class="callout" style="margin-top:14px">&#128073; The model doesn&rsquo;t run the tool &mdash; it <b>emits</b> an <span class="mono">Action</span>; the orchestrator runs it and pastes back an <span class="mono">Observation</span>. That alternation <b>is</b> ReAct &mdash; and it&rsquo;s exactly what scrolls past in your LangChain lab with <span class="mono">verbose=True</span>.</p>
+      <p class="callout" style="margin-top:14px">&#128073; The model doesn&rsquo;t run the tool &mdash; it <b>emits</b> an <span class="mono">Action</span>; the orchestrator runs it and pastes back an <span class="mono">Observation</span>. That alternation <b>is</b> ReAct &mdash; and it&rsquo;s exactly the <b>trace</b> you&rsquo;ll read scroll past in your labs.</p>
+      <p class="small" style="margin-top:8px">&#128736;&#65039; <b>ReAct vs function-calling.</b> The text <span class="mono">Thought / Action / Observation</span> above is the <b>readable ReAct rendering</b>. Modern models emit that <span class="mono">Action</span> as a <b>structured (JSON) tool call</b> at the API level &mdash; <i>function-calling</i> &mdash; so there&rsquo;s no text to hand-parse. Same loop, cleaner mechanism.</p>
     </div>
   </section>
 
   <!-- ============ SLIDE 11 — MEMORY ============ -->
   <section class="slide" data-title="Memory"
     data-note="Why agents need memory, in two flavours. SHORT-TERM is the context window -- the running transcript of this task: the goal, every thought, action and observation so far. It's how the agent knows what it already tried. But the context window is finite and clears between sessions. LONG-TERM memory is external -- often a vector store (preview of Day 3/RAG): you save facts, notes, past conversations, and retrieve the relevant ones later by meaning. Analogy: short-term = what's on your desk right now; long-term = your filing cabinet. A useful agent needs both: the scratchpad to finish a task, the store to remember a user across tasks.">
-    <div class="kicker"><span class="dot"></span> So it doesn&rsquo;t start from zero each step</div>
+    <div class="kicker"><span class="dot"></span> So it doesn&rsquo;t start from zero each step<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 5.6</span></div>
     <h2 class="title">Memory &mdash; short-term &amp; long-term</h2>
     <div class="body">
       <div class="grid2">
@@ -534,7 +544,7 @@
   <!-- ============ SLIDE 12 — PLANNING PATTERNS ============ -->
   <section class="slide" data-title="Planning patterns"
     data-note="A quick tour of how agents organise their steps -- three patterns they'll meet again. REACT: interleave reasoning and acting step by step (what we just traced) -- simple, robust, the default. PLAN-AND-EXECUTE: draft the whole multi-step plan up front, then execute it (re-planning if needed) -- better for long, structured tasks. REFLECTION / SELF-CRITIQUE: the agent reviews its own output and tries to improve it -- great for quality but costs extra calls. Don't over-teach; the point is that 'agent' isn't one algorithm -- there's a small toolbox of control patterns, and ReAct is where everyone starts.">
-    <div class="kicker"><span class="dot"></span> How agents organise their steps</div>
+    <div class="kicker"><span class="dot"></span> How agents organise their steps<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 5.10 &amp; 5.11</span></div>
     <h2 class="title">Planning patterns at a glance</h2>
     <div class="body">
       <div class="grid3">
@@ -599,7 +609,7 @@
   <!-- ============ SLIDE 15 — GUARDRAILS ============ -->
   <section class="slide" data-title="Guardrails"
     data-note="The practitioner's safety kit -- preview of Day 5's responsible-AI module, but they need the vocabulary now. Five guardrails: STEP LIMITS (max iterations so it can't loop forever); TOOL PERMISSIONS (allow-list what it can call; read-only by default; gate anything that changes the world); INPUT/OUTPUT VALIDATION (check tool arguments and final answers); HUMAN-IN-THE-LOOP (pause for approval before irreversible or high-stakes actions -- send money, delete data, email a customer); and OBSERVABILITY (log every thought/action/observation so you can debug and audit -- this is why the loop's reason/execute split matters). Frame it as: autonomy is a dial you turn up only as far as you can safely supervise.">
-    <div class="kicker"><span class="dot"></span> Make autonomy safe</div>
+    <div class="kicker"><span class="dot"></span> Make autonomy safe<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 5.8 &amp; 5.9</span></div>
     <h2 class="title">Guardrails &amp; human-in-the-loop</h2>
     <div class="body">
       <div class="grid3">
@@ -616,8 +626,8 @@
 
   <!-- ============ SLIDE 16 — DAY IN THE LIFE ============ -->
   <section class="slide" data-title="A day in the life"
-    data-note="Tie it all together with one friendly end-to-end story. A user asks: 'What's the weather in Tokyo right now, and is that warmer than the average for June?' Step 1 the agent reasons it needs the current temperature -> calls a weather tool -> observes 24C. Step 2 it reasons it needs the June average -> calls search -> observes ~22C. Step 3 it reasons it now needs to compare -> a quick calculation -> 24 > 22. Step 4 it has everything -> writes the final answer in plain language. Point at each step: that's reason, act, observe, repeating -- the loop from slide 7, with two real tools. This is precisely Labs 3.1 and 3.2: a simple LangChain agent that calls Google Search and Wolfram Alpha.">
-    <div class="kicker"><span class="dot"></span> One query, end to end</div>
+    data-note="Tie it all together with one friendly end-to-end story. A user asks: 'What's the weather in Tokyo right now, and is that warmer than the average for June?' Step 1 the agent reasons it needs the current temperature -> calls a weather tool -> observes 24C. Step 2 it reasons it needs the June average -> calls search -> observes ~22C. Step 3 it reasons it now needs to compare -> a quick calculation -> 24 > 22. Step 4 it has everything -> writes the final answer in plain language. Point at each step: that's reason, act, observe, repeating -- the loop from slide 7, with two real tools. In the Module 5 labs they build exactly this loop BY HAND with a real local model; Module 6 then hands the same loop to LangChain calling Google Search and Wolfram Alpha.">
+    <div class="kicker"><span class="dot"></span> One query, end to end<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 5.12 (capstone)</span></div>
     <h2 class="title">A day in the life of an agent</h2>
     <div class="body">
       <p class="lead" style="margin-bottom:10px"><b>User:</b> &ldquo;What&rsquo;s the weather in Tokyo right now, and is that warmer than the June average?&rdquo;</p>
@@ -627,64 +637,66 @@
         <div class="card cyan"><h3>3 &middot; Reason &rarr; Act</h3><p>&ldquo;Compare them.&rdquo; &rarr; <span class="mono">calculator(24 &gt; 22)</span> &rarr; <b>true</b>.</p></div>
         <div class="card gold"><h3>4 &middot; Stop &amp; answer</h3><p>&ldquo;It&rsquo;s 24&deg;C in Tokyo &mdash; about 2&deg; <b>warmer</b> than the June norm.&rdquo;</p></div>
       </div>
-      <p class="callout" style="margin-top:16px">&#128073; That&rsquo;s the loop from earlier &mdash; <b>reason &rarr; act &rarr; observe</b>, twice over &mdash; with two real tools. It&rsquo;s exactly your <b>Labs 3.1 &amp; 3.2</b>: a LangChain agent calling <b>Google Search</b> and <b>Wolfram Alpha</b>.</p>
+      <p class="callout" style="margin-top:16px">&#128073; That&rsquo;s the loop from earlier &mdash; <b>reason &rarr; act &rarr; observe</b>, twice over &mdash; with two tools. You&rsquo;ll build this loop <b>by hand</b> in the <b>Module 5 labs</b>; <b>Module 6</b> then hands the same loop to <b>LangChain</b> calling live <b>Google Search</b> &amp; <b>Wolfram Alpha</b>.</p>
     </div>
   </section>
 
   <!-- ============ SLIDE 17 — LANGCHAIN CODE PEEK ============ -->
   <section class="slide" data-title="LangChain code-peek"
     data-note="A short, illustrative peek so the abstractions feel concrete -- not a coding lesson. The shape every LangChain agent shares: (1) define your tools (a function + a name + a description the model reads to decide when to use it); (2) create a ReAct agent that binds the LLM to those tools; (3) invoke it with a goal and let the loop run. Stress: this is the SHAPE -- Module 6 and the labs give the runnable version with real APIs and a real model. The point of showing it now is that everything on the previous slides -- tools, the loop, the goal -- maps to a few lines you'll actually write tomorrow.">
-    <div class="kicker"><span class="dot"></span> Illustrative &middot; preview of Module 6 &amp; your labs</div>
+    <div class="kicker"><span class="dot"></span> Illustrative &middot; preview of Module 6 &amp; your labs<span class="lab-cue bridge"><span class="tri">&#9654;</span> BRIDGE &middot; Module 6</span></div>
     <h2 class="title">A tool-using agent, in code (the shape)</h2>
     <div class="body">
       <div class="terminal">
 <span class="com"># The SHAPE of a LangChain agent -- Module 6 &amp; the labs have the runnable version</span>
-<span class="kw">from</span> langchain.agents <span class="kw">import</span> create_react_agent, AgentExecutor
+<span class="kw">from</span> langchain.agents <span class="kw">import</span> create_agent
 <span class="kw">from</span> langchain_core.tools <span class="kw">import</span> tool
 
 <span class="com"># 1. Define a tool: a function + a name + a description the model reads</span>
 <span class="fn">@tool</span>
 <span class="kw">def</span> <span class="fn">calculator</span>(expression: str) -> str:
     <span class="str">"""Evaluate a math expression, e.g. '68000000 / 2'."""</span>
-    <span class="kw">return</span> <span class="fn">str</span>(<span class="fn">eval</span>(expression))
+    <span class="kw">return</span> <span class="fn">str</span>(<span class="fn">safe_eval</span>(expression))   <span class="com"># AST-based -- no bare eval (see the lab)</span>
 
 tools = [calculator, web_search]          <span class="com"># 2. give the agent its hands</span>
 
 <span class="com"># 3. Bind the LLM to the tools and run the loop toward a goal</span>
-agent    = <span class="fn">create_react_agent</span>(llm, tools, prompt)
-executor = <span class="fn">AgentExecutor</span>(agent=agent, tools=tools, verbose=<span class="kw">True</span>, max_iterations=<span class="str">6</span>)
-executor.<span class="fn">invoke</span>({<span class="str">"input"</span>: <span class="str">"Population of France divided by 2?"</span>})
+agent = <span class="fn">create_agent</span>(llm, tools)          <span class="com"># a ReAct agent (a LangGraph app)</span>
+agent.<span class="fn">invoke</span>(
+    {<span class="str">"messages"</span>: [(<span class="str">"user"</span>, <span class="str">"Population of France divided by 2?"</span>)]},
+    config={<span class="str">"recursion_limit"</span>: 6},   <span class="com"># a guardrail -- cap the loop</span>
+)
 <span class="out"># &gt; Thought ... Action: web_search ... Observation ... Final Answer: ~34 million</span>
       </div>
-      <p class="callout" style="margin-top:12px">&#128073; Define tools &rarr; <span class="mono">create_react_agent</span> &rarr; <span class="mono">invoke</span>. Note <span class="mono">max_iterations</span> &mdash; a guardrail from the last slide, in one line. Everything you saw today maps to a few lines you&rsquo;ll write tomorrow.</p>
+      <p class="callout" style="margin-top:12px">&#128073; Define tools &rarr; <span class="mono">create_agent</span> &rarr; <span class="mono">invoke</span>. Note <span class="mono">recursion_limit</span> &mdash; a guardrail from the last slide, in one line. Everything you saw today maps to a few lines you&rsquo;ll write tomorrow.</p>
     </div>
   </section>
 
   <!-- ============ SLIDE 18 — CONNECT TO LABS ============ -->
   <section class="slide" data-title="This connects to your labs"
-    data-note="Hand off to the keyboards. Module 5's labs take them from a single LLM call to their first real agent: build a simple LangChain agent (Lab 3.1) that reasons and uses a tool, then connect it to external APIs (Lab 3.2) -- Google Search for live facts and Wolfram Alpha for computation -- so it answers questions no static model could. Encourage: this is the moment the course turns from 'understanding AI' to 'building AI that acts'. Then Module 6 goes deeper on the frameworks (LangChain, AutoGPT) that make this production-grade.">
+    data-note="Hand off to the keyboards. Module 5's 12 labs take them from a single LLM call to their first real agent -- built BY HAND so nothing is magic. Labs 1-6 build the mechanics: model-vs-agent, build a tool, the reason-act-observe loop, ReAct-step parsing, tool routing, a memory scratchpad -- driven by a real local model. Labs 7-12 make it robust: a full rule-based ReAct agent, guardrails (step caps, allow-lists, loop detection), plan-and-execute, reflection/self-critique, and a mini-autonomous-agent capstone. This is the moment the course turns from 'understanding AI' to 'building AI that acts'. The real LangChain framework plus Google Search and Wolfram Alpha come next, in Module 6.">
     <div class="kicker"><span class="dot"></span> From slides to keyboards</div>
     <h2 class="title">Now build it &mdash; Module 5 labs</h2>
     <div class="body">
       <div class="grid2">
-        <div class="card"><h3>&#9654; Lab 3.1 &middot; A simple LangChain agent</h3>
+        <div class="card"><h3>&#9654; Build the mechanics &middot; Labs 1&ndash;6</h3>
           <ul>
-            <li>Wrap an LLM in the <b>agent loop</b> &mdash; reason, act, observe</li>
-            <li>Give it a <b>tool</b> and watch it decide to use it</li>
-            <li>Read the <b>ReAct trace</b> (<span class="mono">verbose=True</span>) you saw today</li>
-            <li>Your first thing that <b>acts</b>, not just answers</li>
+            <li>Model-vs-agent, then <b>build a tool</b> the model can call</li>
+            <li>Wire the <b>reason &rarr; act &rarr; observe</b> loop &amp; parse a ReAct step</li>
+            <li>Tool routing + a <b>memory scratchpad</b></li>
+            <li>Driven by a real local model &mdash; built <b>by hand</b>, no framework yet</li>
           </ul>
         </div>
-        <div class="card cyan"><h3>&#9654; Lab 3.2 &middot; Connect to external APIs</h3>
+        <div class="card cyan"><h3>&#9654; Make it robust &middot; Labs 7&ndash;12</h3>
           <ul>
-            <li>Add <b>Google Search</b> &mdash; live facts beyond training data</li>
-            <li>Add <b>Wolfram Alpha</b> &mdash; real computation &amp; knowledge</li>
-            <li>Chain tools to answer questions a static model can&rsquo;t</li>
-            <li>The day-in-the-life trace, for real</li>
+            <li>A full <b>rule-based ReAct agent</b> over a two-step task</li>
+            <li><b>Guardrails</b> &mdash; step caps, allow-lists, loop detection</li>
+            <li><b>Plan-and-execute</b> &amp; <b>reflection / self-critique</b></li>
+            <li>A <b>mini-autonomous-agent capstone</b> over a task suite</li>
           </ul>
         </div>
       </div>
-      <p class="callout warn" style="margin-top:16px">&#128218; Open <b><a href="../hands-on/module-5/index.html">Module 5&rsquo;s hands-on labs</a></b> &mdash; the moment the course turns from <i>understanding</i> AI to <b>building AI that acts</b>. Next: <b>Module 6 &mdash; Agent Frameworks</b> (LangChain &amp; AutoGPT).</p>
+      <p class="callout warn" style="margin-top:16px">&#128218; Open <b><a href="../hands-on/module-5/index.html">Module 5&rsquo;s hands-on labs</a></b> &mdash; you build the agent loop <b>by hand</b> so nothing is magic. Next, <b>Module 6 &mdash; Agent Frameworks</b> hands the same loop to <b>LangChain</b> and connects it to <b>Google Search &amp; Wolfram Alpha</b>.</p>
     </div>
   </section>
 
@@ -1102,7 +1114,7 @@ executor.<span class="fn">invoke</span>({<span class="str">"input"</span>: <span
 <div class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Day 3 · Module 5 — What is Agentic AI?</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.2</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.5</span>
 </div>
 
 <script>
