@@ -34,12 +34,20 @@
   @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 
   .kicker{
-    display:flex;align-items:center;gap:10px;
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
     font-size:clamp(.7rem,1.1vw,.85rem);font-weight:700;letter-spacing:.06em;
     text-transform:uppercase;color:var(--ind-600);margin-bottom:6px;
   }
   .kicker .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);}
   .kicker .sub{color:var(--muted);font-weight:600;}
+  /* ---------- Hands-on lab cue (right-aligned badge in the kicker) ---------- */
+  .kicker .lab-cue{display:inline-flex;align-items:center;gap:6px;
+    background:var(--amber);color:var(--ink-900);font-weight:800;text-transform:none;
+    padding:3px 12px;border-radius:12px;letter-spacing:.02em;
+    box-shadow:0 1px 4px rgba(245,158,11,.45);}
+  .kicker .lab-cue.bridge{background:#fff;color:var(--blue);border:1px solid var(--blue);box-shadow:none;}
+  .kicker .lab-cue .tri{font-size:.85em;line-height:1;}
+  @media print{.kicker .lab-cue{box-shadow:none;border:1px solid var(--amber-d);}}
   h2.title{
     margin:0 0 14px;color:var(--ink-800);
     font-size:clamp(1.5rem,3.4vw,2.5rem);line-height:1.1;
@@ -333,7 +341,7 @@
   <!-- ============ SLIDE 5 — TRANSFER LEARNING ============ -->
   <section class="slide" data-title="Transfer learning"
     data-note="Name the principle and make it intuitive. Transfer learning = reuse knowledge learned on one task to jump-start another. Human analogy: someone who already speaks English learns legal English fast -- they don't relearn the language, just the specialty. A pre-trained model already 'speaks' language; fine-tuning teaches it your specialty (your domain, your labels). Why it works: the lower layers learned general features (grammar, meaning) that transfer; only the top needs to adapt. Practical payoff: you get strong results with a TINY labelled dataset, because the model isn't starting from zero.">
-    <div class="kicker"><span class="dot"></span> The principle</div>
+    <div class="kicker"><span class="dot"></span> The principle<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 07 &amp; 09</span></div>
     <h2 class="title">Transfer learning &mdash; reuse, don&rsquo;t relearn</h2>
     <div class="body">
       <div class="grid2">
@@ -410,7 +418,7 @@
   <!-- ============ SLIDE 8 — PIPELINES CODE ============ -->
   <section class="slide" data-title="Load a model in 3 lines"
     data-note="Show the payoff in code. The pipeline is the fastest on-ramp: name a task and (optionally) a model, and you get a callable that just works. Left: sentiment in three lines (downloads a default model, classifies). Right: text generation with a small local model. Point out: no tokenizer wiring, no model class -- the pipeline hides it. This is exactly how the Module 4 labs begin (use a pretrained pipeline) before we go deeper into fine-tuning. Reassure: runs on a laptop CPU; the model downloads once and caches.">
-    <div class="kicker"><span class="dot"></span> The fastest on-ramp</div>
+    <div class="kicker"><span class="dot"></span> The fastest on-ramp<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 01&ndash;02</span></div>
     <h2 class="title">Use a pre-trained model in three lines</h2>
     <div class="body">
       <div class="grid2">
@@ -441,7 +449,7 @@ gen(<span class="str">"Agentic AI lets models"</span>,
   <!-- ============ SLIDE 9 — PROMPT VS FINE-TUNE VS RAG ============ -->
   <section class="slide" data-title="Prompt vs fine-tune vs RAG"
     data-note="THE decision slide -- the most practically valuable in the module. Three ways to make a pre-trained model do what you want, in increasing cost/effort. (1) PROMPT: just ask well -- zero training, instant, but limited control and no new knowledge. (2) RAG (retrieval-augmented generation): give the model relevant documents at question time -- best when you need it to know YOUR facts/data that change often; no training. We deep-dive this on Day 3. (3) FINE-TUNE: actually train on examples -- best when you need a consistent behaviour/format/style or a specialised classifier, and you have labelled data. Rule of thumb: try prompting first, add RAG for knowledge, fine-tune for behaviour. Walk the SVG.">
-    <div class="kicker"><span class="dot"></span> The decision every project faces</div>
+    <div class="kicker"><span class="dot"></span> The decision every project faces<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 03</span></div>
     <h2 class="title">Three ways to adapt a model</h2>
     <div class="body center">
       <figure>
@@ -497,6 +505,27 @@ gen(<span class="str">"Agentic AI lets models"</span>,
     </div>
   </section>
 
+  <!-- ============ TRADEOFFS — closes the decision block (was SLIDE 16) ============ -->
+  <section class="slide" data-title="Cost, latency &amp; data"
+    data-note="Close the decision block by grounding it in engineering reality. A quick tradeoff table: prompting a hosted API is fastest to ship but you pay per call and send data out; a small local fine-tuned model is cheap per call, private, and fast, but you invest up front in data + training. The practitioner's judgement: match the approach to constraints -- privacy (keep data in-house?), cost at scale (millions of calls?), latency (real-time?), and how much labelled data you can get. No single right answer; this is the kind of call they'll make on real projects. Then we commit to fine-tuning and go deep.">
+    <div class="kicker"><span class="dot"></span> The engineering judgement</div>
+    <h2 class="title">Cost, latency &amp; data tradeoffs</h2>
+    <div class="body">
+      <table>
+        <thead><tr><th style="width:24%">Consideration</th><th>Hosted API (prompt)</th><th>Small fine-tuned local model</th></tr></thead>
+        <tbody>
+          <tr><td><b>Time to ship</b></td><td><span class="yes">Fastest &mdash; just call it</span></td><td>Slower &mdash; gather data &amp; train</td></tr>
+          <tr><td><b>Cost at scale</b></td><td>Pay per call &mdash; adds up</td><td><span class="yes">Cheap per call once trained</span></td></tr>
+          <tr><td><b>Data privacy</b></td><td>Data leaves your walls</td><td><span class="yes">Stays in-house</span></td></tr>
+          <tr><td><b>Latency &amp; control</b></td><td>Network round-trip</td><td><span class="yes">Local, fast, fully yours</span></td></tr>
+          <tr><td><b>Upfront effort</b></td><td><span class="yes">Minimal</span></td><td>Labelled data + training</td></tr>
+        </tbody>
+        <caption>No universal winner &mdash; match the approach to your constraints: privacy, cost at scale, latency, and how much labelled data you can get.</caption>
+      </table>
+      <p class="callout" style="margin-top:14px">&#9878;&#65039; This is real practitioner judgement &mdash; the same call you&rsquo;ll weigh when you put agents into production later in the week. <b>Our path today: fine-tune a small local model.</b></p>
+    </div>
+  </section>
+
   <!-- ============ SLIDE 11 — GPT FOR GENERATION ============ -->
   <section class="slide" data-title="GPT for text generation"
     data-note="First concrete path from the client brief: generating text with a GPT-style (decoder) model. The concept: a decoder predicts the next token over and over, building text left to right. You steer it with the prompt and a few knobs -- max length, temperature (randomness). The OpenAI GPT API is one hosted way to do this; in our labs we use a small LOCAL model (distilgpt2) so there's no key or cost, fully consistent with the course's Ollama/Groq convention. Note the optional 'bring your own key' path for those who have one. Tie to the Module 3 text-generation lab.">
@@ -527,7 +556,7 @@ gen(<span class="str">"Agentic AI lets models"</span>,
   <!-- ============ SLIDE 12 — BERT FOR SENTIMENT ============ -->
   <section class="slide" data-title="BERT for sentiment"
     data-note="Second concrete path: classification with a BERT-style (encoder) model -- the fine-tuning target from the client brief. BERT reads the whole text both directions and produces a rich representation; you add a small classification head on top and fine-tune on labelled examples (review -> positive/negative). This is the canonical fine-tuning task and exactly what the Module 4 capstone does. Contrast with GPT: GPT generates, BERT understands/classifies. In the lab they'll use a tiny BERT (bert-tiny / distilbert) on a small dataset so it trains in seconds-minutes on CPU.">
-    <div class="kicker"><span class="dot"></span> Concrete path 2 &middot; encoders</div>
+    <div class="kicker"><span class="dot"></span> Concrete path 2 &middot; encoders<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 10</span></div>
     <h2 class="title">BERT for sentiment classification</h2>
     <div class="body">
       <div class="grid2">
@@ -554,7 +583,7 @@ gen(<span class="str">"Agentic AI lets models"</span>,
   <!-- ============ SLIDE 13 — FINE-TUNING STEP BY STEP ============ -->
   <section class="slide" data-title="Fine-tuning, step by step"
     data-note="Demystify fine-tuning as a concrete pipeline -- it's just Day 1's training loop applied to a pre-trained model. Steps: (1) gather a small labelled dataset (texts + labels); (2) tokenize the texts into ids the model reads; (3) load the pre-trained model + a fresh classification head; (4) train -- the same forward/loss/gradient-descent loop from Day 1, but starting from pre-trained weights so it converges fast; (5) evaluate on held-out data. Emphasise the connection: nothing new conceptually -- it's the training loop they already built, warm-started. The lab walks exactly this.">
-    <div class="kicker"><span class="dot"></span> It&rsquo;s Day 1&rsquo;s training loop, warm-started</div>
+    <div class="kicker"><span class="dot"></span> It&rsquo;s Day 1&rsquo;s training loop, warm-started<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 04 &amp; 08</span></div>
     <h2 class="title">Fine-tuning, end to end</h2>
     <div class="body center">
       <figure>
@@ -599,7 +628,7 @@ gen(<span class="str">"Agentic AI lets models"</span>,
   <!-- ============ SLIDE 14 — PREPARING A DATASET ============ -->
   <section class="slide" data-title="Preparing a dataset"
     data-note="The unglamorous step that decides success: your data. For fine-tuning a classifier you need examples = (text, label) pairs, reasonably balanced across classes, and split into train and validation so you can measure honestly (the Day-1 train/test rule again). Quality and consistency of labels matter more than quantity -- a few hundred clean examples beat thousands of noisy ones. Show the tiny code shape. Tell them the lab gives them a small clean dataset so they can focus on the mechanics.">
-    <div class="kicker"><span class="dot"></span> The step that decides success</div>
+    <div class="kicker"><span class="dot"></span> The step that decides success<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 05&ndash;06</span></div>
     <h2 class="title">Preparing a fine-tuning dataset</h2>
     <div class="body">
       <div class="grid2">
@@ -630,7 +659,7 @@ X_tr, X_val, y_tr, y_val = <span class="fn">train_test_split</span>(
   <!-- ============ SLIDE 15 — FINE-TUNE IN CODE ============ -->
   <section class="slide" data-title="A fine-tune in a few lines"
     data-note="The payoff: fine-tuning is short code. Show the shape with Hugging Face -- load a tokenizer + a sequence-classification model (pre-trained base + fresh head), tokenize, then a Trainer runs the loop. Don't dwell on every argument; the point is it's a handful of lines and the heavy lifting (the loop, batching) is handled. Emphasise this is the SHAPE -- the lab gives the runnable, tiny-model version. Reassure: with bert-tiny and a small dataset this finishes in seconds-to-minutes on a CPU.">
-    <div class="kicker"><span class="dot"></span> Shorter than you&rsquo;d think</div>
+    <div class="kicker"><span class="dot"></span> Shorter than you&rsquo;d think<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 11 &amp; 12 (capstone)</span></div>
     <h2 class="title">Fine-tuning in a few lines (Hugging Face)</h2>
     <div class="body">
       <div class="terminal">
@@ -646,27 +675,6 @@ trainer.<span class="fn">train</span>()                                         
 <span class="out"># accuracy before: ~0.50  ->  after: ~0.90   the model learned YOUR task</span>
       </div>
       <p class="callout" style="margin-top:14px">&#128073; Load (base + head) &rarr; tokenize &rarr; <span class="mono">Trainer.train()</span>. A handful of lines, and the training loop, batching &amp; optimisation are handled. Your <b>Module 4 capstone</b> runs exactly this on a tiny model.</p>
-    </div>
-  </section>
-
-  <!-- ============ SLIDE 16 — TRADEOFFS ============ -->
-  <section class="slide" data-title="Cost, latency &amp; data"
-    data-note="Ground the choice in engineering reality before the labs. A quick tradeoff table: prompting a hosted API is fastest to ship but you pay per call and send data out; a small local fine-tuned model is cheap per call, private, and fast, but you invest up front in data + training. The practitioner's judgement: match the approach to constraints -- privacy (keep data in-house?), cost at scale (millions of calls?), latency (real-time?), and how much labelled data you can get. No single right answer; this is the kind of call they'll make on real projects.">
-    <div class="kicker"><span class="dot"></span> The engineering judgement</div>
-    <h2 class="title">Cost, latency &amp; data tradeoffs</h2>
-    <div class="body">
-      <table>
-        <thead><tr><th style="width:24%">Consideration</th><th>Hosted API (prompt)</th><th>Small fine-tuned local model</th></tr></thead>
-        <tbody>
-          <tr><td><b>Time to ship</b></td><td><span class="yes">Fastest &mdash; just call it</span></td><td>Slower &mdash; gather data &amp; train</td></tr>
-          <tr><td><b>Cost at scale</b></td><td>Pay per call &mdash; adds up</td><td><span class="yes">Cheap per call once trained</span></td></tr>
-          <tr><td><b>Data privacy</b></td><td>Data leaves your walls</td><td><span class="yes">Stays in-house</span></td></tr>
-          <tr><td><b>Latency &amp; control</b></td><td>Network round-trip</td><td><span class="yes">Local, fast, fully yours</span></td></tr>
-          <tr><td><b>Upfront effort</b></td><td><span class="yes">Minimal</span></td><td>Labelled data + training</td></tr>
-        </tbody>
-        <caption>No universal winner &mdash; match the approach to your constraints: privacy, cost at scale, latency, and how much labelled data you can get.</caption>
-      </table>
-      <p class="callout" style="margin-top:14px">&#9878;&#65039; This is real practitioner judgement &mdash; the same call you&rsquo;ll weigh when you put agents into production later in the week.</p>
     </div>
   </section>
 
@@ -1111,7 +1119,7 @@ trainer.<span class="fn">train</span>()                                         
 <div class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Day 2 · Module 4 — Pre-trained Models &amp; Fine-tuning</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.3</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.6</span>
 </div>
 
 <script>
