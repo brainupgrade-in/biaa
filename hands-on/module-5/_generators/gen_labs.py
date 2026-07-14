@@ -225,7 +225,7 @@ def lab(nn, slug, level, title, mins, summary, concepts):
 # ============================================================ LAB 01
 @lab(1, "lab-01-agent-vs-model", "Beginner",
      "A Model that Answers vs an Agent that Acts", 20,
-     "Call the REAL llama3.1:8b twice to feel it is stateless, then build a tiny goal-seeking agent loop that carries state.",
+     "Give the REAL llama3.1:8b a fact then ask for it in a fresh call to feel it forget (stateless), then build a tiny goal-seeking agent loop that carries state.",
      ["Stateless model", "Goal loop", "Real model"])
 def _l1(sol):
     DEFS = [
@@ -247,17 +247,18 @@ def _l1(sol):
       '    return {"value": current, "steps": steps, "stopped": "max_steps"}',
     ]
     EX = 'print("agent reached", run(3))   # stateful: it remembers `current` and stops at the goal'
-    RUN = '''q = "In ONE word, greet me."
-a1 = llm_text(q)     # a REAL model call
-a2 = llm_text(q)     # the SAME prompt again
-print("model call 1:", a1)
-print("model call 2:", a2)
+    RUN = '''# Two calls where the SECOND depends on the FIRST -- the real test of memory.
+a1 = llm_text("Remember this number: 42. Reply with just 'OK'.")   # call 1: we give it a fact
+a2 = llm_text("What number did I just ask you to remember?")       # call 2: a fresh call, ask for it
+print("call 1 (we told it 42):", a1)
+print("call 2 (ask it back)  :", a2)
 print("---")
-print("Same prompt -> same reply, and call 2 has NO memory of call 1: the model is STATELESS.")
+print("Call 2 is a brand-new request with NO access to call 1, so the model can't recall '42': STATELESS.")
+print("(Same prompt twice would only show it's deterministic -- it's the FORGETTING across calls that proves statelessness.)")
 print("Your run() loop, by contrast, carried state (`current`) across steps until the goal was met.")'''
     return [
       header(1, "A Model that Answers vs an Agent that Acts", "Beginner", 20,
-        ["Call the real model twice and see it is stateless (no memory between calls)",
+        ["Give the model a fact then ask for it in a fresh call &mdash; and watch it forget (stateless)",
          "Write a rule that DECIDES an action toward a goal",
          "Wrap it in a loop that carries state and stops when the goal is met"],
         "A model that answers &rarr; an agent that acts"),
@@ -273,18 +274,20 @@ print("agent:  goal + loop + state -> keeps acting until done")'''),
       buildmd('''Write `decide` (the action toward the goal) and note how `run` **carries state** (`current`) across
 steps &mdash; the thing a bare model can't do.'''),
       code(render(DEFS, sol) + "\n\n" + guard(EX)),
-      runmd("Call the real model twice with the same prompt and watch it answer identically with no memory &mdash; then compare to your stateful loop above."),
+      runmd("Give the model a fact in one call, then ask for it back in a **fresh** call &mdash; and watch it have no memory of the first. Then compare to your stateful loop above."),
       code(runguard(RUN)),
-      noticemd('''- The real model returned the **same** reply both times and had **no idea** it had already answered &mdash; stateless.
+      noticemd('''- Call 2 was a **brand-new request with no access to call 1**, so the model couldn't recall the number &mdash; stateless. (Repeating the *same* prompt would only show it's deterministic; it's the **forgetting across calls** that proves statelessness.)
 - Your `run()` loop kept `current` between steps and **stopped at the goal** &mdash; that memory + loop is the seed of every agent.
 - Everything else in this module &mdash; tools, the ReAct loop, memory, guardrails &mdash; hangs off that single shift.'''),
-      yourturn('''Ask the real model a follow-up that needs memory &mdash; e.g. call `llm_text("what did I just ask you?")` &mdash;
-and watch it have no clue. Then change `run`'s target and confirm the loop still tracks its state to the goal.
-**What good looks like:** the model can't remember across calls; your loop can.'''),
+      yourturn('''Now give the model &ldquo;memory&rdquo; the only way you can &mdash; feed the fact **into** the prompt as context:
+call `llm_text("Context: the number is 42.\\nQuestion: what is the number?")` and watch it answer correctly.
+That manual carry-over is exactly what the loop (and, next lab, the scratchpad) automates.
+**What good looks like:** stateless across calls, but you can *fake* memory by stuffing prior context into the prompt.'''),
       *sol_answer(sol, r'''if ollama_up():
-    print("follow-up (needs memory):", llm_text("What did I just ask you?"))   # the model has no clue
+    # Fake memory by putting the fact INTO the prompt as context -- now it can answer.
+    print("with manual context:", llm_text("Context: the number is 42.\nQuestion: what is the number? Answer with just the number."))
 else:
-    print("(start Ollama to see the stateless model reply)")
+    print("(start Ollama to see the model answer once you hand it the context)")
 print("run(target=7) ->", run(7))   # the loop still tracks its own state to the NEW goal'''),
       footer(1, "A model **answers**; an agent **acts toward a goal in a loop with state**. You just proved a real model is stateless -- now you'll give the loop tools, parsing, memory and guardrails."),
     ]
