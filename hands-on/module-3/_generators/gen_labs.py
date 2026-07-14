@@ -12,9 +12,9 @@ positional encoding, and cosine similarity -- these teach the maths a transforme
 a lab *invokes a model*, it is a REAL HF model, never a fake.
 
 Models used (small, CPU-friendly, cached after first download):
-  distilbert-base-uncased ............ tokenizer / fill-mask / subwords (labs 1, 5, 6)
+  distilbert-base-uncased ............ tokenizer / fill-mask / subwords (labs 1, 5, 6) + real
+                                       attention weights, output_attentions=True (lab 9)
   sentence-transformers/all-MiniLM-L6-v2 . sentence embeddings (labs 2, 7, 11, 12)
-  prajjwal1/bert-tiny ................ real attention weights, output_attentions=True (lab 9)
   distilgpt2 ......................... text generation (lab 10) + ChatGroq hosted "GPT API"
 
 Student robustness (no grader): cells that exercise the blanks or load a model are wrapped by
@@ -94,7 +94,7 @@ def header(nn, title, level, mins, goals, concept_slide):
 
 > **How this lab works (near-real):** these labs run **real Hugging Face Transformers** locally on CPU. Read the **Concept**, fill the real `___` blanks in **Build it** (real tokenizer / model / decoding calls), **Run it for real** to see the **actual model output**, note **What to notice**, then finish with an open **Your turn**. There is **no auto-grader** &mdash; the goal is real model output you can read. The genuine maths (attention, positional encoding, cosine) you still compute **by hand** &mdash; that is real mechanics, not a stub.
 
-> **Models:** small, CPU-friendly models from the HF hub &mdash; `distilbert-base-uncased` (tokenizer / fill-mask), `sentence-transformers/all-MiniLM-L6-v2` (embeddings), `prajjwal1/bert-tiny` (attention), `distilgpt2` (generation). First use downloads the weights (needs network), then they are cached. The hosted "GPT API" path uses `ChatGroq` (`GROQ_API_KEY` in `.env`).
+> **Models:** small, CPU-friendly models from the HF hub &mdash; `distilbert-base-uncased` (tokenizer / fill-mask / attention), `sentence-transformers/all-MiniLM-L6-v2` (embeddings), `distilgpt2` (generation). First use downloads the weights (needs network), then they are cached. The hosted "GPT API" path uses `ChatGroq` (`GROQ_API_KEY` in `.env`).
 
 **Reference:** [Module 3 slides &mdash; {concept_slide}]({DECK}) &nbsp;&middot;&nbsp; [Course outline]({OUTLINE}) &nbsp;&middot;&nbsp; [All Module 3 labs](./index.html)''')
 
@@ -672,69 +672,107 @@ print("averaged 4-head output shape:", np.mean(outs, axis=0).shape)'''),
 # ============================================================ LAB 09
 @lab(9, "lab-09-attention-heatmap", "Intermediate",
      "Real Attention from a Real Model", 35,
-     "Extract the ACTUAL attention weights from a real model (bert-tiny, output_attentions=True) and plot them over the real tokens -- interpretability for real.",
-     ["Real attention weights", "output_attentions", "Heatmap"])
+     "Search a real model's heads (distilbert, output_attentions=True) for the one that resolves \"it\" -> \"animal\", then plot it -- interpretability you can point at.",
+     ["Real attention weights", "output_attentions", "Head search", "Heatmap"])
 def _l9(sol):
     return [
       header(9, "Real Attention from a Real Model", "Intermediate", 35,
         ["Run a real model and ask it for its attention weights",
-         "Extract one head's attention matrix over the real tokens",
-         "Plot it as a heatmap and read which tokens attend to which"],
+         "Search its heads for the one that resolves a pronoun (\"it\" -> \"animal\")",
+         "Plot that head as a heatmap and point at the cell that carries the link"],
         "Self-attention (Q/K/V)"),
       setup(9),
-      concept('''Attention is **interpretable**: for each token the model records where it looked. We load the real
-**prajjwal1/bert-tiny**, ask for `output_attentions=True`, run a sentence through it, and pull out one
-layer/head's `seq x seq` weight matrix &mdash; the *actual* attention the model computed, over its
-*actual* subword tokens. Then we plot it.
+      concept('''Attention is **interpretable**, and different heads **specialise**. We load the real
+**distilbert-base-uncased**, ask for `output_attentions=True`, and run a coreference sentence &mdash;
+*"the animal did not cross the street because **it** was too tired."* Somewhere in its 6 layers &times; 12
+heads is a head that has learned that **"it" refers to "animal"**. We **search every head** for the one
+where `it` attends most strongly to `animal`, pull out that head's `seq x seq` matrix, and plot it &mdash;
+the *actual* attention the model computed, over its *actual* subword tokens.
 
+> We **search** rather than hardcode a head because the interpretable behaviour lives in *specific*
+> heads &mdash; head 0 is usually a "null" head that just dumps attention onto `[SEP]`. (This is why the
+> earlier `bert-tiny` demo looked like noise: it is too small to have learned this, and head 0 is a
+> `[SEP]` head.)
 > The heatmap needs `matplotlib` (already in the lab venv).'''),
-      buildmd("Turn on attention output and extract one head's matrix."),
+      buildmd("Turn on attention output, read one head's matrix, and search every head for a learned link."),
       code(render([
         "import torch, numpy as np",
         "from transformers import AutoTokenizer, AutoModel",
         "",
         "def load_attn_model():",
-        '    name = "prajjwal1/bert-tiny"',
+        '    name = "distilbert-base-uncased"   # real, well-trained -- and already used elsewhere in Module 3',
         "    tok = AutoTokenizer.from_pretrained(name)",
         {"s": '    model = AutoModel.from_pretrained(name, attn_implementation="eager", output_attentions=___)   # TODO: True',
          "a": '    model = AutoModel.from_pretrained(name, attn_implementation="eager", output_attentions=True)'},
         "    model.eval()",
         "    return tok, model",
         "",
-        "def real_attention(sentence, tok, model, layer=-1, head=0):",
+        "def real_attention(sentence, tok, model, layer, head):",
         '    enc = tok(sentence, return_tensors="pt")',
         "    with torch.no_grad(): out = model(**enc)",
         "    tokens = tok.convert_ids_to_tokens(enc['input_ids'][0])",
-        {"s": '    A = ___   # TODO: out.attentions[layer][0, head].numpy()  -- one head, batch item 0',
-         "a": '    A = out.attentions[layer][0, head].numpy()'},
+        "    A = out.attentions[layer][0, head].numpy()   # ONE (layer, head): a seq x seq matrix",
         "    return tokens, A",
+        "",
+        "def find_head(sentence, query_word, target_word, tok, model):",
+        '    """Scan every layer & head; return the (layer, head) whose QUERY token attends',
+        '    most to the TARGET token -- i.e. the head that has learned that link."""',
+        '    enc = tok(sentence, return_tensors="pt")',
+        "    with torch.no_grad(): out = model(**enc)",
+        "    tokens = tok.convert_ids_to_tokens(enc['input_ids'][0])",
+        "    qi, ti = tokens.index(query_word), tokens.index(target_word)",
+        "    best_w, best = -1.0, (0, 0)",
+        "    for L in range(len(out.attentions)):",
+        "        for H in range(out.attentions[L].shape[1]):",
+        {"s": '            w = ___   # TODO: out.attentions[L][0, H][qi, ti].item()  -- query->target weight',
+         "a": '            w = out.attentions[L][0, H][qi, ti].item()   # how much query attends to target'},
+        "            if w > best_w: best_w, best = w, (L, H)",
+        "    return best, best_w",
       ], sol)),
-      runmd("Run a real sentence and plot its real attention."),
+      runmd("Search for the head that resolves the pronoun, then plot it."),
       code(hfrun('''tok, model = load_attn_model()
-tokens, A = real_attention("the cat sat on the mat", tok, model)
-print("tokens:", tokens)
-print("attention matrix shape:", A.shape, "| row sums:", np.round(A.sum(axis=1), 2))
-import matplotlib.pyplot as plt
-plt.figure(figsize=(5, 4))
-plt.imshow(A, cmap="viridis")
-plt.xticks(range(len(tokens)), tokens, rotation=45, ha="right"); plt.yticks(range(len(tokens)), tokens)
-plt.title("real attention (bert-tiny, last layer, head 0)"); plt.colorbar(); plt.tight_layout()
-plt.savefig(WORK + "/real_attention.png", dpi=90); plt.show()
-print("saved:", WORK + "/real_attention.png")''')),
-      noticemd('''- The tokens include `[CLS]` and `[SEP]` &mdash; the model's real inputs, not just the words you typed.
-- Each **row still sums to 1** (it is a softmax) &mdash; the same maths you built by hand in Labs 3.3 and 3.8.
-- Many tokens attend heavily to `[CLS]`/`[SEP]` &mdash; a real, well-documented behaviour. Different heads (`head=1,2,...`) and layers show different patterns.'''),
-      yourturn('''Change the sentence and the `head` / `layer` arguments. Find a head whose pattern looks
-**meaningful** (e.g. a word attending to a related word) and one that looks like a "junk" / `[SEP]`
-head. A "good" answer: you can point to one cell of the heatmap and say what it means in plain English.'''),
-      *sol_answer(sol, hfrun(r'''import numpy as np
-tokens, A = real_attention("the quick brown fox", tok, model, layer=-1, head=1)   # try head 1
+sentence = "the animal did not cross the street because it was too tired"
+
+# Which head has learned that "it" refers to "animal"?
+(layer, head), w = find_head(sentence, "it", "animal", tok, model)
+print(f"strongest 'it'->'animal' head: layer {layer}, head {head}  (weight {w:.2f})")
+
+tokens, A = real_attention(sentence, tok, model, layer, head)
 print("tokens:", tokens)
 print("row sums:", np.round(A.sum(axis=1), 2))
-print("each token's most-attended token (head 1):")
-for i, t in enumerate(tokens):
-    print(f"   {t:8s} -> {tokens[int(A[i].argmax())]}")''')),
-      footer(9, "Attention maps are how researchers peek inside transformers. You just read them off a real model -- the by-hand maths from Labs 3.3/3.8 made concrete."),
+
+# the pointable evidence: where does the token 'it' look?
+i_it = tokens.index("it")
+order = A[i_it].argsort()[::-1][:4]
+print("'it' attends most to:", ", ".join(f"{tokens[j]}={A[i_it][j]:.2f}" for j in order))
+
+import matplotlib.pyplot as plt
+plt.figure(figsize=(6, 5))
+plt.imshow(A, cmap="viridis")
+plt.xticks(range(len(tokens)), tokens, rotation=45, ha="right"); plt.yticks(range(len(tokens)), tokens)
+plt.title(f"distilbert attention -- layer {layer}, head {head}\\n(the 'it' row lights up on 'animal')")
+plt.colorbar(); plt.tight_layout()
+plt.savefig(WORK + "/real_attention.png", dpi=90); plt.show()
+print("saved:", WORK + "/real_attention.png")''')),
+      noticemd('''- The winning head (printed above) puts most of the **"it" row's** weight on **"animal"** &mdash; the model
+  resolved the pronoun. That is one cell of the heatmap you can explain in plain English.
+- Each **row still sums to 1** (it is a softmax) &mdash; the same maths you built by hand in Labs 3.3 and 3.8.
+- Heads specialise: some track the next/previous token, many dump attention on `[CLS]`/`[SEP]` (a real,
+  well-documented "no-op" behaviour), and a few &mdash; like this one &mdash; carry linguistic structure.
+  That is exactly why we **searched** instead of trusting head 0.'''),
+      yourturn('''Swap in your own sentence and your own `(query, target)` pair &mdash; e.g. a noun and the
+adjective that describes it, or a verb and its subject &mdash; and re-run `find_head` to locate the head
+that carries *that* link. A "good" answer: you can point to the bright cell and say what it means in plain
+English (and, by contrast, name a head that is clearly a "junk"/`[SEP]` head).'''),
+      *sol_answer(sol, hfrun(r'''# A different link: which head ties the noun "fox" to the adjective "brown"?
+sentence = "the tired brown fox quickly climbed the tall old tree"
+(layer, head), w = find_head(sentence, "fox", "brown", tok, model)
+print(f"strongest 'fox'->'brown' head: layer {layer}, head {head}  (weight {w:.2f})")
+tokens, A = real_attention(sentence, tok, model, layer, head)
+i = tokens.index("fox")
+order = A[i].argsort()[::-1][:3]
+print("'fox' attends most to:", ", ".join(f"{tokens[j]}={A[i][j]:.2f}" for j in order))''')),
+      footer(9, "Attention maps are how researchers peek inside transformers. You didn't just read one off a real model -- you searched its heads and found the one that resolved a pronoun. The by-hand maths from Labs 3.3/3.8, made concrete and interpretable."),
     ]
 
 # ============================================================ LAB 10
