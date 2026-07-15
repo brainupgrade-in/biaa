@@ -17,6 +17,21 @@ React Native can't run Python. The lab agents (LangChain / `create_agent` /
 The app stays thin (UI + `fetch`); all agent logic lives server-side, exactly as
 you'd deploy it.
 
+## Quick start (one command)
+
+On a Codespace, `demo/run.sh` does the whole build+launch: installs backend deps,
+starts the API, scaffolds the Expo app, injects the **forwarded** backend URL into
+it (not `localhost`), makes port 8000 public, and starts Expo. Ctrl+C stops both.
+
+```bash
+bash demo/run.sh                                   # Module-8 example + Expo web
+bash demo/run.sh --backend demo.backend.main:app   # the generic template instead
+bash demo/run.sh --mode tunnel                     # phone via Expo Go (QR)
+bash demo/run.sh --mode backend-only               # just the API (curl / external app)
+```
+
+Prefer the manual steps? They're below.
+
 ## 1. Run the API
 
 ```bash
