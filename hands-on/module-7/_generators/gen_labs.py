@@ -242,11 +242,34 @@ def _l1(sol):
       '    # the human approval gate: a person must approve before the irreversible act',
       {"s": '    return ___   # TODO: True only for the "approve" stage',
        "a": '    return stage == "approve"'},
+      "",
+      "def draw_pipeline(app):",
+      '    """ASCII-visualise the compiled StateGraph: walk its own edges from START to END."""',
+      "    G = app.get_graph()",
+      "    succ = {}",
+      "    for e in G.edges:                       # the compiled graph knows its own wiring",
+      "        succ.setdefault(e.source, []).append(e.target)",
+      '    order, cur = [], "__start__"',
+      "    while cur is not None:                  # follow the linear pipeline START -> ... -> END",
+      "        order.append(cur)",
+      "        nxts = succ.get(cur, [])",
+      "        cur = nxts[0] if nxts else None",
+      '    label = {"__start__": "START", "__end__": "END"}',
+      '    out, pad = [], " " * 8',
+      "    for i, n in enumerate(order):",
+      "        name = label.get(n, n)",
+      '        box = "+" + "-" * (len(name) + 4) + "+"',
+      '        tag = "   <== human checkpoint (approve before the irreversible act)" if is_checkpoint(n) else ""',
+      '        out += [pad + box, pad + "|  " + name + "  |" + tag, pad + box]',
+      "        if i < len(order) - 1:",
+      '            arm = pad + " " * (len(name) // 2 + 3)',
+      '            out += [arm + "|", arm + "v"]',
+      '    return "\\n".join(out)',
     ]
     EX = '''app = build_pipeline()
+print(draw_pipeline(app))                          # ASCII view of the compiled StateGraph
 final = app.invoke({"trail": []})
-print("pipeline ran:", " -> ".join(final["trail"]))
-print("graph nodes :", sorted(set(app.get_graph().nodes) - {"__start__", "__end__"}))
+print("\\npipeline ran:", " -> ".join(final["trail"]))
 print("checkpoint at approve?", is_checkpoint("approve"))'''
     return [
       header(1, "The Automation Pipeline", "Beginner", 20,
@@ -269,14 +292,15 @@ print(" -> ".join(STAGES))'''),
 checkpoint. `make_stage` and the state schema are written for you.'''),
       code(render(DEFS, sol) + "\n\n" + guard(EX)),
       noticemd('''- `build_pipeline()` compiles a **real `StateGraph`**; running it walks all six nodes in order &mdash; that ordering is the contract every later lab honours.
-- `is_checkpoint("approve")` marks the one **human** gate; everything before it is autonomous, everything after is irreversible.
-- The `draft` node is where the real model runs (Lab 6); `gather` is where real tools run (Lab 2). Module 8 turns this line into branches and parallel fan-out.'''),
+- `draw_pipeline(app)` reads the compiled graph's **own edges** (`app.get_graph().edges`) to print the flow &mdash; the same graph LangGraph runs, visualised. Add a stage and the picture redraws itself.
+- `is_checkpoint("approve")` marks the one **human** gate; everything before it is autonomous, everything after is irreversible. The `draft` node is where the real model runs (Lab 6); Module 8 turns this line into branches and parallel fan-out.'''),
       yourturn('''Add a seventh stage node &mdash; e.g. `"log"` after `act` &mdash; wire it in, and re-run. **What good looks
-like:** the walk includes your new node in the right place and the graph still terminates at `END`. Then ask:
-which stages are reversible, and which one truly needs the human gate?'''),
+like:** the ASCII diagram redraws with your new node in the right place and the graph still terminates at `END`.
+Then ask: which stages are reversible, and which one truly needs the human gate?'''),
       *sol_answer(sol, r'''STAGES.append("log")                             # a 7th stage node, after "act"
-final = build_pipeline().invoke({"trail": []})   # STAGES[-1] is now "log" -> wired to END automatically
-print("pipeline ran:", " -> ".join(final["trail"]))   # includes "log", still terminates
+app = build_pipeline()                           # STAGES[-1] is now "log" -> wired to END automatically
+print(draw_pipeline(app))                        # the diagram redraws to include the new 'log' stage
+print("\npipeline ran:", " -> ".join(app.invoke({"trail": []})["trail"]))
 print("checkpoint at approve?", is_checkpoint("approve"))
 print("reversible: log yes / act no -- only the pre-act 'approve' stage truly needs the human gate")'''),
       footer(1, "Trigger -> gather -> draft -> validate -> approve -> act, built as a real StateGraph. The outer stages are what turn a demo agent into an automation. Next: the gather stage -- grounding the task in real data with real tools."),
