@@ -151,7 +151,15 @@ def sol_answer(sol, code_text):
     """Solution-only worked reference for the open 'Your turn' task above (empty in the student notebook)."""
     if not sol:
         return []
-    return [code("# --- Reference answer (ONE good way to do the 'Your turn' task -- compare with your own) ---\n" + code_text)]
+    body = code_text
+    # A groq_ready()-guarded reference cell is a LIVE cell (it calls the real model, directly
+    # or via a helper like process()/draft()). A model-side error (a rate limit, or gpt-oss
+    # emitting a stray built-in tool call -> Groq 400) must never crash Run All. Wrap it so it
+    # degrades to a note, exactly like the Build-it "run it for real" cells do.
+    if "groq_ready()" in code_text:
+        body = ("try:\n" + _indent(code_text, 4) +
+                '\nexcept Exception as e:\n    print("(Live model hiccup -- a rate limit or a stray built-in tool call. Re-run in a moment.)", type(e).__name__)')
+    return [code("# --- Reference answer (ONE good way to do the 'Your turn' task -- compare with your own) ---\n" + body)]
 
 # ---- shared building blocks -----------------------------------------------------------------
 
@@ -548,7 +556,7 @@ def _l6(sol):
       "",
       "def draft_reply(order):",
       '    """Ask the REAL Groq model to draft a reply, grounded in this order."""',
-      {"s": '    return ___   # TODO: with_backoff(lambda: llm.invoke(build_prompt(order)).content)',
+      {"s": '    return ___   # TODO: draft with the real model on the order\'s prompt, retry-safe',
        "a": '    return with_backoff(lambda: llm.invoke(build_prompt(order)).content)'},
     ]
     EX = '''# No model call here -- just inspect the grounded prompt the model will receive:
@@ -768,7 +776,7 @@ def _l9(sol):
       '    # the human-in-the-loop gate: approve -> send, reject -> revise',
       '    if draft["status"] != "needs_approval":',
       '        return "invalid"',
-      {"s": '    return ___   # TODO: "send" if approved else "revise"',
+      {"s": '    return ___   # TODO: send when approved, otherwise revise',
        "a": '    return "send" if approved else "revise"'},
       "",
       "def agent_tools():",
@@ -988,11 +996,11 @@ def _l12(sol):
       '    # gather via the SAME tool the Lab 7.11 agent is built from (reuse, not re-implement)',
       '    found  = lookup_order.invoke(rec["order_id"]) if rec["order_id"] else {}',
       '    order  = found if found.get("id") else {"id": rec["order_id"], "name": "there", "status": "unknown", "eta": "soon"}',
-      {"s": '    reply  = ___   # TODO: draft a grounded reply for this order with the REAL model (draft(order))',
+      {"s": '    reply  = ___   # TODO: draft a grounded reply for this order with the REAL model',
        "a": '    reply  = draft(order)'},
       "    ok     = validate(reply, order)",
       '    # never auto-send: a valid draft awaits approval; an invalid one needs a fix',
-      {"s": '    status = ___   # TODO: "needs_approval" if ok else "needs_fix"',
+      {"s": '    status = ___   # TODO: needs_approval when validated, else needs_fix',
        "a": '    status = "needs_approval" if ok else "needs_fix"'},
       '    return {"team": routed["team"], "escalate": routed["escalate"],',
       '            "draft": reply, "status": status}',
