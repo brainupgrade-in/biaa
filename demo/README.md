@@ -32,6 +32,38 @@ from `hands-on/module-7` (email-drafting) or `module-8` (customer-service). Keep
 the gather-only / no-send guardrails: don't bind a `send_*`/`place_trade` tool
 you wouldn't run unattended.
 
+### Packaging any lab — the recipe
+
+1. **Read the solution, keep the reusable core.** Drop the notebook scaffolding
+   (`groq_ready()` prints, `print_trace`, offline-sanity cells, the "Your turn"
+   cell); keep the tools, the agent/team logic, and the model.
+2. **Paste it into a module under `demo/backend/`.** Two mechanical fixes when
+   lifting from a notebook: build the model **lazily** (inside a getter) so
+   `/health` works without a key, and load the repo-root `.env` with a
+   `Path(__file__).resolve().parents[2]` anchor (not the notebook's `find_dotenv`).
+3. **Map the lab's entry point to `/chat`, matching the return shape:**
+
+   | Lab shape | `/chat` returns |
+   |-----------|-----------------|
+   | Single agent (M7 email, M9 insight) | `{reply}` from `result["messages"][-1].content` |
+   | Team with a `process()` (M8 8.12) | `{reply, status, agents, conflict}` — the whole verdict |
+4. **Keep the guardrail.** If the lab withholds a tool (no `send_email` /
+   `place_trade` / refund tool), a request for it comes back as
+   `needs_approval` — in the app that's a human-approval screen, never an
+   auto-action.
+
+**Worked example — Module-8 lab 8.12** (the customer-service chatbot *team*) is
+packaged in [`backend/app_module8.py`](backend/app_module8.py). It lifts
+`route → real specialists → vote → synthesise → refund-gate` verbatim and returns
+the structured verdict:
+
+```bash
+uvicorn demo.backend.app_module8:app --reload --host 0.0.0.0 --port 8000
+curl -sX POST localhost:8000/chat -H 'content-type: application/json' \
+  -d '{"message":"I was charged twice for order 4471 and the app keeps crashing on login."}'
+# -> {"agents":["billing","tech"], "reply":"[billing] … [tech] …", "status":"needs_approval", "conflict":false}
+```
+
 ## 2. Scaffold the mobile app
 
 ```bash
