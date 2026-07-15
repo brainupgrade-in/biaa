@@ -91,8 +91,8 @@
           <span class="time">&#9201; 20 min</span>
         </div>
         <h4>The Automation Pipeline</h4>
-        <p>Model the pipeline every task automation follows: trigger, gather, draft, validate, approve, act.</p>
-        <div class="chips"><span class="chip">Pipeline</span><span class="chip">Stages</span><span class="chip">Checkpoint</span></div>
+        <p>Build the six-stage automation pipeline (trigger->...->act) as a REAL LangGraph StateGraph, and mark the human approval checkpoint.</p>
+        <div class="chips"><span class="chip">StateGraph pipeline</span><span class="chip">Stages in order</span><span class="chip">Checkpoint</span></div>
         <div class="links">
           <a class="open" href="lab-01-the-automation-pipeline.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-01-the-automation-pipeline.ipynb">Solution</a>
@@ -130,8 +130,8 @@
           <span class="time">&#9201; 25 min</span>
         </div>
         <h4>Extract: Mess In, Structure Out</h4>
-        <p>Pull order_id, intent and sentiment out of a messy client email into a tight schema; handle missing data.</p>
-        <div class="chips"><span class="chip">Extract</span><span class="chip">Tight schema</span><span class="chip">Missing data</span></div>
+        <p>Use the REAL model as an extractor -- with_structured_output fills a tight schema -- then validate its intent against a closed set.</p>
+        <div class="chips"><span class="chip">Extract pattern</span><span class="chip">Structured output</span><span class="chip">Closed-set guard</span></div>
         <div class="links">
           <a class="open" href="lab-04-extract-fields.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-04-extract-fields.ipynb">Solution</a>
@@ -201,7 +201,7 @@
           <span class="time">&#9201; 30 min</span>
         </div>
         <h4>Human-in-the-Loop: Draft ≠ Send</h4>
-        <p>Separate drafting from sending: the agent emits a needs-approval draft and never holds a send tool.</p>
+        <p>Build the REAL gather-only create_agent (no send tool), invoke it to draft, and gate the send on a human -- draft never equals send.</p>
         <div class="chips"><span class="chip">Draft not send</span><span class="chip">Approval gate</span><span class="chip">Withhold the tool</span></div>
         <div class="links">
           <a class="open" href="lab-09-human-in-the-loop.ipynb">&#9654; Open lab</a>
@@ -246,8 +246,8 @@
           <span class="time">&#9201; 45 min</span>
         </div>
         <h4>Capstone: The Email-Drafting Agent</h4>
-        <p>Chain extract -> route -> gather -> draft (real Groq) -> validate over a suite of client emails; never auto-send.</p>
-        <div class="chips"><span class="chip">End-to-end pipeline</span><span class="chip">Task suite</span><span class="chip">Draft-not-send</span></div>
+        <p>Chain extract -> route -> INVOKE the real gather-only agent (gather+draft) -> validate over a suite of client emails; never auto-send.</p>
+        <div class="chips"><span class="chip">Real agent run</span><span class="chip">Task suite</span><span class="chip">Draft-not-send</span></div>
         <div class="links">
           <a class="open" href="lab-12-capstone-email-drafting-agent.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-12-capstone-email-drafting-agent.ipynb">Solution</a>

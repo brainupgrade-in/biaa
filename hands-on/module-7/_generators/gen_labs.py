@@ -209,64 +209,77 @@ def lab(nn, slug, level, title, mins, summary, concepts):
 # ============================================================ LAB 01
 @lab(1, "lab-01-the-automation-pipeline", "Beginner",
      "The Automation Pipeline", 20,
-     "Model the pipeline every task automation follows: trigger, gather, draft, validate, approve, act.",
-     ["Pipeline", "Stages", "Checkpoint"])
+     "Build the six-stage automation pipeline (trigger->...->act) as a REAL LangGraph StateGraph, and mark the human approval checkpoint.",
+     ["StateGraph pipeline", "Stages in order", "Checkpoint"])
 def _l1(sol):
     DEFS = [
-      'PIPELINE = ["trigger", "gather", "draft", "validate", "approve", "act"]',
+      "from typing import Annotated, TypedDict",
+      "from operator import add",
+      "from langgraph.graph import StateGraph, START, END",
       "",
-      "def next_stage(current):",
-      "    i = PIPELINE.index(current)",
-      {"s": '    return ___   # TODO: "done" if this is the last stage, else the next stage',
-       "a": '    return "done" if i == len(PIPELINE) - 1 else PIPELINE[i + 1]'},
+      'STAGES = ["trigger", "gather", "draft", "validate", "approve", "act"]',
+      "",
+      "class PipelineState(TypedDict):",
+      "    trail: Annotated[list, add]        # each stage node appends its name (a reducer)",
+      "",
+      "def make_stage(name):",
+      '    """Each stage is a node that records it ran (later labs put real tools/model inside)."""',
+      "    def node(state):",
+      '        return {"trail": [name]}',
+      "    return node",
+      "",
+      "def build_pipeline():",
+      "    g = StateGraph(PipelineState)",
+      "    for s in STAGES:",
+      "        g.add_node(s, make_stage(s))",
+      '    g.add_edge(START, "trigger")',
+      {"s": '    for a, b in zip(STAGES, STAGES[1:]):\n        ___   # TODO: wire each stage to the next one, in order',
+       "a": '    for a, b in zip(STAGES, STAGES[1:]):\n        g.add_edge(a, b)'},
+      '    g.add_edge(STAGES[-1], END)',
+      "    return g.compile()",
       "",
       "def is_checkpoint(stage):",
       '    # the human approval gate: a person must approve before the irreversible act',
       {"s": '    return ___   # TODO: True only for the "approve" stage',
        "a": '    return stage == "approve"'},
-      "",
-      "def run_pipeline():",
-      '    order, stage = [], "trigger"',
-      '    while stage != "done":',
-      "        order.append(stage)",
-      "        stage = next_stage(stage)",
-      "    return order",
     ]
-    EX = '''print("after trigger ->", next_stage("trigger"))
-print("after act     ->", next_stage("act"))
-print("full run:", run_pipeline())
+    EX = '''app = build_pipeline()
+final = app.invoke({"trail": []})
+print("pipeline ran:", " -> ".join(final["trail"]))
+print("graph nodes :", sorted(set(app.get_graph().nodes) - {"__start__", "__end__"}))
 print("checkpoint at approve?", is_checkpoint("approve"))'''
     return [
       header(1, "The Automation Pipeline", "Beginner", 20,
-        ["Walk the six pipeline stages in order, from trigger to act",
-         "See where the Day-3 loop lives (inside reason/draft)",
+        ["Build the six pipeline stages as a real StateGraph, wired in order",
+         "See where the Day-3 loop lives (inside the draft node)",
          "Mark the approval checkpoint that guards the irreversible act"],
         "The task-automation pipeline"),
       setup(1),
       concept('''Every task-automation agent, however complex, follows the **same pipeline** (deck slide 5):
 **trigger** &rarr; **gather** &rarr; **draft** &rarr; **validate** &rarr; **approve** &rarr; **act**.
-The Day-3 ReAct loop lives inside *reason/draft*; the outer stages &mdash; gather, validate,
-approve &mdash; are what make it **reliable** and **safe**. The **approve** stage is a human
-checkpoint that guards the one irreversible step: **act**. (This lab is pure Python &mdash; it's the
-scaffold the real Groq-driven steps in later labs slot into.)'''),
-      code('''PIPELINE = ["trigger", "gather", "draft", "validate", "approve", "act"]
+You build it here as a **real LangGraph `StateGraph`** &mdash; six nodes wired in order &mdash; the same
+framework the later labs' real tools and model slot into. The Day-3 ReAct loop lives inside the *draft*
+node; the outer stages (gather, validate, approve) are what make it **reliable** and **safe**. **approve**
+is a human checkpoint guarding the one irreversible step: **act**. (Module 8 grows this straight line into
+branches, parallel fan-out and reducers.)'''),
+      code('''STAGES = ["trigger", "gather", "draft", "validate", "approve", "act"]
 print("the shape of every automation:")
-print(" -> ".join(PIPELINE))'''),
-      buildmd('''Implement `next_stage` (what follows each stage) and `is_checkpoint` (the human gate before the
-irreversible act); `run_pipeline` then walks the whole thing.'''),
+print(" -> ".join(STAGES))'''),
+      buildmd('''Build the pipeline as a real `StateGraph`: wire each stage node to the next in order, and mark the human
+checkpoint. `make_stage` and the state schema are written for you.'''),
       code(render(DEFS, sol) + "\n\n" + guard(EX)),
-      noticemd('''- `run_pipeline()` walks all six stages in order &mdash; that ordering is the contract every later lab honours.
-- `is_checkpoint("approve")` marks the one **human** gate; everything before it is autonomous, everything after it is irreversible.
-- The `draft` stage is where the real model runs (Lab 6); `gather` is where real tools run (Lab 2).'''),
-      yourturn('''Add a seventh stage &mdash; e.g. `"log"` after `act` &mdash; and re-run `run_pipeline()`. **What good looks
-like:** the walk includes your new stage in the right place and `next_stage` still terminates at `"done"`.
-Then ask yourself: which of your stages are reversible, and which one truly needs the human gate?'''),
-      *sol_answer(sol, r'''PIPELINE.append("log")                      # a 7th stage, after "act"
-print("after act ->", next_stage("act"))    # now "log", not "done"
-print("full run:", run_pipeline())          # includes "log" and still terminates at "done"
+      noticemd('''- `build_pipeline()` compiles a **real `StateGraph`**; running it walks all six nodes in order &mdash; that ordering is the contract every later lab honours.
+- `is_checkpoint("approve")` marks the one **human** gate; everything before it is autonomous, everything after is irreversible.
+- The `draft` node is where the real model runs (Lab 6); `gather` is where real tools run (Lab 2). Module 8 turns this line into branches and parallel fan-out.'''),
+      yourturn('''Add a seventh stage node &mdash; e.g. `"log"` after `act` &mdash; wire it in, and re-run. **What good looks
+like:** the walk includes your new node in the right place and the graph still terminates at `END`. Then ask:
+which stages are reversible, and which one truly needs the human gate?'''),
+      *sol_answer(sol, r'''STAGES.append("log")                             # a 7th stage node, after "act"
+final = build_pipeline().invoke({"trail": []})   # STAGES[-1] is now "log" -> wired to END automatically
+print("pipeline ran:", " -> ".join(final["trail"]))   # includes "log", still terminates
 print("checkpoint at approve?", is_checkpoint("approve"))
 print("reversible: log yes / act no -- only the pre-act 'approve' stage truly needs the human gate")'''),
-      footer(1, "Trigger -> gather -> draft -> validate -> approve -> act. The outer stages are what turn a demo agent into an automation. Next: the gather stage -- grounding the task in real data with real tools."),
+      footer(1, "Trigger -> gather -> draft -> validate -> approve -> act, built as a real StateGraph. The outer stages are what turn a demo agent into an automation. Next: the gather stage -- grounding the task in real data with real tools."),
     ]
 
 # ============================================================ LAB 02
@@ -420,69 +433,77 @@ print("valid?    :", is_valid(coerce({"order_id": "4471", "intent": "refund"})))
 # ============================================================ LAB 04
 @lab(4, "lab-04-extract-fields", "Beginner",
      "Extract: Mess In, Structure Out", 25,
-     "Pull order_id, intent and sentiment out of a messy client email into a tight schema; handle missing data.",
-     ["Extract", "Tight schema", "Missing data"])
+     "Use the REAL model as an extractor -- with_structured_output fills a tight schema -- then validate its intent against a closed set.",
+     ["Extract pattern", "Structured output", "Closed-set guard"])
 def _l4(sol):
     DEFS = [
+      "from typing import Optional",
+      "from pydantic import BaseModel, Field",
+      "",
       'INTENTS = ("refund", "delivery", "cancel", "other")',
       "",
+      "class Extracted(BaseModel):",
+      '    """The tight schema we pull from a messy customer email."""',
+      '    order_id: Optional[str] = Field(description="the order number as a string, or null if none")',
+      '    intent: str = Field(description="one of: refund, delivery, cancel, other")',
+      '    sentiment: str = Field(description="negative or neutral")',
+      "",
       "def extract(email):",
-      "    text = email.lower()",
-      '    # order id: the digits in the message, or None if there are none',
-      '    digits = "".join(ch for ch in email if ch.isdigit())',
-      {"s": '    order_id = ___   # TODO: the digits as-is if we found any, else None (keep order_id a STRING -- the orders DB is keyed by strings)',
-       "a": '    order_id = digits if digits else None'},
-      '    # intent: map keywords to a label from the CLOSED set INTENTS',
-      '    if "refund" in text or "money back" in text:',
-      '        intent = "refund"',
-      {"s": '    elif ___:   # TODO: a delivery-ish message (deliver / arrive / late / where is)',
-       "a": '    elif any(w in text for w in ("deliver", "arrive", "late", "where is", "hasn\'t")):'},
-      '        intent = "delivery"',
-      '    elif "cancel" in text:',
-      '        intent = "cancel"',
-      "    else:",
-      '        intent = "other"',
-      '    # sentiment: negative if the customer sounds unhappy',
-      {"s": '    sentiment = ___   # TODO: "negative" if any unhappy word is present, else "neutral"',
-       "a": '    sentiment = "negative" if any(w in text for w in ("frustrated", "angry", "late", "still", "unhappy")) else "neutral"'},
-      '    return {"order_id": order_id, "intent": intent, "sentiment": sentiment}',
+      '    """Use the REAL model as an EXTRACTOR (structured output), then validate against the closed set."""',
+      {"s": '    structured = ___   # TODO: make llm return the Extracted schema (hint: llm.with_structured_output(Extracted, method="json_schema"))',
+       "a": '    structured = llm.with_structured_output(Extracted, method="json_schema")'},
+      "    result = with_backoff(lambda: structured.invoke(",
+      '        "Extract the fields from this customer email. Use ONLY the email text; "',
+      '        "do not call any tool or search the web.\\nEmail: " + email))',
+      "    rec = result.model_dump()",
+      "    # never trust the model blindly: constrain intent to the CLOSED set (the escape hatch)",
+      {"s": '    if ___:   # TODO: the model returned an intent OUTSIDE the closed INTENTS set',
+       "a": '    if rec["intent"] not in INTENTS:'},
+      '        rec["intent"] = "other"',
+      "    return rec",
     ]
-    EX = '''print(extract("my order 4471 still hasn't arrived, getting frustrated"))
-print(extract("please cancel my subscription"))
-print(extract("I want a refund"))
-print(extract("where is my stuff?"))'''
+    RUN = '''for email in ["my order 4471 still hasn't arrived, getting frustrated",
+              "my parcel never showed up",          # NO delivery keyword -- the model still gets it
+              "please cancel my subscription",
+              "I want a refund"]:
+    print(repr(email[:40]), "->", extract(email))'''
     return [
       header(4, "Extract: Mess In, Structure Out", "Beginner", 25,
-        ["Pull defined fields out of an unstructured email",
-         "Use a closed set of intents; handle a missing order id",
-         "Return the tight schema the rest of the pipeline consumes"],
+        ["Ask the real model for structured output that fills a tight schema",
+         "Handle a missing order id (null, not invented)",
+         "Validate the model's intent against a closed set before trusting it"],
         "Extract — mess in, structure out"),
       setup(4),
       concept('''**Extract** turns unstructured input into structured data (deck slide 10): an email *"my order from
 last Tuesday still hasn't arrived, ref 4471, getting frustrated"* becomes
-`{"order_id": "4471", "intent": "delivery", "sentiment": "negative"}`. Keys: a **tight schema** (only
-the fields you'll use, intents from a **closed set**), **handle missing data** (return `None`, don't
-invent an id), and **type consistency** &mdash; `order_id` is a **string** because the orders DB is
-keyed by strings. Extract is usually the **first step** in the chain &mdash; extract &rarr; route
-&rarr; draft. (A keyword extractor is deterministic and auditable; a model can extract too, but you
-must still validate its output against a closed schema.)'''),
+`{"order_id": "4471", "intent": "delivery", "sentiment": "negative"}`. The reliable way is the **extract
+pattern** &mdash; ask the **real model** for **structured output** (`llm.with_structured_output(schema)`),
+so the model reads the language and fills a **tight schema** you define (only the fields you'll use).
+But you **never trust it blindly**: constrain `intent` to a **closed set** (with an escape hatch) so a
+stray label can't break the router. Extract is the **first step** in the chain &mdash; extract &rarr;
+route &rarr; draft.'''),
       code('''sample = "Hi, my order from last Tuesday still hasn't arrived, ref 4471, getting frustrated."
 print("unstructured in:", sample)
-print("we want out    : {order_id, intent, sentiment}")'''),
-      buildmd('''Complete `extract`: pull the order id (digits), classify the intent from a closed set, and read a
-rough sentiment.'''),
-      code(render(DEFS, sol) + "\n\n" + guard(EX)),
-      noticemd('''- The order id comes out a **string** (`"4471"`), matching the DB key; a message with no digits yields `None`, not a made-up id.
-- `intent` is always one of the **closed set** &mdash; that's what makes the label safe to branch on in the router.
-- The keyword rules mis-read some phrasings (e.g. "never showed up") &mdash; a real, visible failure mode you'll see again in the capstone.'''),
-      yourturn('''Feed `extract` a few of your own emails &mdash; especially awkward ones like *"my parcel never showed up"*
-(no keyword hit) &mdash; and see where it mislabels. **What good looks like:** you can name exactly which
-phrasings slip past the keywords, which tells you where a model-based extractor would earn its keep.'''),
-      *sol_answer(sol, r'''for e in ["my parcel never showed up", "order 5090 arrived late", "refund please, ref 4471"]:
-    print(repr(e), "->", extract(e))
-# "never showed up" hits no delivery keyword, so intent falls to "other" --
-# a real, visible miss where a model-based extractor (with a closed-schema validator) would earn its keep.'''),
-      footer(4, "Extract is the workhorse: it turns email, chat and forms into rows your systems can process. A tight schema plus missing-data handling is what makes it reliable enough to build on."),
+print("we want out    : {order_id, intent, sentiment} -- filled by the real model, guarded by a closed set")'''),
+      buildmd('''Complete `extract`: bind the `Extracted` schema to the model with `with_structured_output`, then constrain
+`intent` to the closed set.'''),
+      code(render(DEFS, sol)),
+      runmd("Run the real extractor over a few emails &mdash; including *'my parcel never showed up'*, which has no delivery keyword. The model reads meaning, not keywords."),
+      code(runguard(RUN)),
+      noticemd('''- The model fills the **schema** directly &mdash; `with_structured_output(..., method="json_schema")` makes Groq return JSON matching `Extracted`, so the reply is a typed object, not prose you must parse (and `json_schema` mode is more robust than the tool-calling default on this model).
+- *'my parcel never showed up'* has **no delivery keyword**, yet the model labels it `delivery` &mdash; exactly the phrasing a keyword extractor missed. The model reads meaning.
+- You still **validate**: an intent outside the closed set is forced to `other`, so a stray label can never break the router. Trust, but verify.'''),
+      yourturn('''Feed `extract` your own awkward emails &mdash; sarcasm, two intents in one message, a typo'd order number &mdash;
+and see where the model's structured output surprises you. **What good looks like:** the schema is always
+well-formed and `intent` is always in the closed set &mdash; the model does the reading, your validator keeps it
+safe.'''),
+      *sol_answer(sol, r'''if groq_ready():
+    for e in ["ugh, still waiting on 5090 AND I want my money back",   # two intents
+              "gr8 service NOT -- where's parcel 4471??"]:              # messy / sarcastic
+        print(repr(e[:40]), "->", extract(e))
+else:
+    print("(add GROQ_API_KEY to .env)")'''),
+      footer(4, "The extract pattern uses the real model's language understanding to fill a tight schema -- and a closed-set guard keeps its output safe to branch on. That's the workhorse first step of every automation."),
     ]
 
 # ============================================================ LAB 05
@@ -492,47 +513,71 @@ phrasings slip past the keywords, which tells you where a model-based extractor 
      ["Route", "Closed labels", "Escalate"])
 def _l5(sol):
     DEFS = [
-      'TEAMS = {"refund": "billing", "delivery": "logistics", "cancel": "billing", "other": "general"}',
+      "from langchain_core.prompts import PromptTemplate",
       "",
-      "def route(record):",
-      '    intent = record.get("intent", "other")',
+      'TEAMS = {"refund": "billing", "delivery": "logistics", "cancel": "billing", "other": "general"}',
+      'LABELS = ("refund", "delivery", "cancel", "other")',
+      "",
+      "CLASSIFY = PromptTemplate.from_template(",
+      '    "Classify the customer message into EXACTLY ONE label from: refund, delivery, cancel, other.\\n"',
+      '    "Use ONLY the message text; do not call any tool or search the web. Reply with only the label word.\\n"',
+      '    "Message: {msg}\\nLabel:")',
+      "",
+      "def classify(message):",
+      '    """Use the REAL model as a closed-set classifier."""',
+      "    raw = with_backoff(lambda: llm.invoke(CLASSIFY.format(msg=message)).content).strip().lower()",
+      "    # constrain the model to the CLOSED set -- a stray answer falls to the escape hatch",
+      {"s": '    return ___   # TODO: the first LABEL that appears in raw, else "other"',
+       "a": '    return next((l for l in LABELS if l in raw), "other")'},
+      "",
+      'def route(message, sentiment="neutral"):',
+      "    intent = classify(message)",
       {"s": '    team = ___   # TODO: the team for intent, defaulting to "general" (the escape hatch)',
        "a": '    team = TEAMS.get(intent, "general")'},
       '    # escalate to a human when the customer is unhappy OR the intent is unknown',
       {"s": '    escalate = ___   # TODO: True if sentiment is negative or intent not in TEAMS',
-       "a": '    escalate = record.get("sentiment") == "negative" or intent not in TEAMS'},
-      '    return {"team": team, "escalate": escalate}',
+       "a": '    escalate = sentiment == "negative" or intent not in TEAMS'},
+      '    return {"intent": intent, "team": team, "escalate": escalate}',
     ]
-    EX = '''print("refund   ->", route({"intent": "refund", "sentiment": "neutral"}))
-print("delivery ->", route({"intent": "delivery", "sentiment": "negative"}))
-print("unknown  ->", route({"intent": "mystery", "sentiment": "neutral"}))'''
+    RUN = '''for msg, sent in [("I want a refund", "neutral"),
+                  ("where is my order 4471? it's late", "negative"),
+                  ("please cancel order 5090", "neutral"),
+                  ("blah blah nonsense", "neutral")]:
+    print(f"{msg[:32]:34} ->", route(msg, sent))'''
     return [
       header(5, "Route: Decide What Happens Next", "Beginner", 20,
-        ["Map an intent to a team from a fixed set (with an escape hatch)",
-         "Escalate negative or unknown cases to a human",
-         "Emit a label that drives the next branch of the workflow"],
+        ["Use the real model as a classifier over a CLOSED label set",
+         "Constrain its answer + escalate negative or unknown cases to a human",
+         "Emit a small label that drives the next branch of the workflow"],
         "Route — decide what happens next"),
       setup(5),
       concept('''**Route** decides what happens next and emits a **label from a fixed set** that drives a branch
-(deck slide 11): which team, how urgent, auto-handle or escalate. The **closed list** is the trick
-that makes an LLM a reliable classifier &mdash; include an **escape hatch** (`other` / `unsure`), and
-a **fallback path** that routes low-confidence or high-stakes cases to a human. (Deterministic
-routing here; routing to a specialist *agent* is Module 8.)'''),
+(deck slide 11): which team, how urgent, auto-handle or escalate. The **closed list** is the trick that
+makes an **LLM a reliable classifier**: ask the real model to pick exactly one label, include an **escape
+hatch** (`other`), and **constrain** its answer to the set so a stray reply is safe. A deterministic
+**fallback path** still routes unhappy or unknown cases to a human. (Routing to a specialist *agent*
+graph is Module 8; here the model classifies and rule-based logic escalates.)'''),
       code('''TEAMS = {"refund": "billing", "delivery": "logistics", "cancel": "billing", "other": "general"}
-print("closed label set -> team:", TEAMS)'''),
-      buildmd('''Complete `route`: pick the team from the closed map, and decide when to **escalate** to a human.'''),
-      code(render(DEFS, sol) + "\n\n" + guard(EX)),
-      noticemd('''- An unknown intent falls back to `general` via the **escape hatch** &mdash; the router never crashes on a label it hasn't seen.
-- A **negative** sentiment escalates to a human even when the team is known &mdash; the high-stakes fallback path.
-- The emitted `{team, escalate}` is the label the rest of the workflow branches on; keep it small and closed.'''),
-      yourturn('''Add a new intent/team pair (e.g. `"billing_query": "billing"`) or a stricter escalation rule (escalate
-any `refund` over a threshold). **What good looks like:** known intents route deterministically, unknowns
-fall to `general`, and the cases you'd want a human to see are the ones that get `escalate=True`.'''),
-      *sol_answer(sol, r'''TEAMS["billing_query"] = "billing"      # a new known intent -> team pair
-print("known   ->", route({"intent": "billing_query", "sentiment": "neutral"}))  # -> billing, no escalate
-print("unknown ->", route({"intent": "mystery", "sentiment": "neutral"}))        # -> general, escalate (not in TEAMS)
-print("unhappy ->", route({"intent": "refund", "sentiment": "negative"}))        # known team but escalate=True'''),
-      footer(5, "Routing makes one agent the front door to a whole system. Routing to the right specialist AGENT is the bridge to Module 8 -- for now it's the label that drives the branch."),
+print("closed label set -> team:", TEAMS)
+print("the model picks ONE label; the escape hatch + escalation keep it safe")'''),
+      buildmd('''Complete `classify` (constrain the model's answer to the closed `LABELS`) and `route` (team from the closed
+map + when to **escalate**).'''),
+      code(render(DEFS, sol)),
+      runmd("Route a few real messages: the model classifies each into the closed set, and the escape hatch catches nonsense."),
+      code(runguard(RUN)),
+      noticemd('''- The **real model** classifies the message, but `classify` **constrains** its answer to `LABELS` &mdash; the escape hatch (`other`) makes even a stray reply safe.
+- A **negative** sentiment escalates to a human even when the team is known &mdash; the deterministic high-stakes fallback path.
+- The emitted `{intent, team, escalate}` is the small, closed label the rest of the workflow branches on.'''),
+      yourturn('''Try messages the model might find ambiguous (*"I'm not sure, maybe cancel, maybe not"*) and see which label it
+picks. **What good looks like:** the answer is always in the closed set, ambiguous or unhappy cases escalate, and
+you can defend why the escape hatch + escalation matter more than the classifier being perfect.'''),
+      *sol_answer(sol, r'''if groq_ready():
+    for msg, sent in [("I'm not sure, maybe cancel maybe not", "neutral"),
+                      ("this is the third time my refund failed!!", "negative")]:
+        print(f"{msg[:34]:36} ->", route(msg, sent))
+else:
+    print("(add GROQ_API_KEY to .env)")'''),
+      footer(5, "A closed label set + an escape hatch is what turns the model into a reliable router; deterministic escalation keeps humans in the high-stakes loop. Routing to specialist AGENTS is the bridge to Module 8."),
     ]
 
 # ============================================================ LAB 06
@@ -763,10 +808,30 @@ print("vs good key  :", send_key("4471", "due Monday"), "-- the draft hash disti
 # ============================================================ LAB 09
 @lab(9, "lab-09-human-in-the-loop", "Intermediate",
      "Human-in-the-Loop: Draft ≠ Send", 30,
-     "Separate drafting from sending: the agent emits a needs-approval draft and never holds a send tool.",
+     "Build the REAL gather-only create_agent (no send tool), invoke it to draft, and gate the send on a human -- draft never equals send.",
      ["Draft not send", "Approval gate", "Withhold the tool"])
 def _l9(sol):
     DEFS = [
+      "from langchain_core.tools import tool",
+      "from langchain.agents import create_agent",
+      "",
+      EMAIL_FIXTURE,
+      "",
+      "@tool",
+      "def lookup_order(order_id: str) -> dict:",
+      '    """Look up an order\'s status, ETA and carrier by id."""',
+      '    return ORDERS.get(order_id, {"status": "unknown"})',
+      "",
+      "@tool",
+      "def send_email(to: str, body: str) -> str:",
+      '    """Send an email. (Defined to show the capability -- but DELIBERATELY WITHHELD from the agent.)"""',
+      '    return "SENT"',
+      "",
+      "def gather_only_agent():",
+      "    # the strongest guardrail: build the REAL agent WITHOUT send_email",
+      {"s": '    return create_agent(llm, ___)   # TODO: gather-only tools -- [lookup_order], NOT send_email',
+       "a": '    return create_agent(llm, [lookup_order])'},
+      "",
       "def make_draft(reply):",
       '    # the agent\'s output is a DRAFT + a needs-approval flag -- never a sent mail',
       {"s": '    return {"reply": reply, "status": ___}   # TODO: the needs-approval flag',
@@ -778,41 +843,51 @@ def _l9(sol):
       '        return "invalid"',
       {"s": '    return ___   # TODO: send when approved, otherwise revise',
        "a": '    return "send" if approved else "revise"'},
-      "",
-      "def agent_tools():",
-      '    # gather-only: the agent must NOT be given a send tool',
-      {"s": '    return ___   # TODO: the two gather tools, WITHOUT send_email',
-       "a": '    return ["lookup_order", "get_template"]'},
-      "",
-      "def agent_can_send():",
-      '    return "send_email" in agent_tools()',
     ]
-    EX = '''d = make_draft("Hi Priya, your order 4471 is due Friday.")
+    EX = '''# Rule-based draft/gate -- no model call yet:
+d = make_draft("Hi Priya, your order 4471 is due Friday.")
 print("draft   :", d)
 print("approve ->", gate(d, True))
 print("reject  ->", gate(d, False))
-print("agent can send?", agent_can_send())'''
+print("send_email is DEFINED but will NOT be bound to the agent:", send_email.name)'''
+    RUN = '''def tools_used(messages):
+    return [tc["name"] for m in messages for tc in (getattr(m, "tool_calls", None) or [])]
+
+agent = gather_only_agent()          # a REAL create_agent, send_email NOT bound
+result = with_backoff(lambda: agent.invoke(
+    {"messages": [("user", "Look up order 4471 and draft a one-line status reply. Do not send anything.")]},
+    config={"recursion_limit": 8}))
+reply = result["messages"][-1].content
+print("tools the agent used:", tools_used(result["messages"]))   # lookup_order -- never send_email
+
+draft = make_draft(reply)            # wrap the real draft as needs_approval
+print("draft status  :", draft["status"])
+print("human approves ->", gate(draft, True))   # only NOW, past a human, does 'send' happen
+print("could the agent auto-send? No -- send_email was never bound.")'''
     return [
       header(9, "Human-in-the-Loop: Draft ≠ Send", "Intermediate", 30,
-        ["Make the agent's output a DRAFT with a needs-approval flag",
-         "Build the approval gate: approve -> send, reject -> revise",
-         "Apply the strongest guardrail: withhold the send tool entirely"],
+        ["Build a REAL gather-only create_agent -- send_email withheld",
+         "Invoke it to draft, then gate the send: approve -> send, reject -> revise",
+         "See that the strongest guardrail is structural: the tool isn't bound"],
         "Human-in-the-loop: draft ≠ send"),
       setup(9),
       concept('''The golden rule for real-world agents: **separate drafting from sending** (deck slides 13, 16). The
 agent gathers, reasons and drafts **autonomously** &mdash; none of that is irreversible &mdash; but the
 **send** pauses for a human. The simplest, strongest guardrail is to **withhold the `send_email`
-tool**: the agent literally **cannot send**, so a human always does that after approving.
-**Draft is not send.** (In Lab 11 you'll enforce this on the *real* Groq agent by never binding
-`send_email`.)'''),
-      code('''# The agent's toolset -- notice what is deliberately MISSING.
-CANDIDATE_TOOLS = ["lookup_order", "get_template", "send_email"]  # send_email must NOT be given
+tool**: you build the **real `create_agent`** with gather tools only, so the agent literally **cannot
+send**. A human does that after approving. **Draft is not send.** (Lab 11 assembles this same
+gather-only guardrail into the full email agent.)'''),
+      code('''# The agent's candidate toolset -- notice what is deliberately WITHHELD.
+CANDIDATE_TOOLS = ["lookup_order", "get_template", "send_email"]  # send_email must NOT be bound
 print("what the agent COULD be given:", CANDIDATE_TOOLS)'''),
-      buildmd('''Complete the draft flag, the approval gate, and the gather-only toolset (no send tool).'''),
+      buildmd('''Complete the **gather-only agent** (bind `[lookup_order]`, never `send_email`), the draft flag, and the
+approval gate.'''),
       code(render(DEFS, sol) + "\n\n" + guard(EX)),
-      noticemd('''- The draft carries **`needs_approval`**, never `sent` &mdash; the output shape itself encodes "a human must look".
-- `gate` routes approve&rarr;send / reject&rarr;revise; the *send* only ever happens on the far side of a human.
-- `agent_can_send()` is **False**: the strongest guardrail is structural &mdash; the tool simply isn't in the list.'''),
+      runmd("Build the real gather-only agent, invoke it to draft a reply, then run the human gate. Read `tools_used`: it calls `lookup_order` and never has a send tool to call."),
+      code(runguard(RUN)),
+      noticemd('''- `gather_only_agent()` is a **real `create_agent`** built with **only** `lookup_order` &mdash; `send_email` is defined but **never bound**, so the agent structurally **cannot send**.
+- The real draft is wrapped **`needs_approval`**; `gate` routes approve&rarr;send / reject&rarr;revise &mdash; the *send* only ever happens past a human.
+- `tools_used` from the trace shows `lookup_order` and never `send_email` &mdash; the guardrail is what's **absent** from the tools list.'''),
       yourturn('''Add a third state to `gate` &mdash; e.g. `"edit"` when a human tweaks the reply before sending &mdash; and
 decide what `status` an edited draft carries. **What good looks like:** every path still ends with a human
 action for the send, and there is no code path where the agent sends on its own.'''),
@@ -824,8 +899,8 @@ action for the send, and there is no code path where the agent sends on its own.
 d = make_draft("Hi Priya, your order 4471 is due Friday.")
 print("approve ->", gate3(d, "approve"))    # send
 print("edit    ->", gate3(d, "edit"))       # edit (then re-review), never a direct send
-print("agent can send?", agent_can_send())  # still False -- the send tool is never given'''),
-      footer(9, "The strongest human-in-the-loop guardrail is the simplest: don't give the agent the send tool. It gathers and drafts all day -- and a human keeps the send. Draft is not send."),
+print("agent bound send_email? No -- gather_only_agent() is built without it")'''),
+      footer(9, "The strongest human-in-the-loop guardrail is the simplest: build the real agent without the send tool. It gathers and drafts all day -- and a human keeps the send. Draft is not send."),
     ]
 
 # ============================================================ LAB 10
@@ -986,24 +1061,25 @@ print("safe can send?  ", "send_email" in [t.name for t in gather_tools()]) # Fa
 # ============================================================ LAB 12
 @lab(12, "lab-12-capstone-email-drafting-agent", "Advanced",
      "Capstone: The Email-Drafting Agent", 45,
-     "Chain extract -> route -> gather -> draft (real Groq) -> validate over a suite of client emails; never auto-send.",
-     ["End-to-end pipeline", "Task suite", "Draft-not-send"])
+     "Chain extract -> route -> INVOKE the real gather-only agent (gather+draft) -> validate over a suite of client emails; never auto-send.",
+     ["Real agent run", "Task suite", "Draft-not-send"])
 def _l12(sol):
     DEFS = [
-      "def process(email):",
+      "def process(email, agent):",
       "    rec    = extract(email)",
       "    routed = route(rec)",
-      '    # gather via the SAME tool the Lab 7.11 agent is built from (reuse, not re-implement)',
-      '    found  = lookup_order.invoke(rec["order_id"]) if rec["order_id"] else {}',
-      '    order  = found if found.get("id") else {"id": rec["order_id"], "name": "there", "status": "unknown", "eta": "soon"}',
-      {"s": '    reply  = ___   # TODO: draft a grounded reply for this order with the REAL model',
-       "a": '    reply  = draft(order)'},
+      "    # hand the task to the REAL gather-only agent: it calls lookup_order, then drafts (it has no send tool)",
+      '    task = f"Look up order {rec[\'order_id\']}, then draft a short, grounded status reply for the customer. Use only the order facts; do not send anything."',
+      {"s": '    result = ___   # TODO: invoke the real agent on the task (recursion_limit 8), retry-safe via with_backoff',
+       "a": '    result = with_backoff(lambda: agent.invoke({"messages": [("user", task)]}, config={"recursion_limit": 8}))'},
+      '    reply  = result["messages"][-1].content',
+      '    order  = lookup_order.invoke(rec["order_id"]) if rec["order_id"] else {}',
       "    ok     = validate(reply, order)",
       '    # never auto-send: a valid draft awaits approval; an invalid one needs a fix',
       {"s": '    status = ___   # TODO: needs_approval when validated, else needs_fix',
        "a": '    status = "needs_approval" if ok else "needs_fix"'},
-      '    return {"team": routed["team"], "escalate": routed["escalate"],',
-      '            "draft": reply, "status": status}',
+      '    return {"team": routed["team"], "escalate": routed["escalate"], "draft": reply,',
+      '            "status": status, "tools_used": tools_used(result["messages"])}',
       "",
       "SUITE = [",
       '    "Where is my order 4471? It\'s late.",',
@@ -1012,31 +1088,31 @@ def _l12(sol):
       "]",
     ]
     EX = '''# Structure check (no model call): the capstone reuses the Lab 7.11 gather-only agent.
-print("agent type      :", type(make_email_agent()).__name__)
+print("agent type      :", type(make_email_agent()).__name__ if groq_ready() else "(needs GROQ_API_KEY)")
 print("still withholds send_email:", "send_email" not in [t.name for t in gather_tools()])'''
-    RUN = '''for email in SUITE:
-    r = process(email)
+    RUN = '''agent = make_email_agent()          # the real gather-only agent, built ONCE
+for email in SUITE:
+    r = process(email, agent)
     print("EMAIL:", email)
-    print("  team:", r["team"], "| escalate:", r["escalate"], "| status:", r["status"])
+    print("  team:", r["team"], "| escalate:", r["escalate"], "| status:", r["status"], "| tools:", r["tools_used"])
     print("  draft:", r["draft"][:140].replace(chr(10), " "))
     print()
 print("Every result is needs_approval / needs_fix -- the agent NEVER auto-sends.")'''
     return [
       header(12, "Capstone: The Email-Drafting Agent", "Advanced", 45,
-        ["Chain the pipeline: extract, route, gather, draft (real Groq), validate",
+        ["Chain the pipeline: extract, route, then INVOKE the real gather-only agent",
          "Never auto-send -- every result is a needs_approval draft",
-         "Run it over a SUITE of client emails and read the real drafts"],
+         "Run it over a SUITE of client emails and read the real drafts + traces"],
         "Now build it — Module 7 labs"),
       setup(12),
       concept('''Capstone: the **email-drafting agent** (the client's Lab 4.1), end to end. It **extracts** the
-query's fields, **routes** it to a team, **gathers** the order via the **gather-only tool** the Lab
-7.11 agent is built from (`send_email` still withheld), **drafts** a grounded reply with the **real
-Groq model**, **validates** it, and returns a **`needs_approval`** draft &mdash; it **never
-auto-sends**. You run it over a **suite of client emails** and read the real drafts. The helpers below
-are the ones you built through the module; you assemble them into `process`.'''),
-      realcell([PROMPT_IMPORT, EMAIL_FIXTURE],
-        '''from langchain_core.prompts import PromptTemplate
-from langchain_core.tools import tool
+query's fields, **routes** it to a team, then **invokes the real gather-only `create_agent`** from Lab
+7.11 (`send_email` still withheld) &mdash; the agent **calls `lookup_order` and drafts** a grounded
+reply itself &mdash; **validates** it, and returns a **`needs_approval`** draft. It **never auto-sends**.
+You run it over a **suite of client emails** and read the real drafts and traces. The helpers below are
+the ones you built through the module; you assemble them into `process`.'''),
+      realcell([TOOL_IMPORT, EMAIL_FIXTURE],
+        '''from langchain_core.tools import tool
 from langchain.agents import create_agent
 
 # --- The pipeline pieces you built this module (provided so you can assemble the whole agent) ---
@@ -1056,16 +1132,9 @@ def route(rec):
     return {"team": TEAMS.get(rec["intent"], "general"),
             "escalate": rec["sentiment"] == "negative" or rec["intent"] not in TEAMS}
 
-DRAFT_PROMPT = PromptTemplate.from_template(
-    "You are a customer-support agent. Using ONLY these order facts, write a short, polite reply.\\n"
-    "Invent no date or fact that is not given below.\\n"
-    "Customer name: {name}\\nOrder id: {id}\\nStatus: {status}\\nETA: {eta}\\nReply:")
-def draft(order):
-    # the DRAFT step calls the REAL Groq model, grounded in the order
-    return with_backoff(lambda: llm.invoke(DRAFT_PROMPT.format(
-        name=order["name"], id=order["id"], status=order["status"], eta=order["eta"])).content)
 def validate(reply, order):
-    return order["eta"] in reply
+    # grounded = the real ETA appears in the reply (nothing invented); unknown orders can't be checked
+    return order.get("eta", "") in reply if order.get("eta") else True
 
 # --- The gather-only agent you assembled in Lab 7.11 (send_email WITHHELD) -- reused here ---
 @tool
@@ -1084,28 +1153,31 @@ def gather_tools():
     return [lookup_order, get_template]                 # gather-only -- send_email is NOT bound
 def make_email_agent():
     return create_agent(llm, gather_tools())
-print("helpers ready: extract, route, draft (real model), validate + the gather-only agent")'''),
-      buildmd('''Assemble `process`: chain the pipeline, gather via the agent's tool, draft with the **real model**, and
-never send &mdash; every result is `needs_approval` or `needs_fix`.'''),
+def tools_used(messages):
+    return [tc["name"] for m in messages for tc in (getattr(m, "tool_calls", None) or [])]
+print("helpers ready: extract, route, validate + the gather-only agent (it drafts; send withheld)")'''),
+      buildmd('''Assemble `process`: extract &rarr; route, then **invoke the real gather-only agent** (it gathers via
+`lookup_order` and drafts), validate, and never send &mdash; every result is `needs_approval` or `needs_fix`.'''),
       code(render(DEFS, sol) + "\n\n" + guard(EX)),
-      runmd("Run the whole pipeline over a suite of client emails. Each `draft` is written by the real Groq model, grounded in the gathered order; nothing is ever sent."),
+      runmd("Run the whole pipeline over a suite of client emails. Each draft is produced by **invoking the real assembled agent** (see `tools_used`), grounded in the order it gathered; nothing is ever sent."),
       code(runguard(RUN)),
-      noticemd('''- Each row runs the **real pipeline**: keyword extract &rarr; route &rarr; gather (real order) &rarr; **real Groq draft** &rarr; validate.
+      noticemd('''- Each row **invokes the real assembled agent** (`agent.invoke`): it calls `lookup_order` then drafts &mdash; see `tools_used`. This is the Lab 7.11 agent doing the whole job, not a bare model call.
 - Every `status` is `needs_approval` or `needs_fix` &mdash; **never** `sent`. The agent has no send tool; a human decides.
-- Read the drafts: for a known order they name the real ETA (grounded); for an unknown order the model can only work with what it was given.'''),
+- For a known order the draft names the real ETA (grounded); the rule-based `extract` still mislabels awkward phrasings &mdash; the honest edge, and the bridge to Module 8.'''),
       yourturn('''Add an awkward email the keyword extractor mis-reads (e.g. *"my package never showed up and I'm furious"*,
 which has no id and no delivery keyword) and re-run. **What good looks like:** you can see exactly where the
-*rule-based* extract fails the model &mdash; and you can argue for swapping in an LLM-based extractor (with a
+*rule-based* extract fails the model &mdash; and you can argue for swapping in the Lab 7.4 LLM extractor (with a
 closed-schema validator) as the fix. That's the honest edge of the system, and the bridge to Module 8.'''),
       *sol_answer(sol, r'''awkward = "my package never showed up and I'm furious"   # no digits, no delivery keyword
 print("extract sees:", extract(awkward))   # order_id None, intent "other" -- a real rule-based miss
 if groq_ready():
-    r = process(awkward)
-    print("  team:", r["team"], "| escalate:", r["escalate"], "| status:", r["status"])
+    agent = make_email_agent()
+    r = process(awkward, agent)
+    print("  team:", r["team"], "| escalate:", r["escalate"], "| status:", r["status"], "| tools:", r["tools_used"])
     print("  draft:", r["draft"][:140].replace(chr(10), " "))
 else:
     print("(add GROQ_API_KEY to .env to see the real drafted reply)")'''),
-      footer(12, "You built the email-drafting agent end to end -- extract, route, gather, draft (real model), validate -- and it never sends on its own. That's an agent that does a job you'd pay for. Next: Module 8 orchestrates a team of them."),
+      footer(12, "You built the email-drafting agent end to end -- extract, route, then the real gather-only agent gathers, drafts and validates -- and it never sends on its own. That's an agent that does a job you'd pay for. Next: Module 8 orchestrates a team of them."),
     ]
 
 # ============================================================ WRITE NOTEBOOKS

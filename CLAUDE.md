@@ -145,13 +145,26 @@ autonomous, industry-ready AI agents.*
   idempotency, and the **draft-not-send** human-in-the-loop gate (Intermediate); observability/run-log,
   **assembling the email agent** (gather-only tools &mdash; `send_email` withheld &mdash; returns a
   `needs_approval` draft), and a **capstone** that chains extract&rarr;route&rarr;gather&rarr;draft&rarr;validate
-  over a suite and never auto-sends (Advanced). ~340 min. **Design (near-real):** the
-  extract/route/validate pipeline is rule-based Python; the tool/prompt/agent-assembly labs use real
-  LangChain 1.x (`@tool`, `PromptTemplate`, `ChatGroq("openai/gpt-oss-20b")`, `create_agent`). The
-  **gather-only guardrail** is the point: `send_email` is defined but **never bound** to the agent (a
-  `CompiledStateGraph`), which returns a `needs_approval` draft. `order_id` is a **string** throughout
-  (the old lab04-vs-lab12 int/str bug is reconciled). Real `@tool` requires a docstring, so docstring
-  blanks keep a `"""___ (TODO...)"""` stub. See the source-of-truth note for provider/verification/crash-proofing.
+  over a suite and never auto-sends (Advanced). ~340 min. **Design (near-real, framework-first &mdash;
+  revised 2026-07-16):** validation/retry-idempotency/observability/schema-coercion (labs 03/07/08/10)
+  stay **rule-based Python by design** &mdash; they are supporting logic that is correctly deterministic
+  even in production (you don't validate, dedupe or log with an LLM). The rest drive real framework/model:
+  **01** the automation pipeline is a real `langgraph.StateGraph` (six stage nodes wired in order, offline);
+  **02** gather-with-tools is a real `create_agent`; **04** the **extract pattern** is a real LLM
+  structured-output extractor (`llm.with_structured_output(Extracted, method="json_schema")` &mdash;
+  json_schema mode, NOT the tool-calling default, which 400s intermittently on gpt-oss) + a closed-set
+  guard; **05** the **route pattern** is a real LLM closed-set classifier (`llm.invoke` over a
+  `PromptTemplate`, constrained to `LABELS` + deterministic escalation); **06** drafts via real `llm.invoke`;
+  **09** builds the **real gather-only `create_agent`** (send withheld) and invokes it to draft, then a
+  rule-based human gate; **11** assembles the gather-only agent; **12** the capstone now **invokes** the
+  real assembled agent per email (`agent.invoke` &rarr; it calls `lookup_order` and drafts; `tools_used`
+  in the output) &mdash; it no longer bypasses the agent with a bare `llm.invoke`. The **gather-only
+  guardrail** is the point: `send_email` is defined but **never bound** (a `CompiledStateGraph`), which
+  returns a `needs_approval` draft. `order_id` is a **string** throughout. Real `@tool` requires a
+  docstring, so docstring blanks keep a `"""___ (TODO...)"""` stub. Deck has **no** rule-based code slides,
+  so it needed no change. Verified 2026-07-16 vs `biaa-venv` with live Groq: labs 01/04/05/09/12 solution +
+  student notebooks run clean; `regenerate.sh` idempotent. See the source-of-truth note for
+  provider/verification/crash-proofing.
 - **Module 8 has 12 labs** (`hands-on/module-8/lab-01..12-*.ipynb`, prefix `/tmp/biaa-lab-08-NN/`):
   6 Beginner, 3 Intermediate, 3 Advanced &mdash; this is the **multi-agent** module and every lab builds
   the **customer-service chatbot** (the client's Lab 4.2) piece by piece: specialist agents
