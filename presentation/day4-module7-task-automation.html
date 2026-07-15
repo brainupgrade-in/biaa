@@ -385,7 +385,7 @@
           <p style="margin-top:8px">Readable &mdash; but your code <b>can&rsquo;t reliably act</b> on it.</p>
         </div>
         <div class="card cyan"><h3>&#128290; Structured (for a machine)</h3>
-          <p class="mono" style="font-size:.85em">{ "intent": "refund",<br>&nbsp;&nbsp;"urgency": "high",<br>&nbsp;&nbsp;"order_id": 4471 }</p>
+          <p class="mono" style="font-size:.85em">{ "intent": "refund",<br>&nbsp;&nbsp;"urgency": "high",<br>&nbsp;&nbsp;"order_id": "4471" }</p>
           <p style="margin-top:8px">Machine-readable, <b>validatable</b>, composable.</p>
         </div>
       </div>
@@ -457,7 +457,7 @@
 <span class="you">"Hi, my order from last Tuesday still hasn't arrived, ref 4471, getting frustrated."</span>
 
 <span class="com"># structured out (a tight schema: fixed fields, allowed values)</span>
-{ <span class="kw">"order_id"</span>: <span class="str">4471</span>, <span class="kw">"intent"</span>: <span class="str">"delivery_issue"</span>, <span class="kw">"sentiment"</span>: <span class="str">"negative"</span> }
+{ <span class="kw">"order_id"</span>: <span class="str">"4471"</span>, <span class="kw">"intent"</span>: <span class="str">"delivery_issue"</span>, <span class="kw">"sentiment"</span>: <span class="str">"negative"</span> }
       </div>
       <p class="callout" style="margin-top:8px">&#129504; Keys: a <b>tight schema</b> (only fields you&rsquo;ll use, with allowed values) &middot; handle <b>missing data</b> (return null, don&rsquo;t invent an id) &middot; <b>validate</b> before trusting. Often the <b>first step</b> in a chain &mdash; extract &rarr; route &rarr; draft.</p>
     </div>
@@ -620,22 +620,25 @@
 
   <!-- ============ SLIDE 16 — EMAIL AGENT IN CODE ============ -->
   <section class="slide" data-title="Email agent in code"
-    data-note="A short, illustrative code peek so the abstractions feel concrete -- not a coding lesson. This is the shape of the email agent they'll build in Lab 4.1, in the LangChain idiom from Module 6. Point out the four things they already know: (1) tools -- lookup_order and get_template, defined with @tool exactly as in Module 6; (2) the agent -- create_react_agent binds the model to those tools; (3) the guardrail -- the draft is returned, and send_email is deliberately NOT given to the agent as a tool, so it CANNOT send on its own; a human calls send after approving; (4) the loop cap -- max_iterations, the guardrail from Module 5. Stress the design choice on line with send_email: withholding the irreversible tool from the agent is the simplest, strongest human-in-the-loop guardrail there is -- the agent literally cannot send. Everything here maps to code they wrote yesterday; today they point it at a real task.">
+    data-note="A short, illustrative code peek so the abstractions feel concrete -- not a coding lesson. This is the shape of the email agent they'll build in Lab 4.1, in the LangChain 1.x idiom from Module 6. Point out the four things they already know: (1) tools -- lookup_order and get_template, defined with @tool exactly as in Module 6; (2) the agent -- create_agent binds the model to those tools and returns a CompiledStateGraph you invoke with a messages list; (3) the guardrail -- the draft is returned, and send_email is deliberately NOT given to the agent as a tool, so it CANNOT send on its own; a human calls send after approving; (4) the loop cap -- recursion_limit in the invoke config, the guardrail from Module 5. Stress the design choice on line with send_email: withholding the irreversible tool from the agent is the simplest, strongest human-in-the-loop guardrail there is -- the agent literally cannot send. Everything here maps to code they wrote yesterday; today they point it at a real task.">
     <div class="kicker"><span class="dot"></span> Illustrative &middot; the shape of Lab 4.1</div>
     <h2 class="title">The email agent, in code</h2>
     <div class="body">
       <div class="terminal">
 <span class="com"># Tools give the agent its hands (Module 6). Note what's MISSING: send_email.</span>
+<span class="kw">from</span> langchain.agents <span class="kw">import</span> create_agent
 <span class="fn">@tool</span>
 <span class="kw">def</span> <span class="fn">lookup_order</span>(order_id: str) -> dict:
     <span class="str">"""Look up an order's status, ETA and carrier by id."""</span>
-    <span class="kw">return</span> orders_db.<span class="fn">get</span>(order_id)
+    <span class="kw">return</span> orders_db.<span class="fn">get</span>(order_id, {<span class="str">"status"</span>: <span class="str">"unknown"</span>})
 
 tools = [lookup_order, get_template]        <span class="com"># gather-only -- the agent CANNOT send</span>
-agent = <span class="fn">create_react_agent</span>(llm, tools, draft_prompt)
-executor = <span class="fn">AgentExecutor</span>(agent=agent, tools=tools, max_iterations=<span class="str">6</span>)
+agent = <span class="fn">create_agent</span>(llm, tools)          <span class="com"># a CompiledStateGraph (LangChain 1.x)</span>
 
-draft = executor.<span class="fn">invoke</span>({<span class="str">"input"</span>: incoming_email})   <span class="com"># returns a DRAFT, not a sent mail</span>
+result = agent.<span class="fn">invoke</span>(
+    {<span class="str">"messages"</span>: [(<span class="str">"user"</span>, incoming_email)]},
+    config={<span class="str">"recursion_limit"</span>: <span class="str">8</span>})       <span class="com"># the loop cap (Module 5 guardrail)</span>
+draft = {<span class="str">"draft"</span>: result[<span class="str">"messages"</span>][-1].content, <span class="str">"status"</span>: <span class="str">"needs_approval"</span>}
 <span class="kw">if</span> human_approves(draft):                   <span class="com"># the human-in-the-loop gate</span>
     <span class="fn">send_email</span>(draft)                       <span class="com"># a human triggers the irreversible act</span>
       </div>
@@ -1129,7 +1132,7 @@ draft = executor.<span class="fn">invoke</span>({<span class="str">"input"</span
 <div class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Day 4 · Module 7 — Task Automation with AI Agents</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.1</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.2</span>
 </div>
 
 <script>

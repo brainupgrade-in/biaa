@@ -609,27 +609,30 @@
 
   <!-- ============ SLIDE 17 — CHATBOT IN CODE ============ -->
   <section class="slide" data-title="The chatbot in code"
-    data-note="A short, illustrative code peek in the LangGraph idiom -- not a coding lesson. This is the shape of the chatbot they'll build in Lab 4.2. Point out the pieces they already know. (1) Specialists: each is just a create_react_agent from Module 6 with its OWN focused prompt and its OWN small tool list -- billing_agent gets the billing tools, tech_agent gets the tech tools. (2) The supervisor: a routing function -- the route pattern from Module 7, but the labels are agent names, not code branches. (3) The graph: a LangGraph StateGraph wires supervisor and workers as NODES with edges; the shared state flows through. (4) The decision step: a synthesise node combines the findings. (5) The guardrail, unchanged from Module 7: the refund tool is behind a human-approval gate -- the agents draft, a human approves. Stress the through-line: everything here is composed from parts they built on Days 3-4 -- @tool, create_react_agent, a state graph, route, draft-not-send. Multi-agent isn't a new toolkit; it's those same parts, arranged as a team. Keep it high-level -- the labs are where they wire it up.">
+    data-note="A short, illustrative code peek in the LangGraph idiom -- not a coding lesson. This is the shape of the chatbot they'll build in Lab 4.2. Point out the pieces they already know. (1) Specialists: each is just a create_agent from Module 6 with its OWN focused system_prompt and its OWN small tool list -- billing_agent gets the billing tools, tech_agent gets the tech tools. (2) The supervisor: route() is just the route pattern from Module 7, but the labels are agent names -- it returns which specialists are involved, e.g. ["billing", "tech"]. (3) The orchestration: those labels drive the dict-comprehension -- each named specialist is invoked with its OWN tools, and the findings dict is the shared state passed to the next step (no compiled graph needed here; the labs cover a real LangGraph StateGraph separately). (4) The decision step: synthesize() combines the findings into one draft reply. (5) The guardrail, unchanged from Module 7: the refund is behind a human-approval gate -- note the specialists have NO refund tool, so the team drafts and a human approves the irreversible act. Stress the through-line: everything here is composed from parts they built on Days 3-4 -- @tool, create_agent, shared state, route, draft-not-send. Multi-agent isn't a new toolkit; it's those same parts, arranged as a team. Keep it high-level -- the labs are where they wire it up.">
     <div class="kicker"><span class="dot"></span> Illustrative &middot; the shape of Lab 4.2</div>
     <h2 class="title">The chatbot, in code</h2>
     <div class="body">
       <div class="terminal">
-<span class="com"># Each specialist is a Module-6 agent with its OWN prompt + small tool set</span>
-billing_agent = <span class="fn">create_react_agent</span>(llm, [lookup_invoice, refund_request], billing_prompt)
-tech_agent    = <span class="fn">create_react_agent</span>(llm, [known_issues, restart_service], tech_prompt)
+<span class="com"># Each specialist = a Module-6 create_agent: its OWN system_prompt + small tool set</span>
+<span class="kw">def</span> <span class="fn">build_specialist</span>(tools, role):
+    <span class="kw">return</span> <span class="fn">create_agent</span>(llm, tools,
+        system_prompt=<span class="str">f"You are the {role} specialist. Use ONLY your own tools."</span>)
 
-<span class="kw">def</span> <span class="fn">supervisor</span>(state):                 <span class="com"># route pattern (Module 7) -> to AGENTS</span>
-    <span class="kw">return</span> <span class="fn">classify_intents</span>(state[<span class="str">"message"</span>])   <span class="com"># e.g. ["billing", "tech"]</span>
+AGENTS = {<span class="str">"billing"</span>: <span class="fn">build_specialist</span>([lookup_invoice], <span class="str">"billing"</span>),
+          <span class="str">"tech"</span>:    <span class="fn">build_specialist</span>([known_issues],   <span class="str">"tech"</span>)}
 
-graph = <span class="fn">StateGraph</span>()                     <span class="com"># LangGraph: nodes are agents, edges are handoffs</span>
-graph.<span class="fn">add_node</span>(<span class="str">"billing"</span>, billing_agent); graph.<span class="fn">add_node</span>(<span class="str">"tech"</span>, tech_agent)
-graph.<span class="fn">add_node</span>(<span class="str">"synthesise"</span>, synthesise)   <span class="com"># combine findings -> one reply</span>
+involved = <span class="fn">route</span>(msg)                   <span class="com"># supervisor = route pattern (M7) -> ["billing","tech"]</span>
+findings = {name: AGENTS[name].<span class="fn">invoke</span>(     <span class="com"># each runs with ITS OWN tools...</span>
+               {<span class="str">"messages"</span>: [(<span class="str">"user"</span>, msg)]},
+               config={<span class="str">"recursion_limit"</span>: <span class="str">8</span>})[<span class="str">"messages"</span>][-1].content
+           <span class="kw">for</span> name <span class="kw">in</span> involved}
+reply = <span class="fn">synthesize</span>(findings)            <span class="com"># combine findings -> one DRAFT reply</span>
 
-reply = graph.<span class="fn">invoke</span>({<span class="str">"message"</span>: msg})   <span class="com"># returns a DRAFT reply</span>
-<span class="kw">if</span> reply.needs_refund <span class="kw">and</span> <span class="fn">human_approves</span>(reply):  <span class="com"># draft-not-send, at team level</span>
-    <span class="fn">issue_refund</span>(reply)
+<span class="kw">if</span> <span class="str">"billing"</span> <span class="kw">in</span> involved <span class="kw">and</span> <span class="fn">refund_intent</span>(msg):   <span class="com"># refund is irreversible -></span>
+    <span class="kw">if</span> <span class="fn">human_approves</span>(reply): <span class="fn">issue_refund</span>(reply)     <span class="com"># draft-not-send, team level</span>
       </div>
-      <p class="callout warn" style="margin-top:12px">&#128073; Nothing new here &mdash; it&rsquo;s all Days 3&ndash;4 parts <b>arranged as a team</b>: <span class="mono">@tool</span>, <span class="mono">create_react_agent</span>, a state graph, the route pattern, and the draft-not-send gate. Multi-agent is <b>composition</b>, not a new toolkit.</p>
+      <p class="callout warn" style="margin-top:12px">&#128073; Nothing new here &mdash; it&rsquo;s all Days 3&ndash;4 parts <b>arranged as a team</b>: <span class="mono">@tool</span>, <span class="mono">create_agent</span>, shared state, the route pattern, and the draft-not-send gate. Multi-agent is <b>composition</b>, not a new toolkit.</p>
     </div>
   </section>
 
@@ -663,12 +666,12 @@ reply = graph.<span class="fn">invoke</span>({<span class="str">"message"</span>
 
   <!-- ============ SLIDE 19 — FAILURE MODES & OBSERVABILITY ============ -->
   <section class="slide" data-title="Failure modes & observability"
-    data-note="Close the engineering arc -- multi-agent systems fail in new ways, and you can't run one you can't see. Name the coordination-specific failure modes. HANDOFF LOOPS: agent A hands to B, B hands back to A, forever -- the multi-agent version of an infinite loop; cap total handoffs just as you cap max_iterations. TALKING PAST EACH OTHER: a shared state that's a soup nobody owns, so agents miss or overwrite each other's context. COST / LATENCY EXPLOSION: each agent is model calls, so a chatty team can 10x your bill and response time before you notice. LOST ACCOUNTABILITY: when the answer is wrong, WHICH agent was responsible? Without tracing you can't tell. The defence is observability, and it's non-negotiable here: log every agent invocation, every message and handoff, every tool call, and the final decision -- so you can replay the whole conversation, find which agent went wrong, measure per-agent quality, and watch cost. This is exactly what LangSmith and Langfuse -- the course stack -- give you for multi-agent graphs. Tie to Karpathy's eval loop: once you can see per-agent behaviour, you can improve the weak specialist without disturbing the others. The slogan: a multi-agent system is only as trustworthy as it is observable.">
+    data-note="Close the engineering arc -- multi-agent systems fail in new ways, and you can't run one you can't see. Name the coordination-specific failure modes. HANDOFF LOOPS: agent A hands to B, B hands back to A, forever -- the multi-agent version of an infinite loop; cap total handoffs just as you cap an agent's recursion_limit. TALKING PAST EACH OTHER: a shared state that's a soup nobody owns, so agents miss or overwrite each other's context. COST / LATENCY EXPLOSION: each agent is model calls, so a chatty team can 10x your bill and response time before you notice. LOST ACCOUNTABILITY: when the answer is wrong, WHICH agent was responsible? Without tracing you can't tell. The defence is observability, and it's non-negotiable here: log every agent invocation, every message and handoff, every tool call, and the final decision -- so you can replay the whole conversation, find which agent went wrong, measure per-agent quality, and watch cost. This is exactly what LangSmith and Langfuse -- the course stack -- give you for multi-agent graphs. Tie to Karpathy's eval loop: once you can see per-agent behaviour, you can improve the weak specialist without disturbing the others. The slogan: a multi-agent system is only as trustworthy as it is observable.">
     <div class="kicker"><span class="dot"></span> New failure modes &mdash; make them visible</div>
     <h2 class="title">Failure modes &amp; observability</h2>
     <div class="body">
       <div class="grid4">
-        <div class="card amber"><h3>&#128260; Handoff loops</h3><p>A &rarr; B &rarr; A forever &mdash; <b>cap total handoffs</b>, like max_iterations.</p></div>
+        <div class="card amber"><h3>&#128260; Handoff loops</h3><p>A &rarr; B &rarr; A forever &mdash; <b>cap total handoffs</b>, like recursion_limit.</p></div>
         <div class="card amber"><h3>&#128172; Talking past</h3><p>A shared state <b>nobody owns</b> &mdash; agents miss or overwrite context.</p></div>
         <div class="card blue"><h3>&#128176; Cost / latency</h3><p>Each agent is calls &mdash; a chatty team can <b>10&times;</b> your bill.</p></div>
         <div class="card blue"><h3>&#128269; Lost accountability</h3><p>Which agent was <b>wrong</b>? Without tracing you can&rsquo;t tell.</p></div>
@@ -1091,7 +1094,7 @@ reply = graph.<span class="fn">invoke</span>({<span class="str">"message"</span>
 <div class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Day 4 · Module 8 — Multi-Agent Collaboration &amp; Decision Making</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.1</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.2</span>
 </div>
 
 <script>
