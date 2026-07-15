@@ -11,14 +11,35 @@ APP="${1:-mobile}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEST="$HERE/$APP"
 
+# Node/npx (from the devcontainer 'node' feature, via nvm) may not be on a
+# non-login shell's PATH - source nvm before giving up.
+if ! command -v npx >/dev/null 2>&1; then
+  export NVM_DIR="${NVM_DIR:-/usr/local/share/nvm}"
+  # shellcheck disable=SC1091
+  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" >/dev/null 2>&1 || true
+  for d in "$NVM_DIR/current/bin" "$NVM_DIR"/versions/node/*/bin /usr/local/lib/nodejs/*/bin; do
+    [ -d "$d" ] && export PATH="$d:$PATH"
+  done
+fi
+if ! command -v npx >/dev/null 2>&1; then
+  echo "ERROR: Node / npx not found. In a Codespace, rebuild the container" >&2
+  echo "  (Command Palette > 'Codespaces: Rebuild Container') to install the" >&2
+  echo "  'node' devcontainer feature, then re-run this script." >&2
+  exit 1
+fi
+
 if [ -d "$DEST" ]; then
   echo "ERROR: $DEST already exists. Pick another name or remove it."
   exit 1
 fi
 
 echo "==> Scaffolding Expo app at $DEST (blank TypeScript template)..."
-# --yes avoids the interactive prompt; runs npx create-expo-app under the hood.
-npx --yes create-expo-app@latest "$DEST" --template blank-typescript
+# CI=1 forces non-interactive: inside an existing git repo create-expo-app would
+# otherwise PROMPT "Skip initializing a new git repository?" and hang a script.
+# --yes runs create-expo-app without a separate install confirmation.
+CI=1 npx --yes create-expo-app@latest "$DEST" --template blank-typescript --no-install
+echo "==> Installing app dependencies (npm install)..."
+( cd "$DEST" && CI=1 npm install --no-audit --no-fund )
 
 echo "==> Writing a starter App.tsx wired to the demo API (/chat)..."
 cat > "$DEST/App.tsx" <<'TSX'

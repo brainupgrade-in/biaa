@@ -40,6 +40,20 @@ if [ ! -x "$ROOT/biaa-venv/bin/python" ]; then
 fi
 PY="$ROOT/biaa-venv/bin/python"
 
+# Node/npx (for Expo) comes from the devcontainer 'node' feature, which installs
+# via nvm. In a non-login shell npx may not be on PATH even though Node exists;
+# source nvm / add its bin dir before giving up.
+ensure_node() {
+  command -v npx >/dev/null 2>&1 && return 0
+  export NVM_DIR="${NVM_DIR:-/usr/local/share/nvm}"
+  # shellcheck disable=SC1091
+  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" >/dev/null 2>&1 || true
+  for d in "$NVM_DIR/current/bin" "$NVM_DIR"/versions/node/*/bin /usr/local/lib/nodejs/*/bin; do
+    [ -d "$d" ] && export PATH="$d:$PATH"
+  done
+  command -v npx >/dev/null 2>&1
+}
+
 # --- compute the backend URL the mobile app should call -----------------
 # In a Codespace, port 8000 is reachable at the forwarded domain, NOT localhost
 # (the phone / web build runs outside the container).
@@ -98,10 +112,26 @@ if [ "$MODE" = "backend-only" ]; then
   exit 0
 fi
 
-# --- 3. scaffold the mobile app if needed -------------------------------
+# --- 3. Node + scaffold the mobile app ----------------------------------
+if ! ensure_node; then
+  echo "ERROR: Node / npx not found - the Expo app needs it." >&2
+  echo "  This Codespace gets Node from the devcontainer 'node' feature." >&2
+  echo "  If it's missing, rebuild the container to install it:" >&2
+  echo "    Command Palette (F1) > 'Codespaces: Rebuild Container'" >&2
+  echo "  then re-run: bash demo/run.sh" >&2
+  echo "  (To run just the API meanwhile: bash demo/run.sh --mode backend-only)" >&2
+  exit 1
+fi
+echo "==> Using node $(node --version 2>/dev/null) / npx $(npx --version 2>/dev/null)"
+
 if [ ! -d "$APP_DIR" ]; then
   echo "==> Scaffolding Expo app: demo/$APP_NAME"
-  bash "$ROOT/demo/new-mobile-app.sh" "$APP_NAME"
+  bash "$ROOT/demo/new-mobile-app.sh" "$APP_NAME" \
+    || { echo "ERROR: Expo scaffold failed (see output above)." >&2; exit 1; }
+fi
+if [ ! -f "$APP_DIR/App.tsx" ]; then
+  echo "ERROR: $APP_DIR/App.tsx missing after scaffold - not launching Expo." >&2
+  exit 1
 fi
 
 # --- 4. point the app at the backend URL --------------------------------
