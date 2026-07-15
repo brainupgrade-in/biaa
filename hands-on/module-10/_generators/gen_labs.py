@@ -155,7 +155,14 @@ def sol_answer(sol, code_text):
     """Solution-only worked reference for the open 'Your turn' task above (empty in the student notebook)."""
     if not sol:
         return []
-    return [code("# --- Reference answer (ONE good way to do the 'Your turn' task -- compare with your own) ---\n" + code_text)]
+    body = code_text
+    # A live reference cell calls the REAL model; a model-side error (a rate limit, or gpt-oss
+    # emitting a stray built-in tool call -> Groq 400) must never crash Run All. Wrap it so it
+    # degrades to a note, exactly like the Build-it "run it for real" cells do.
+    if "groq_ready()" in code_text and ("llm.invoke" in code_text or "agent.invoke" in code_text):
+        body = ("try:\n" + _indent(code_text, 4) +
+                '\nexcept Exception as e:\n    print("(Live model hiccup -- a rate limit or a stray built-in tool call. Re-run in a moment.)", type(e).__name__)')
+    return [code("# --- Reference answer (ONE good way to do the 'Your turn' task -- compare with your own) ---\n" + body)]
 
 # ---- shared building blocks -----------------------------------------------------------------
 

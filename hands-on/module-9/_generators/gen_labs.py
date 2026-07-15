@@ -136,7 +136,14 @@ def sol_answer(sol, code_text):
     """Solution-only worked reference for the open 'Your turn' task above (empty in the student notebook)."""
     if not sol:
         return []
-    return [code("# --- Reference answer (ONE good way to do the 'Your turn' task -- compare with your own) ---\n" + code_text)]
+    body = code_text
+    # A live reference cell calls the REAL model; a model-side error (a rate limit, or gpt-oss
+    # emitting a stray built-in tool call -> Groq 400) must never crash Run All. Wrap it so it
+    # degrades to a note, exactly like the Build-it "run it for real" cells do.
+    if "groq_ready()" in code_text and ("llm.invoke" in code_text or "agent.invoke" in code_text):
+        body = ("try:\n" + _indent(code_text, 4) +
+                '\nexcept Exception as e:\n    print("(Live model hiccup -- a rate limit or a stray built-in tool call. Re-run in a moment.)", type(e).__name__)')
+    return [code("# --- Reference answer (ONE good way to do the 'Your turn' task -- compare with your own) ---\n" + body)]
 
 def realcell(parts, demo):
     """A code cell = real-library imports/fixtures + a runnable demo."""
@@ -304,12 +311,12 @@ def _l3(sol):
       SAFE_CALC, "", REPORT_FIXTURE, "",
       "def yoy_growth(current, prior):",
       '    # percent change year over year, rounded to 1 dp',
-      {"s": '    return round(___, 1)   # TODO: (current - prior) / prior * 100',
+      {"s": '    return round(___, 1)   # TODO: percent change of current vs prior',
        "a": '    return round((current - prior) / prior * 100, 1)'},
       "",
       "def margin_pct(net_income, revenue):",
       '    # net margin as a percentage, rounded to 1 dp',
-      {"s": '    return round(___, 1)   # TODO: net_income / revenue * 100',
+      {"s": '    return round(___, 1)   # TODO: net income as a percent of revenue',
        "a": '    return round(net_income / revenue * 100, 1)'},
     ]
     EX = '''rev_now = REPORT["revenue"]["value"]; rev_prior = PRIOR["revenue"]
@@ -736,7 +743,8 @@ print("owns (if executed):", owns_decision({"status": "executed"}))
 uncited = make_insight("...", [{"metric": "guess", "source": ""}])
 print("uncited reviewable?", reviewable(uncited))'''
     RUN = '''# Ask the REAL model for a one-line, cited, NO-advice insight -- then push its output through YOUR gate.
-prompt = ("In ONE line, state revenue and net income with their page cites, and give NO advice: "
+prompt = ("In ONE line, state revenue and net income with their page cites, and give NO advice. "
+          "Use ONLY the numbers given here; do not search the web or call any tool: "
           "revenue 120.0M (p4, income stmt), net income 9.0M (p4, income stmt).")
 text = llm.invoke(prompt).content
 print("REAL model insight:", text)
@@ -774,7 +782,7 @@ run the cell.'''),
 the model's goodwill.'''),
       *sol_answer(sol, r'''if groq_ready():
     tempt = ("In ONE line state revenue 120.0M (p4) and net income 9.0M (p4) with cites, "
-             "and say whether to buy.")            # deliberately tempts the model into advice
+             "and say whether to buy. Use ONLY these numbers; do not search the web or call any tool.")  # tempts the model into advice
     text = llm.invoke(tempt).content
     ins  = make_insight(text, [{"metric": "revenue", "source": "p4"}])
     advice_terms = ("buy", "sell", "recommend", "you should", "invest in")
@@ -817,7 +825,7 @@ print("read-only tools:", extract_figure.name, "&", compute.name, "| withheld:",
       "from langchain.agents import create_agent",
       "",
       "def readonly_tools():",
-      {"s": '    return ___   # TODO: read-only -- [extract_figure, compute], NEVER place_trade',
+      {"s": '    return ___   # TODO: bind only the two read-only tools -- never place_trade',
        "a": '    return [extract_figure, compute]'},
       "",
       "def make_insight_agent():",
@@ -826,7 +834,7 @@ print("read-only tools:", extract_figure.name, "&", compute.name, "| withheld:",
       "",
       "def wrap_needs_review(insight, tools_used):",
       '    # analysis only: wrap the finding so a human analyst reviews it -- never a decision',
-      {"s": '    return {"insight": insight, "status": ___, "tools_used": tools_used}   # TODO: needs_review',
+      {"s": '    return {"insight": insight, "status": ___, "tools_used": tools_used}   # TODO: the review flag a human owns',
        "a": '    return {"insight": insight, "status": "needs_review", "tools_used": tools_used}'},
     ]
     EX = '''print("bound tools :", [t.name for t in readonly_tools()])
@@ -918,7 +926,7 @@ print("helpers ready: redact, build_summary, claims_of, margin_pct")'''
        "a": '    cited   = all(c["source"] for c in claims)'},
       "    advice  = any(t in summary.lower() for t in ADVICE_TERMS)",
       '    # ship for review only if fully cited AND advice-free; else reject',
-      {"s": '    status  = "needs_review" if (___) else "rejected"   # TODO: cited and not advice',
+      {"s": '    status  = "needs_review" if (___) else "rejected"   # TODO: ship only if fully cited AND advice-free',
        "a": '    status  = "needs_review" if (cited and not advice) else "rejected"'},
       '    return {"summary": summary, "cited": cited, "advice": advice, "status": status}',
       "",
@@ -944,7 +952,7 @@ from langchain_core.tools import tool
 from langchain.agents import create_agent
 
 REPORTS = {
-    "acme": {"revenue": {"value": 120.0, "source": "p4, income stmt"}, "net_income": {"value": 9.0, "source": "p4"}},
+    "acme": {"revenue": {"value": 120.0, "source": "p4, income stmt"}, "net_income": {"value": 9.0, "source": "p4, income stmt"}},
     "globex": {"revenue": {"value": 80.0, "source": "p3, income stmt"}, "net_income": {"value": 12.0, "source": "p3"}},
 }
 @tool
