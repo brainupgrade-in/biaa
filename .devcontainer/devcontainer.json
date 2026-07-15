@@ -1,0 +1,72 @@
+{
+  "name": "Building Intelligent AI Agents (biaa)",
+
+  // Python 3.12 to match biaa-venv (the labs pin 3.12; see SETUP.md).
+  "image": "mcr.microsoft.com/devcontainers/python:3.12-bookworm",
+
+  "features": {
+    // Node LTS: needed for Expo / React Native prototyping and many CLIs.
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    },
+    // GitHub CLI (gh) for repo/PR ops from inside the Codespace.
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    // Ollama runtime for Day-3 (Modules 5-6) local LLM. Installs the binary
+    // only; the ~4.9 GB llama3.1:8b model is pulled on demand (see
+    // scripts/pull-ollama-model.sh) so Codespace creation stays fast.
+    "ghcr.io/prulloac/devcontainer-features/ollama:1": {}
+  },
+
+  // Recommend a 4-core machine: the setup installs torch + tensorflow-cpu +
+  // transformers, and Day-3 Ollama inference is CPU-bound.
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "8gb",
+    "storage": "32gb"
+  },
+
+  // onCreate = heavy, cacheable setup (venv + deps + kernel + OpenCode). Runs
+  // during a prebuild so it's baked into the image -> fast Codespace starts.
+  "onCreateCommand": "bash .devcontainer/on-create.sh",
+  // postCreate = light, per-Codespace setup (.env seed, final message).
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  // Ports the labs and the RN demo stack use.
+  "forwardPorts": [8888, 8000, 8081, 19000, 19006, 11434],
+  "portsAttributes": {
+    "8888": { "label": "Jupyter Lab", "onAutoForward": "notify" },
+    "8000": { "label": "Demo API (FastAPI)", "onAutoForward": "notify" },
+    "8081": { "label": "Expo / Metro bundler", "onAutoForward": "silent" },
+    "19000": { "label": "Expo dev server", "onAutoForward": "silent" },
+    "19006": { "label": "Expo web", "onAutoForward": "openBrowser" },
+    "11434": { "label": "Ollama", "onAutoForward": "silent" }
+  },
+
+  "customizations": {
+    "vscode": {
+      // Auto-installed in the Codespace. Kept in sync with .vscode/extensions.json
+      // (which drives the "recommended extensions" prompt in VS Code Desktop).
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.debugpy",
+        "ms-toolsai.jupyter",
+        "ms-toolsai.jupyter-keymap",
+        "ms-toolsai.jupyter-renderers",
+        "ms-toolsai.vscode-jupyter-cell-tags",
+        "charliermarsh.ruff",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "msjsdiag.vscode-react-native",
+        "expo.vscode-expo-tools",
+        "redhat.vscode-yaml",
+        "ms-azuretools.vscode-docker",
+        "github.vscode-github-actions",
+        "yzhang.markdown-all-in-one"
+      ]
+    }
+  },
+
+  // Run as the non-root 'vscode' user the base image ships.
+  "remoteUser": "vscode"
+}

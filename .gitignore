@@ -18,3 +18,9 @@ __pycache__/
 *.pyc
 .venv/
 biaa-venv/
+
+# Node / React Native demo apps (throwaway; regenerate with demo/new-mobile-app.sh)
+node_modules/
+demo/mobile/
+demo/*/node_modules/
+.expo/

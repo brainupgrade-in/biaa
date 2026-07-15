@@ -1,0 +1,42 @@
+{
+  // Point Python + Jupyter at the workshop venv so nobody hand-picks a kernel
+  // (the #1 in-room time-sink, per scripts/RUNBOOK.md).
+  "python.defaultInterpreterPath": "${workspaceFolder}/biaa-venv/bin/python",
+  "python.terminal.activateEnvironment": true,
+
+  "jupyter.notebookFileRoot": "${workspaceFolder}",
+  "notebook.output.textLineLimit": 60,
+  "notebook.formatOnSave.enabled": false,
+
+  // Ruff as the Python formatter/linter (extension is recommended below).
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": false
+  },
+
+  // JS/TS side for the React Native / Expo demo app.
+  "[javascript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[javascriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[typescriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/.ipynb_checkpoints": true
+  },
+  "files.watcherExclude": {
+    "**/biaa-venv/**": true,
+    "**/node_modules/**": true,
+    "**/.venv/**": true
+  },
+  "search.exclude": {
+    "**/biaa-venv": true,
+    "**/node_modules": true,
+    "**/_generators/_meta.json": true
+  },
+
+  // The labs assume the venv is active in the integrated terminal.
+  "terminal.integrated.defaultProfile.linux": "bash"
+}

@@ -1,0 +1,23 @@
+{
+  // Kept in sync with .devcontainer/devcontainer.json (customizations.vscode.extensions).
+  // In VS Code Desktop these drive the "recommended extensions" prompt; in a
+  // Codespace they are auto-installed by the devcontainer.
+  "recommendations": [
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-python.debugpy",
+    "ms-toolsai.jupyter",
+    "ms-toolsai.jupyter-keymap",
+    "ms-toolsai.jupyter-renderers",
+    "ms-toolsai.vscode-jupyter-cell-tags",
+    "charliermarsh.ruff",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "msjsdiag.vscode-react-native",
+    "expo.vscode-expo-tools",
+    "redhat.vscode-yaml",
+    "ms-azuretools.vscode-docker",
+    "github.vscode-github-actions",
+    "yzhang.markdown-all-in-one"
+  ]
+}
