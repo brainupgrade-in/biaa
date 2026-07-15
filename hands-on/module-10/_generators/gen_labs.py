@@ -786,6 +786,12 @@ def _l10(sol):
       "            return m.content",
       "    return None",
       "",
+      "# Workflow (create_agent -> CompiledStateGraph) -- the FIXED agent loop:",
+      "#",
+      "#   START -> model <--> tools -> END",
+      "#           (the fix: bind the read-only GROUNDING tool the buggy run was missing)",
+      "#",
+      "#   Bound: extract_figure (grounding) + compute   (READ-ONLY)",
       "def fixed_agent():",
       '    # the fix: give the agent the read-only GROUNDING tool it was missing, alongside compute',
       {"s": '    return create_agent(llm, ___)   # TODO: [extract_figure, compute]',
@@ -868,6 +874,11 @@ def _l11(sol):
     DEFS = [
       "from langchain.agents import create_agent",
       "",
+      "# Workflow (create_agent -> CompiledStateGraph) -- least-privilege agent loop:",
+      "#",
+      "#   START -> model <--> tools -> END   (reason -> read-only tool -> repeat -> answer)",
+      "#",
+      "#   Bound: extract_figure, compute  (READ-ONLY, least privilege)  |  withheld: any trade/send tool",
       "def make_agent():",
       {"s": '    tools = ___   # TODO: read-only, least-privilege -- [extract_figure, compute] (NO trade/send tool)',
        "a": '    tools = [extract_figure, compute]'},
@@ -1032,6 +1043,9 @@ def handle(task, answer, tools_used):
     return {"status": "ok", "grounded": "p4" in answer.lower(), "answer": answer, "tools_used": tools_used}
 
 # Lab 10.11 -- the REAL least-privilege agent, wrapped so respond() can call it on a clean task.
+# Workflow (create_agent -> CompiledStateGraph) -- least-privilege agent loop:
+#   START -> model <--> tools -> END   (reason -> read-only tool -> repeat -> grounded answer)
+#   Bound: extract_figure, compute  (READ-ONLY)   |   withheld: any trade/send tool
 _agent = create_agent(llm, [extract_figure, compute]) if llm is not None else None
 def run_agent(task):
     """Run the REAL ChatGroq least-privilege agent; return (answer, tools_used)."""

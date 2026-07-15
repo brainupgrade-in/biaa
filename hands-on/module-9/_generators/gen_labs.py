@@ -829,6 +829,12 @@ print("read-only tools:", extract_figure.name, "&", compute.name, "| withheld:",
       {"s": '    return ___   # TODO: bind only the two read-only tools -- never place_trade',
        "a": '    return [extract_figure, compute]'},
       "",
+      "# Workflow (create_agent -> CompiledStateGraph) -- the insight-agent loop:",
+      "#",
+      "#   START -> model <--> tools -> END",
+      "#           (reason -> call a read-only tool -> read result -> repeat -> answer + cite)",
+      "#",
+      "#   Bound: extract_figure, compute  (READ-ONLY)   |   withheld: place_trade (never bound)",
       "def make_insight_agent():",
       {"s": '    return create_agent(llm, ___)   # TODO: bind the read-only tools to the real Groq model',
        "a": '    return create_agent(llm, readonly_tools())'},
@@ -965,6 +971,9 @@ def place_trade(ticker: str, shares: int) -> str:
     """Place a trade. (Defined, but DELIBERATELY WITHHELD -- the agent never gets it.)"""
     return "TRADED"
 
+# Workflow (create_agent -> CompiledStateGraph) -- the insight-agent loop:
+#   START -> model <--> tools -> END   (reason -> read-only tool -> repeat -> cited answer)
+#   Bound: extract_figure  (READ-ONLY)   |   withheld: place_trade (never bound)
 agent = create_agent(llm, [extract_figure])          # read-only: place_trade is NOT bound
 for company in ("acme", "globex"):
     result = agent.invoke({"messages": [{"role": "user",
