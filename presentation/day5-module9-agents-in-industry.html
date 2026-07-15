@@ -427,7 +427,7 @@
 
   <!-- ============ SLIDE 9 — INSIGHT AGENT IN CODE ============ -->
   <section class="slide" data-title="Insight agent in code"
-    data-note="A short, illustrative code peek -- the shape of Lab 5.1 in the LangChain idiom you know. Point out the four familiar pieces. TOOLS: extract_figure pulls a number AND its source from the document, and compute does exact arithmetic -- both defined with @tool exactly as in Module 6, and note the safe calculator, never bare eval, because this is financial math. THE AGENT: create_react_agent binds the model to those tools. THE GUARDRAIL -- and this is the whole point: the tools list contains extract_figure and compute, but there is deliberately NO place_trade and NO give_advice tool. Just as the email agent couldn't send, this agent literally cannot trade or advise; it can only read, compute and summarize. THE OUTPUT: a structured insight where every figure carries its citation, returned with needs_review -- a human analyst owns any decision. Stress the design line on the tools list: in a high-stakes domain, your strongest safety control is the tool you DON'T provide. Everything here is code they've written before; today they point it at a financial report and harden the guardrail. Keep it high level -- the lab is where they wire it up.">
+    data-note="A short, illustrative code peek -- the shape of Lab 5.1 in the LangChain idiom you know. Point out the four familiar pieces. TOOLS: extract_figure pulls a number AND its source from the document, and compute does exact arithmetic -- both defined with @tool exactly as in Module 6, and note the safe calculator, never bare eval, because this is financial math. THE AGENT: create_agent binds the model to those tools and returns a CompiledStateGraph you invoke with a messages list (recursion_limit caps the loop). THE GUARDRAIL -- and this is the whole point: the tools list contains extract_figure and compute, but there is deliberately NO place_trade and NO give_advice tool. Just as the email agent couldn't send, this agent literally cannot trade or advise; it can only read, compute and summarize. THE OUTPUT: a structured insight where every figure carries its citation, returned with needs_review -- a human analyst owns any decision. Stress the design line on the tools list: in a high-stakes domain, your strongest safety control is the tool you DON'T provide. Everything here is code they've written before; today they point it at a financial report and harden the guardrail. Keep it high level -- the lab is where they wire it up.">
     <div class="kicker"><span class="dot"></span> Illustrative &middot; the shape of Lab 5.1</div>
     <h2 class="title">The insight agent, in code</h2>
     <div class="body">
@@ -439,11 +439,13 @@
     <span class="kw">return</span> report.<span class="fn">lookup</span>(name)          <span class="com"># {value, source} -- grounded, cited</span>
 
 tools = [extract_figure, compute]           <span class="com"># read-only -- the agent CANNOT trade or advise</span>
-agent = <span class="fn">create_react_agent</span>(llm, tools, insight_prompt)
-executor = <span class="fn">AgentExecutor</span>(agent=agent, tools=tools, max_iterations=<span class="str">8</span>)
+agent = <span class="fn">create_agent</span>(llm, tools)            <span class="com"># a CompiledStateGraph (LangChain 1.x)</span>
 
-insight = executor.<span class="fn">invoke</span>({<span class="str">"input"</span>: report})   <span class="com"># structured, CITED summary</span>
-<span class="kw">assert</span> insight.<span class="fn">every_figure_cited</span>()          <span class="com"># auditability guardrail</span>
+result = agent.<span class="fn">invoke</span>(
+    {<span class="str">"messages"</span>: [(<span class="str">"user"</span>, report_question)]},
+    config={<span class="str">"recursion_limit"</span>: <span class="str">8</span>})       <span class="com"># the loop cap</span>
+insight = {<span class="str">"insight"</span>: result[<span class="str">"messages"</span>][-1].content, <span class="str">"status"</span>: <span class="str">"needs_review"</span>}
+<span class="kw">assert</span> <span class="fn">every_figure_cited</span>(insight)          <span class="com"># auditability guardrail</span>
 <span class="fn">send_to_analyst</span>(insight)                     <span class="com"># a human reviews &amp; decides</span>
       </div>
       <p class="callout warn" style="margin-top:12px">&#128073; In a high-stakes domain your strongest safety control is the <b>tool you don&rsquo;t provide</b>. No <span class="mono">place_trade</span>, no <span class="mono">give_advice</span> &mdash; the agent can only <b>read, compute &amp; summarize</b>. A human owns the decision.</p>
@@ -1064,7 +1066,7 @@ insight = executor.<span class="fn">invoke</span>({<span class="str">"input"</sp
 <div class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Day 5 · Module 9 — Agents in Finance, Healthcare &amp; Cybersecurity</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.1</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.2</span>
 </div>
 
 <script>

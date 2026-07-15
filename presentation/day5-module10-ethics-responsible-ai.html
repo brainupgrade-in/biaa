@@ -378,7 +378,7 @@
 
   <!-- ============ SLIDE 8 — SAFETY & GUARDRAILS (CONSOLIDATED) ============ -->
   <section class="slide" data-title="Guardrails, consolidated"
-    data-note="This slide is a gift to the participant: every guardrail from the entire course, consolidated in one place, organised by where it sits. Walk it as a checklist they can lift straight into a design. INPUT guardrails -- before the agent reasons: validate and sanitise inputs, and treat untrusted content (web, documents, tool results) as DATA not instructions -- the prompt-injection defence we'll expand next. REASONING guardrails -- during the loop: cap iterations (max_iterations, Module 5-6), detect loops (Module 8), and keep the tool set minimal and allow-listed (Module 6). ACTION guardrails -- the most important: withhold the dangerous tool entirely (the trade tool, the send tool, the remediate tool -- Modules 7 and 9), require human approval on anything irreversible (draft-not-send, Module 7), and make actions idempotent so a retry can't double-fire (Module 7). OUTPUT guardrails -- before anything ships: validate the structure and grounding, require citations, and block forbidden content like advice (Module 9). And CROSS-CUTTING: observability and audit trails over everything, so you can see and prove what happened. The point to make: you didn't just learn concepts this week, you accumulated a concrete toolkit of guardrails -- and responsible AI, at the engineering level, is largely the disciplined application of this list. Print it, use it on every agent. The strongest single one, worth repeating: the most reliable guardrail is the capability you don't give the agent.">
+    data-note="This slide is a gift to the participant: every guardrail from the entire course, consolidated in one place, organised by where it sits. Walk it as a checklist they can lift straight into a design. INPUT guardrails -- before the agent reasons: validate and sanitise inputs, and treat untrusted content (web, documents, tool results) as DATA not instructions -- the prompt-injection defence we'll expand next. REASONING guardrails -- during the loop: cap iterations (recursion_limit, Module 5-6), detect loops (Module 8), and keep the tool set minimal and allow-listed (Module 6). ACTION guardrails -- the most important: withhold the dangerous tool entirely (the trade tool, the send tool, the remediate tool -- Modules 7 and 9), require human approval on anything irreversible (draft-not-send, Module 7), and make actions idempotent so a retry can't double-fire (Module 7). OUTPUT guardrails -- before anything ships: validate the structure and grounding, require citations, and block forbidden content like advice (Module 9). And CROSS-CUTTING: observability and audit trails over everything, so you can see and prove what happened. The point to make: you didn't just learn concepts this week, you accumulated a concrete toolkit of guardrails -- and responsible AI, at the engineering level, is largely the disciplined application of this list. Print it, use it on every agent. The strongest single one, worth repeating: the most reliable guardrail is the capability you don't give the agent.">
     <div class="kicker"><span class="dot"></span> Every guardrail you built &mdash; in one place</div>
     <h2 class="title">Safety: guardrails, consolidated</h2>
     <div class="body">
@@ -509,7 +509,7 @@
 
   <!-- ============ SLIDE 15 — COMMON FAILURE MODES & FIXES ============ -->
   <section class="slide" data-title="Failure modes & fixes"
-    data-note="Give them the field guide -- the common agent failure modes and the fix for each, so debugging becomes pattern-matching rather than guessing. Go through the table. WRONG TOOL SELECTED: the agent picks the wrong tool or an unknown one -- fix by improving tool DESCRIPTIONS (the model chooses from those), reducing the number of tools, or splitting into specialists (Module 8). HALLUCINATED / UNGROUNDED ARGUMENT: the agent invents a value instead of retrieving it -- fix by forcing gather-first, validating that arguments trace to an observation, and grounding with citations (Module 9). INFINITE OR RUNAWAY LOOP: the agent repeats without progressing -- fix with max_iterations and loop detection (Modules 5-6, 8). BAD OUTPUT FORMAT: the downstream code can't parse the result -- fix with structured output and output validation with a retry (Module 7). LOST CONTEXT / FORGOT INSTRUCTION: an overloaded prompt drops a requirement -- fix by simplifying the prompt or decomposing into specialists (Module 8). MIS-GROUNDED / WRONG SOURCE: cites the wrong place -- fix with grounding validation (Module 9). The meta-point to stress: notice EVERY fix is something you already learned this week -- debugging isn't a new toolbox, it's applying the course's techniques at the point the trace shows they're missing. So the workflow is: read the trace, match the symptom to a failure mode, apply the known fix at the right layer -- prompt, tool description, guardrail, grounding, or decomposition -- and then, critically, verify the fix didn't just move the bug, which is what the eval loop is for. Debugging agents is a learnable, systematic craft.">
+    data-note="Give them the field guide -- the common agent failure modes and the fix for each, so debugging becomes pattern-matching rather than guessing. Go through the table. WRONG TOOL SELECTED: the agent picks the wrong tool or an unknown one -- fix by improving tool DESCRIPTIONS (the model chooses from those), reducing the number of tools, or splitting into specialists (Module 8). HALLUCINATED / UNGROUNDED ARGUMENT: the agent invents a value instead of retrieving it -- fix by forcing gather-first, validating that arguments trace to an observation, and grounding with citations (Module 9). INFINITE OR RUNAWAY LOOP: the agent repeats without progressing -- fix with recursion_limit and loop detection (Modules 5-6, 8). BAD OUTPUT FORMAT: the downstream code can't parse the result -- fix with structured output and output validation with a retry (Module 7). LOST CONTEXT / FORGOT INSTRUCTION: an overloaded prompt drops a requirement -- fix by simplifying the prompt or decomposing into specialists (Module 8). MIS-GROUNDED / WRONG SOURCE: cites the wrong place -- fix with grounding validation (Module 9). The meta-point to stress: notice EVERY fix is something you already learned this week -- debugging isn't a new toolbox, it's applying the course's techniques at the point the trace shows they're missing. So the workflow is: read the trace, match the symptom to a failure mode, apply the known fix at the right layer -- prompt, tool description, guardrail, grounding, or decomposition -- and then, critically, verify the fix didn't just move the bug, which is what the eval loop is for. Debugging agents is a learnable, systematic craft.">
     <div class="kicker"><span class="dot"></span> A field guide &middot; symptom &rarr; fix</div>
     <h2 class="title">Common failure modes &amp; their fixes</h2>
     <div class="body">
@@ -518,7 +518,7 @@
         <tbody>
           <tr><td>Wrong / unknown tool called</td><td>Vague descriptions, too many tools</td><td>Better tool <b>descriptions</b>; fewer tools; <b>specialists</b> (M8)</td></tr>
           <tr><td>Hallucinated argument / value</td><td>Reasoned from memory, not sources</td><td><b>Gather-first</b>, validate args, <b>grounding + citations</b> (M9)</td></tr>
-          <tr><td>Runaway / repeating loop</td><td>No progress, no cap</td><td><b>max_iterations</b> + loop detection (M5&ndash;6, M8)</td></tr>
+          <tr><td>Runaway / repeating loop</td><td>No progress, no cap</td><td><b>recursion_limit</b> + loop detection (M5&ndash;6, M8)</td></tr>
           <tr><td>Unparseable output</td><td>Free-form prose</td><td><b>Structured output</b> + validation &amp; retry (M7)</td></tr>
           <tr><td>Forgot an instruction</td><td>Overloaded prompt</td><td>Simplify the prompt; <b>decompose</b> (M8)</td></tr>
         </tbody>
@@ -529,25 +529,27 @@
 
   <!-- ============ SLIDE 16 — DEBUG IN CODE / VERBOSE ============ -->
   <section class="slide" data-title="Debug in code"
-    data-note="Make the debugging craft concrete with the code moves participants use in Lab 5.2 -- this is how you actually SEE and fix the failures from the last two slides. Point out four practical things. TURN ON VERBOSE: the single highest-leverage move -- AgentExecutor(..., verbose=True) prints the full thought/action/observation trace, which is what you read to localise a bug (Module 6). Nothing else beats seeing the reasoning. INSPECT INTERMEDIATE STEPS: the run returns intermediate_steps -- the list of (tool, input, observation) tuples -- so in code you can assert on exactly what the agent did: which tools it called, in what order, with what arguments. That's how a test catches a regression. ASSERT GROUNDING: for the hallucinated-argument bug, add a check that every value used traces back to an observation or a cited source -- fail fast rather than ship a confident wrong number. ATTACH A TRACING CALLBACK: for production, a callback or a tool like Langfuse/LangSmith logs every run so you can debug incidents after the fact from the recorded trace, not a reproduction. Show the shape: enable verbose, run, read intermediate_steps, assert on tools and grounding. The message: debugging an agent is mostly making it OBSERVABLE and then reading and asserting on what it did -- the same instrumentation that gives you transparency and auditability gives you debuggability. It all comes back to: see everything, assert on the important things, log for later. Then bridge: seeing and fixing one run is necessary but not sufficient -- to know a fix actually improved things and didn't regress others, you need to measure across many cases, which is the eval loop.">
+    data-note="Make the debugging craft concrete with the code moves participants use in Lab 5.2 -- this is how you actually SEE and fix the failures from the last two slides. Point out four practical things. READ THE MESSAGE TRACE: the single highest-leverage move -- create_agent returns the run's messages, and print_trace walks them to show every AIMessage, tool call and ToolMessage observation, which is what you read to localise a bug (Module 6). Nothing else beats seeing the reasoning. INSPECT THE TOOL CALLS: pull tools_used(result["messages"]) -- the names/args of every tool the model invoked -- so in code you can assert on exactly what the agent did: which tools it called, in what order, with what arguments. That's how a test catches a regression. ASSERT GROUNDING: for the hallucinated-argument bug, add a check that every value used traces back to an observation or a cited source -- fail fast rather than ship a confident wrong number. ATTACH A TRACING CALLBACK: for production, pass config={"callbacks": [...]} (Langfuse/LangSmith) so every run is logged and you can debug incidents after the fact from the recorded trace, not a reproduction. Show the shape: invoke, print_trace, assert on tools_used and grounding. The message: debugging an agent is mostly making it OBSERVABLE and then reading and asserting on what it did -- the same instrumentation that gives you transparency and auditability gives you debuggability. It all comes back to: see everything, assert on the important things, log for later. Then bridge: seeing and fixing one run is necessary but not sufficient -- to know a fix actually improved things and didn't regress others, you need to measure across many cases, which is the eval loop.">
     <div class="kicker"><span class="dot"></span> The moves you&rsquo;ll use in the lab</div>
     <h2 class="title">Debugging, in code</h2>
     <div class="body">
       <div class="terminal">
-<span class="com"># 1. The highest-leverage move: SEE the reasoning</span>
-executor = <span class="fn">AgentExecutor</span>(agent=agent, tools=tools, verbose=<span class="kw">True</span>)   <span class="com"># prints the full trace</span>
-result = executor.<span class="fn">invoke</span>({<span class="str">"input"</span>: task})
+<span class="com"># 1. The highest-leverage move: SEE the reasoning -- read the message trace</span>
+result = agent.<span class="fn">invoke</span>({<span class="str">"messages"</span>: [(<span class="str">"user"</span>, task)]},
+                     config={<span class="str">"recursion_limit"</span>: <span class="str">8</span>})
+<span class="fn">print_trace</span>(result)                            <span class="com"># each AIMessage / ToolMessage</span>
 
 <span class="com"># 2. Inspect exactly what it did -- assert on it in a test</span>
-steps = result[<span class="str">"intermediate_steps"</span>]              <span class="com"># [(tool, input, observation), ...]</span>
-tools_used = [s[<span class="str">0</span>] <span class="kw">for</span> s <span class="kw">in</span> steps]
-<span class="kw">assert</span> <span class="str">"lookup_order"</span> <span class="kw">not in</span> tools_used         <span class="com"># catch the wrong-tool bug</span>
+<span class="kw">def</span> <span class="fn">tools_used</span>(messages):                     <span class="com"># every tool the model called</span>
+    <span class="kw">return</span> [tc[<span class="str">"name"</span>] <span class="kw">for</span> m <span class="kw">in</span> messages
+            <span class="kw">for</span> tc <span class="kw">in</span> (<span class="fn">getattr</span>(m, <span class="str">"tool_calls"</span>, <span class="kw">None</span>) <span class="kw">or</span> [])]
+<span class="kw">assert</span> <span class="str">"lookup_order"</span> <span class="kw">not in</span> <span class="fn">tools_used</span>(result[<span class="str">"messages"</span>])   <span class="com"># catch the wrong-tool bug</span>
 
 <span class="com"># 3. Assert grounding -- every value must trace to an observation</span>
-<span class="kw">assert</span> <span class="fn">all</span>(<span class="fn">is_grounded</span>(v) <span class="kw">for</span> v <span class="kw">in</span> result[<span class="str">"figures"</span>])   <span class="com"># fail fast, don't ship</span>
+<span class="kw">assert</span> <span class="fn">all</span>(<span class="fn">is_grounded</span>(v) <span class="kw">for</span> v <span class="kw">in</span> extracted_figures)   <span class="com"># fail fast, don't ship</span>
 
-<span class="com"># 4. In production: log every run for after-the-fact debugging</span>
-executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn">LangfuseCallback</span>()])   <span class="com"># trace store</span>
+<span class="com"># 4. In production: attach a tracing callback so every run is logged</span>
+agent.<span class="fn">invoke</span>({<span class="str">"messages"</span>: [...]}, config={<span class="str">"callbacks"</span>: [<span class="fn">LangfuseCallback</span>()]})
       </div>
       <p class="callout warn" style="margin-top:12px">&#128073; Debugging an agent is mostly making it <b>observable</b>, then <b>reading &amp; asserting</b> on what it did. The same instrumentation that gives you <b>transparency &amp; auditability</b> gives you <b>debuggability</b>.</p>
     </div>
@@ -825,7 +827,7 @@ executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn
 
   <!-- ============ SLIDE 33 — A6 ============ -->
   <section class="slide" data-title="Answer Q6"
-    data-note="The final answer often looks plausible; the trace shows the wrong tool at step 1 or the ungrounded argument at step 2. verbose=True and inspecting intermediate_steps is how you localise the bug. Transparency and debuggability are the same thing.">
+    data-note="The final answer often looks plausible; the trace shows the wrong tool at step 1 or the ungrounded argument at step 2. Reading the message trace -- print_trace over result["messages"] -- is how you localise the bug. Transparency and debuggability are the same thing.">
     <div class="kicker"><span class="dot"></span> Answer &middot; Q6 / 10</div>
     <h2 class="title">Read the trace</h2>
     <div class="body center">
@@ -836,7 +838,7 @@ executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn
         <div class="quiz-opt correct"><span class="ltr">C</span><span>The trace &mdash; the verbose thought/action/observation log showing where &amp; why it went wrong. &#10003;</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>Adding more tools.</span></div>
       </div>
-      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;<span class="mono">verbose=True</span> + inspecting <span class="mono">intermediate_steps</span> localises the bug &mdash; the wrong tool or the ungrounded argument. <b>Transparency &amp; debuggability are the same thing.</b></p>
+      <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;<span class="mono">print_trace</span> over the run&rsquo;s <span class="mono">messages</span> localises the bug &mdash; the wrong tool call or the ungrounded argument. <b>Transparency &amp; debuggability are the same thing.</b></p>
     </div>
   </section>
 
@@ -849,7 +851,7 @@ executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn
       <div class="quiz-opts">
         <div class="quiz-opt"><span class="ltr">A</span><span>Trust it &mdash; the number is probably close.</span></div>
         <div class="quiz-opt"><span class="ltr">B</span><span>Gather-first grounding; validate that every argument traces to an observation/source.</span></div>
-        <div class="quiz-opt"><span class="ltr">C</span><span>Raise max_iterations.</span></div>
+        <div class="quiz-opt"><span class="ltr">C</span><span>Raise recursion_limit.</span></div>
         <div class="quiz-opt"><span class="ltr">D</span><span>Switch to a bigger model and hope.</span></div>
       </div>
     </div>
@@ -865,7 +867,7 @@ executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn
       <div class="quiz-opts">
         <div class="quiz-opt dim"><span class="ltr">A</span><span>Trust it &mdash; the number is probably close.</span></div>
         <div class="quiz-opt correct"><span class="ltr">B</span><span>Gather-first grounding; validate that every argument traces to an observation/source. &#10003;</span></div>
-        <div class="quiz-opt dim"><span class="ltr">C</span><span>Raise max_iterations.</span></div>
+        <div class="quiz-opt dim"><span class="ltr">C</span><span>Raise recursion_limit.</span></div>
         <div class="quiz-opt dim"><span class="ltr">D</span><span>Switch to a bigger model and hope.</span></div>
       </div>
       <p class="callout quiz-why"><span class="quiz-badge">WHY</span> &nbsp;Force <b>gather-first</b>, validate that values trace to a real observation or cited source, and <b>fail fast</b> &mdash; Module 9&rsquo;s grounding discipline, applied at debug time.</p>
@@ -1031,7 +1033,7 @@ executor = <span class="fn">AgentExecutor</span>(..., callbacks=[<span class="fn
 <div class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Day 5 · Module 10 — Ethics &amp; Responsible AI in Agentic Systems</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.2</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.3</span>
 </div>
 
 <script>
