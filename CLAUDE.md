@@ -33,27 +33,51 @@ autonomous, industry-ready AI agents.*
 
 ## Hands-on labs (the convention that's now established)
 
-> **NEAR-REAL CONVERSION (Modules 3&ndash;10, 2026-07-10) &mdash; READ THIS FIRST; it SUPERSEDES the
-> design details in the per-module bullets below.** On the instruction that participants have live
-> keys/services (Ollama local; `GROQ_API_KEY`, `OPENAI_API_KEY`, `SERPER_API_KEY`,
-> `WOLFRAM_ALPHA_APPID` in the repo `.env`), Modules 3&ndash;10 were converted from the
-> deterministic **grade-scaffolding** design to **near-real** labs: a **real LLM / real HF model
-> drives every lab**, and **the auto-grader was removed** (`expect`/`expect_true`/`Score` are gone).
-> The mock-LLM policies, recorded/faked traces, and "graded cells never call an LLM / verify offline"
-> language in the bullets below are now **HISTORICAL** &mdash; ignore them for Modules 3&ndash;10.
-> Current design: each lab is **Concept &rarr; Setup (`load_dotenv(.env)` + real model) &rarr; Build it
-> (real `___` blanks) &rarr; Run it for real &rarr; Read the trace/output &rarr; open "Your turn"** &mdash;
-> **no Score cell**; unfilled `___` blanks print a note (via `guard()`/`runguard()`), never crash Run All.
-> **Providers by day:** M5&ndash;M6 (Day 3) = local `ChatOllama("llama3.1:8b", base_url="http://127.0.0.1:11434")`;
-> **M7&ndash;M10 (Day 4&ndash;5) = `ChatGroq("openai/gpt-oss-20b")`** (verified tool-calling via `create_agent`
-> &mdash; do NOT use `llama-3.3-70b-versatile`, it 400s `tool_use_failed`); **M3&ndash;M4 (Day 2) = real
-> Hugging Face** (`AutoTokenizer`/`AutoModel`, `pipeline`, real fine-tune of `prajjwal1/bert-tiny`; hosted
-> text-gen via `ChatGroq`). Real `@tool`s **catch errors and return a string** (a raising tool aborts the
-> agent run). `sentence-transformers` is NOT installed &mdash; use `AutoModel` + mean-pooling. **VERIFY BY
-> RUNNING, not by a Score:** execute notebooks with the sandbox disabled (live LLM/model calls need network)
-> against `biaa-venv` and confirm REAL output/traces appear; per-module `regenerate.sh` stays idempotent.
-> Modules 1&ndash;2 were left as-is (already real DL training). Decks &amp; quizzes were NOT touched by this
-> pass. Reference implementation: `hands-on/module-6/_generators/gen_labs.py`.
+> **NEAR-REAL LABS (Modules 3&ndash;10) &mdash; READ THIS FIRST. This block is the SOURCE OF TRUTH; it
+> SUPERSEDES the framework/verification details in the per-module bullets below.** Those bullets
+> describe the earlier deterministic **grade-scaffolding** design and are now **HISTORICAL** &mdash;
+> ignore their "graded cells never call an LLM / verify offline / no shim / `FakeChatModel` /
+> `ChatOllama("llama3.2:1b")`" language for Modules 3&ndash;10. Keep the bullets for **what each lab
+> covers** (the pedagogy and guardrail/throughline design is still accurate).
+>
+> On the instruction that participants have live keys/services (Ollama local; `GROQ_API_KEY`,
+> `OPENAI_API_KEY`, `SERPER_API_KEY`, `WOLFRAM_ALPHA_APPID` in the repo `.env`), Modules 3&ndash;10
+> were converted to **near-real** labs: a **real LLM / real HF model drives every lab**, and the
+> **auto-grader was removed** (`expect`/`expect_true`/`Score` are gone). Each lab is
+> **Concept &rarr; Setup (`load_dotenv(.env)` + real model) &rarr; Build it (real `___` blanks) &rarr;
+> Run it for real &rarr; Read the trace/output &rarr; open "Your turn"** &mdash; **no Score cell**;
+> unfilled `___` blanks print a note (via `guard()`/`runguard()`), never crash Run All. Modules
+> 1&ndash;2 keep their real DL-training pedagogy and their `[PASS]`/`[FAIL]`/`Score` self-check.
+>
+> **Providers by day (must match the labs):** **M3&ndash;M4 (Day 2) = real Hugging Face**
+> (`AutoTokenizer`/`AutoModel`, `pipeline`, real fine-tune of `prajjwal1/bert-tiny`; hosted text-gen
+> via `ChatGroq`) &mdash; `sentence-transformers` is NOT installed, use `AutoModel` + mean-pooling.
+> **M5&ndash;M6 (Day 3) = local `ChatOllama("llama3.1:8b")`** on `127.0.0.1:11434`.
+> **M7&ndash;M10 (Day 4&ndash;5) = `ChatGroq("openai/gpt-oss-20b")`** &mdash; verified tool-calling via
+> `create_agent`; do NOT use `llama-3.3-70b-versatile` (it 400s `tool_use_failed`). Real `@tool`s
+> **catch their own errors and return a string** (a raising tool aborts the agent run).
+>
+> **Live-model gotcha &mdash; crash-proof every live cell (fixed 2026-07-15):** `gpt-oss-20b` on Groq
+> will occasionally emit a **built-in `browser.search` tool call** on a **bare `llm.invoke(...)`** (no
+> tools bound), which Groq rejects with **`400 tool_use_failed` &mdash; "Tool choice is none, but model
+> called a tool"** and **aborts Run All**. `with_backoff` does NOT catch it (it only retries 429s). Two
+> defences, both baked into the generators: (1) **every live cell is wrapped in try/except** &mdash; the
+> Build-it "run it for real" cells via `runguard()`, and **reference-answer cells via `sol_answer()`**,
+> which now wraps **any `groq_ready()`-guarded cell** (a groq-guarded cell IS a live cell &mdash; this
+> also catches cells that reach the model through a helper like `process()`/`draft()`, not just a literal
+> `llm`/`agent.invoke`); (2) **harden bare-`llm.invoke` prompts** with "use ONLY the numbers/text given;
+> do not search the web or call any tool" so the model answers directly. `agent.invoke` cells (tools
+> bound via `create_agent`) do not hit this 400 path. All four generators (M7&ndash;M10) share the same
+> `sol_answer` wrap rule.
+>
+> **VERIFY BY RUNNING, not by a Score:** execute notebooks with the **sandbox disabled** (live
+> LLM/model calls need network) against **`biaa-venv`** and confirm REAL output/traces appear;
+> per-module `regenerate.sh` stays idempotent (byte-identical). **Status (2026-07-15):** all four
+> Day-4/5 decks realigned to the **LangChain 1.x** API in their code slides (`create_agent` /
+> `recursion_limit` / message-trace via `result["messages"]` &mdash; NOT `create_react_agent` /
+> `AgentExecutor` / `max_iterations` / `intermediate_steps`; M7/M8 v1.2, M9 v1.2, M10 v1.3); M7&ndash;M10
+> labs **run-verified with live Groq** against `biaa-venv` (48/48 per day-pair after the crash-proofing
+> fix). Reference implementation: `hands-on/module-6/_generators/gen_labs.py`.
 
 - **Course prefix:** `biaa`. Each lab writes to its own `/tmp/biaa-lab-MM-NN/` working dir
   (module MM, lab NN) &mdash; e.g. `/tmp/biaa-lab-01-07/`, `/tmp/biaa-lab-02-11/`.
@@ -74,58 +98,45 @@ autonomous, industry-ready AI agents.*
   positional encoding, fill-mask (bigram), subword tokenizer (Beginner); semantic search (TF-IDF),
   self-attention over a sequence, attention heatmap (Intermediate); text generation (greedy/temperature),
   feature-extraction + classifier head, and a mini-transformer-pipeline capstone (Advanced). ~375 min.
-  **Framework choice:** every GRADED cell is **offline (NumPy/scikit-learn/matplotlib)** &mdash; no keys,
-  no downloads; each Advanced lab adds an **optional, non-graded Hugging Face cell** (`transformers`+`torch`,
-  tiny models `bert-tiny`/`tiny-gpt2`) that degrades gracefully if absent. The client's "GPT API text
-  generation" is reframed as a runnable local-generation lab + an optional guarded OpenAI/Groq key cell.
+  **Design (near-real):** real Hugging Face drives the labs &mdash; `AutoTokenizer`/`AutoModel`
+  (mean-pooled embeddings, since `sentence-transformers` is NOT installed), `pipeline`, tiny models
+  (`bert-tiny`/`tiny-gpt2`), plus hosted text-gen via `ChatGroq`; a few NumPy/scikit-learn techniques
+  remain where they are the right tool (e.g. TF-IDF semantic search). No grader. The client's "GPT API
+  text generation" is a runnable generation lab. See the source-of-truth note for verification.
 - **Module 4 has 12 labs** (`hands-on/module-4/lab-01..12-*.ipynb`, prefix `/tmp/biaa-lab-04-NN/`):
   6 Beginner, 3 Intermediate, 3 Advanced &mdash; using a pretrained model, softmax confidence,
   prompt/fine-tune/RAG, model inputs (ids/mask/padding), dataset prep, train/val split (Beginner);
   frozen features + trainable head, precision/recall/confusion, data-efficiency curve (Intermediate);
   **fine-tune a sentiment classifier** (before vs after), tune &amp; evaluate (regularisation +
   confusion matrix), and a capstone adapting a model to a NEW task (Advanced). ~340 min.
-  **Framework choice:** same as Module 3 &mdash; every GRADED cell is offline (scikit-learn transfer
-  learning: frozen TF-IDF features + a trainable head, the portable form of fine-tuning); each Advanced
-  lab adds an **optional, non-graded Hugging Face cell** that fine-tunes/uses a real `bert-tiny`. The
-  client's "fine-tune BERT for sentiment" is the offline-graded core + the optional real-bert cell.
-  (Real bert-tiny did not load on the bleeding-edge verify venv &mdash; transformers 5.x / torch 2.12
-  tokenizer-backend issue &mdash; so the offline path is what guarantees verification; the optional cell
-  targets the managed sandbox.)
+  **Design (near-real):** real Hugging Face is the core &mdash; a real `bert-tiny` fine-tune/inference for
+  the sentiment task &mdash; with scikit-learn transfer learning (frozen features + a trainable head) as
+  the portable companion technique, and hosted text-gen via `ChatGroq`. No grader. The client's "fine-tune
+  BERT for sentiment" is the real-bert path. See the source-of-truth note for verification.
 - **Module 5 has 12 labs** (`hands-on/module-5/lab-01..12-*.ipynb`, prefix `/tmp/biaa-lab-05-NN/`):
   6 Beginner, 3 Intermediate, 3 Advanced &mdash; model-vs-agent, build-a-tool, the reason&rarr;act&rarr;observe
   agent loop, ReAct-step parsing, tool routing, memory/scratchpad (Beginner); a rule-based ReAct agent
   (two-step task), guardrails (max-steps / allow-list / loop-detection / input validation), tool selection
   (Intermediate); plan-and-execute, reflection/self-critique, and a **mini-autonomous-agent capstone** over
-  a task suite (Advanced). ~330 min. **Framework choice:** every GRADED cell is **pure Python stdlib** &mdash;
-  students build a ReAct agent from scratch driven by a deterministic rule-based ("mock LLM") policy, with an
-  **AST-based safe calculator** (no bare `eval`); no numpy/sklearn needed. Each Advanced lab adds an
-  **optional, non-graded, guarded real-LLM cell** (`langchain_ollama` `llama3.2:1b`, Groq alt) that degrades
-  gracefully &mdash; the bridge to Module 6 (Agent Frameworks) and the Day-3 LangChain labs. So this module
-  verifies with just the Jupyter exec stack (`nbconvert nbformat ipykernel`).
+  a task suite (Advanced). ~330 min. **Design (near-real):** students build a ReAct agent from rule-based
+  roots (a deterministic policy, an **AST-based safe calculator** &mdash; no bare `eval`), then **run it for
+  real** against a live `ChatOllama("llama3.1:8b")` via `create_agent` (`ollama_up()`-guarded, self-skips
+  when Ollama is down). No grader. The bridge to Module 6 (Agent Frameworks) and the Day-3 LangChain labs.
+  See the source-of-truth note for verification.
 - **Module 6 has 12 labs** (`hands-on/module-6/lab-01..12-*.ipynb`, prefix `/tmp/biaa-lab-06-NN/`):
   6 Beginner, 3 Intermediate, 3 Advanced &mdash; first tool with `@tool`, tool descriptions/catalog, the
   model interface (`PromptTemplate` + `ChatOllama`), assemble an agent with `create_agent`, run it &amp;
   read the message trace + `recursion_limit`, safe tool routing (Beginner); conversation memory, a real
   **LangGraph `StateGraph`** (human-approval node), multi-tool orchestration (Intermediate); connect to
   external APIs (search + Wolfram-style compute), guardrails &amp; a tracing callback, and a
-  **guardrailed-LangChain-agent capstone** (Advanced). ~335 min. **Framework choice (REWRITTEN &mdash; real
-  LangChain, no shim):** this module now uses the **real LangChain 1.x** directly &mdash;
-  `langchain_core.tools.@tool` (a `StructuredTool`), `PromptTemplate`, `langchain_ollama.ChatOllama`,
-  `langchain.agents.create_agent` (a `CompiledStateGraph`), and `langgraph.StateGraph`. There is **no
-  `LC_*` shim and no `FakeChatModel`**. Verify discipline is kept by the **grade-scaffolding pattern**:
-  every GRADED cell asserts only on **deterministic** structure you build (tool `name`/`args`/`.invoke`,
-  `prompt.format`, agent is a `CompiledStateGraph` with `model`+`tools` nodes, pure routing/guardrail
-  logic, reading a fixed real message trace) and **never calls an LLM**, so the labs verify **offline**
-  &mdash; but now against the **`biaa-venv`** (langchain/langgraph installed), **not** stdlib-only. Cells
-  marked **&ldquo;Optional &mdash; run it for real&rdquo;** call a **live** `ChatOllama("llama3.2:1b")`
-  (Groq alt; Serper/Wolfram need keys) and **self-skip via an `ollama_up()` reachability check** so
-  &ldquo;Run All&rdquo; never hangs when offline. **Gotcha baked in:** real `@tool` **requires a
-  docstring**, so docstring blanks keep a `"""___ (TODO...)"""` stub (a bare `___` comment would raise at
-  decoration time and crash the notebook). Verified (2026-07-10): all 12 solutions score full and all 12
-  student notebooks run top-to-bottom clean against `biaa-venv`; `regenerate.sh` is idempotent (byte-identical).
-  The Module-6 **deck** was realigned to the 1.x API (`create_agent`/`recursion_limit`, message-trace
-  slide; footer v1.1). This grade-scaffolding rewrite was rolled out to **Modules 6&ndash;10** (all
-  verified); **Module 5 keeps its from-scratch pedagogy** (no shim there &mdash; nothing to change).
+  **guardrailed-LangChain-agent capstone** (Advanced). ~335 min. **Design:** real LangChain 1.x directly
+  &mdash; `langchain_core.tools.@tool`, `PromptTemplate`, `langchain_ollama.ChatOllama("llama3.1:8b")`,
+  `langchain.agents.create_agent` (a `CompiledStateGraph`), and `langgraph.StateGraph` (no `LC_*` shim,
+  no `FakeChatModel`). **Gotcha:** a real `@tool` **requires a docstring**, so docstring blanks keep a
+  `"""___ (TODO...)"""` stub (a bare `___` would raise at decoration time and crash the notebook). The
+  Module-6 **deck** was realigned to the 1.x API (`create_agent`/`recursion_limit`, message-trace slide).
+  `hands-on/module-6/_generators/gen_labs.py` is the **reference generator** for M6&ndash;M10. See the
+  source-of-truth note above for providers, verification, and the live-cell crash-proofing rule.
 - **Module 7 has 12 labs** (`hands-on/module-7/lab-01..12-*.ipynb`, prefix `/tmp/biaa-lab-07-NN/`):
   6 Beginner, 3 Intermediate, 3 Advanced &mdash; this is the **task-automation** module and every lab builds
   the **email-drafting agent** (the client's Lab 4.1) piece by piece: the automation pipeline
@@ -134,20 +145,13 @@ autonomous, industry-ready AI agents.*
   idempotency, and the **draft-not-send** human-in-the-loop gate (Intermediate); observability/run-log,
   **assembling the email agent** (gather-only tools &mdash; `send_email` withheld &mdash; returns a
   `needs_approval` draft), and a **capstone** that chains extract&rarr;route&rarr;gather&rarr;draft&rarr;validate
-  over a suite and never auto-sends (Advanced). ~340 min. **Framework choice (REWRITTEN &mdash; real
-  LangChain, no shim):** the extract/route/validate pipeline is legitimate rule-based Python (unchanged);
-  the tool + prompt + agent-assembly labs (2, 6, 11&ndash;12) now use the **real LangChain 1.x**
-  (`langchain_core.tools.@tool`, `PromptTemplate`, `langchain_ollama.ChatOllama`,
-  `langchain.agents.create_agent`) via the **grade-scaffolding pattern** &mdash; GRADED cells assert only
-  on deterministic structure (tool wiring, prompt formatting, the pipeline, the **gather-only guardrail**:
-  `send_email` is defined but never bound, agent is a `CompiledStateGraph`, `needs_approval` wrapper) and
-  **never call an LLM**, so labs verify **offline against `biaa-venv`** (not stdlib-only). Real-import
-  constants `TOOL_IMPORT`/`PROMPT_IMPORT`; `shimcell`&rarr;`realcell`. Cells marked **&ldquo;Optional &mdash;
-  run it for real&rdquo;** (`live()` helper) call a live `ChatOllama("llama3.2:1b")` guarded by an
-  `ollama_up()` reachability check (in `setup()`); non-model interface cells use `optional_real()`.
-  Docstring blanks keep a `"""___ (TODO...)"""` stub (real `@tool` requires a docstring). Verified
-  (2026-07-10): all 12 solutions full score, all 12 students clean against `biaa-venv`, `regenerate.sh`
-  idempotent, no residual shim refs. Same rewrite as Module 6; the bridge to Module 8.
+  over a suite and never auto-sends (Advanced). ~340 min. **Design (near-real):** the
+  extract/route/validate pipeline is rule-based Python; the tool/prompt/agent-assembly labs use real
+  LangChain 1.x (`@tool`, `PromptTemplate`, `ChatGroq("openai/gpt-oss-20b")`, `create_agent`). The
+  **gather-only guardrail** is the point: `send_email` is defined but **never bound** to the agent (a
+  `CompiledStateGraph`), which returns a `needs_approval` draft. `order_id` is a **string** throughout
+  (the old lab04-vs-lab12 int/str bug is reconciled). Real `@tool` requires a docstring, so docstring
+  blanks keep a `"""___ (TODO...)"""` stub. See the source-of-truth note for provider/verification/crash-proofing.
 - **Module 8 has 12 labs** (`hands-on/module-8/lab-01..12-*.ipynb`, prefix `/tmp/biaa-lab-08-NN/`):
   6 Beginner, 3 Intermediate, 3 Advanced &mdash; this is the **multi-agent** module and every lab builds
   the **customer-service chatbot** (the client's Lab 4.2) piece by piece: specialist agents
@@ -156,14 +160,13 @@ autonomous, industry-ready AI agents.*
   critique/debate (capped loop), synthesis into one grounded reply (Intermediate); observability with
   loop-detection, **assembling the chatbot** (supervisor routes to billing/tech specialist
   `create_agent` agents &rarr; synthesise &rarr; a `needs_approval` reply, refund gated on a human), and a
-  **capstone** running the full team over a suite (Advanced). ~340 min. **Framework choice (REWRITTEN
-  &mdash; real LangChain, no shim):** the multi-agent constructs (route/handoff/vote/critique/synthesise)
-  are legitimate rule-based Python (unchanged); the agent-assembly labs (11&ndash;12) now use the **real
-  LangChain 1.x** (`@tool`, `ChatOllama`, `create_agent`) via the **grade-scaffolding pattern** &mdash;
-  GRADED cells assert only on deterministic structure and **never call an LLM**, so labs verify **offline
-  against `biaa-venv`** (not stdlib-only). `live()` cells (ollama_up-guarded) run a real model; docstring
-  blanks keep a `"""___ (TODO...)"""` stub. Verified (2026-07-10): all 12 solutions full, all 12 students
-  clean, `regenerate.sh` idempotent, no residual shim refs. Same rewrite as Modules 6&ndash;7.
+  **capstone** running the full team over a suite (Advanced). ~340 min. **Design (near-real):** the
+  multi-agent constructs (route/handoff/vote/critique/synthesise) are rule-based Python; the specialists
+  are real `create_agent(llm, tools, system_prompt=...)` (a `build_specialist(tools, role)` helper) over
+  `ChatGroq("openai/gpt-oss-20b")`, orchestrated by `route()` &rarr; per-specialist `.invoke` &rarr;
+  `synthesize()` &rarr; a refund human-gate (specialists have **no** refund tool). A real LangGraph
+  `StateGraph` appears in labs 01/11. Deck slide 17 mirrors lab 11's rule-based orchestration. See the
+  source-of-truth note for provider/verification/crash-proofing.
 - **Module 9 has 12 labs** (`hands-on/module-9/lab-01..12-*.ipynb`, prefix `/tmp/biaa-lab-09-NN/`):
   6 Beginner, 3 Intermediate, 3 Advanced &mdash; this is the **high-stakes/industry** module and every
   lab builds the **financial-report insight agent** (the client's Lab 5.1) piece by piece: ground a
@@ -174,14 +177,12 @@ autonomous, industry-ready AI agents.*
   tools &mdash; no trade tool &mdash; returns a grounded, cited, `needs_review` insight), and a
   **capstone** running the agent over a report suite (Advanced). ~340 min. **Responsible-AI framing is
   the point:** the agent is informational only &mdash; grounds &amp; cites every figure, gives no
-  investment advice, has no trade tool; a human analyst decides. **Framework choice (REWRITTEN &mdash;
-  real LangChain, no shim):** the ground/cite/compute/flag/validate/redact logic is legitimate rule-based
-  Python (unchanged; financial math via an AST-safe calculator, no bare `eval`); the agent-assembly labs
-  (11&ndash;12) now use the **real LangChain 1.x** (`@tool`, `ChatOllama`, `create_agent`) via the
-  **grade-scaffolding pattern** &mdash; lab 11's read-only guardrail (`place_trade` defined but never
-  bound) is a deterministic graded check. GRADED cells **never call an LLM**, so labs verify **offline
-  against `biaa-venv`**; `live()` cells (ollama_up-guarded) run a real model. Verified (2026-07-10): 12
-  solutions full, 12 students clean, idempotent, no shim refs.
+  investment advice, has no trade tool; a human analyst decides. **Design (near-real):** the
+  ground/cite/compute/flag/validate/redact logic is rule-based Python (financial math via an **AST-safe
+  calculator**, no bare `eval`); the agent-assembly labs (11&ndash;12) use real LangChain 1.x (`@tool`,
+  `ChatGroq("openai/gpt-oss-20b")`, `create_agent`). The **read-only guardrail** is the point:
+  `place_trade` is defined but **never bound**; the agent returns a grounded, cited, `needs_review`
+  insight. Deck slide 9 matches lab 11. See the source-of-truth note for provider/verification/crash-proofing.
 - **Module 10 has 12 labs** (`hands-on/module-10/lab-01..12-*.ipynb`, prefix `/tmp/biaa-lab-10-NN/`) &mdash;
   the **course finale** (Lab 5.2): 6 Beginner, 3 Intermediate, 3 Advanced covering BOTH halves of the deck.
   Responsible-AI practice: treat input as data (prompt injection), least privilege, read the trace, classify
@@ -190,14 +191,13 @@ autonomous, industry-ready AI agents.*
   a full **debug-and-fix loop** (read a broken-run trace &rarr; diagnose the wrong-tool bug &rarr; give the
   agent a grounding tool &rarr; verify), **assemble a guardrailed agent** (input-as-data + least-privilege +
   output-validation + trace), and a **capstone** running a responsible agent over an eval suite of
-  normal/injection/advice cases (Advanced). ~340 min. **Framework choice (REWRITTEN &mdash; real LangChain,
-  no shim):** the responsible-AI logic (injection/least-privilege/trace-reading/fairness/eval) is legitimate
-  rule-based Python (unchanged); labs 10&ndash;12 now use the **real LangChain 1.x** (`@tool`, real message
-  traces `AIMessage`/`ToolMessage`, `ChatOllama`, `create_agent`) via the **grade-scaffolding pattern**.
-  The debug-and-fix lab uses two **recorded real message traces** (buggy vs fixed) + a create_agent wiring
-  fix &mdash; deterministic, no LLM call. GRADED cells never call an LLM (verify **offline against
-  `biaa-venv`**); `live()` cells (ollama_up-guarded) run a real model. Verified (2026-07-10): 12 solutions
-  full, 12 students clean, idempotent, no shim refs.
+  normal/injection/advice cases (Advanced). ~340 min. **Design (near-real):** the responsible-AI logic
+  (injection/least-privilege/trace-reading/fairness/eval) is rule-based Python; labs 10&ndash;12 use real
+  LangChain 1.x (`@tool`, real message traces `AIMessage`/`ToolMessage`, `ChatGroq("openai/gpt-oss-20b")`,
+  `create_agent`). The debug-and-fix lab reads a **recorded real message trace** (buggy vs fixed) and
+  applies a `create_agent` wiring fix (add the missing grounding tool). Trace-reading uses
+  `print_trace(result["messages"])` + `tools_used(...)` &mdash; the deck's debugging slide (S16) mirrors it.
+  See the source-of-truth note for provider/verification/crash-proofing.
 - **Engagement revision (Modules 5&ndash;10, 2026-07-10):** after a duplication/triviality/flow audit,
   all six back-half modules got an **in-place** engagement pass &mdash; **no lab count, slug or file
   renames** (still 12/module); only lab CONTENT changed, verified byte-identical file scope. Fixed **5
@@ -212,11 +212,15 @@ autonomous, industry-ready AI agents.*
   specialists, suite&rarr;6; M9 mixed clean/advice/uncited suite + redaction wired in; M10 finale runs lab11's
   agent + folds in fairness); re-domained off-throughline labs (M8 lab04/05 &rarr; the CS chatbot). The
   `order_id` int/str throughline bug in M7 (lab04 vs lab12) was reconciled to strings. Re-verified vs
-  `biaa-venv`: every changed solution reaches a full `Score`, all students run clean, each `regenerate.sh`
-  idempotent. **Decks &amp; quizzes were NOT touched by this pass** (labs only).
-- **Every notebook follows:** Concept &rarr; Demo (runnable) &rarr; Your Turn (`___` blanks) &rarr;
-  auto-grader cell printing `[PASS]`/`[FAIL]`/`[TODO]` + `Score: n/total`. Grader helpers are
-  `expect(label, got, want)` and `expect_true(label, fn)`; blanks/exceptions register as `[TODO]`.
+  `biaa-venv`: every changed solution + student notebook runs clean, each `regenerate.sh` idempotent.
+  **Decks &amp; quizzes were NOT touched by this pass** (labs only). *(This pass predates the near-real
+  conversion above, which later removed the `Score` cells it refers to &mdash; kept as a defect-fix record.)*
+- **Notebook flow:** **Modules 1&ndash;2** &mdash; Concept &rarr; Demo (runnable) &rarr; Your Turn
+  (`___` blanks) &rarr; a self-check cell printing `[PASS]`/`[FAIL]`/`[TODO]` + `Score: n/total`
+  (`expect`/`expect_true` helpers). **Modules 3&ndash;10 (near-real)** &mdash; Concept &rarr; Setup
+  (real model) &rarr; Build it (`___`) &rarr; Run it for real &rarr; Read the trace/output &rarr;
+  "Your turn"; **no grader, no `Score`** (see the source-of-truth note above). Unfilled blanks print
+  a `guard()`/`runguard()` note, never crash Run All.
 - **Student vs solution:** student notebooks have `___`; full answer keys live in each module's
   `solutions/` dir (same filenames, with a SOLUTION banner cell).
 - **Generators (re-run to regenerate, do NOT hand-edit the .ipynb):** each module has its own
@@ -225,17 +229,17 @@ autonomous, industry-ready AI agents.*
   no args), `README.md`. Blanks use the `{"s":..,"a":..}` student/answer convention; `_meta.json`
   is written beside the generators (not in the labs dir, and gitignored). Verified: `regenerate.sh`
   reproduces the committed files byte-identically. Edit the generators, never the JSON.
-- **Verification done (Modules 1&ndash;10, ALL):** all 120 solution notebooks were executed with `nbconvert`
-  and reach a full `Score`; all 120 student notebooks run top-to-bottom without uncaught errors
-  (blanks land as `[TODO]`/`[FAIL]`); each module's `regenerate.sh` reproduces its files byte-identically.
-  Module 2's Keras labs were verified against real MNIST. Modules 3&ndash;4 graded cells are offline
-  (numpy/sklearn) so they verify with just `numpy scikit-learn matplotlib nbconvert`. **Module 5** graded
-  cells are stdlib-only (`nbconvert nbformat ipykernel`). **Modules 6&ndash;10 now use the REAL LangChain 1.x
-  (grade-scaffolding rewrite, no shim)**, so their graded cells still never call an LLM but DO import
-  `langchain`/`langgraph` &mdash; **verify them against the course `biaa-venv`** (`biaa-venv/bin/python -m
-  nbconvert --to notebook --execute ... --ExecutePreprocessor.timeout=90`), not a bare stdlib venv. Their
-  optional `live()` cells call a local Ollama if one is up and self-skip via `ollama_up()` otherwise, so
-  execution stays clean offline. Re-verify the same way after any edit.
+- **Verification (how to re-verify after any edit):** all 120 solution + 120 student notebooks execute
+  top-to-bottom without uncaught errors, and each module's `regenerate.sh` reproduces its files
+  byte-identically. **Modules 1&ndash;2** reach a full `Score` (M2 Keras verified against real MNIST).
+  **Modules 3&ndash;10 have no `Score`** &mdash; verify by RUNNING and confirming real output/traces
+  appear (see the source-of-truth note). All of M3&ndash;M10 import `langchain`/`langgraph` and/or
+  `transformers`, so **verify against the course `biaa-venv`**, not a bare stdlib venv:
+  `biaa-venv/bin/python -m nbconvert --to notebook --execute <nb> --ExecutePreprocessor.timeout=300`.
+  M5&ndash;M6 live cells need a **local Ollama** up (self-skip via `ollama_up()` otherwise); **M7&ndash;M10
+  live cells call Groq &mdash; run with the sandbox DISABLED (network needed) and `GROQ_API_KEY` set**, or
+  they self-skip via `groq_ready()`. Last full run-verify with live Groq: **2026-07-15, M7&ndash;M10 48/48
+  per day-pair.**
 - **Deck framework:** single self-contained HTML, custom slide engine (NOT Reveal.js) ported
   from the Sharewealth Module-1 deck &mdash; keyboard/swipe nav, slide counter, progress bar,
   `O`/Esc overview grid, `N` presenter notes (`data-note` per `<section.slide>`), `F`
