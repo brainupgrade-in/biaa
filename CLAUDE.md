@@ -160,13 +160,22 @@ autonomous, industry-ready AI agents.*
   critique/debate (capped loop), synthesis into one grounded reply (Intermediate); observability with
   loop-detection, **assembling the chatbot** (supervisor routes to billing/tech specialist
   `create_agent` agents &rarr; synthesise &rarr; a `needs_approval` reply, refund gated on a human), and a
-  **capstone** running the full team over a suite (Advanced). ~340 min. **Design (near-real):** the
-  multi-agent constructs (route/handoff/vote/critique/synthesise) are rule-based Python; the specialists
-  are real `create_agent(llm, tools, system_prompt=...)` (a `build_specialist(tools, role)` helper) over
-  `ChatGroq("openai/gpt-oss-20b")`, orchestrated by `route()` &rarr; per-specialist `.invoke` &rarr;
-  `synthesize()` &rarr; a refund human-gate (specialists have **no** refund tool). A real LangGraph
-  `StateGraph` appears in labs 01/11. Deck slide 17 mirrors lab 11's rule-based orchestration. See the
-  source-of-truth note for provider/verification/crash-proofing.
+  **capstone** running the full team over a suite (Advanced). ~340 min. **Design (near-real, framework-first
+  &mdash; revised 2026-07-16):** labs **02&ndash;06 are real `langgraph.StateGraph` builds** &mdash; the
+  orchestration patterns are the framework's own primitives, not hand-rolled Python loops: **02** supervisor =
+  `StateGraph` + `add_conditional_edges` routing to **real `create_agent` specialist nodes**; **03** shared
+  state = a typed `TypedDict` schema + **reducers** (`Annotated[list, add]`, offline); **04** sequential =
+  `add_edge` chain with real specialist nodes; **05** parallel = fan-out edges from `START` + reducer merge +
+  fault-tolerant branch; **06** handoff = `Command(goto=...)` + `recursion_limit` cap, real specialists.
+  Labs **07&ndash;09** (voting/critique/synthesis) stay decision-logic Python &mdash; no framework primitive
+  maps to them. Specialists everywhere are real `create_agent(llm, tools, system_prompt=...)` (a
+  `build_specialist(tools, role)` helper) over `ChatGroq("openai/gpt-oss-20b")`. Labs **11&ndash;12** assemble
+  the chatbot with `route()` &rarr; per-specialist `.invoke` &rarr; `synthesize()` &rarr; a refund human-gate
+  (specialists have **no** refund tool). Deck slide 17 mirrors lab 11's assembly, and the deck's code-slide note
+  already promises "the labs cover a real LangGraph StateGraph separately" &mdash; now true, so the **deck
+  needed no change**. Verified 2026-07-16: labs 02&ndash;06 solution + student notebooks run clean against
+  `biaa-venv` with live Groq (02/04/05/06 make real specialist calls; 03 is offline); `regenerate.sh`
+  idempotent. See the source-of-truth note for provider/verification/crash-proofing.
 - **Module 9 has 12 labs** (`hands-on/module-9/lab-01..12-*.ipynb`, prefix `/tmp/biaa-lab-09-NN/`):
   6 Beginner, 3 Intermediate, 3 Advanced &mdash; this is the **high-stakes/industry** module and every
   lab builds the **financial-report insight agent** (the client's Lab 5.1) piece by piece: ground a

@@ -256,298 +256,552 @@ else:
 # ============================================================ LAB 02
 @lab(2, "lab-02-the-supervisor", "Beginner",
      "The Supervisor (Router)", 20,
-     "Build a supervisor that classifies a message and routes it to the right specialist -- or to several.",
-     ["Supervisor", "Routing", "Multi-intent"])
+     "Build a real StateGraph whose supervisor conditional-routes a ticket to real create_agent specialists -- one, several, or a general fallback.",
+     ["StateGraph router", "Conditional edges", "Real specialists"])
 def _l2(sol):
     DEFS = [
-      "class Specialist:",
-      "    def __init__(self, name, keywords): self.name = name; self.keywords = keywords",
-      "    def in_scope(self, message):",
-      "        return any(k in message.lower() for k in self.keywords)",
+      "from typing import Annotated, TypedDict",
+      "from operator import add",
+      "from langgraph.graph import StateGraph, START, END",
+      TOOL_IMPORT,
+      "from langchain.agents import create_agent",
       "",
-      'billing = Specialist("billing", ["charge", "refund", "invoice", "billed"])',
-      'tech    = Specialist("tech", ["crash", "error", "login", "bug", "broken"])',
-      "SPECIALISTS = [billing, tech]",
+      CS_FIXTURE,
       "",
-      "def route(message, specialists):",
-      {"s": '    hits = ___   # TODO: the .name of every specialist whose scope matches the message',
-       "a": '    hits = [s.name for s in specialists if s.in_scope(message)]'},
-      {"s": '    return hits if hits else ___   # TODO: fall back to ["general"] when nothing matches',
-       "a": '    return hits if hits else ["general"]'},
+      SPECIALIST_TOOLS,
+      "",
+      "class TeamState(TypedDict):",
+      "    message: str",
+      "    findings: Annotated[list, add]        # reducer: each specialist APPENDS; nobody overwrites",
+      "",
+      "def build_specialist(tools, role):",
+      '    return create_agent(llm, tools, system_prompt=f"You are the {role} specialist. Use ONLY your own tools; answer in one sentence.")',
+      "",
+      "def specialist_node(role, tools):",
+      '    """Wrap a REAL create_agent specialist as a graph node that appends its finding."""',
+      "    agent = build_specialist(tools, role)",
+      "    def node(state):",
+      '        r = agent.invoke({"messages": [("user", state["message"])]}, config={"recursion_limit": 8})',
+      '        text = r["messages"][-1].content',
+      '        return {"findings": [f"{role}: {text}"]}',
+      "    return node",
+      "",
+      "def general_node(state):",
+      '    return {"findings": ["general: forwarded to a human agent"]}',
+      "",
+      "def supervise(state):",
+      '    """The supervisor: classify the message, name the specialist(s) it needs."""',
+      "    m = state[\"message\"].lower()",
+      "    hits = []",
+      '    if any(k in m for k in ("charg", "refund", "invoice", "billed")): hits.append("billing")',
+      '    if any(k in m for k in ("crash", "bug", "login", "broken")): hits.append("tech")',
+      {"s": '    return ___   # TODO: the matching specialists (a LIST routes to all of them), or "general" when none match',
+       "a": '    return hits or "general"'},
+      "",
+      "def build_team():",
+      "    g = StateGraph(TeamState)",
+      '    g.add_node("supervisor", lambda s: s)                       # its only job is to route',
+      '    g.add_node("billing", specialist_node("billing", [lookup_invoice]))',
+      '    g.add_node("tech", specialist_node("tech", [known_issues]))',
+      '    g.add_node("general", general_node)',
+      '    g.add_edge(START, "supervisor")',
+      {"s": '    ___   # TODO: conditional edges out of "supervisor", routed by supervise, to ["billing","tech","general"]',
+       "a": '    g.add_conditional_edges("supervisor", supervise, ["billing", "tech", "general"])'},
+      '    for n in ("billing", "tech", "general"):',
+      '        g.add_edge(n, END)',
+      "    return g.compile()",
     ]
-    EX = '''print("charge msg :", route("I was charged twice", SPECIALISTS))
-print("crash msg  :", route("the app keeps crashing", SPECIALISTS))
-print("both       :", route("charged twice and the app crashes", SPECIALISTS))
-print("unknown    :", route("what are your hours?", SPECIALISTS))'''
+    EX = '''# The router itself is pure classification -- run it offline (no model call):
+for msg in ["I was charged twice", "the app keeps crashing",
+            "charged twice and it crashes", "what are your hours?"]:
+    print(f"{msg:34} -> {supervise({'message': msg})}")'''
+    RUN = '''team = build_team()
+print("graph nodes:", sorted(set(team.get_graph().nodes) - {"__start__", "__end__"}))
+
+# A two-intent ticket: the supervisor routes it to BOTH real specialists, which really answer.
+state = team.invoke(
+    {"message": "I was charged twice for order 4471 and the app keeps crashing on login.", "findings": []},
+    config={"recursion_limit": 12})
+print("\\nfindings gathered into shared state:")
+for f in state["findings"]:
+    print(" -", f)'''
     return [
       header(2, "The Supervisor (Router)", "Beginner", 20,
-        ["Route a message to the specialist(s) whose scope it matches",
-         "Handle a message with TWO intents -> route to both",
-         "Fall back to a general agent when nothing matches"],
+        ["Express the supervisor as a StateGraph with conditional edges",
+         "Route a two-intent ticket to BOTH real create_agent specialists",
+         "Fall back to a general node when nothing matches"],
         "The supervisor (router) pattern"),
       setup(2),
-      concept('''The **supervisor** (router) is the backbone of a multi-agent system (deck slide 6): it receives the
-message, decides **which specialist** should handle it, and routes there. It is exactly Module 7's **route**
-pattern &mdash; but the destinations are **agents**, not code branches. A message can carry **two intents**
-(a billing problem *and* a crash), so routing returns a **list**; and an unmatched message falls back to a
-**general** agent (the escape hatch). This classification is genuine rule-based plumbing &mdash; no LLM
-needed to decide who owns a ticket.'''),
-      code('''# A tiny Specialist just knows its name + the keywords that put a message in its scope.
-print("we will route to whichever specialists a message is in scope for -- possibly several")'''),
-      buildmd('''Complete `route`: collect every specialist whose scope matches, and fall back to `["general"]`.'''),
+      concept('''The **supervisor** is the backbone of a multi-agent system (deck slide 6): it reads the message and decides
+**which specialist** handles it. In LangGraph you express this with a **`StateGraph`** and **conditional
+edges** &mdash; `add_conditional_edges` sends control from the supervisor node to the specialist node(s) a
+routing function names. Returning a **list** routes to **several** specialists at once (a billing *and* a
+tech problem); an unmatched message falls back to a **general** node &mdash; the router never drops a ticket.
+Each specialist node is a **real `create_agent`**, so the supervisor dispatches to agents that really answer,
+and a **reducer** (`Annotated[list, add]`) gathers their findings into shared state.'''),
+      code('''# supervisor node -> conditional edges -> real billing/tech specialist nodes (or general)
+print("we build a real StateGraph: a supervisor routes each ticket to the specialist(s) it needs")'''),
+      buildmd('''Complete `supervise` (return the matching specialists, or `"general"`) and the **conditional edges** in
+`build_team`. The specialist nodes are real `create_agent` agents, already wired for you.'''),
       code(render(DEFS, sol) + "\n\n" + guard(EX)),
-      noticemd('''- A billing message routes to `["billing"]`, a crash to `["tech"]`, and a **two-intent** message to **both** &mdash; routing returns a *list*.
-- An unmatched message falls back to `["general"]` &mdash; the router never drops a ticket on the floor.
-- In Lab 8.11 these names become the keys into a dict of **real** specialist agents; here you just decide *who*.'''),
-      yourturn('''Add a **third** specialist (e.g. `account` with keywords like `"password"`, `"email"`, `"cancel"`) to
-`SPECIALISTS` and re-run over a message that hits it. **What good looks like:** the router now sends
-account-related tickets to `account`, two-intent messages reach both owners, and anything unmatched still
-falls back to `general`. That is the supervisor whose destinations you'll wire to real agents later.'''),
-      *sol_answer(sol, r'''account = Specialist("account", ["password", "email", "cancel"])
-SPECIALISTS3 = [billing, tech, account]
-print("account :", route("please cancel my account", SPECIALISTS3))
-print("two     :", route("charged twice and I forgot my password", SPECIALISTS3))
-print("unknown :", route("what are your hours?", SPECIALISTS3))'''),
-      footer(2, "The supervisor is Module 7's route pattern -- but routing to AGENTS. Returning a list lets one message reach several specialists; the general fallback keeps it safe. Next: how those agents share what they find."),
+      runmd("Build the graph, then route a real two-intent ticket. The supervisor fans it to **both** real specialists; the reducer collects what each found."),
+      code(runguard(RUN)),
+      noticemd('''- `add_conditional_edges` turns the supervisor into a real **router**: a two-intent ticket routes to **both** `billing` and `tech`, and the reducer merges their findings &mdash; **no join code needed**, the framework does it.
+- Each specialist node is a real `create_agent` (a `CompiledStateGraph`); each calls **its own** tool to answer in its lane.
+- An unmatched message routes to `general` &mdash; the safe fallback. In Lab 8.11 this same graph gains synthesis and a refund gate.'''),
+      yourturn('''Add a third specialist &mdash; an **`account`** node (keywords `"password"`, `"email"`, `"cancel"`) with its own
+`@tool` &mdash; to `build_team` and to `supervise`, then send it a matching ticket. **What good looks like:**
+`add_conditional_edges` now reaches `account` too, a two-intent message still fans to both owners, and anything
+unmatched still falls back to `general`. (Each live ticket makes a model call per engaged specialist &mdash; run a
+couple on the free tier.)'''),
+      *sol_answer(sol, r'''if groq_ready():
+    @tool
+    def account_status(query: str) -> str:
+        """Look up an account action such as a password reset or cancellation."""
+        return "password reset link sent" if "password" in query.lower() else "account action logged"
+
+    def supervise3(state):
+        m = state["message"].lower(); hits = []
+        if any(k in m for k in ("charg", "refund", "invoice", "billed")): hits.append("billing")
+        if any(k in m for k in ("crash", "bug", "login", "broken")): hits.append("tech")
+        if any(k in m for k in ("password", "email", "cancel")): hits.append("account")
+        return hits or "general"
+
+    g = StateGraph(TeamState)
+    g.add_node("supervisor", lambda s: s)
+    g.add_node("billing", specialist_node("billing", [lookup_invoice]))
+    g.add_node("tech", specialist_node("tech", [known_issues]))
+    g.add_node("account", specialist_node("account", [account_status]))
+    g.add_node("general", general_node)
+    g.add_edge(START, "supervisor")
+    g.add_conditional_edges("supervisor", supervise3, ["billing", "tech", "account", "general"])
+    for n in ("billing", "tech", "account", "general"): g.add_edge(n, END)
+    team3 = g.compile()
+
+    out = team3.invoke({"message": "please reset my password and refund the duplicate charge on 4471", "findings": []},
+                       config={"recursion_limit": 12})
+    for f in out["findings"]: print(" -", f)
+else:
+    print("(add GROQ_API_KEY to .env)")'''),
+      footer(2, "The supervisor is a real StateGraph router: add_conditional_edges dispatches one ticket to one, several, or a fallback specialist -- each a real create_agent -- and a reducer gathers their findings. Next: the shared state that reducer writes to."),
     ]
 
 # ============================================================ LAB 03
 @lab(3, "lab-03-shared-state", "Beginner",
      "Shared State & Message Passing", 20,
-     "Give the team a shared state object where each agent records its finding and the running log is kept.",
-     ["Shared state", "Message passing", "Findings"])
+     "Replace a hand-rolled state class with LangGraph's real state schema: a TypedDict + reducers that MERGE each node's partial update.",
+     ["StateGraph state", "Reducers", "Message passing"])
 def _l3(sol):
     DEFS = [
-      "class SharedState:",
-      "    def __init__(self, message):",
-      "        self.message = message",
-      "        self.findings = {}",
-      "        self.log = []",
-      "    def record(self, agent, finding):",
-      {"s": '        ___   # TODO: store the finding under self.findings[agent]',
-       "a": '        self.findings[agent] = finding'},
-      "        self.log.append((agent, finding))",
-      "    def context(self):",
-      '        # small & relevant: just the findings gathered so far',
-      {"s": '        return ___   # TODO: the findings dict',
-       "a": '        return self.findings'},
+      "from typing import Annotated, TypedDict",
+      "from operator import add",
+      "from langgraph.graph import StateGraph, START, END",
+      "",
+      "# LangGraph's state IS the shared blackboard. Declare it once as a typed schema;",
+      "# a REDUCER says how each node's partial update is merged into it.",
+      "class TeamState(TypedDict):",
+      "    message: str",
+      {"s": '    findings: Annotated[list, ___]   # TODO: the reducer that MERGES successive/parallel updates (hint: operator.add)',
+       "a": '    findings: Annotated[list, add]'},
+      "    log: Annotated[list, add]",
+      "",
+      "def billing_node(state):",
+      '    """A node reads shared state and returns a PARTIAL update -- the reducer merges it in."""',
+      '    return {"findings": ["billing: duplicate charge on 4471"], "log": [("billing", "looked up 4471")]}',
+      "",
+      "def tech_node(state):",
+      {"s": '    return ___   # TODO: return tech\'s finding + a log entry, the same shape as billing_node',
+       "a": '    return {"findings": ["tech: matches BUG-231"], "log": [("tech", "matched BUG-231")]}'},
+      "",
+      "def build_graph():",
+      "    g = StateGraph(TeamState)",
+      '    g.add_node("billing", billing_node)',
+      '    g.add_node("tech", tech_node)',
+      '    g.add_edge(START, "billing")',
+      '    g.add_edge("billing", "tech")',
+      '    g.add_edge("tech", END)',
+      "    return g.compile()",
     ]
-    EX = '''st = SharedState("charged twice and the app crashes")
-st.record("billing", "duplicate charge on 4471")
-st.record("tech", "matches BUG-231")
-print("findings:", st.context())
-print("log     :", st.log)'''
+    EX = '''# A REAL StateGraph runs offline (no model call): the reducer accumulates both nodes' findings.
+app = build_graph()
+final = app.invoke({"message": "charged twice and the app crashes", "findings": [], "log": []})
+print("findings:", final["findings"])
+print("log     :", final["log"])'''
     return [
       header(3, "Shared State & Message Passing", "Beginner", 20,
-        ["Record each agent's finding into a shared state",
-         "Keep an ordered log of who said what",
-         "Expose a small, relevant context for the next agent"],
+        ["Declare the team's shared state as a typed StateGraph schema",
+         "Use a reducer so each node's partial update MERGES, not overwrites",
+         "Run a real graph and watch both findings accumulate"],
         "Message passing & shared state"),
       setup(3),
-      concept('''Agents coordinate by **communicating** (deck slide 7): they pass **messages** or read/write a **shared
-state** &mdash; a common object carrying the conversation, each agent's findings, and the plan. **LangGraph**
-works exactly this way: the state flows through every node. Two rules keep it sane: keep the shared context
-**small &amp; relevant** (don't dump everything to everyone), and make handoffs **explicit**.'''),
-      code('''# One finding is just (agent_name, what it found).
-print("a finding:", ("billing", "duplicate charge on 4471"))'''),
-      buildmd('''Complete `SharedState`: record findings (keyed by agent), keep an ordered log, and return a small
-context.'''),
+      concept('''Agents coordinate by sharing state (deck slide 7). In LangGraph the **state is a typed schema** you declare
+once &mdash; a `TypedDict` &mdash; and it flows through every node. The key framework idea is the
+**reducer**: annotate a field with `Annotated[list, add]` and LangGraph **merges** each node's partial update
+instead of overwriting it. So two nodes can each return `{"findings": [...]}` and **both survive** &mdash; no
+bespoke state class, no manual dict-merging. Keep the shared context **small &amp; relevant**; the reducer
+does the plumbing every LangGraph agent relies on.'''),
+      code('''# state = a typed schema; a reducer (Annotated[list, add]) merges each node's update.
+print("no hand-rolled class -- the framework's StateGraph + reducers ARE the shared state")'''),
+      buildmd('''Complete the **reducer** on `findings` and the `tech_node` update. Then a real `StateGraph` runs
+`billing -> tech` and the reducer accumulates both findings &mdash; no API key needed.'''),
       code(render(DEFS, sol) + "\n\n" + guard(EX)),
-      noticemd('''- Two agents' findings **coexist** in `findings`, keyed by who found them &mdash; nobody overwrites anybody.
-- The **`log`** preserves order, so you can replay *who said what, when* &mdash; the seed of observability (Lab 8.10).
-- `context()` stays **small** &mdash; only what's been recorded &mdash; so the next agent isn't drowned in irrelevant state.'''),
-      yourturn('''Add a `summary()` method that returns a one-line string joining every finding (e.g.
-`"billing: ...; tech: ..."`), and call it after recording two findings. **What good looks like:** the summary
-reads back in a stable order and contains every recorded finding &mdash; the raw material a **synthesiser**
-(Lab 8.9) will turn into one reply.'''),
-      *sol_answer(sol, r'''def summary(st):
-    # one-line, stable order, every recorded finding present
-    return "; ".join(f"{a}: {f}" for a, f in sorted(st.findings.items()))
+      noticemd('''- `findings` is `Annotated[list, add]` &mdash; the **reducer**. Each node returns only its *partial* update `{"findings": [...]}`, and LangGraph merges them, so **nobody overwrites anybody**.
+- This is the framework doing what a hand-rolled shared-state class used to do &mdash; but it's the real mechanism *every* LangGraph agent uses.
+- The `log` (also reduced) preserves order &mdash; the seed of observability (Lab 8.10). Change the reducer and you change how updates combine.'''),
+      yourturn('''Add a `status` field with a **custom reducer** &mdash; a function `(old, new) -> merged` that keeps only the
+latest value &mdash; and a node that sets it. **What good looks like:** each node still returns a small partial
+update, and your reducer decides how the shared state combines them (append vs overwrite) &mdash; the raw material
+a synthesiser (Lab 8.9) turns into one reply.'''),
+      *sol_answer(sol, r'''def keep_last(old, new):        # a custom reducer: overwrite instead of append
+    return new
 
-st = SharedState("charged twice and the app crashes")
-st.record("billing", "duplicate charge on 4471")
-st.record("tech", "matches BUG-231")
-print("summary:", summary(st))'''),
-      footer(3, "Shared state is how a team stays coherent -- each agent writes its finding, the next reads the context. Keep it small and let handoffs be explicit, or agents talk past each other."),
+class TeamState2(TypedDict):
+    message: str
+    findings: Annotated[list, add]
+    status: Annotated[str, keep_last]
+
+def triage2(state): return {"status": "triaged"}
+def close2(state):  return {"status": "closed", "findings": ["case closed"]}
+
+g = StateGraph(TeamState2)
+g.add_node("triage", triage2); g.add_node("close", close2)
+g.add_edge(START, "triage"); g.add_edge("triage", "close"); g.add_edge("close", END)
+final = g.compile().invoke({"message": "x", "findings": [], "status": ""})
+print("findings (appended):", final["findings"])
+print("status  (last only):", final["status"])'''),
+      footer(3, "LangGraph's typed state + reducers ARE the shared blackboard -- each node returns a small partial update and the reducer merges it. That replaces any hand-rolled state class, and it's the real mechanism every graph uses."),
     ]
 
 # ============================================================ LAB 04
 @lab(4, "lab-04-sequential-pipeline", "Beginner",
      "Sequential Pipeline of Specialists", 25,
-     "Chain specialists in a fixed order so each adds to a customer case -- triage, then billing, then tech.",
-     ["Sequential", "Pipeline", "Stages"])
+     "Wire a real StateGraph triage -> billing -> tech, each node a stage over shared state, with billing/tech as real create_agent specialists.",
+     ["Sequential graph", "Nodes & edges", "Real specialist stage"])
 def _l4(sol):
     DEFS = [
-      "def run_pipeline(ticket, stages):",
-      "    case = ticket",
-      "    trail = []",
-      "    for stage in stages:",
-      {"s": '        case = ___   # TODO: run this stage on the CURRENT case (its input is the previous stage output)',
-       "a": '        case = stage(case)'},
-      "        trail.append(case)",
-      '    return {"case": case, "trail": trail}',
+      "from typing import Annotated, TypedDict",
+      "from operator import add",
+      "from langgraph.graph import StateGraph, START, END",
+      TOOL_IMPORT,
+      "from langchain.agents import create_agent",
       "",
-      "STAGES = [",
-      '    lambda c: c + " | triage -> billing+tech",',
-      '    lambda c: c + " | billing: duplicate charge on 4471",',
-      '    lambda c: c + " | tech: matches BUG-231",',
-      "]",
+      CS_FIXTURE,
+      "",
+      SPECIALIST_TOOLS,
+      "",
+      "class CaseState(TypedDict):",
+      "    message: str",
+      "    findings: Annotated[list, add]",
+      "",
+      "def build_specialist(tools, role):",
+      '    return create_agent(llm, tools, system_prompt=f"You are the {role} specialist. Use ONLY your own tools; answer in one sentence.")',
+      "",
+      "def specialist_node(role, tools):",
+      '    """Wrap a REAL create_agent specialist as a pipeline stage."""',
+      "    agent = build_specialist(tools, role)",
+      "    def node(state):",
+      '        r = agent.invoke({"messages": [("user", state["message"])]}, config={"recursion_limit": 8})',
+      '        return {"findings": [f"{role}: " + r["messages"][-1].content]}',
+      "    return node",
+      "",
+      "def triage_node(state):",
+      '    """Stage 1 (deterministic): sort the ticket before the specialists see it."""',
+      '    return {"findings": ["triage: billing + tech needed"]}',
+      "",
+      "def build_pipeline():",
+      "    g = StateGraph(CaseState)",
+      '    g.add_node("triage", triage_node)',
+      '    g.add_node("billing", specialist_node("billing", [lookup_invoice]))',
+      '    g.add_node("tech", specialist_node("tech", [known_issues]))',
+      '    g.add_edge(START, "triage")',
+      {"s": '    ___   # TODO: chain the stages in order -- triage -> billing, then billing -> tech',
+       "a": '    g.add_edge("triage", "billing")\n    g.add_edge("billing", "tech")'},
+      '    g.add_edge("tech", END)',
+      "    return g.compile()",
     ]
-    EX = '''out = run_pipeline("ticket: charged twice, app crashing", STAGES)
-print("final case:", out["case"])
-for step in out["trail"]:
-    print("  step:", step)'''
+    EX = '''# Offline sanity (no model call): the deterministic triage stage + the intended order.
+print("triage stage:", triage_node({"message": "charged twice, app crashing"}))
+print("pipeline order: START -> triage -> billing -> tech -> END")'''
+    RUN = '''pipe = build_pipeline()
+print("graph nodes:", sorted(set(pipe.get_graph().nodes) - {"__start__", "__end__"}))
+
+final = pipe.invoke(
+    {"message": "I was charged twice for order 4471 and the app keeps crashing on login.", "findings": []},
+    config={"recursion_limit": 12})
+print("\\ncase, stage by stage:")
+for f in final["findings"]:
+    print("  •", f)'''
     return [
       header(4, "Sequential Pipeline of Specialists", "Beginner", 25,
-        ["Run the CS specialists in a fixed order over one customer ticket",
-         "Feed each stage the previous stage's accumulated case",
-         "See why a clean, ordered hand-off keeps each stage reliable"],
+        ["Wire a StateGraph triage -> billing -> tech with edges",
+         "Run billing and tech as real create_agent specialist nodes",
+         "See how one edge fixes the order and each stage adds to shared state"],
         "Sequential — a pipeline of specialists"),
       setup(4),
-      concept('''The simplest collaboration is the **sequential pipeline** (deck slide 9): agents run in a **fixed order**,
-each transforming the running case &mdash; for a support ticket that is **triage &rarr; billing &rarr;
-tech**. It's a relay where the baton is the growing case. Each stage gets a **clean, focused input** (the
-prior stage's output), so each does its narrow job well &mdash; and you can swap any stage independently.
-(Watch out: errors **propagate** downstream, and it's **serial**, so latency adds up.)'''),
-      code('''# Each stage is a specialist that takes the running case and returns it, extended with its note.
-print("pipeline: triage -> billing -> tech")'''),
-      buildmd('''Complete `run_pipeline` so each stage receives the previous stage's output.'''),
+      concept('''The simplest collaboration is the **sequential pipeline** (deck slide 9): specialists run in a **fixed
+order**, each adding to the case &mdash; for support that's **triage &rarr; billing &rarr; tech**. In LangGraph
+you express order with **edges**: `add_edge("triage", "billing")` makes billing run *after* triage. Each stage
+reads shared state and appends its finding, so a later stage sees everything so far. Here `triage` is
+deterministic and `billing`/`tech` are **real `create_agent` specialists** &mdash; a real pipeline of agents.
+(Trade-off: it's serial, so latency adds up, and an early error flows downstream.)'''),
+      code('''# Each stage is a node; edges fix the order. billing/tech are real create_agent specialists.
+print("pipeline graph: triage -> billing(real) -> tech(real)")'''),
+      buildmd('''Complete the **edges** that chain `triage -> billing -> tech`. The triage node is written; `billing` and
+`tech` are real specialist nodes.'''),
       code(render(DEFS, sol) + "\n\n" + guard(EX)),
-      noticemd('''- The ticket passes through **every stage in order**; each `trail` entry **builds on** the previous one.
-- Triage runs before the specialists, so the specialists get a pre-sorted case &mdash; a clean, focused input.
-- Because stages are just functions of the running case, you can **swap** any one independently. Errors, though, propagate downstream.'''),
-      yourturn('''Insert a new **`policy`** stage between billing and tech (e.g. `lambda c: c + " | policy: refund within 30 days"`)
-and re-run. **What good looks like:** the new stage appears in order in the trail, the final case carries every
-stage's note, and removing a stage cleanly shortens the pipeline &mdash; no other stage needs to change.'''),
-      *sol_answer(sol, r'''STAGES2 = [
-    STAGES[0],                                              # triage
-    STAGES[1],                                              # billing
-    lambda c: c + " | policy: refund within 30 days",       # NEW policy stage
-    STAGES[2],                                              # tech
-]
-out = run_pipeline("ticket: charged twice, app crashing", STAGES2)
-print("final case:", out["case"])
-for step in out["trail"]:
-    print("  step:", step)'''),
-      footer(4, "A pipeline is the multi-agent version of Module 7's automation pipeline -- each stage a specialist over the same ticket. Clean, ordered hand-offs make each stage reliable; just remember errors propagate downstream."),
+      runmd("Build the graph and run one ticket through it. Each stage adds its finding to shared state in the wired order."),
+      code(runguard(RUN)),
+      noticemd('''- The `add_edge` chain fixes the **order**: triage, then billing, then tech &mdash; each a real node appending to shared `findings`.
+- Swap or insert a stage by rewiring **one edge** &mdash; the framework sequences the team, not a bespoke loop.
+- Because it's serial, latency is the **sum** of stages and an early error propagates downstream &mdash; the price of a clean ordered hand-off. Fan-out (Lab 8.5) trades that for parallelism.'''),
+      yourturn('''Insert a **`policy`** node between billing and tech (a deterministic stage, e.g. returns
+`"policy: refund within 30 days"`) and rewire the two edges around it. **What good looks like:** the new stage runs
+in order, every stage's finding is in the final state, and removing it cleanly shortens the graph &mdash; no other
+node changes.'''),
+      *sol_answer(sol, r'''if groq_ready():
+    def policy_node(state):
+        return {"findings": ["policy: refund within 30 days"]}
+    g = StateGraph(CaseState)
+    g.add_node("triage", triage_node)
+    g.add_node("billing", specialist_node("billing", [lookup_invoice]))
+    g.add_node("policy", policy_node)
+    g.add_node("tech", specialist_node("tech", [known_issues]))
+    g.add_edge(START, "triage")
+    g.add_edge("triage", "billing")
+    g.add_edge("billing", "policy")     # NEW stage: one edge in, one edge out
+    g.add_edge("policy", "tech")
+    g.add_edge("tech", END)
+    pipe = g.compile()
+    final = pipe.invoke({"message": "charged twice on 4471 and the app keeps crashing", "findings": []},
+                        config={"recursion_limit": 12})
+    for f in final["findings"]: print("  •", f)
+else:
+    print("(add GROQ_API_KEY to .env)")'''),
+      footer(4, "A sequential pipeline is a StateGraph edge-chain: add_edge fixes the order and each node -- a real specialist -- adds to shared state. Clean ordered hand-offs, at the cost of serial latency. Next: run specialists in parallel."),
     ]
 
 # ============================================================ LAB 05
 @lab(5, "lab-05-parallel-fanout", "Beginner",
      "Parallel Fan-Out", 20,
-     "Fan one ticket out to several specialists at once, collect results by agent, and survive one that fails.",
-     ["Parallel", "Fan-out", "Coverage"])
+     "Fan one ticket to several nodes at once with a real StateGraph, merge their findings with a reducer, and survive a branch that fails.",
+     ["Parallel fan-out", "Reducer merge", "Fault tolerance"])
 def _l5(sol):
     DEFS = [
-      "def fan_out(ticket, specialists):",
-      "    results = {}",
-      "    for name, agent in specialists.items():",
-      "        try:",
-      {"s": '            results[name] = ___   # TODO: run THIS agent on the ticket (same input for all)',
-       "a": '            results[name] = agent(ticket)'},
-      "        except Exception as e:",
-      {"s": '            results[name] = ___   # TODO: this agent is down -- record a marker string beginning "ERROR: " (include type(e).__name__) so the fan-out survives',
-       "a": '            results[name] = f"ERROR: {type(e).__name__}"'},
-      "    return results",
+      "from typing import Annotated, TypedDict",
+      "from operator import add",
+      "from langgraph.graph import StateGraph, START, END",
+      TOOL_IMPORT,
+      "from langchain.agents import create_agent",
+      "",
+      CS_FIXTURE,
+      "",
+      SPECIALIST_TOOLS,
+      "",
+      "class FanState(TypedDict):",
+      "    message: str",
+      {"s": '    findings: Annotated[list, ___]   # TODO: the reducer that MERGES the parallel branches (hint: operator.add)',
+       "a": '    findings: Annotated[list, add]'},
+      "    summary: str",
+      "",
+      "def build_specialist(tools, role):",
+      '    return create_agent(llm, tools, system_prompt=f"You are the {role} specialist. Use ONLY your own tools; answer in one sentence.")',
+      "",
+      "def specialist_node(role, tools):",
+      "    agent = build_specialist(tools, role)",
+      "    def node(state):",
+      '        r = agent.invoke({"messages": [("user", state["message"])]}, config={"recursion_limit": 8})',
+      '        return {"findings": [f"{role}: " + r["messages"][-1].content]}',
+      "    return node",
+      "",
+      "def policy_node(state):",
+      '    """A third branch that is DOWN. It must CATCH its own error -- a raising node aborts the whole graph."""',
+      "    try:",
+      '        raise RuntimeError("policy service unavailable")',
+      "    except Exception as e:",
+      {"s": '        return ___   # TODO: return an ERROR-marker finding (include type(e).__name__) so the fan-out survives',
+       "a": '        return {"findings": [f"policy: ERROR: {type(e).__name__}"]}'},
+      "",
+      "def join_node(state):",
+      '    """Fan-in: combine whatever the branches produced into one summary."""',
+      '    return {"summary": " | ".join(sorted(state["findings"]))}',
+      "",
+      "def build_fanout():",
+      "    g = StateGraph(FanState)",
+      '    g.add_node("billing", specialist_node("billing", [lookup_invoice]))',
+      '    g.add_node("tech", specialist_node("tech", [known_issues]))',
+      '    g.add_node("policy", policy_node)',
+      '    g.add_node("join", join_node)',
+      {"s": '    for n in ("billing", "tech", "policy"):\n        ___   # TODO: fan OUT from START to each branch, and fan each branch IN to "join"',
+       "a": '    for n in ("billing", "tech", "policy"):\n        g.add_edge(START, n)\n        g.add_edge(n, "join")'},
+      '    g.add_edge("join", END)',
+      "    return g.compile()",
     ]
-    EX = '''out = fan_out("charged twice and the app keeps crashing", SPECIALISTS)
-for name, res in out.items():
-    print(f"{name:8}: {res}")'''
+    EX = '''# Offline sanity (no model call): the down branch degrades to a marker, and the fan-out plan.
+print("down branch ->", policy_node({"message": "x"}))
+print("plan: START -> {billing, tech, policy} in parallel -> join -> END")'''
+    RUN = '''fan = build_fanout()
+print("graph nodes:", sorted(set(fan.get_graph().nodes) - {"__start__", "__end__"}))
+
+final = fan.invoke(
+    {"message": "I was charged twice on 4471 and the app keeps crashing on login.", "findings": [], "summary": ""},
+    config={"recursion_limit": 12})
+print("\\nfindings (merged by the reducer):")
+for f in sorted(final["findings"]):
+    print("  •", f)
+print("\\njoined summary:", final["summary"][:300])'''
     return [
       header(5, "Parallel Fan-Out", "Beginner", 20,
-        ["Run every specialist on the SAME customer ticket at once",
-         "Collect each result tagged with the agent that produced it",
-         "Survive one agent failing -- fault tolerance in a fan-out"],
+        ["Fan a ticket from START to several nodes that run in parallel",
+         "Merge their findings with a reducer and fan in to a join node",
+         "Survive a branch that fails -- fault tolerance in a fan-out"],
         "Parallel — fan-out for coverage & speed"),
       setup(5),
-      concept('''In the **parallel** (fan-out) shape, several agents work the **same input** at once and their outputs are
-combined (deck slide 10). For a support ticket you fan it out to the **billing, tech and policy** specialists
-together &mdash; each an independent lens, so between them they catch what one alone would miss. Two practical
-rules: keep each result **tagged with the agent** that produced it (you must know who said what), and make
-the fan-out **fault-tolerant** &mdash; if one specialist is down, the others still return. Fan-out then
-creates a new problem &mdash; **several outputs, and you need one** &mdash; which is the decision-making you
-build next.'''),
-      code('''# Three specialists, each a different lens on the SAME ticket -- and one of them is currently DOWN.
-def billing_agent(t):
-    return "duplicate charge on 4471" if "charg" in t.lower() else "no billing issue"
-def tech_agent(t):
-    return "matches BUG-231" if "crash" in t.lower() else "no tech issue"
-def policy_agent(t):
-    raise RuntimeError("policy service unavailable")   # this specialist is DOWN -> the fan-out must survive it
-SPECIALISTS = {"billing": billing_agent, "tech": tech_agent, "policy": policy_agent}
-print("fan-out targets:", list(SPECIALISTS))'''),
-      buildmd('''Complete `fan_out`: run every specialist on the **same** ticket, tag each result by agent, and keep going
-when one raises.'''),
+      concept('''In the **parallel** (fan-out) shape several agents work the **same input** at once and their outputs are
+combined (deck slide 10). In LangGraph you fan out by adding edges from **`START` to several nodes** &mdash;
+they run in **one superstep, concurrently** &mdash; and fan in by pointing them all at a **join** node. The
+**reducer** (`Annotated[list, add]`) merges their findings no matter the finish order. Two rules the framework
+makes easy: keep each result **tagged** with its agent, and make branches **fault-tolerant** &mdash; a node
+that *raises* aborts the whole graph, so a down branch must **catch its own error** and return a marker.'''),
+      code('''# Three branches on the SAME ticket: billing/tech are real specialists; policy is DOWN.
+print("fan-out: START -> billing, tech, policy (parallel) -> join")'''),
+      buildmd('''Complete the **reducer** on `findings`, the down-branch **error marker** in `policy_node`, and the
+**fan-out / fan-in edges**. `billing` and `tech` are real specialist nodes.'''),
       code(render(DEFS, sol) + "\n\n" + guard(EX)),
-      noticemd('''- Every specialist saw the **same ticket**; each result is **tagged** with who produced it &mdash; you always know who said what.
-- The **down** `policy` agent yields an `"ERROR: ..."` marker instead of crashing the fan-out &mdash; the survivors still returned findings.
-- You now hold **several** results and need **one** &mdash; that convergence (vote / synthesise) is the rest of the module.'''),
-      yourturn('''Add a fourth specialist that returns a *contradicting* billing verdict (e.g. `"no refund due"`), then re-run
-the fan-out. **What good looks like:** all four run, each tagged, the down agent still degrades to a marker &mdash;
-and you now have a genuine **conflict** to resolve with a vote (Lab 8.7) or synthesis (Lab 8.9).'''),
-      *sol_answer(sol, r'''def billing_review(t):
-    return "no refund due" if "charg" in t.lower() else "no billing issue"   # CONTRADICTS billing_agent
-
-SPECIALISTS["billing_review"] = billing_review
-out = fan_out("charged twice and the app keeps crashing", SPECIALISTS)
-for name, res in out.items():
-    print(f"{name:14}: {res}")            # all run, each tagged; policy still degrades to an ERROR marker'''),
-      footer(5, "Fan-out buys coverage and speed -- latency is the slowest agent, not the sum -- and staying tagged + fault-tolerant means one agent going down doesn't take the team with it. But now you have several outputs and need one: that convergence is decision making, coming up."),
+      runmd("Build the graph and fan one ticket out. Watch the reducer merge findings from branches that finished in any order, and the down branch degrade to a marker."),
+      code(runguard(RUN)),
+      noticemd('''- Three branches run from `START` in **one superstep** &mdash; real parallel execution; latency is the **slowest** branch, not the sum.
+- The **reducer** merges all three findings regardless of finish order; the down `policy` branch caught its error and returned a **marker**, so the graph survived.
+- You now hold **several** findings and need **one** &mdash; the `join` node starts that; vote/synthesis (Labs 8.7&ndash;8.9) finish it.'''),
+      yourturn('''Add a fourth branch &mdash; a `billing_review` node that returns a *contradicting* verdict
+(e.g. `"billing_review: no refund due"`). **What good looks like:** all four run in parallel, the reducer merges
+them (the down branch still degrades to a marker), and you now have a genuine **conflict** to resolve with a vote
+(Lab 8.7).'''),
+      *sol_answer(sol, r'''if groq_ready():
+    def billing_review_node(state):
+        return {"findings": ["billing_review: no refund due"]}    # CONTRADICTS the billing branch
+    g = StateGraph(FanState)
+    g.add_node("billing", specialist_node("billing", [lookup_invoice]))
+    g.add_node("tech", specialist_node("tech", [known_issues]))
+    g.add_node("billing_review", billing_review_node)
+    g.add_node("policy", policy_node)
+    g.add_node("join", join_node)
+    for n in ("billing", "tech", "billing_review", "policy"):
+        g.add_edge(START, n)
+        g.add_edge(n, "join")
+    g.add_edge("join", END)
+    fan = g.compile()
+    final = fan.invoke({"message": "charged twice on 4471 and the app keeps crashing", "findings": [], "summary": ""},
+                       config={"recursion_limit": 12})
+    for f in sorted(final["findings"]): print("  •", f)
+else:
+    print("(add GROQ_API_KEY to .env)")'''),
+      footer(5, "Fan-out is edges from START to several nodes running in one superstep; a reducer merges their findings and a join fans them back in. A down branch that catches its own error keeps the team alive -- and now you have several outputs to converge."),
     ]
 
 # ============================================================ LAB 06
 @lab(6, "lab-06-handoff", "Beginner",
      "Explicit Handoff (Capped)", 25,
-     "Let agents hand off to each other explicitly, walk the handoff path, and cap it to stop loops.",
-     ["Handoff", "Loop cap", "Coordination"])
+     "Hand off between nodes with Command(goto=...) in a real StateGraph, run a real specialist between handoffs, and cap loops with recursion_limit.",
+     ["Command handoff", "Recursion cap", "Coordination"])
 def _l6(sol):
     DEFS = [
-      "def run_handoffs(start, agents, max_handoffs=5):",
-      "    current, path = start, []",
-      "    for _ in range(max_handoffs):",
-      "        path.append(current)",
-      "        nxt = agents[current]()",
-      {"s": '        if ___:   # TODO: the agent signalled it is finished',
-       "a": '        if nxt == "done":'},
-      "            break",
-      {"s": '        current = ___   # TODO: hand off to the next agent',
-       "a": '        current = nxt'},
-      "    return path",
+      "from typing import Annotated, TypedDict",
+      "from operator import add",
+      "from langgraph.graph import StateGraph, START, END",
+      "from langgraph.types import Command",
+      TOOL_IMPORT,
+      "from langchain.agents import create_agent",
       "",
-      'AGENTS = {"supervisor": lambda: "billing", "billing": lambda: "tech", "tech": lambda: "done"}',
-      'LOOP   = {"a": lambda: "b", "b": lambda: "a"}   # two agents that would loop forever',
+      CS_FIXTURE,
+      "",
+      SPECIALIST_TOOLS,
+      "",
+      "class FlowState(TypedDict):",
+      "    message: str",
+      "    findings: Annotated[list, add]",
+      "",
+      "def build_specialist(tools, role):",
+      '    return create_agent(llm, tools, system_prompt=f"You are the {role} specialist. Use ONLY your own tools; answer in one sentence.")',
+      "",
+      "def handoff_node(role, tools, goto):",
+      '    """A specialist node that does its work, then HANDS OFF to the next node (or END)."""',
+      "    agent = build_specialist(tools, role)",
+      "    def node(state):",
+      '        r = agent.invoke({"messages": [("user", state["message"])]}, config={"recursion_limit": 8})',
+      '        return Command(goto=goto, update={"findings": [f"{role}: " + r["messages"][-1].content]})',
+      "    return node",
+      "",
+      "def build_flow():",
+      "    g = StateGraph(FlowState)",
+      '    g.add_node("billing", handoff_node("billing", [lookup_invoice], goto="tech"))   # billing -> tech',
+      {"s": '    g.add_node("tech", handoff_node("tech", [known_issues], goto=___))          # TODO: tech is last -> hand off to END',
+       "a": '    g.add_node("tech", handoff_node("tech", [known_issues], goto=END))'},
+      '    g.add_edge(START, "billing")',
+      "    return g.compile()",
     ]
-    EX = '''print("path :", run_handoffs("supervisor", AGENTS))
-print("loop :", run_handoffs("a", LOOP, max_handoffs=4))'''
+    EX = '''# The runaway guard is deterministic -- demo it offline (no model call).
+# A polite looping pair would hand back and forth forever; recursion_limit stops it.
+def ping(state) -> Command: return Command(goto="pong", update={"findings": ["ping"]})
+def pong(state) -> Command: return Command(goto="ping", update={"findings": ["pong"]})
+loop = StateGraph(FlowState)
+loop.add_node("ping", ping); loop.add_node("pong", pong); loop.add_edge(START, "ping")
+try:
+    loop.compile().invoke({"message": "x", "findings": []}, config={"recursion_limit": 5})
+except Exception as e:
+    print("looping pair stopped by recursion_limit ->", type(e).__name__)'''
+    RUN = '''flow = build_flow()
+state = flow.invoke(
+    {"message": "I was charged twice for 4471 and the app keeps crashing on login.", "findings": []},
+    config={"recursion_limit": 8})
+print("handoff chain findings:")
+for f in state["findings"]:
+    print(" -", f)'''
     return [
       header(6, "Explicit Handoff (Capped)", "Beginner", 25,
-        ["Let each agent return the next agent, or 'done'",
-         "Walk the handoff path from a starting agent",
-         "Cap total handoffs so two agents can't loop forever"],
-        "Message passing & shared state"),
+        ["Hand off between nodes with Command(goto=...)",
+         "Run a real create_agent specialist between handoffs",
+         "Cap runaway loops with recursion_limit (the multi-agent max_iterations)"],
+        "Failure modes & observability"),
       setup(6),
-      concept('''Agents coordinate by **explicit handoffs**: an agent signals *&ldquo;done&rdquo;* or *&ldquo;this needs the
-tech agent&rdquo;*, and control passes on. The danger is a **handoff loop** &mdash; A hands to B, B hands
-back to A, forever (deck slide 19) &mdash; so you **cap total handoffs**, exactly like `max_iterations`.
-Explicit handoffs plus a cap are what keep a team from becoming a mob.'''),
-      code('''# Each agent is a function returning the NEXT agent's name, or "done".
-print("handoff: supervisor -> billing -> tech -> done")'''),
-      buildmd('''Complete `run_handoffs`: stop at `"done"`, otherwise follow the handoff, all under a cap.'''),
+      concept('''Agents also coordinate by **explicit handoffs**: a node finishes its part and passes control on. LangGraph
+expresses this with **`Command`** &mdash; a node returns `Command(goto="tech", update={...})` to both **update
+shared state** and **route** to the next node in one move. The danger is a **handoff loop** (A &rarr; B &rarr;
+A forever, deck slide 19), so every graph runs under a **`recursion_limit`** &mdash; the multi-agent
+`max_iterations`. Here each handoff node runs a **real `create_agent` specialist**, then hands off; a
+deliberately looping pair shows the cap stopping a runaway team.'''),
+      code('''# Each node returns Command(goto=..., update=...): state update + routing in one step.
+print("handoff: billing (real) -> tech (real) -> END, all under a recursion_limit")'''),
+      buildmd('''Complete the final handoff: `tech` is the last specialist, so it hands off to **`END`**. Each node runs a real
+specialist, then returns a `Command`.'''),
       code(render(DEFS, sol) + "\n\n" + guard(EX)),
-      noticemd('''- The handoff **path** is walked in order and stops at `"done"` &mdash; explicit control passing, not magic.
-- Point it at `LOOP` (two agents that hand back and forth) and the **cap** stops it dead &mdash; the multi-agent `max_iterations`.
-- A lower cap stops sooner: the cap is your dial between *let the team finish* and *never run away*.'''),
-      yourturn('''Add an agent that hands off **conditionally** (returns `"tech"` sometimes and `"done"` other times), and walk
-a few runs. **What good looks like:** normal runs terminate at `"done"` well under the cap, while a
-deliberately looping set is always stopped by the cap &mdash; no polite pair of agents can hand back and forth
-forever.'''),
-      *sol_answer(sol, r'''import itertools
-flip = itertools.cycle(["tech", "done"])                 # sometimes hands to tech, sometimes finishes
-COND = {"supervisor": lambda: "billing", "billing": lambda: next(flip), "tech": lambda: "done"}
-print("run 1 :", run_handoffs("supervisor", COND))       # terminates at "done", under the cap
-print("run 2 :", run_handoffs("supervisor", COND))
-print("loop  :", run_handoffs("a", LOOP, max_handoffs=4)) # a looping pair is always stopped by the cap'''),
-      footer(6, "Explicit handoffs plus a cap are the multi-agent version of the agent loop with max_iterations. Without the cap, two polite agents hand back and forth forever."),
+      runmd("Build the flow and run one ticket: billing does its part and hands off to tech, which hands off to END. Read the findings each node contributed."),
+      code(runguard(RUN)),
+      noticemd('''- Each node returns `Command(goto=..., update=...)` &mdash; **state update and routing in one step**; `billing` hands to `tech`, `tech` hands to `END`.
+- The looping `ping`/`pong` pair is stopped by **`recursion_limit`** (a `GraphRecursionError`) &mdash; the framework's built-in runaway guard, no manual counter.
+- Lower the cap and it stops sooner: `recursion_limit` is your dial between *let the team finish* and *never run away*.'''),
+      yourturn('''Make `billing` hand off **conditionally** &mdash; return `Command(goto="tech")` for a two-intent ticket but
+`Command(goto=END)` for a billing-only one (branch on `state["message"]`). **What good looks like:** a normal ticket
+terminates under the cap, while the `ping`/`pong` loop is *always* stopped by `recursion_limit` &mdash; no polite
+pair of nodes hands back and forth forever.'''),
+      *sol_answer(sol, r'''if groq_ready():
+    def billing_cond_node(state):
+        agent = build_specialist([lookup_invoice], "billing")
+        r = agent.invoke({"messages": [("user", state["message"])]}, config={"recursion_limit": 8})
+        m = state["message"].lower()
+        nxt = "tech" if any(k in m for k in ("crash", "bug", "login", "broken")) else END
+        return Command(goto=nxt, update={"findings": ["billing: " + r["messages"][-1].content]})
+
+    g = StateGraph(FlowState)
+    g.add_node("billing", billing_cond_node)
+    g.add_node("tech", handoff_node("tech", [known_issues], goto=END))
+    g.add_edge(START, "billing")
+    flow = g.compile()
+    for msg in ["I was charged twice on 4471", "charged twice on 4471 and the app keeps crashing"]:
+        out = flow.invoke({"message": msg, "findings": []}, config={"recursion_limit": 8})
+        print(f"{msg[:34]:36} -> handed to:", [f.split(':')[0] for f in out["findings"]])
+else:
+    print("(add GROQ_API_KEY to .env)")'''),
+      footer(6, "Command(goto=...) updates state and routes in one step -- the framework's handoff -- and recursion_limit caps runaway loops without a manual counter. Explicit handoffs plus a cap keep a team from becoming a mob. Next: deciding when specialists disagree."),
     ]
 
 # ============================================================ LAB 07

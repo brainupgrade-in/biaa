@@ -104,8 +104,8 @@
           <span class="time">&#9201; 20 min</span>
         </div>
         <h4>The Supervisor (Router)</h4>
-        <p>Build a supervisor that classifies a message and routes it to the right specialist -- or to several.</p>
-        <div class="chips"><span class="chip">Supervisor</span><span class="chip">Routing</span><span class="chip">Multi-intent</span></div>
+        <p>Build a real StateGraph whose supervisor conditional-routes a ticket to real create_agent specialists -- one, several, or a general fallback.</p>
+        <div class="chips"><span class="chip">StateGraph router</span><span class="chip">Conditional edges</span><span class="chip">Real specialists</span></div>
         <div class="links">
           <a class="open" href="lab-02-the-supervisor.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-02-the-supervisor.ipynb">Solution</a>
@@ -117,8 +117,8 @@
           <span class="time">&#9201; 20 min</span>
         </div>
         <h4>Shared State & Message Passing</h4>
-        <p>Give the team a shared state object where each agent records its finding and the running log is kept.</p>
-        <div class="chips"><span class="chip">Shared state</span><span class="chip">Message passing</span><span class="chip">Findings</span></div>
+        <p>Replace a hand-rolled state class with LangGraph's real state schema: a TypedDict + reducers that MERGE each node's partial update.</p>
+        <div class="chips"><span class="chip">StateGraph state</span><span class="chip">Reducers</span><span class="chip">Message passing</span></div>
         <div class="links">
           <a class="open" href="lab-03-shared-state.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-03-shared-state.ipynb">Solution</a>
@@ -130,8 +130,8 @@
           <span class="time">&#9201; 25 min</span>
         </div>
         <h4>Sequential Pipeline of Specialists</h4>
-        <p>Chain specialists in a fixed order so each adds to a customer case -- triage, then billing, then tech.</p>
-        <div class="chips"><span class="chip">Sequential</span><span class="chip">Pipeline</span><span class="chip">Stages</span></div>
+        <p>Wire a real StateGraph triage -> billing -> tech, each node a stage over shared state, with billing/tech as real create_agent specialists.</p>
+        <div class="chips"><span class="chip">Sequential graph</span><span class="chip">Nodes & edges</span><span class="chip">Real specialist stage</span></div>
         <div class="links">
           <a class="open" href="lab-04-sequential-pipeline.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-04-sequential-pipeline.ipynb">Solution</a>
@@ -143,8 +143,8 @@
           <span class="time">&#9201; 20 min</span>
         </div>
         <h4>Parallel Fan-Out</h4>
-        <p>Fan one ticket out to several specialists at once, collect results by agent, and survive one that fails.</p>
-        <div class="chips"><span class="chip">Parallel</span><span class="chip">Fan-out</span><span class="chip">Coverage</span></div>
+        <p>Fan one ticket to several nodes at once with a real StateGraph, merge their findings with a reducer, and survive a branch that fails.</p>
+        <div class="chips"><span class="chip">Parallel fan-out</span><span class="chip">Reducer merge</span><span class="chip">Fault tolerance</span></div>
         <div class="links">
           <a class="open" href="lab-05-parallel-fanout.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-05-parallel-fanout.ipynb">Solution</a>
@@ -156,8 +156,8 @@
           <span class="time">&#9201; 25 min</span>
         </div>
         <h4>Explicit Handoff (Capped)</h4>
-        <p>Let agents hand off to each other explicitly, walk the handoff path, and cap it to stop loops.</p>
-        <div class="chips"><span class="chip">Handoff</span><span class="chip">Loop cap</span><span class="chip">Coordination</span></div>
+        <p>Hand off between nodes with Command(goto=...) in a real StateGraph, run a real specialist between handoffs, and cap loops with recursion_limit.</p>
+        <div class="chips"><span class="chip">Command handoff</span><span class="chip">Recursion cap</span><span class="chip">Coordination</span></div>
         <div class="links">
           <a class="open" href="lab-06-handoff.ipynb">&#9654; Open lab</a>
           <a class="sol" href="solutions/lab-06-handoff.ipynb">Solution</a>
