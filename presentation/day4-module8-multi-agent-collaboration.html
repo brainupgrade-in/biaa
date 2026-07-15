@@ -39,6 +39,14 @@
     text-transform:uppercase;color:var(--ind-600);margin-bottom:6px;
   }
   .kicker .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);}
+  /* ---------- Hands-on lab cue (badge in the kicker) ---------- */
+  .kicker .lab-cue{display:inline-flex;align-items:center;gap:6px;
+    background:var(--amber);color:var(--ink-900);font-weight:800;text-transform:none;
+    padding:3px 12px;border-radius:12px;letter-spacing:.02em;
+    box-shadow:0 1px 4px rgba(245,158,11,.45);}
+  .kicker .lab-cue.bridge{background:#fff;color:var(--blue);border:1px solid var(--blue);box-shadow:none;}
+  .kicker .lab-cue .tri{font-size:.85em;line-height:1;}
+  @media print{.kicker .lab-cue{box-shadow:none;border:1px solid var(--amber-d);}}
   .kicker .sub{color:var(--muted);font-weight:600;}
   h2.title{
     margin:0 0 14px;color:var(--ink-800);
@@ -302,7 +310,7 @@
   <!-- ============ SLIDE 5 — SPECIALIST ROLES ============ -->
   <section class="slide" data-title="Specialist roles"
     data-note="Deep-dive on the building block: the specialist. The whole payoff of multi-agent comes from each agent being GOOD at one thing, and that comes from three deliberate design choices per agent. A FOCUSED PROMPT: a short system prompt that defines exactly this role and nothing else -- 'You are a billing specialist. You handle refunds, charges and invoices. You never give technical troubleshooting.' A SMALL TOOL SET: only the tools this role needs -- the billing agent gets lookup_invoice and issue_refund_request, not the tech agent's restart_service. CLEAR BOUNDARIES: the agent knows what's out of scope and hands back rather than guessing. Why this works: a small prompt means the model actually follows it; a small tool set means high selection accuracy; clear boundaries mean predictable behaviour you can test. The design heuristic: give each agent a job description you could hand to a new hire -- if you can't write it in three lines, the role is too broad. This is exactly the separation of concerns that makes the customer-service bot maintainable: you can improve the billing agent without touching tech support.">
-    <div class="kicker"><span class="dot"></span> The building block</div>
+    <div class="kicker"><span class="dot"></span> The building block<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 8.1</span></div>
     <h2 class="title">Specialist roles: separation of concerns</h2>
     <div class="body">
       <p class="lead">The payoff comes from each agent being <b>good at one thing</b>. That&rsquo;s three deliberate choices per agent:</p>
@@ -318,7 +326,7 @@
   <!-- ============ SLIDE 6 — SUPERVISOR / ROUTER PATTERN (CENTERPIECE) ============ -->
   <section class="slide" data-title="The supervisor pattern"
     data-note="The centrepiece pattern -- spend time here. The most common and most useful multi-agent architecture is the SUPERVISOR (a.k.a. router or orchestrator). A supervisor agent sits at the front. It receives the request, decides WHICH specialist should handle it, and routes it there -- exactly the ROUTE pattern from Module 7, except the destinations are agents, not code branches. The specialist does its focused work and returns a result to the supervisor, which decides what's next: done, hand to another specialist, or ask a human. Walk the diagram: user message hits the supervisor; it routes to billing / tech / general; the chosen worker runs (with its own tools); the result comes back to the supervisor, which either returns the answer or re-routes. Key points to stress: (1) the supervisor holds the conversation and the plan -- workers are stateless experts it calls; (2) this is just LangGraph -- supervisor and workers are nodes, the routing decisions are the edges; (3) it degrades gracefully -- an unknown request routes to a general agent or a human. This is the backbone of the customer-service chatbot you'll build. Tie back to Module 7: routing to the right specialist AGENT is where task automation becomes multi-agent collaboration.">
-    <div class="kicker"><span class="dot"></span> The centrepiece &middot; the backbone of the chatbot</div>
+    <div class="kicker"><span class="dot"></span> The centrepiece &middot; the backbone of the chatbot<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 8.2</span></div>
     <h2 class="title">The supervisor (router) pattern</h2>
     <div class="body center">
       <figure>
@@ -365,7 +373,7 @@
   <!-- ============ SLIDE 7 — MESSAGE PASSING & SHARED STATE ============ -->
   <section class="slide" data-title="Message passing"
     data-note="Zoom into how agents actually talk to each other -- the plumbing. Coordination needs communication, and there are two dominant styles. MESSAGE PASSING: agents exchange explicit messages -- the supervisor sends the billing agent a message ('handle this refund request, order 4471'), the billing agent replies with its result. It's like a conversation transcript that grows. SHARED STATE: all agents read and write a common state object -- a dict carrying the conversation, the extracted fields, each agent's findings, the current plan. LangGraph uses this: the graph's state flows through every node, each node reading what it needs and adding its contribution. Two design rules that keep it sane. Keep the shared context SMALL and RELEVANT -- don't dump everything to every agent, or you recreate the overloaded-prompt problem at the system level and blow up token cost. And make handoffs EXPLICIT -- an agent should clearly signal 'I'm done, hand back' or 'this needs the tech agent', not leave the next step ambiguous. The failure mode: agents talking past each other because the state is a soup nobody owns. Good message discipline is what makes the difference between a team and a mob.">
-    <div class="kicker"><span class="dot"></span> The plumbing of collaboration</div>
+    <div class="kicker"><span class="dot"></span> The plumbing of collaboration<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 8.3</span></div>
     <h2 class="title">Message passing &amp; shared state</h2>
     <div class="body">
       <div class="grid2">
@@ -439,7 +447,7 @@
   <!-- ============ SLIDE 9 — SEQUENTIAL PIPELINE ============ -->
   <section class="slide" data-title="Sequential pipeline"
     data-note="Deep dive on the sequential / pipeline shape -- the simplest useful collaboration. Agents run in a fixed order, each transforming the previous one's output: a researcher gathers facts, a writer drafts from them, an editor polishes. It's a relay -- the baton is the shared state, growing as it passes. When to use it: when the task has genuine, ordered STAGES where each needs different expertise, and stage N truly depends on stage N-1. Why it's powerful: each agent sees a clean, focused input (the previous stage's output) instead of the raw mess, so each does its narrow job well -- and you can improve or swap any stage independently. Two cautions. Errors PROPAGATE: a bad research step poisons the writer and editor downstream -- so validate between stages (Module 7's discipline applies here too). And it's inherently SERIAL -- latency is the sum of all stages, so don't pipeline things that could run in parallel. The sequential pipeline is the multi-agent version of the Module-7 automation pipeline: same idea, but each stage is now a reasoning specialist rather than a single step. It's often the right first thing to reach for before anything fancier.">
-    <div class="kicker"><span class="dot"></span> Shape 1 &middot; the relay</div>
+    <div class="kicker"><span class="dot"></span> Shape 1 &middot; the relay<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 8.4 &amp; 8.6</span></div>
     <h2 class="title">Sequential &mdash; a pipeline of specialists</h2>
     <div class="body">
       <p class="lead">Agents run in a <b>fixed order</b>, each transforming the previous output &mdash; researcher &rarr; writer &rarr; editor. A relay where the baton is the <b>shared state</b>.</p>
@@ -455,7 +463,7 @@
   <!-- ============ SLIDE 10 — PARALLEL FAN-OUT ============ -->
   <section class="slide" data-title="Parallel fan-out"
     data-note="Deep dive on the parallel / fan-out shape -- and set up the decision-making half of the module. Here several agents work the SAME input at the same time, independently, and their outputs are then combined. Two big use cases. COVERAGE: give the same question to agents with different lenses -- a security reviewer, a performance reviewer, a correctness reviewer -- and you catch what any one would miss. DIVERSITY OF ATTEMPTS: ask three agents to solve the same problem in different ways, then pick or merge the best -- this is how you beat one-shot answers on hard problems. The win is speed (they run concurrently, so latency is the SLOWEST one, not the sum) and robustness (independent views don't share a blind spot). But fan-out creates a new problem, and it's the pivot into the rest of the module: now you have SEVERAL outputs and you need ONE. Three agents reviewed the code -- do you act on all three? Three agents drafted a reply -- which goes out? That convergence step is DECISION MAKING, and it doesn't happen for free -- you have to design it. That's exactly voting, critique and synthesis, the next three slides.">
-    <div class="kicker"><span class="dot"></span> Shape 2 &middot; many views at once</div>
+    <div class="kicker"><span class="dot"></span> Shape 2 &middot; many views at once<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 8.5</span></div>
     <h2 class="title">Parallel &mdash; fan-out for coverage &amp; speed</h2>
     <div class="body">
       <p class="lead">Several agents work the <b>same input</b> concurrently; their outputs are then combined. Latency is the <b>slowest</b> agent, not the sum.</p>
@@ -486,7 +494,7 @@
   <!-- ============ SLIDE 12 — VOTING / CONSENSUS ============ -->
   <section class="slide" data-title="Voting & consensus"
     data-note="Decision mechanism 1: voting / consensus. When several agents produce COMPARABLE answers to the same question, take a vote and go with the agreement. Simplest form: majority vote -- run the same question through N agents (or the same agent N times with variation) and pick the answer most of them give. This works because independent errors tend to cancel: if each agent is 70% right and their mistakes are uncorrelated, the majority is much better than 70%. Variants: WEIGHTED voting when some agents are more trustworthy on a topic; SCORED voting where a judge rates each answer and you take the top; and a CONFIDENCE THRESHOLD -- if the vote is split (no clear majority), that's a signal to escalate to a human rather than force a call. When it fits: factual questions, classification, anything with a checkable or comparable answer. When it doesn't: creative or open-ended tasks where 'the average' is meaningless, and cases where the agents share a blind spot (then they'll confidently agree on the same wrong answer -- voting amplifies correlated error). The senior move: use voting for convergent problems, and treat a SPLIT vote as valuable information, not a failure.">
-    <div class="kicker"><span class="dot"></span> Decision mechanism 1 of 3</div>
+    <div class="kicker"><span class="dot"></span> Decision mechanism 1 of 3<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 8.7</span></div>
     <h2 class="title">Voting &amp; consensus</h2>
     <div class="body">
       <p class="lead">Several agents give <b>comparable answers</b>; take the <b>agreement</b>. Independent errors cancel &mdash; if each is 70% right with uncorrelated mistakes, the <b>majority</b> is far better.</p>
@@ -502,7 +510,7 @@
   <!-- ============ SLIDE 13 — CRITIQUE & DEBATE ============ -->
   <section class="slide" data-title="Critique & debate"
     data-note="Decision mechanism 2: critique, debate and reflection. Instead of averaging answers, you STRESS-TEST one. The pattern: one agent proposes; a second agent -- a critic with an adversarial brief -- tries to find what's wrong; the proposer revises, or a judge rules. It's the multi-agent version of the reflection you saw in Module 5, but the critic is a SEPARATE agent with a different prompt, which is what makes it effective: an independent skeptic catches errors the author is blind to, because the author is invested in their own answer. Forms: simple CRITIC (review-and-revise once), DEBATE (two agents argue opposing sides and a judge decides -- great for surfacing trade-offs), and REFLECTION loops (propose, critique, improve, repeat until the critic is satisfied or a cap is hit). Why it works: generating and evaluating are different skills, and separating them raises quality -- the same reason code review beats writing carefully alone. When to use: high-stakes or error-prone outputs where being RIGHT matters more than being fast -- a financial figure, a medical summary, a legal clause. The cost: extra model calls and latency, and you must CAP the loop or two agents will politely argue forever. The rule: for anything you'd want a second pair of eyes on, add a critic.">
-    <div class="kicker"><span class="dot"></span> Decision mechanism 2 of 3</div>
+    <div class="kicker"><span class="dot"></span> Decision mechanism 2 of 3<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 8.8</span></div>
     <h2 class="title">Critique &amp; debate</h2>
     <div class="body">
       <p class="lead">Don&rsquo;t average &mdash; <b>stress-test</b>. One agent proposes; an independent <b>critic</b> tries to find what&rsquo;s wrong; the proposer revises, or a judge rules.</p>
@@ -518,7 +526,7 @@
   <!-- ============ SLIDE 14 — SYNTHESIS ============ -->
   <section class="slide" data-title="Synthesis"
     data-note="Decision mechanism 3: synthesis / aggregation. Voting is for comparable WHOLE answers; synthesis is for complementary PARTS. When agents each contributed a different piece -- the billing agent found the refund status, the tech agent diagnosed the bug, the research agent pulled the policy -- you need one agent to weave those pieces into a single coherent response. That's the synthesiser (or aggregator): its whole job is to take the collected findings from the shared state and produce one well-structured, non-redundant, consistent output. Keys to a good synthesiser. It must RESOLVE CONFLICTS, not just concatenate -- if two agents disagree, it flags or reconciles rather than pasting both. It should ATTRIBUTE and stay grounded -- built only from what the agents actually found, inventing nothing (Module 7's grounding discipline). And it OWNS THE VOICE -- one consistent tone, even though many agents contributed. This is the last step in the customer-service chatbot: after the specialists have each done their part, a synthesiser composes the single reply the customer sees -- and then, for anything risky, a human approves it (Module 7's draft-not-send, now at the team level). Tie the three together: vote to converge comparable answers, critique to harden a risky one, synthesise to combine complementary parts -- pick the mechanism the situation calls for.">
-    <div class="kicker"><span class="dot"></span> Decision mechanism 3 of 3</div>
+    <div class="kicker"><span class="dot"></span> Decision mechanism 3 of 3<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 8.9</span></div>
     <h2 class="title">Synthesis &mdash; combine the parts</h2>
     <div class="body">
       <p class="lead">Voting is for comparable <b>whole answers</b>; synthesis is for complementary <b>parts</b>. One agent weaves the collected findings into a single coherent response.</p>
@@ -534,7 +542,7 @@
   <!-- ============ SLIDE 15 — WORKED EXAMPLE: CUSTOMER-SERVICE CHATBOT (CENTERPIECE) ============ -->
   <section class="slide" data-title="The customer-service chatbot"
     data-note="Now assemble everything into the worked example that IS your Lab 4.2: a multi-agent customer-service chatbot. Walk the flow end to end with a concrete case. A customer message arrives -- 'I was charged twice for order 4471 and the app keeps crashing.' The SUPERVISOR reads it and sees TWO intents, so it routes to two specialists. The BILLING agent (its own prompt, its own tools -- lookup_invoice, refund_request) handles the double charge: finds the duplicate, prepares a refund request. In parallel, the TECH agent (restart_service, known_issues) diagnoses the crash: matches a known issue, gets the fix steps. Both write their findings to the shared state. The SYNTHESISER takes both and composes ONE coherent reply that addresses both problems in a consistent voice -- not two disjointed messages. Then, because a refund is irreversible, the draft goes to a HUMAN for approval before anything is sent or actioned -- Module 7's draft-not-send, now at the team level. Point out how every concept lands here: specialists (separation of concerns), supervisor (routing to agents), parallel fan-out (two agents at once), shared state (findings), synthesis (one reply), human-in-the-loop (the send). This is exactly what they'll build. Emphasise: no single agent could be a great billing AND tech expert -- the team is what makes the answer good.">
-    <div class="kicker"><span class="dot"></span> The worked example &middot; your Lab 4.2</div>
+    <div class="kicker"><span class="dot"></span> The worked example &middot; your Lab 4.2<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 8.11</span></div>
     <h2 class="title">The multi-agent customer-service chatbot</h2>
     <div class="body center">
       <figure>
@@ -584,7 +592,7 @@
   <!-- ============ SLIDE 16 — CHATBOT TRACE ============ -->
   <section class="slide" data-title="The chatbot trace"
     data-note="Make the flow concrete with a run trace -- the multi-agent version of the traces from Modules 5-7. Walk it line by line. The customer message triggers the run. The supervisor reasons that there are two intents -- a billing problem and a technical problem -- and routes to both specialists. The billing agent runs: it calls lookup_invoice, sees two charges for order 4471, and records that a refund is warranted. The tech agent runs: it calls known_issues, matches the crash to a known bug, and records the fix. Both findings land in the shared state. The synthesiser reads both and composes one reply that handles the refund AND the crash in a single, consistent voice. And the last line is the key one: because the reply involves an irreversible refund, the system emits status = needs_approval -- it drafted the whole resolution but STOPPED before acting, exactly as in Module 7, now at the team level. Point out what the trace makes visible: which agent did what, in what order, and where the human gate is. This is precisely what scrolls past when they run the chatbot with verbose logging in the lab -- and it's why observability matters so much for multi-agent systems, which we'll hit shortly.">
-    <div class="kicker"><span class="dot"></span> The run, made visible</div>
+    <div class="kicker"><span class="dot"></span> The run, made visible<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 8.10</span></div>
     <h2 class="title">The chatbot&rsquo;s trace</h2>
     <div class="body">
       <div class="terminal">
@@ -610,7 +618,7 @@
   <!-- ============ SLIDE 17 — CHATBOT IN CODE ============ -->
   <section class="slide" data-title="The chatbot in code"
     data-note="A short, illustrative code peek in the LangGraph idiom -- not a coding lesson. This is the shape of the chatbot they'll build in Lab 4.2. Point out the pieces they already know. (1) Specialists: each is just a create_agent from Module 6 with its OWN focused system_prompt and its OWN small tool list -- billing_agent gets the billing tools, tech_agent gets the tech tools. (2) The supervisor: route() is just the route pattern from Module 7, but the labels are agent names -- it returns which specialists are involved, e.g. ["billing", "tech"]. (3) The orchestration: those labels drive the dict-comprehension -- each named specialist is invoked with its OWN tools, and the findings dict is the shared state passed to the next step (no compiled graph needed here; the labs cover a real LangGraph StateGraph separately). (4) The decision step: synthesize() combines the findings into one draft reply. (5) The guardrail, unchanged from Module 7: the refund is behind a human-approval gate -- note the specialists have NO refund tool, so the team drafts and a human approves the irreversible act. Stress the through-line: everything here is composed from parts they built on Days 3-4 -- @tool, create_agent, shared state, route, draft-not-send. Multi-agent isn't a new toolkit; it's those same parts, arranged as a team. Keep it high-level -- the labs are where they wire it up.">
-    <div class="kicker"><span class="dot"></span> Illustrative &middot; the shape of Lab 4.2</div>
+    <div class="kicker"><span class="dot"></span> Illustrative &middot; the shape of Lab 4.2<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 8.11 &amp; 8.12 (capstone)</span></div>
     <h2 class="title">The chatbot, in code</h2>
     <div class="body">
       <div class="terminal">
@@ -1094,7 +1102,7 @@ reply = <span class="fn">synthesize</span>(findings)            <span class="com
 <div class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Day 4 · Module 8 — Multi-Agent Collaboration &amp; Decision Making</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.2</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.3</span>
 </div>
 
 <script>

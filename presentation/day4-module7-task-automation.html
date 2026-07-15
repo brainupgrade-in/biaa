@@ -39,6 +39,14 @@
     text-transform:uppercase;color:var(--ind-600);margin-bottom:6px;
   }
   .kicker .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);}
+  /* ---------- Hands-on lab cue (badge in the kicker) ---------- */
+  .kicker .lab-cue{display:inline-flex;align-items:center;gap:6px;
+    background:var(--amber);color:var(--ink-900);font-weight:800;text-transform:none;
+    padding:3px 12px;border-radius:12px;letter-spacing:.02em;
+    box-shadow:0 1px 4px rgba(245,158,11,.45);}
+  .kicker .lab-cue.bridge{background:#fff;color:var(--blue);border:1px solid var(--blue);box-shadow:none;}
+  .kicker .lab-cue .tri{font-size:.85em;line-height:1;}
+  @media print{.kicker .lab-cue{box-shadow:none;border:1px solid var(--amber-d);}}
   .kicker .sub{color:var(--muted);font-weight:600;}
   h2.title{
     margin:0 0 14px;color:var(--ink-800);
@@ -303,7 +311,7 @@
   <!-- ============ SLIDE 5 — THE AUTOMATION PIPELINE (CENTERPIECE) ============ -->
   <section class="slide" data-title="The automation pipeline"
     data-note="The centrepiece -- spend time here. Every task-automation agent, however complex, follows the same pipeline. TRIGGER: something kicks it off (an email arrives, a schedule fires, a form is submitted). GATHER: the agent pulls the context it needs -- the client's history from the CRM, a policy from the knowledge base, a figure from a database -- using tools. REASON / DRAFT: the LLM does the actual cognitive work -- drafts the reply, extracts the fields, decides the route. VALIDATE: check the output against rules -- is the JSON well-formed, is the tone right, are required fields present. APPROVE: for anything irreversible, a human reviews before it goes out. ACT: finally, take the action -- send, file, update. Walk the arrows once, then note: the loop from Day 3 lives inside 'reason/draft', but the OUTER pipeline is what makes it an automation. Every lab and every real system maps onto this.">
-    <div class="kicker"><span class="dot"></span> The centrepiece &middot; the shape of every automation</div>
+    <div class="kicker"><span class="dot"></span> The centrepiece &middot; the shape of every automation<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 7.1</span></div>
     <h2 class="title">The task-automation pipeline</h2>
     <div class="body center">
       <figure>
@@ -360,7 +368,7 @@
   <!-- ============ SLIDE 6 — GROUNDING WITH TOOLS/APIS/DB ============ -->
   <section class="slide" data-title="Grounding the task"
     data-note="Zoom into the GATHER stage -- grounding. An automation is only as good as the context it works from. A general model doesn't know your client's order history, your refund policy, or today's inventory -- so the agent must fetch them via tools before it drafts anything. Three staple sources. TOOLS/APIS: live systems -- the CRM, a ticketing system, a calendar, a payments API. DATABASES: your records -- orders, customers, transactions. KNOWLEDGE BASE / DOCS: policies, templates, product info -- often via RAG (Day 3's retrieval). The rule: gather FIRST, draft SECOND. An agent that drafts before it gathers hallucinates specifics; an agent that grounds every claim in retrieved context is accurate and auditable. Tie back to Module 6: these are just tools you wrapped and gave the agent -- now you're pointing them at a real job.">
-    <div class="kicker"><span class="dot"></span> Gather before you draft</div>
+    <div class="kicker"><span class="dot"></span> Gather before you draft<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 7.2</span></div>
     <h2 class="title">Grounding the task in real data</h2>
     <div class="body">
       <p class="lead">A general model doesn&rsquo;t know <b>your</b> client&rsquo;s history, <b>your</b> refund policy, or today&rsquo;s numbers. So the agent must <b>gather context first</b> &mdash; then draft. Three staple sources:</p>
@@ -376,7 +384,7 @@
   <!-- ============ SLIDE 7 — STRUCTURED OUTPUT ============ -->
   <section class="slide" data-title="Structured output"
     data-note="This is the single most important engineering idea in the module -- dwell on it. Free-flowing prose is great for a human reader but terrible for automation: you can't reliably act on it. The fix is STRUCTURED OUTPUT -- ask the model to return a defined shape (JSON matching a schema) instead of a paragraph. Why it changes everything: it's machine-readable (your code can act on each field), it's validatable (you can CHECK required fields, types, allowed values before trusting it), and it's composable (the output of one step feeds cleanly into the next). Example: instead of 'I think you should refund them and it's fairly urgent', the extract step returns {intent: refund, urgency: high, order_id: 4471}. Frameworks make the model return this shape (function-calling / structured output / Pydantic schemas). The mantra: if a machine will act on it, make it structured. Prose for humans, JSON for machines.">
-    <div class="kicker"><span class="dot"></span> The backbone of reliable automation</div>
+    <div class="kicker"><span class="dot"></span> The backbone of reliable automation<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 7.3</span></div>
     <h2 class="title">Structured output, not prose</h2>
     <div class="body">
       <div class="grid2">
@@ -432,7 +440,7 @@
   <!-- ============ SLIDE 9 — DRAFT ============ -->
   <section class="slide" data-title="Pattern: Draft"
     data-note="Deep dive on Draft -- the pattern behind your email lab. Draft = the agent generates a work product from gathered context: a reply, a summary, a proposal, a product description. Three keys to a good draft agent. GROUND IT: feed it the real context (the client's message, their history, the relevant policy) so the draft is specific and correct, not generic. GIVE IT A VOICE: a system prompt with tone, format and constraints -- 'professional, concise, sign off as the support team, never promise a refund without approval'. LEAVE A HUMAN IN THE LOOP: a draft is a suggestion, not a sent message -- the human edits and approves. The failure mode to avoid: a draft that invents facts (a delivery date, a policy) because it wasn't grounded. Draft agents are the highest-value, lowest-risk automation because the human still holds the pen -- which is exactly why the email agent is the canonical first real-world lab.">
-    <div class="kicker"><span class="dot"></span> Pattern 1 of 3 &middot; the email lab</div>
+    <div class="kicker"><span class="dot"></span> Pattern 1 of 3 &middot; the email lab<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 7.6</span></div>
     <h2 class="title">Draft &mdash; generate a work product</h2>
     <div class="body">
       <p class="lead">The agent turns gathered context into a <b>draft</b> a human will review &mdash; a reply, a summary, a proposal. Three keys:</p>
@@ -448,7 +456,7 @@
   <!-- ============ SLIDE 10 — EXTRACT ============ -->
   <section class="slide" data-title="Pattern: Extract"
     data-note="Deep dive on Extract -- turning mess into structure. Extract = pull defined fields out of unstructured input. An incoming email says 'Hi, my order from last Tuesday still hasn't arrived, ref 4471, getting frustrated' -- extract returns {order_id: 4471, intent: delivery_issue, sentiment: negative}. This is where structured output (slide 7) pays off: you define the schema, the model fills it, your code validates and acts. Keys: define a TIGHT schema (only the fields you'll use, with types and allowed values -- intent must be one of a fixed list); handle MISSING data gracefully (return null, don't hallucinate an order id); and VALIDATE before trusting (is order_id a real order?). Extract is the workhorse that turns email, chat, documents and forms into rows your systems can process. It's often the FIRST step in a chain -- extract, then route, then draft. Reliable extraction is what lets an agent plug into the systems you already run.">
-    <div class="kicker"><span class="dot"></span> Pattern 2 of 3</div>
+    <div class="kicker"><span class="dot"></span> Pattern 2 of 3<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 7.4</span></div>
     <h2 class="title">Extract &mdash; mess in, structure out</h2>
     <div class="body">
       <p class="lead">Pull defined fields out of unstructured input &mdash; the workhorse that turns email, chat, docs &amp; forms into rows your systems can process.</p>
@@ -466,7 +474,7 @@
   <!-- ============ SLIDE 11 — ROUTE ============ -->
   <section class="slide" data-title="Pattern: Route"
     data-note="Deep dive on Route / classify -- the decision pattern. Route = decide what happens next and emit a label that drives a branch. Which team gets this ticket (billing, tech, sales)? Is this urgent or routine? Approve automatically or escalate to a human? The output is a single choice from a FIXED set -- that constraint is the whole trick: give the model a closed list of options and it becomes a reliable classifier, not a free-associator. Keys: a CLOSED label set (route must be one of {billing, tech, sales, other} -- include 'other'/'unsure' as an escape hatch); a CONFIDENCE or fallback path (low confidence -> route to a human, never guess on high-stakes); and the label DRIVES CODE, not just a note (your workflow branches on it). Routing is how one agent becomes the front door to a whole system -- it triages, and everything downstream depends on getting it right. It's also the bridge to Module 8: routing to the right specialist AGENT is multi-agent collaboration.">
-    <div class="kicker"><span class="dot"></span> Pattern 3 of 3</div>
+    <div class="kicker"><span class="dot"></span> Pattern 3 of 3<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 7.5</span></div>
     <h2 class="title">Route &mdash; decide what happens next</h2>
     <div class="body">
       <p class="lead">Emit a <b>label from a fixed set</b> that drives a branch &mdash; which team, how urgent, auto-handle or escalate. The closed list is the trick that makes an LLM a <b>reliable classifier</b>.</p>
@@ -482,7 +490,7 @@
   <!-- ============ SLIDE 12 — RELIABILITY ============ -->
   <section class="slide" data-title="Reliability"
     data-note="This slide is what separates a demo from something you'd trust unattended -- hit it hard. Four cheap disciplines. VALIDATE THE OUTPUT: never trust the model blindly -- check the JSON parses, required fields are present, values are in range, the order id actually exists. If it fails validation, don't act. RETRY ON FAILURE: models and tools are flaky -- wrap calls with a retry (and a slightly firmer prompt on the retry). But cap retries so you don't loop forever. IDEMPOTENCY: design so running the same task twice is safe -- key each action so a re-run doesn't double-send an email or double-charge a card. This is the subtlest and most important for anything that touches money or messages. DEGRADE GRACEFULLY: when the agent can't complete confidently, fall back to a human with the context, don't fail silently or guess. The theme: assume every step can fail, and make failure safe and visible. This is ordinary software engineering -- agents don't get a pass on it.">
-    <div class="kicker"><span class="dot"></span> What separates a demo from production</div>
+    <div class="kicker"><span class="dot"></span> What separates a demo from production<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 7.7 &amp; 7.8</span></div>
     <h2 class="title">Reliability: validate, retry, stay idempotent</h2>
     <div class="body">
       <div class="grid4">
@@ -498,7 +506,7 @@
   <!-- ============ SLIDE 13 — HUMAN IN THE LOOP ============ -->
   <section class="slide" data-title="Human-in-the-loop"
     data-note="The single most important safety pattern for real-world agents -- and the design principle behind the whole email lab. The rule: separate DRAFTING from SENDING. The agent can do all the cognitive work -- gather, reason, draft -- fully autonomously, because none of that is irreversible. But the irreversible action -- sending the email, issuing the refund, deleting the record -- pauses for a human to approve. The diagram shows the gate: draft flows to a human checkpoint; approve -> send; reject/edit -> back to the agent to revise. Why this is the sweet spot: you get ALL the speed of automation on the 90% that's safe (the drafting), and full human control on the 10% that's risky (the sending). It also builds trust and a training signal -- every approval/edit teaches you where the agent is weak. Frame it as a dial: as confidence grows you can auto-approve the easy cases and only escalate the hard ones. But start with a human on every send. Draft is not send.">
-    <div class="kicker"><span class="dot"></span> The rule for real-world agents</div>
+    <div class="kicker"><span class="dot"></span> The rule for real-world agents<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 7.9</span></div>
     <h2 class="title">Human-in-the-loop: draft &ne; send</h2>
     <div class="body center">
       <figure>
@@ -594,7 +602,7 @@
   <!-- ============ SLIDE 15 — EMAIL AGENT TRACE ============ -->
   <section class="slide" data-title="Email agent trace"
     data-note="Make the flow concrete with a run trace -- the same ReAct trace shape from Module 5/6, now doing a real job. Walk it: the incoming email triggers the run; the agent reasons it needs the order status and calls the lookup_order tool (observation: shipped, ETA Friday); it reasons it needs the reply template and fetches it; then it drafts the reply, grounded in those observations; validation passes; and instead of sending, it STOPS and emits the draft for human approval. Point at the last line: the agent's output is a DRAFT plus a 'needs approval' flag -- it did not send. That's the human-in-the-loop pattern in the trace. This is exactly what scrolls past in the lab when you run the email agent with verbose logging. Tie back: gather (two tool calls), draft (grounded), validate, then hand off -- the pipeline made visible.">
-    <div class="kicker"><span class="dot"></span> The run, made visible</div>
+    <div class="kicker"><span class="dot"></span> The run, made visible<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 7.10</span></div>
     <h2 class="title">The email agent&rsquo;s trace</h2>
     <div class="body">
       <div class="terminal">
@@ -621,7 +629,7 @@
   <!-- ============ SLIDE 16 — EMAIL AGENT IN CODE ============ -->
   <section class="slide" data-title="Email agent in code"
     data-note="A short, illustrative code peek so the abstractions feel concrete -- not a coding lesson. This is the shape of the email agent they'll build in Lab 4.1, in the LangChain 1.x idiom from Module 6. Point out the four things they already know: (1) tools -- lookup_order and get_template, defined with @tool exactly as in Module 6; (2) the agent -- create_agent binds the model to those tools and returns a CompiledStateGraph you invoke with a messages list; (3) the guardrail -- the draft is returned, and send_email is deliberately NOT given to the agent as a tool, so it CANNOT send on its own; a human calls send after approving; (4) the loop cap -- recursion_limit in the invoke config, the guardrail from Module 5. Stress the design choice on line with send_email: withholding the irreversible tool from the agent is the simplest, strongest human-in-the-loop guardrail there is -- the agent literally cannot send. Everything here maps to code they wrote yesterday; today they point it at a real task.">
-    <div class="kicker"><span class="dot"></span> Illustrative &middot; the shape of Lab 4.1</div>
+    <div class="kicker"><span class="dot"></span> Illustrative &middot; the shape of Lab 4.1<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 7.11</span></div>
     <h2 class="title">The email agent, in code</h2>
     <div class="body">
       <div class="terminal">
@@ -693,7 +701,7 @@ draft = {<span class="str">"draft"</span>: result[<span class="str">"messages"</
   <!-- ============ SLIDE 19 — CONNECT TO LABS ============ -->
   <section class="slide" data-title="This connects to your labs"
     data-note="Hand off to the keyboards. Module 7's labs build the email-drafting agent for real, piece by piece, exactly as the module described. Lab 4.1 -- the flagship: an agent that reads an incoming client query, gathers the order and template context via tools, drafts a grounded reply with the right tone, validates it, and returns it for human approval -- never sending on its own. Along the way you'll practice the three patterns (extract the query's fields, route by type, draft the reply), structured output, validation and the draft-not-send guardrail. Encourage them: this is the first agent that does a job you'd actually pay for -- and it's the template for automating almost any drafting task. Then tease Module 8: when one agent isn't enough, you coordinate several specialists -- the customer-service chatbot (Lab 4.2) -- which is where routing becomes routing to another agent.">
-    <div class="kicker"><span class="dot"></span> From slides to keyboards</div>
+    <div class="kicker"><span class="dot"></span> From slides to keyboards<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 7.12 (capstone)</span></div>
     <h2 class="title">Now build it &mdash; Module 7 labs</h2>
     <div class="body">
       <div class="grid2">
@@ -1132,7 +1140,7 @@ draft = {<span class="str">"draft"</span>: result[<span class="str">"messages"</
 <div class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Day 4 · Module 7 — Task Automation with AI Agents</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.2</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.3</span>
 </div>
 
 <script>

@@ -39,6 +39,14 @@
     text-transform:uppercase;color:var(--ind-600);margin-bottom:6px;
   }
   .kicker .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);}
+  /* ---------- Hands-on lab cue (badge in the kicker) ---------- */
+  .kicker .lab-cue{display:inline-flex;align-items:center;gap:6px;
+    background:var(--amber);color:var(--ink-900);font-weight:800;text-transform:none;
+    padding:3px 12px;border-radius:12px;letter-spacing:.02em;
+    box-shadow:0 1px 4px rgba(245,158,11,.45);}
+  .kicker .lab-cue.bridge{background:#fff;color:var(--blue);border:1px solid var(--blue);box-shadow:none;}
+  .kicker .lab-cue .tri{font-size:.85em;line-height:1;}
+  @media print{.kicker .lab-cue{box-shadow:none;border:1px solid var(--amber-d);}}
   .kicker .sub{color:var(--muted);font-weight:600;}
   h2.title{
     margin:0 0 14px;color:var(--ink-800);
@@ -358,7 +366,7 @@
   <!-- ============ SLIDE 7 — FINANCIAL-REPORT INSIGHT AGENT (CENTERPIECE) ============ -->
   <section class="slide" data-title="The financial-report insight agent"
     data-note="Now the flagship worked example that IS your Lab 5.1: a financial-report insight agent. Walk the pipeline end to end with a concrete case -- a quarterly report lands. GROUND: the agent uses tools to pull the actual numbers from the report -- revenue, net income, margins, cash -- and retrieves the prior period for comparison; every figure comes from the document, not the model's memory. ANALYZE: it computes the derived metrics a human cares about -- year-over-year growth, margin change, notable movements -- and flags anomalies (a margin that collapsed, debt that spiked). STRUCTURE + CITE: it emits a structured insight summary -- each finding as a field with the SOURCE it came from (page/line/figure), so an analyst can verify every claim in seconds. VALIDATE: it checks the numbers are grounded and internally consistent, and that it produced no forbidden content. GUARDRAIL: the output is explicitly informational -- it contains NO buy/sell recommendation and the agent has NO trading tool, so it literally cannot act. HUMAN: a financial analyst reviews the cited summary and makes any decision. Point at the guardrail: withholding the trade tool and banning advice is the same draft-not-send discipline from Module 7, applied to finance. Every concept in the module, in one flow -- and it's exactly what they'll build.">
-    <div class="kicker"><span class="dot"></span> The worked example &middot; your Lab 5.1</div>
+    <div class="kicker"><span class="dot"></span> The worked example &middot; your Lab 5.1<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 9.11</span></div>
     <h2 class="title">The financial-report insight agent, end to end</h2>
     <div class="body center">
       <figure>
@@ -400,7 +408,7 @@
   <!-- ============ SLIDE 8 — INSIGHT AGENT TRACE ============ -->
   <section class="slide" data-title="Insight agent trace"
     data-note="Make it concrete with a run trace -- the same ReAct trace shape you've seen since Module 5, now doing financial analysis. Walk it. The quarterly report triggers the run. The agent reasons it needs the actual figures and calls a tool to extract revenue and net income from the document -- the observation carries the real numbers AND their source location. It calls again for the prior period. It reasons and computes the derived metric -- revenue up 12% year over year, but net margin down -- and flags the margin as noteworthy. It assembles a STRUCTURED insight with each figure carrying its citation. Validation confirms every number is grounded in the document and the output contains no buy/sell language. And the final line is the key one: the agent returns an insight summary flagged for analyst review -- it did NOT recommend an action and had no tool to trade. Point at that last line: the output is analysis plus a needs_review flag, never a decision. This is exactly what scrolls past in the lab. Emphasise how the citations make it auditable -- an analyst can click straight to the source for any figure.">
-    <div class="kicker"><span class="dot"></span> The run, made visible</div>
+    <div class="kicker"><span class="dot"></span> The run, made visible<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 9.3 &amp; 9.4</span></div>
     <h2 class="title">The insight agent&rsquo;s trace</h2>
     <div class="body">
       <div class="terminal">
@@ -428,7 +436,7 @@
   <!-- ============ SLIDE 9 — INSIGHT AGENT IN CODE ============ -->
   <section class="slide" data-title="Insight agent in code"
     data-note="A short, illustrative code peek -- the shape of Lab 5.1 in the LangChain idiom you know. Point out the four familiar pieces. TOOLS: extract_figure pulls a number AND its source from the document, and compute does exact arithmetic -- both defined with @tool exactly as in Module 6, and note the safe calculator, never bare eval, because this is financial math. THE AGENT: create_agent binds the model to those tools and returns a CompiledStateGraph you invoke with a messages list (recursion_limit caps the loop). THE GUARDRAIL -- and this is the whole point: the tools list contains extract_figure and compute, but there is deliberately NO place_trade and NO give_advice tool. Just as the email agent couldn't send, this agent literally cannot trade or advise; it can only read, compute and summarize. THE OUTPUT: a structured insight where every figure carries its citation, returned with needs_review -- a human analyst owns any decision. Stress the design line on the tools list: in a high-stakes domain, your strongest safety control is the tool you DON'T provide. Everything here is code they've written before; today they point it at a financial report and harden the guardrail. Keep it high level -- the lab is where they wire it up.">
-    <div class="kicker"><span class="dot"></span> Illustrative &middot; the shape of Lab 5.1</div>
+    <div class="kicker"><span class="dot"></span> Illustrative &middot; the shape of Lab 5.1<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 9.11 &amp; 9.12 (capstone)</span></div>
     <h2 class="title">The insight agent, in code</h2>
     <div class="body">
       <div class="terminal">
@@ -471,7 +479,7 @@ insight = {<span class="str">"insight"</span>: result[<span class="str">"message
   <!-- ============ SLIDE 11 — HEALTHCARE: ASSISTIVE NOT AUTONOMOUS ============ -->
   <section class="slide" data-title="Assistive, not autonomous"
     data-note="Drive home the single most important principle for healthcare -- and really for the whole day -- with a clean contrast. On the left, the WRONG framing: an autonomous agent that reads symptoms and outputs a diagnosis or a prescription, acting as if it were the clinician. This is unsafe, usually illegal, and it fails the moment the model is confidently wrong about a rare presentation -- which it will be. On the right, the RIGHT framing: an assistive agent that does the grounded, tedious work -- pull the history, summarize the notes, retrieve the relevant guideline, structure the intake, surface the differential the clinician might consider -- and hands a clear, cited briefing to the human, who examines the patient and makes the call. Same underlying capability; completely different safety profile. Why assistive wins: it captures most of the value (the clinician's time saved, information surfaced) while keeping a qualified human -- who carries the training, the liability and the accountability -- firmly in control of the decision. Generalise it: across every high-stakes domain, the pattern is the agent does the 90% of grounded legwork and the human owns the 10% that's the actual judgement. Assistive, not autonomous, isn't a limitation you tolerate -- it's the design that makes these agents deployable at all.">
-    <div class="kicker"><span class="dot"></span> The principle for the whole day</div>
+    <div class="kicker"><span class="dot"></span> The principle for the whole day<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 9.10</span></div>
     <h2 class="title">Assistive, not autonomous</h2>
     <div class="body">
       <div class="grid2">
@@ -551,7 +559,7 @@ insight = {<span class="str">"insight"</span>: result[<span class="str">"message
   <!-- ============ SLIDE 14 — GROUNDING: RAG & CITATIONS ============ -->
   <section class="slide" data-title="Grounding & citations"
     data-note="Now the cross-cutting disciplines every high-stakes agent needs -- start with grounding, the most important. In these domains the model's parametric memory is not just unreliable, it's dangerous: a hallucinated revenue figure, a made-up drug interaction, an invented CVE detail. The fix is GROUNDING -- the agent answers only from retrieved, authoritative sources, never from memory. Two mechanisms you already know. TOOLS pull exact facts from systems of record -- the filing, the EHR, the log store. RAG (retrieval-augmented generation, from Day 3) retrieves the relevant passages from a domain corpus -- guidelines, policies, prior filings, threat intel -- and the model reasons over THOSE, not its training. And the piece that makes it trustworthy in a regulated setting: CITATIONS. Every claim carries a pointer back to its source -- page, record, document -- so a human can verify it and an auditor can trace it. A grounded, cited answer is checkable; an ungrounded one is a liability dressed up as an answer. Tie back: this is Day 3's RAG and Module 7's gather-first discipline, now mandatory. The rule for high-stakes agents: if it isn't grounded and cited, it doesn't ship.">
-    <div class="kicker"><span class="dot"></span> Cross-cutting 1 &middot; ground everything</div>
+    <div class="kicker"><span class="dot"></span> Cross-cutting 1 &middot; ground everything<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 9.1, 9.2 &amp; 9.7</span></div>
     <h2 class="title">Grounding: RAG &amp; citations</h2>
     <div class="body">
       <p class="lead">In these domains the model&rsquo;s memory isn&rsquo;t just unreliable &mdash; it&rsquo;s <b>dangerous</b>. The agent must answer <b>only from retrieved, authoritative sources</b>.</p>
@@ -567,7 +575,7 @@ insight = {<span class="str">"insight"</span>: result[<span class="str">"message
   <!-- ============ SLIDE 15 — AUDITABILITY: STRUCTURED OUTPUT & THE AUDIT TRAIL ============ -->
   <section class="slide" data-title="Auditability"
     data-note="Cross-cutting discipline two: auditability. In a regulated domain, producing the right answer isn't enough -- you must be able to PROVE, after the fact, how the agent got there. A regulator asks why a transaction was flagged; a doctor asks what the summary was based on; an incident review asks what the triage saw. If you can't answer, the agent is unusable no matter how good it is. Two practices make an agent auditable. STRUCTURED OUTPUT -- from Module 7: every conclusion is a defined, machine-readable field with its citation, not a paragraph -- so each claim is individually inspectable and checkable. And the AUDIT TRAIL -- from Module 7/8's observability: log the whole run -- the trigger, every tool call and its observation, every figure retrieved, the reasoning, the final structured output, and the human's decision. Together they give you a complete, replayable record: for any conclusion, you can point to the exact source and the exact step that produced it. This is also what lets you IMPROVE the agent -- the trail shows you where it went wrong -- and what satisfies compliance. Tie it together: structured output makes each answer checkable; the audit trail makes the whole run accountable. In high-stakes domains, an unauditable agent is a non-starter.">
-    <div class="kicker"><span class="dot"></span> Cross-cutting 2 &middot; prove how it got there</div>
+    <div class="kicker"><span class="dot"></span> Cross-cutting 2 &middot; prove how it got there<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 9.8</span></div>
     <h2 class="title">Auditability: structure &amp; the trail</h2>
     <div class="body">
       <div class="grid2">
@@ -581,7 +589,7 @@ insight = {<span class="str">"insight"</span>: result[<span class="str">"message
   <!-- ============ SLIDE 16 — PRIVACY, COMPLIANCE & DATA HANDLING ============ -->
   <section class="slide" data-title="Privacy & compliance"
     data-note="Cross-cutting discipline three: privacy, compliance and data handling -- the part that's easy to overlook and expensive to get wrong. These domains run on the most sensitive data there is: financial records and MNPI, protected health information, security logs and credentials. Four disciplines. MINIMIZE: send the model only what the task needs -- redact or tokenize identifiers, don't dump a whole record when a summary field will do. Less exposed data is less risk. PROTECT: encrypt in transit and at rest, control access, and be deliberate about WHERE the data goes -- a general public LLM API may be the wrong place for PHI or MNPI; a compliant, private, or on-prem deployment (like the local models this course uses) may be required. Note this connects to why Day 1 started with local Ollama models. COMPLY: know the regime -- HIPAA for health, financial regulation and MNPI rules for finance, security and data-protection standards -- and design the agent to respect it, not bolt it on later. RETAIN & LOG carefully: audit trails are good, but they now contain sensitive data too, so they need the same protection. The one-liner: in high-stakes domains, data handling is a first-class design constraint, not an afterthought -- decide where the data can go before you build.">
-    <div class="kicker"><span class="dot"></span> Cross-cutting 3 &middot; the sensitive data</div>
+    <div class="kicker"><span class="dot"></span> Cross-cutting 3 &middot; the sensitive data<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Lab 9.9</span></div>
     <h2 class="title">Privacy, compliance &amp; data handling</h2>
     <div class="body">
       <div class="grid4">
@@ -597,7 +605,7 @@ insight = {<span class="str">"insight"</span>: result[<span class="str">"message
   <!-- ============ SLIDE 17 — ASSISTIVE, NOT AUTONOMOUS (THE GOLDEN RULE) ============ -->
   <section class="slide" data-title="The golden rule"
     data-note="Consolidate the day's central rule into one memorable frame -- the human-authority spectrum. Picture a dial from fully manual on the left to fully autonomous on the right. In the forgiving domains of Day 4, you can slide fairly far right -- let the email agent draft and, as trust grows, even auto-send the easy cases. In the high-stakes domains of Day 5, you deliberately DON'T: the dial stays firmly on the left of any consequential action. The agent can be highly autonomous on the SAFE work -- gathering, grounding, computing, summarizing, drafting, recommending -- because none of that is irreversible. But the CONSEQUENTIAL act -- the trade, the diagnosis, the prescription, the host isolation, the money movement -- stays with a qualified, accountable human. This isn't timidity; it's the design that makes the agent both useful and safe: you get the full speed of automation on the 90% that's legwork, and full human control on the 10% that carries the risk and the liability. And the implementation is the simplest thing in the world, the same move from Module 7: don't give the agent the dangerous tool. No trade tool, no prescribe tool, no auto-remediate tool. Withholding the capability is stronger than any prompt instruction. The golden rule of Day 5: in high-stakes domains, agents are assistive, not autonomous -- and you enforce it by what you DON'T build.">
-    <div class="kicker"><span class="dot"></span> The golden rule of Day 5</div>
+    <div class="kicker"><span class="dot"></span> The golden rule of Day 5<span class="lab-cue"><span class="tri">&#9654;</span> HANDS-ON &middot; Labs 9.5 &amp; 9.6</span></div>
     <h2 class="title">Assistive on judgement, autonomous on legwork</h2>
     <div class="body">
       <div class="grid2">
@@ -1066,7 +1074,7 @@ insight = {<span class="str">"insight"</span>: result[<span class="str">"message
 <div class="footer">
   <span class="brand">&copy; 2026 Gheware DevOps &amp; Agentic AI</span>
   <span>Day 5 · Module 9 — Agents in Finance, Healthcare &amp; Cybersecurity</span>
-  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.2</span>
+  <span><a href="https://devops.gheware.com">devops.gheware.com</a> · Trainer: Rajesh Gheware · v1.3</span>
 </div>
 
 <script>
