@@ -814,6 +814,40 @@ class GState(TypedDict):
 print("nodes we will wire: tool, human, END |", "END sentinel:", END)'''),
       buildmd('''Complete `route` (which node an action goes to) and the conditional entry point, then compile and run the
 real graph. A risky step lands on the human node before anything happens.'''),
+      md('''## The graph you're wiring
+
+There is **no fixed order** of nodes. `route(state)` is consulted **before the first node and again after
+every node**, and it alone picks the next hop by returning `"tool"`, `"human"`, or `"end"`. The `edges`
+dict then maps that key to a destination: `{'tool': 'tool', 'human': 'human', 'end': END}`.
+
+```
+             START
+               |
+        route(state)                 returns "tool" | "human" | "end"
+      +--------+--------+
+   "tool"   "human"   "end"
+      |        |        |
+      v        v        v
+  +------+ +-------+ +-----+
+  | tool | | human | | END |
+  +--+---+ +---+---+ +-----+
+     |         |
+     |  route(state) runs AGAIN after each node
+     +----+----+
+          |
+     back to tool / human ... until route returns "end" -> END
+```
+
+Because every node re-routes the same way, it is really a fully-connected router &mdash; any node can reach
+any node (a node can even loop back to itself). The three lines of API that build exactly this:
+
+```
+   from \\ to |  tool   human   END      wired by
+  -----------+---------------------------------------------------------
+   START     |   *       *      *    set_conditional_entry_point(route, edges)
+   tool      |   *       *      *    add_conditional_edges('tool',  route, edges)
+   human     |   *       *      *    add_conditional_edges('human', route, edges)
+```'''),
       code(render(DEFS, sol) + "\n\n" + guard(EX)),
       noticemd('''- The path shows **`human`** appearing exactly where a risky action was &mdash; the graph *paused* for approval.
 - `set_conditional_entry_point` + `add_conditional_edges` are the real LangGraph API; this graph genuinely compiled and ran.
