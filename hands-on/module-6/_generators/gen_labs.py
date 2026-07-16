@@ -852,6 +852,23 @@ any node (a node can even loop back to itself). The three lines of API that buil
       noticemd('''- The path shows **`human`** appearing exactly where a risky action was &mdash; the graph *paused* for approval.
 - `set_conditional_entry_point` + `add_conditional_edges` are the real LangGraph API; this graph genuinely compiled and ran.
 - LangChain gets an agent running; LangGraph puts its flow under explicit control.'''),
+      md('''## See the graph the framework drew
+You don't have to sketch it by hand &mdash; LangGraph can render the **compiled** graph for you.
+`draw_mermaid_png()` returns a PNG (it renders via mermaid.ink, so it needs network);
+`draw_mermaid()` returns the mermaid **text** and always works offline. Notice the framework does **not**
+draw `route` as a node &mdash; a conditional edge isn't a node, so `route` shows up as **dotted edges**
+fanning out from every source to `tool` / `human` / `__end__`.'''),
+      code('''# Render the COMPILED graph (framework's own view). PNG needs network; text is the offline fallback.
+try:
+    graph = build_graph().get_graph()
+    try:
+        from IPython.display import Image, display
+        display(Image(graph.draw_mermaid_png()))       # needs network (mermaid.ink)
+    except Exception:
+        print("PNG unavailable (offline?) -- mermaid source instead:\\n")
+        print(graph.draw_mermaid())                    # always works, no network
+except Exception as e:
+    print("(Fill the ___ blanks above, then re-run.)", type(e).__name__)'''),
       yourturn('''Add a new risky action name to `RISKY` (e.g. `"wire_transfer"`) and a sequence that uses it, then re-run.
 **What good looks like:** your new risky action routes to `human` while safe actions go straight to `tool`.
 (Advanced: add a real `llm`-backed node that decides the next action &mdash; the graph will call it.)'''),
