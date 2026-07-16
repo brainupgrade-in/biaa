@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>biaa agent demo</title>
+<style>
+  :root {
+    --bg: #0b1020; --panel: #121a33; --panel2: #0e1730; --ink: #e6ebff; --muted: #94a3c8;
+    --accent: #06b6d4; --indigo: #4f46e5; --amber: #f59e0b; --line: #24304f;
+    --me: #4f46e5; --bot: #17224a; --ok: #10b981; --warn: #f59e0b; --err: #ef4444;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: radial-gradient(1200px 600px at 50% -10%, #1a2450 0%, var(--bg) 60%);
+    color: var(--ink); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+  }
+  /* phone frame on desktop; full-bleed on small screens */
+  .phone {
+    width: 100%; max-width: 420px; height: min(860px, 96vh);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 28px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.5); display: flex; flex-direction: column; overflow: hidden;
+  }
+  header {
+    padding: 16px 18px; background: linear-gradient(135deg, #1e1b4b, #312e81);
+    border-bottom: 1px solid var(--line);
+  }
+  .title { font-weight: 700; letter-spacing: .2px; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 10px var(--ok); }
+  .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .picker { margin-top: 12px; }
+  select {
+    width: 100%; background: var(--panel2); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 10px; padding: 9px 10px; font-size: 13px; appearance: none;
+  }
+  #log { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .row { display: flex; }
+  .row.me { justify-content: flex-end; }
+  .bubble {
+    max-width: 82%; padding: 10px 13px; border-radius: 16px; white-space: pre-wrap; word-wrap: break-word;
+    font-size: 14px; border: 1px solid var(--line);
+  }
+  .me .bubble { background: var(--me); border-color: transparent; border-bottom-right-radius: 5px; }
+  .bot .bubble { background: var(--bot); border-bottom-left-radius: 5px; }
+  .meta { margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+  .badge.ok { color: #062; background: #10b98122; border-color: #10b98155; color: #6ee7b7; }
+  .badge.warn { color: #7c2d12; background: #f59e0b22; border-color: #f59e0b66; color: #fcd34d; }
+  .badge.err { background: #ef444422; border-color: #ef444466; color: #fca5a5; }
+  .hint { color: var(--muted); font-size: 12px; text-align: center; padding: 4px 12px; }
+  form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); background: var(--panel2); }
+  input[type=text] {
+    flex: 1; background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 12px; padding: 12px 14px; font-size: 14px;
+  }
+  input[type=text]:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+  button {
+    background: var(--accent); color: #05252b; border: 0; border-radius: 12px; padding: 0 16px;
+    font-weight: 700; cursor: pointer;
+  }
+  button:disabled { opacity: .55; cursor: default; }
+  .typing { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+  <div class="phone">
+    <header>
+      <div class="title"><span class="dot" id="statusdot"></span> biaa agent demo</div>
+      <div class="sub" id="subtitle">Lab agent, served for real over HTTP</div>
+      <div class="picker"><select id="agent" aria-label="Choose agent"></select></div>
+    </header>
+    <div id="log">
+      <div class="hint" id="greeting">Pick an agent and send a message.</div>
+    </div>
+    <form id="form">
+      <input id="msg" type="text" placeholder="Type a message…" autocomplete="off" />
+      <button id="send" type="submit">Send</button>
+    </form>
+  </div>
+
+<script>
+const log = document.getElementById("log");
+const form = document.getElementById("form");
+const msgEl = document.getElementById("msg");
+const sendBtn = document.getElementById("send");
+const agentSel = document.getElementById("agent");
+const subtitle = document.getElementById("subtitle");
+const statusdot = document.getElementById("statusdot");
+
+const SAMPLES = {
+  module8: "I was charged twice for order 4471 and the app keeps crashing on login.",
+  generic: "How many words are in this sentence?",
+};
+
+function bubble(role, text) {
+  const row = document.createElement("div");
+  row.className = "row " + role;
+  const b = document.createElement("div");
+  b.className = "bubble";
+  b.textContent = text;
+  row.appendChild(b);
+  log.appendChild(row);
+  log.scrollTop = log.scrollHeight;
+  return row;
+}
+function badges(row, data) {
+  const meta = document.createElement("div");
+  meta.className = "meta";
+  const st = (data.status || "").toString();
+  if (st) {
+    const cls = st === "needs_approval" ? "warn" : st === "error" ? "err" : "ok";
+    const b = document.createElement("span"); b.className = "badge " + cls; b.textContent = st;
+    meta.appendChild(b);
+  }
+  (data.agents || []).forEach(a => {
+    const b = document.createElement("span"); b.className = "badge"; b.textContent = a; meta.appendChild(b);
+  });
+  if (data.conflict) { const b = document.createElement("span"); b.className = "badge warn"; b.textContent = "conflict"; meta.appendChild(b); }
+  if (meta.children.length) row.querySelector(".bubble").appendChild(meta);
+}
+
+async function loadAgents() {
+  try {
+    const r = await fetch("health");
+    const h = await r.json();
+    statusdot.style.background = h.has_key ? "var(--ok)" : "var(--warn)";
+    statusdot.style.boxShadow = "0 0 10px " + (h.has_key ? "var(--ok)" : "var(--warn)");
+    subtitle.textContent = h.has_key ? "Live · GROQ key detected" : "No GROQ key — replies will be a placeholder";
+    (h.agents || []).forEach(a => {
+      const o = document.createElement("option"); o.value = a.id; o.textContent = a.label; agentSel.appendChild(o);
+    });
+  } catch (e) {
+    subtitle.textContent = "Could not reach the API";
+    statusdot.style.background = "var(--err)";
+  }
+  setPlaceholder();
+}
+function setPlaceholder() {
+  const s = SAMPLES[agentSel.value];
+  if (s) msgEl.placeholder = s;
+}
+agentSel.addEventListener("change", setPlaceholder);
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const text = (msgEl.value || msgEl.placeholder || "").trim();
+  if (!text) return;
+  const g = document.getElementById("greeting"); if (g) g.remove();
+  bubble("me", text);
+  msgEl.value = "";
+  sendBtn.disabled = true;
+  const wait = bubble("bot", "…"); wait.querySelector(".bubble").classList.add("typing");
+  try {
+    const r = await fetch("chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text, agent: agentSel.value }),
+    });
+    const data = await r.json();
+    wait.remove();
+    const row = bubble("bot", data.reply || JSON.stringify(data));
+    badges(row, data);
+  } catch (err) {
+    wait.remove();
+    bubble("bot", "Request failed: " + String(err));
+  } finally {
+    sendBtn.disabled = false;
+    msgEl.focus();
+  }
+});
+
+loadAgents();
+</script>
+</body>
+</html>

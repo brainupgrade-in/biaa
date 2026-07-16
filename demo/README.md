@@ -1,118 +1,96 @@
-# Ship a lab as an app (FastAPI + React Native / Expo)
+# Ship a lab as an app (FastAPI + a mobile-styled web UI)
 
-This folder turns any hands-on lab agent into a deployable app so you can
-demonstrate **production deployment of Agentic AI** in the room. It's built to be
-driven with **[OpenCode](https://opencode.ai)** for rapid prototyping.
+Turn any hands-on lab agent into a deployable app to demonstrate **production
+deployment of Agentic AI** — with the least possible friction.
 
-## Why a backend?
+**One process, one port, no Node.** A single FastAPI service serves both a
+mobile-styled chat page (`app/index.html`) and the `/chat` API. It launches
+identically on any Codespace (Alpine or Debian), and containerizes to a real
+one-command deploy.
 
-React Native can't run Python. The lab agents (LangChain / `create_agent` /
-`ChatGroq`) are Python, so the production pattern is:
+> Why not React Native? A native RN/Expo build needs the whole Node toolchain
+> (npm install + Metro/EAS build + 3 forwarded ports) and broke on an Alpine/musl
+> Codespace. For a *demo*, a responsive web page that calls the same backend is
+> dramatically more reliable and tells the same "app → agent service" story.
+
+## Layout
 
 ```
-  Expo / React Native app  ──HTTP──►  FastAPI service  ──►  lab agent (ChatGroq / Ollama)
-     (demo/<name>/)                    (demo/backend/)        (hands-on/**/*.ipynb logic)
+demo/
+  app/
+    main.py          # FastAPI: serves index.html + /chat + /health + /agents
+    __main__.py      # python -m demo.app
+    index.html       # phone-framed chat UI (inline CSS/JS, no external deps)
+    agents/
+      registry.py    # id -> lab agent; add a line to package a new lab
+      lab8_12.py     # Module-8 team (route → specialists → vote → refund gate)
+      generic.py     # single-agent template (word count)
+  requirements.txt   # web layer + just the LangChain bits (no torch/transformers)
+  Dockerfile
+  docker-compose.yml
+  run.sh             # dev launcher
 ```
 
-The app stays thin (UI + `fetch`); all agent logic lives server-side, exactly as
-you'd deploy it.
+## Launch
 
-## Quick start (one command)
+**Dev (venv):**
+```bash
+bash demo/run.sh
+# → http://localhost:8000   (in a Codespace, open the forwarded port 8000)
+```
+or directly: `python -m demo.app` / `uvicorn demo.app.main:app --host 0.0.0.0 --port 8000`.
 
-On a Codespace, `demo/run.sh` does the whole build+launch: installs backend deps,
-starts the API, scaffolds the Expo app, injects the **forwarded** backend URL into
-it (not `localhost`), makes port 8000 public, and starts Expo. Ctrl+C stops both.
+**Production-like (Docker):**
+```bash
+docker compose -f demo/docker-compose.yml up --build
+```
+The image is slim (no torch/transformers) and reads `GROQ_API_KEY` from the
+repo-root `.env` at run time (never baked in).
+
+**In a Codespace:** open the **PORTS** panel, and set port **8000** to **Public**
+(or just open the forwarded `…-8000.app.github.dev` URL in the same browser).
+
+## The GROQ key
+
+Days 4–5 agents use Groq. Put your key in the repo-root `.env`:
+```
+GROQ_API_KEY=gsk_...        # free at https://console.groq.com/keys
+```
+or set it as a **Codespaces secret** (Settings → Codespaces → Secrets). Without it
+the app still runs and the UI loads — `/chat` just returns a friendly placeholder.
+
+## Package any lab as an agent
+
+The whole contract is one function:
+
+1. Add `demo/app/agents/<yourlab>.py` exposing:
+   ```python
+   def run(message: str) -> dict:   # must include a "reply" key;
+       ...                          # may also add status / agents / conflict
+   ```
+   Build the model **lazily** (inside the function) and read `os.getenv("GROQ_API_KEY")`
+   so the app starts without a key. Copy `generic.py` (single agent) or `lab8_12.py`
+   (a multi-agent team) as your starting point.
+2. Register it in `agents/registry.py`:
+   ```python
+   REGISTRY = { ..., "yourlab": ("Nice label", "demo.app.agents.yourlab") }
+   ```
+The dropdown in the UI and the `/chat` endpoint pick it up automatically.
+
+**Worked example — Module-8 lab 8.12** (`agents/lab8_12.py`): the customer-service
+*team* — `route → real billing/tech specialists → vote-on-dispute → synthesise →
+refund gate`. The guardrail is the point: specialists have **no refund tool**, so a
+refund request returns `status: "needs_approval"` (in the UI, an amber badge) — a
+human-approval step, never an auto-action.
 
 ```bash
-bash demo/run.sh                                   # Module-8 example + Expo web
-bash demo/run.sh --backend demo.backend.main:app   # the generic template instead
-bash demo/run.sh --mode tunnel                     # phone via Expo Go (QR)
-bash demo/run.sh --mode backend-only               # just the API (curl / external app)
-```
-
-Prefer the manual steps? They're below.
-
-## 1. Run the API
-
-```bash
-# from the repo root, with biaa-venv active
-pip install -r demo/backend/requirements.txt
-uvicorn demo.backend.main:app --reload --host 0.0.0.0 --port 8000
-# open http://localhost:8000/docs  (or the forwarded 8000 URL in a Codespace)
-```
-
-`demo/backend/main.py` ships a trivial `word_count` agent. **Swap the body of
-`build_agent()`** for the lab you want to ship — e.g. lift the tools + prompt
-from `hands-on/module-7` (email-drafting) or `module-8` (customer-service). Keep
-the gather-only / no-send guardrails: don't bind a `send_*`/`place_trade` tool
-you wouldn't run unattended.
-
-### Packaging any lab — the recipe
-
-1. **Read the solution, keep the reusable core.** Drop the notebook scaffolding
-   (`groq_ready()` prints, `print_trace`, offline-sanity cells, the "Your turn"
-   cell); keep the tools, the agent/team logic, and the model.
-2. **Paste it into a module under `demo/backend/`.** Two mechanical fixes when
-   lifting from a notebook: build the model **lazily** (inside a getter) so
-   `/health` works without a key, and load the repo-root `.env` with a
-   `Path(__file__).resolve().parents[2]` anchor (not the notebook's `find_dotenv`).
-3. **Map the lab's entry point to `/chat`, matching the return shape:**
-
-   | Lab shape | `/chat` returns |
-   |-----------|-----------------|
-   | Single agent (M7 email, M9 insight) | `{reply}` from `result["messages"][-1].content` |
-   | Team with a `process()` (M8 8.12) | `{reply, status, agents, conflict}` — the whole verdict |
-4. **Keep the guardrail.** If the lab withholds a tool (no `send_email` /
-   `place_trade` / refund tool), a request for it comes back as
-   `needs_approval` — in the app that's a human-approval screen, never an
-   auto-action.
-
-**Worked example — Module-8 lab 8.12** (the customer-service chatbot *team*) is
-packaged in [`backend/app_module8.py`](backend/app_module8.py). It lifts
-`route → real specialists → vote → synthesise → refund-gate` verbatim and returns
-the structured verdict:
-
-```bash
-uvicorn demo.backend.app_module8:app --reload --host 0.0.0.0 --port 8000
 curl -sX POST localhost:8000/chat -H 'content-type: application/json' \
-  -d '{"message":"I was charged twice for order 4471 and the app keeps crashing on login."}'
-# -> {"agents":["billing","tech"], "reply":"[billing] … [tech] …", "status":"needs_approval", "conflict":false}
+  -d '{"message":"I was charged twice for order 4471 and the app keeps crashing on login.","agent":"module8"}'
+# → {"agents":["billing","tech"], "reply":"[billing] … [tech] …", "status":"needs_approval", "conflict":false}
 ```
 
-## 2. Scaffold the mobile app
+## Iterate with OpenCode
 
 ```bash
-bash demo/new-mobile-app.sh            # creates demo/mobile/
-# or:  bash demo/new-mobile-app.sh insight-app
-cd demo/mobile
-npx expo start                         # press w for web, or scan the QR in Expo Go
+opencode        # "add a refund-approval screen when status is needs_approval", etc.
 ```
-
-The generated `App.tsx` already POSTs to the API's `/chat`.
-
-## 3. Wiring it up in a Codespace
-
-- The **Ports** panel forwards `8000` (API) and `8081`/`19006` (Expo). Make the
-  8000 port **Public** (or use the `…-8000.app.github.dev` URL) and set that as
-  `API` in `App.tsx`.
-- On a physical phone via **Expo Go**, `localhost` means the phone, not the
-  server — use the forwarded public URL, or `expo start --tunnel`.
-
-## 4. Prototype fast with OpenCode
-
-```bash
-cd demo/mobile        # or demo/backend
-opencode              # installed by the devcontainer; describe the change and let it build
-```
-
-Good OpenCode prompts to start from:
-- "Add a chat history list with user/agent bubbles to App.tsx."
-- "Add a /stream SSE endpoint to the FastAPI app and stream tokens to the UI."
-- "Wrap the module-8 customer-service agent in build_agent() and add a refund-approval screen."
-
-## Notes
-
-- `demo/mobile/` (and any scaffolded app) is git-ignored — it's a throwaway demo,
-  regenerate it any time with `new-mobile-app.sh`.
-- For a shareable web build: `npx expo export --platform web` (static output in
-  `dist/`), then host anywhere. For native binaries, use EAS Build.

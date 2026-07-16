@@ -1,0 +1,15 @@
+# One-command production-like launch:  docker compose -f demo/docker-compose.yml up --build
+services:
+  demo:
+    build:
+      context: ..                 # repo root, so the Dockerfile can COPY demo/...
+      dockerfile: demo/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+    # Pull GROQ_API_KEY (etc.) from the repo-root .env if it exists. Marked optional
+    # so `up` still works without a .env — /chat then returns a friendly placeholder.
+    env_file:
+      - path: ../.env
+        required: false

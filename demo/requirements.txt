@@ -1,0 +1,10 @@
+# Demo app deps — the web layer + just the LangChain pieces the demo agents use.
+# Deliberately NO torch/transformers/tensorflow (the labs need those; the demo
+# agents don't), so the Docker image stays small.
+fastapi
+uvicorn[standard]
+python-dotenv
+langchain
+langchain-core
+langchain-groq
+langgraph

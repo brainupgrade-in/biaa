@@ -1,4 +1,0 @@
-# Demo API extras. LangChain / langchain-groq already live in biaa-venv
-# (scripts/requirements-core.txt); these two add the web layer.
-fastapi
-uvicorn[standard]
