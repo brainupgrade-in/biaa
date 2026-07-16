@@ -341,6 +341,50 @@ error-recovery table). Key facts:
   (not `1b`) &mdash; the M5-6 labs require it. Day 5 also live-demos the FrontDesk
   AI production app (separate repo).
 
+## Codespaces &amp; the demo app (`.devcontainer/`, `demo/`)
+
+The repo opens in **GitHub Codespaces** (`.devcontainer/`): Python 3.12 base
+matching `biaa-venv`, Node/GitHub-CLI/Ollama features, forwarded ports, and
+auto-installed VS Code extensions. Lifecycle is split for prebuilds &mdash;
+`onCreate` (heavy: venv + deps + kernel + OpenCode, baked into the prebuild) vs
+`postCreate` (light: `.env` seed + a safety-net rebuild). `.devcontainer/README.md`
+documents enabling prebuilds; `scripts/pull-ollama-model.sh` pulls the Day-3 model
+on demand. `.vscode/` carries the shared interpreter/Jupyter/formatter settings.
+
+**`demo/` &mdash; ship a lab agent as a deployable app** (the "production
+deployment of Agentic AI" story). It is a **single self-contained FastAPI service
+that serves BOTH a mobile-styled chat UI and the `/chat` API** &mdash; **no Node,
+one port (8000)**, identical on any Codespace (Alpine or Debian). (An earlier
+React Native / Expo scaffolder was removed: the Node toolchain is heavy and broke
+on an Alpine/musl Codespace; a web page that calls the same backend is far more
+reliable for a demo.) Structure:
+
+```
+demo/
+  app/main.py        # FastAPI: serves index.html + /chat + /health + /agents
+  app/__main__.py    # python -m demo.app
+  app/index.html     # phone-framed chat UI (inline CSS/JS, no external deps)
+  app/agents/
+    registry.py      # id -> lab agent; one line to register a new lab
+    lab8_12.py       # M8 team (route->specialists->vote->refund gate), refund-gated
+    generic.py       # single-agent template (word count)
+  requirements.txt   # web layer + LangChain only (NO torch/transformers -> slim image)
+  Dockerfile
+  docker-compose.yml
+  run.sh             # dev launcher (python -m demo.app)
+```
+
+- **Launch:** `bash demo/run.sh` (dev) or
+  `docker compose -f demo/docker-compose.yml up --build` (production-like, ~215MB
+  image). In a Codespace, set forwarded port **8000** to **Public**. `GROQ_API_KEY`
+  comes from the repo-root `.env` (or a Codespaces secret) at run time, never baked
+  into the image; without it the app still runs and `/chat` returns a placeholder.
+- **Package any lab:** add `demo/app/agents/&lt;lab&gt;.py` exposing
+  `run(message: str) -&gt; dict` (must contain a `"reply"` key; build the model
+  lazily; read `os.getenv("GROQ_API_KEY")`), then add one line to `registry.py`.
+  The UI dropdown and `/chat` pick it up automatically. Copy `generic.py` (single
+  agent) or `lab8_12.py` (multi-agent team). See `demo/README.md`.
+
 ## Preview
 
 ```bash
