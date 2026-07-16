@@ -10,6 +10,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+# Port the app listens on (demo.app reads $PORT; default 8000). Override: PORT=8250 bash demo/run.sh
+export PORT="${PORT:-8000}"
+
 # Prefer the course venv; fall back to any python3.
 PY="$ROOT/biaa-venv/bin/python"
 [ -x "$PY" ] || PY="$(command -v python3 || command -v python)"
@@ -22,8 +25,8 @@ if [ ! -f "$ROOT/.env" ] || ! grep -q '^GROQ_API_KEY=gsk_' "$ROOT/.env" 2>/dev/n
 fi
 
 echo "=============================================="
-echo " Demo app:  http://localhost:8000"
-echo " In a Codespace: open the forwarded port 8000 (PORTS panel) — make it Public"
+echo " Demo app:  http://localhost:$PORT"
+echo " In a Codespace: open the forwarded port $PORT (PORTS panel) — make it Public"
 echo " Ctrl+C to stop."
 echo "=============================================="
 exec "$PY" -m demo.app
